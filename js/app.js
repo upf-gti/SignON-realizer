@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
-import { CharacterController } from './js/controllers/CharacterController.js'
+import { CharacterController } from './controllers/CharacterController.js'
 
 class App {
 
@@ -41,9 +41,8 @@ class App {
         this.body = null;
         this.eyelashes = null;
     }
-
+    
     init() {
-
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
@@ -115,7 +114,7 @@ class App {
         
         this.eyesTarget = new THREE.Mesh(new THREE.SphereGeometry( 0.5, 5, 16), new THREE.MeshPhongMaterial( { color: 0xffff00 , depthWrite: false } ) );
         this.eyesTarget.name = "eyesTarget";
-        this.eyesTarget.position.set(0,2,100); 
+        this.eyesTarget.position.set(0,-5,100); 
         this.headTarget = new THREE.Mesh(new THREE.SphereGeometry( 0.5, 5, 16), new THREE.MeshPhongMaterial( { color: 0xff0000 , depthWrite: false } ) );
         this.headTarget.name = "headTarget";
         this.headTarget.position.set(0,2,100); 
@@ -123,11 +122,11 @@ class App {
         this.neckTarget.name = "neckTarget";
         this.neckTarget.position.set(0,2,100); 
 
-        this.scene.add(eyesTarget);
-        this.scene.add(headTarget);
-        this.scene.add(neckTarget);
+        this.scene.add(this.eyesTarget);
+        this.scene.add(this.headTarget);
+        this.scene.add(this.neckTarget);
 
-        this.loaderGLB.load( 'animations/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -160,19 +159,26 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = model.getObjectByName( 'Body' );
-            this.eyelashes = model.getObjectByName( 'Eyelashes' );
+            this.body = this.model.getObjectByName( 'Body' );
+            this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
 
-            ECAcontroller = new CharacterController({character: model});
+            let additiveActions = {};
+            const expressions = Object.keys( this.body.morphTargetDictionary );
+            for ( let i = 0; i < expressions.length; i ++ ) {
+                additiveActions[expressions[i]] = {weight: this.body.morphTargetInfluences[i]}
+
+            }
+            
+            this.ECAcontroller = new CharacterController({character: this.model});
             var morphTargets = { 
-                'Body': {dictionary: body.morphTargetDictionary, weights: body.morphTargetInfluences, map: additiveActions},
-                'Eyelashes': {dictionary: eyelashes.morphTargetDictionary, weights: eyelashes.morphTargetInfluences, map: additiveActions}
+                'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
+                'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
             }
             this.ECAcontroller.onStart(morphTargets);
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
-            this.loadBVH('animations/VGT Thanks.bvh');
+            this.loadBVH('./data/anim/VGT Thanks.bvh');
             
             this.animate();
             $('#loading').fadeOut(); //hide();
@@ -186,12 +192,12 @@ class App {
         requestAnimationFrame( this.animate.bind(this) );
 
         let delta = this.clock.getDelta();
+        let et = this.clock.getElapsedTime();
 
         if (this.mixer) {
             this.mixer.update(delta);
         }
 
-        var et = clock.getElapsedTime()
         this.ECAcontroller.time = et;
         // Update the animation mixer, the stats panel, and render this frame
         this.ECAcontroller.facialController.onUpdate(delta, et, this.ECAcontroller.onUpdate.bind(this.ECAcontroller) );
@@ -246,6 +252,31 @@ class App {
             }
             this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             this.mixer.update(0);
+            
+            let msg = {
+                type: "behaviours",
+                data: [
+                    {
+                        type: "gaze",
+                        start: 0,
+                        ready: 0.5,
+                        relax: 1,
+                        end: 2,
+                        influence: "EYES",
+                        target: "LEFT"
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 2.5,
+                        attackPeak: 3,
+                        relax: 3.5,
+                        end: 5,
+                        amount:1,
+                        lexeme: "RAISE_LEFT_BROW"
+                    }
+                ]
+            };
+            this.ECAcontroller.processMsg(JSON.stringify(msg));
         } );
     }
 }

@@ -10,7 +10,7 @@ BehaviourPlanner.LISTENING  = 3;
 function BehaviourPlanner(){
 
   this.conversation = "--- New dialogue---\n\n";
-  this.state = BehaviourPlanner.LISTENING;
+  this.state = BehaviourPlanner.SPEAKING;
 
   //For automatic state update
   this.stateTime = 0;
@@ -42,12 +42,12 @@ BehaviourPlanner.prototype.update = function(dt){
   }
   
   // Check if speech has finished to change to WAITING
-  if (this.state == BehaviourPlanner.SPEAKING){
-    if (this.BehaviourManager){
-      if (this.BehaviourManager.lgStack.length == 0 && this.BehaviourManager.speechStack.length == 0)
-        this.transition({control: BehaviourPlanner.WAITING});
-    }
-  }
+  // if (this.state == BehaviourPlanner.SPEAKING){
+  //   if (this.BehaviourManager){
+  //     if (this.BehaviourManager.lgStack.length == 0 && this.BehaviourManager.speechStack.length == 0)
+  //       this.transition({control: BehaviourPlanner.WAITING});
+  //   }
+  // }
   
   // Automatic blink and saccades
   return this.updateBlinksAndSaccades(dt);
@@ -216,46 +216,46 @@ BehaviourPlanner.prototype.createBlock = function(){
       
       this.nextBlockIn = 2 + Math.random()*4;
       // Head
-      if (Math.random() < 0.6){
-        block.head = {
-          start: 0,
-          end: 2.5 + Math.random()*1.5,
-          lexeme: "NOD",
-          amount: 0.05 + Math.random()*0.05,
-          type:"head"
-        }
-        // Deviate head slightly
-        if (Math.random() < 0.85)
-        {
-          var offsetDirections = ["DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
-          var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
-          block.headDirectionShift = {
-            start: 0,
-            end: 1 + Math.random(),
-            target: "CAMERA",
-            offsetDirection: randOffset,
-            offsetAngle: 1 + Math.random()*3,
-            type:"headDirectionShift"
-          }
-        }
-      }
-      // Esporadic raising eyebrows
-      if (Math.random() < 0.7)
-      {
-        var start = Math.random();
-        var end = start + 1.2 + Math.random()*0.5;
-        block.face = {
-          start: start,
-          attackPeak: start + (end-start)*0.2,
-          relax: start + (end-start)*0.5,
-          end: end,
-          lexeme: {
-            lexeme: "RAISE_BROWS", 
-            amount: 0.1 + Math.random()*0.2
-          },
-           type:"face"
-        }
-      }
+      // if (Math.random() < 0.6){
+      //   block.head = {
+      //     start: 0,
+      //     end: 2.5 + Math.random()*1.5,
+      //     lexeme: "NOD",
+      //     amount: 0.05 + Math.random()*0.05,
+      //     type:"head"
+      //   }
+      //   // Deviate head slightly
+      //   if (Math.random() < 0.85)
+      //   {
+      //     var offsetDirections = ["DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
+      //     var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
+      //     block.headDirectionShift = {
+      //       start: 0,
+      //       end: 1 + Math.random(),
+      //       target: "CAMERA",
+      //       offsetDirection: randOffset,
+      //       offsetAngle: 1 + Math.random()*3,
+      //       type:"headDirectionShift"
+      //     }
+      //   }
+      // }
+      // // Esporadic raising eyebrows
+      // if (Math.random() < 0.7)
+      // {
+      //   var start = Math.random();
+      //   var end = start + 1.2 + Math.random()*0.5;
+      //   block.face = {
+      //     start: start,
+      //     attackPeak: start + (end-start)*0.2,
+      //     relax: start + (end-start)*0.5,
+      //     end: end,
+      //     lexeme: {
+      //       lexeme: "RAISE_BROWS", 
+      //       amount: 0.1 + Math.random()*0.2
+      //     },
+      //      type:"face"
+      //   }
+      // }
       // Redirect gaze to user
       if (Math.random() < 0.7)
       {

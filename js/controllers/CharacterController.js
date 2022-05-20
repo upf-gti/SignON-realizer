@@ -279,7 +279,7 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
   if (!this.BehaviourManager)
     return;
 
-  this.BehaviourManager.update(this.processBML, this.time);
+  this.BehaviourManager.update(this.processBML.bind(this), this.time);
 
   if (!msg) {
     console.error("An undefined block has been created due to the update of BMLManager.", msg);

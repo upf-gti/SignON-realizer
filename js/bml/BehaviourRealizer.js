@@ -1020,7 +1020,7 @@ Gaze.prototype.gazeBS = {
   "UP": {squint:0.3, eyelids:0}, "DOWN": {squint:0, eyelids:0.5},
   "UPRIGHT": {squint:0.3, eyelids:0}, "UPLEFT": {squint:0.3, eyelids:0},
   "DOWNRIGHT": {squint:0, eyelids:0.5}, "DOWNLEFT": {squint:0, eyelids:0.5},
-  "CAMERA": {squint:0, eyelids:0}
+  "CAMERA": {squint:0, eyelids:0}, "EYESTARGET": {squint:0, eyelids:0}, "HEADTARGET": {squint:0, eyelids:0},"NECKTARGET": {squint:0, eyelids:0}
 };
 
 // Constructor (lookAt objects and gazePositions)

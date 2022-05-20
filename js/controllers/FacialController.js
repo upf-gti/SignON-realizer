@@ -237,10 +237,10 @@ FacialController.prototype.onUpdate = function(dt, et, callback)
   this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
   // Head behavior
   this.headBMLUpdate(dt)
-  if(!this.headBMLUpdate(dt))
+  /*if(!this.headBMLUpdate(dt))
     this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
   this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
-  
+  */
  if(callback)
     callback(dt,et)
 }

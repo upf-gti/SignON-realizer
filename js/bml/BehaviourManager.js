@@ -746,97 +746,106 @@ BehaviourManager.prototype.processIntoBMLStack = function(bml, stack, globalStar
 }
 
 
-BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite){
+BehaviorManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite){
 	var merged = false;
 
 	// Refs to another block (negative global timestamp)
 	if (bml.start < 0) 
-    bml.start = (-bml.start) - globalStart; // The ref timestamp should be always bigger than globalStart
-	
-  if (bml.end < 0) 
-    bml.end = (-bml.end) - globalStart;
-
+	bml.start = (-bml.start) - globalStart; // The ref timestamp should be always bigger than globalStart
+	  
+	if (bml.end < 0) 
+	  bml.end = (-bml.end) - globalStart;
+  
 	bml.startGlobalTime = globalStart + bml.start;
 	bml.endGlobalTime = globalStart + bml.end;
 
 	// Check errors
 	if (bml.start < 0 ) console.error ("BML start is negative", bml.start, bml.key, globalStart);
 	if (bml.end < 0 ) console.error ("BML end is negative", bml.end, bml.key, globalStart);
-
+  
 	// Modify all sync attributes to remove non-zero starts (offsets)
 	// Also fix refs to another block (negative global timestamp)
 	bml.end -= bml.start;
-  var tmpStart = bml.start;
-	if (bml.attackPeak) 
-    bml.attackPeak = this.mergeBMLSyncFix(bml.attackPeak, bml.start, globalStart);
-	if (bml.ready) 
-    bml.ready = this.mergeBMLSyncFix(bml.ready, bml.start, globalStart);
-	if (bml.strokeStart) 
-    bml.strokeStart = this.mergeBMLSyncFix(bml.strokeStart, bml.start, globalStart);
-	if (bml.stroke) 
-    bml.stroke = this.mergeBMLSyncFix(bml.stroke, bml.start, globalStart);
-	if (bml.strokeEnd) 
-    bml.strokeEnd =	this.mergeBMLSyncFix(bml.strokeEnd, bml.start, globalStart);
-	if (bml.relax) 
-    bml.relax = this.mergeBMLSyncFix(bml.relax, bml.start, globalStart);
-	
-  bml.start = 0;
 
+	var tmpStart = bml.start;
+	if (bml.attackPeak) 
+	bml.attackPeak = this.mergeBMLSyncFix(bml.attackPeak, bml.start, globalStart);
+	if (bml.ready) 
+	bml.ready = this.mergeBMLSyncFix(bml.ready, bml.start, globalStart);
+	if (bml.strokeStart) 
+	bml.strokeStart = this.mergeBMLSyncFix(bml.strokeStart, bml.start, globalStart);
+	if (bml.stroke) 
+	bml.stroke = this.mergeBMLSyncFix(bml.stroke, bml.start, globalStart);
+	if (bml.strokeEnd) 
+	bml.strokeEnd =	this.mergeBMLSyncFix(bml.strokeEnd, bml.start, globalStart);
+	if (bml.relax) 
+	bml.relax = this.mergeBMLSyncFix(bml.relax, bml.start, globalStart);
+	  
+	bml.start = 0;
+  
 	// Empty
 	if (stack.length == 0)
-  {
-		stack[0] = bml;
-		merged = true;
+	{
+		  stack[0] = bml;
+		  merged = true;
 	}
 	else
-  {
+	{
 		// Fits between
 		if (stack.length > 1){
-			for (var i = 0; i<stack.length-1; i++)
-      {
-        // Does it fit?
-				if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i+1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime)
-        {
-          if (!merged){
-            tmp = stack.splice(i, stack.length);
-            stack.push(bml);
-            stack.concat(tmp);
-            merged = true;
-          }
-        } 
-        // If it doesn't fit remove if overwrite
-        else if (overwrite)
-        {
-          // Remove from bml stack
-          stack.splice(i,1);
-          i--;
-        }
-			}
+			
+			//append at the end
+			if(bml.startGlobalTime >= stack[stack.length - 1].endGlobalTime)
+				stack.push(bml);
+			// fit on the stack?
+			else
+				for (var i = 0; i<stack.length-1; i++)
+				{
+					// Does it fit?
+					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i+1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime)
+					{
+						if (!merged){
+							tmp = stack.splice(i, stack.length);
+							stack.push(bml);
+							stack.concat(tmp);
+							merged = true;
+						}
+					} 
+					// If it doesn't fit remove if overwrite
+					else if (overwrite)
+					{
+						// Remove from bml stack
+						stack.splice(i,1);
+						i--;
+					}
+				}
 		}
 		// End of stack (stack.length == 1)
 		if (!merged || overwrite)
-    {// End of stack
+	  	{
+			// End of stack
 			if (stack[stack.length-1].endGlobalTime <= bml.startGlobalTime){
-        if (!merged){
-          stack.push(bml);
-          merged = true;
-        }
-			} else if (overwrite) 
-        stack.splice(stack.length-1, 1);
-      else if (bml.endGlobalTime < stack[0].startGlobalTime){// Start of stack
-        stack.push(bml);
-        stack.reverse();
-      }
+				if (!merged){
+					stack.push(bml);
+					merged = true;
+				}
+			} 
+			else if (overwrite) 
+				stack.splice(stack.length-1, 1);
+			else if (bml.endGlobalTime < stack[0].startGlobalTime){// Start of stack
+		  		stack.push(bml);
+		  		stack.reverse();
+			}
 		}
 	}
-  // After removing conflicting bml, add
-  if (overwrite && !merged){
-    stack.push(bml);
-  	merged = true;
-  }
-
+	// After removing conflicting bml, add
+	if (overwrite && !merged){
+		stack.push(bml);
+		merged = true;
+	}
+  
 	return merged;
-}
+  }
 
 // Fix ref to another block (negative global timestamp) and remove start offset
 BehaviourManager.prototype.mergeBMLSyncFix = function(syncAttr, start, globalStart){
