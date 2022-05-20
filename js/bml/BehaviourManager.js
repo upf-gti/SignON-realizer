@@ -672,8 +672,9 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 	}
 
 	// Could be called directly? Should always return true
-	var merged = this.mergeBML(bml, stack, globalStart, overwrite);
-	bml.del = !merged;
+	let merge = composition=="MERGE" ? true : false;
+	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
+  bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
 	// should fit in the stack.
@@ -683,9 +684,10 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 	//JSON.stringify(stack));
 }
 
-BehaviourManager.prototype.mergeBML = function (bml, stack, globalStart, overwrite) {
-	var merged = false;
 
+BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite, merge = false){
+	var merged = false;
+	
 	// Refs to another block (negative global timestamp)
 	if (bml.start < 0)
 		bml.start = (-bml.start) - globalStart; // The ref timestamp should be always bigger than globalStart
@@ -734,7 +736,9 @@ BehaviourManager.prototype.mergeBML = function (bml, stack, globalStart, overwri
 				stack.push(bml);
 			// fit on the stack?
 			else
-				for (var i = 0; i < stack.length - 1; i++) {
+				for (var i = 0; i<stack.length-1; i++)
+				{
+					if(merged) break;
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i + 1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime) {
 						if (!merged) {
@@ -749,6 +753,10 @@ BehaviourManager.prototype.mergeBML = function (bml, stack, globalStart, overwri
 						// Remove from bml stack
 						stack.splice(i, 1);
 						i--;
+					}
+					else if(merge){
+						stack.push(bml);
+						merged = true;
 					}
 				}
 		}

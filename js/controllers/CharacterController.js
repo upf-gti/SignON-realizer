@@ -367,9 +367,11 @@ CharacterController.prototype.processBML = function(key, bml) {
             break;
         case "speech":
         	console.log("TTS:" + bml.text)
-          this.speechController.start = true;
-            this.speechController.speak(bml.text);
-        		thatFacial.newLipSync(bml.text)
+          /*this.speechController.start = true;
+            this.speechController.speak(bml.text);*/
+            bml.textToLipInfo = { text: "ai sii faiv lamps", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+            thatFacial.newTextToLip(bml.textToLipInfo)
+        		//thatFacial.newLipSync(bml.text)
             break;
         case "gesture":
             this.gestureManager.newGesture(bml)   
