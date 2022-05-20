@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { CharacterController } from './js/controllers/CharacterController.js'
 
 class App {
 
@@ -32,9 +33,13 @@ class App {
         this.srcBindPose = null;
         this.tgtBindPose = null;
 
+        this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
+
+        this.body = null;
+        this.eyelashes = null;
     }
 
     init() {
@@ -145,16 +150,25 @@ class App {
                 }
             } );
 
-            this.model.eyesTarget = this.eyesTarget;
-            this.model.headTarget = this.headTarget;
-            this.model.neckTarget = this.neckTarget;
 
             this.skeletonHelper = new THREE.SkeletonHelper(this.model);
             this.skeletonHelper.visible = false;
             this.scene.add(this.skeletonHelper);
             this.scene.add(this.model);
-            
+
+            this.model.eyesTarget = this.eyesTarget;
+            this.model.headTarget = this.headTarget;
+            this.model.neckTarget = this.neckTarget;
+
+            this.body = model.getObjectByName( 'Body' );
+            this.eyelashes = model.getObjectByName( 'Eyelashes' );
+
             ECAcontroller = new CharacterController({character: model});
+            var morphTargets = { 
+                'Body': {dictionary: body.morphTargetDictionary, weights: body.morphTargetInfluences, map: additiveActions},
+                'Eyelashes': {dictionary: eyelashes.morphTargetDictionary, weights: eyelashes.morphTargetInfluences, map: additiveActions}
+            }
+            this.ECAcontroller.onStart(morphTargets);
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
@@ -177,6 +191,15 @@ class App {
             this.mixer.update(delta);
         }
 
+        var et = clock.getElapsedTime()
+        this.ECAcontroller.time = et;
+        // Update the animation mixer, the stats panel, and render this frame
+        this.ECAcontroller.facialController.onUpdate(delta, et, this.ECAcontroller.onUpdate.bind(this.ECAcontroller) );
+        //this.ECAcontroller.onUpdate(dt, et);
+        let BSw = this.ECAcontroller.facialController._morphDeformers;
+        this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
+        this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
+        
         let [x, y, z] = [... this.camera.position];
         this.spotLight.position.set( x + 10, y + 10, z + 10);
             
