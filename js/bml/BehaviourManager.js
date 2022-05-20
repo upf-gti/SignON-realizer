@@ -746,7 +746,7 @@ BehaviourManager.prototype.processIntoBMLStack = function(bml, stack, globalStar
 }
 
 
-BehaviorManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite){
+BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite){
 	var merged = false;
 
 	// Refs to another block (negative global timestamp)
