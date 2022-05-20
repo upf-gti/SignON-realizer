@@ -3,6 +3,7 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
+import { GUI } from '../libs/lil-gui.module.min.js';
 
 class App {
 
@@ -41,8 +42,27 @@ class App {
         this.body = null;
         this.eyelashes = null;
     }
-    
+    createPanel() {
+        let gui = new GUI();
+        let obj = { add:() =>{ 
+            let msg = {
+                type: "behaviours",
+                data: [
+                    {
+                        type: "speech",
+                        start: 0,
+                        end: 2,
+                        text: "I have six lamps"
+                    }
+                ]
+            };
+            this.ECAcontroller.processMsg(JSON.stringify(msg));
+        }};
+
+        gui.add(obj,'add');
+    }
     init() {
+        this.createPanel()
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );

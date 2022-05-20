@@ -1,6 +1,6 @@
 //@FacialController
 
-import {Blink, FacialExpr, GazeManager, Gaze, HeadBML, GestureManager, Lipsync, AnimationManager} from '../bml/BehaviourRealizer.js';
+import {Blink, FacialExpr, GazeManager, Gaze, HeadBML, GestureManager, Lipsync, AnimationManager, Text2LipInterface, T2LTABLES} from '../bml/BehaviourRealizer.js';
 import * as THREE from 'three';
 
 function FacialController(o) {
@@ -273,6 +273,48 @@ FacialController.prototype.newLipSync = function (text)
   this.lipsync.parse(text);
   this.lipsync.speaking = true;
 }
+
+FacialController.prototype.newTextToLip = function (info)
+  {
+    if(!this.lipsync){ // setup
+  
+        this.lipsync = new Text2LipInterface();
+      this.lipsync.start(); // keep started but idle
+      this.lipsyncBSMapping = []; // array of [ MeshBSIndex, T2Lindex, factor ]
+  
+      let BS = Object.keys(this._morphDeformers["Body"].morphTargetDictionary);
+      let t2lBSWMap = T2LTABLES.BlendshapeMapping;
+  
+      for(let i = 0; i<BS.length; i++)
+      {
+        if(BS[i].includes("Midmouth_Left"))      this.lipsyncBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
+        if(BS[i].includes("Midmouth_Right"))     this.lipsyncBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
+        if(BS[i].includes("MouthNarrow_Left"))   this.lipsyncBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
+        if(BS[i].includes("MouthNarrow_Left"))   this.lipsyncBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
+  
+        if(BS[i].includes("MouthDown"))          this.lipsyncBSMapping.push( [ i, t2lBSWMap.upperLipClosed, 0.4 ]);
+        if(BS[i].includes("UpperLipOut"))        this.lipsyncBSMapping.push( [ i, t2lBSWMap.upperLipClosed, -1.5 ]);
+        if(BS[i].includes("UpperLipUp_Left"))    this.lipsyncBSMapping.push( [ i, t2lBSWMap.upperLipClosed, -0.3 ]);
+        if(BS[i].includes("UpperLipUp_Right"))   this.lipsyncBSMapping.push( [ i, t2lBSWMap.upperLipClosed, -0.3 ]);
+  
+        if(BS[i].includes("LowerLipDown_Left"))  this.lipsyncBSMapping.push( [ i, t2lBSWMap.lowerLipClosed, -0.8 ]);
+        if(BS[i].includes("LowerLipDown_Right")) this.lipsyncBSMapping.push( [ i, t2lBSWMap.lowerLipClosed, -0.8 ]);
+        if(BS[i].includes("LowerLipIn"))         this.lipsyncBSMapping.push( [ i, t2lBSWMap.lowerLipClosed, 1.0 ]);
+  
+        if(BS[i].includes("MouthOpen"))          this.lipsyncBSMapping.push( [ i, t2lBSWMap.jawOpen, 1.0 ]);
+  
+        if(BS[i].includes("TongueBackUp"))       this.lipsyncBSMapping.push( [ i, t2lBSWMap.tongueBackUp,  1.0 ]);
+        if(BS[i].includes("TongueFrontUp"))      this.lipsyncBSMapping.push( [ i, t2lBSWMap.tongueFrontUp, 1.0 ]);
+        if(BS[i].includes("TongueOut"))          this.lipsyncBSMapping.push( [ i, t2lBSWMap.tongueOut,     1.0 ]);
+      }
+    }// end of setup
+  
+    this.lipsync.cleanQueueSentences();
+    this.lipsync.pushSentence( info.text, info ); // use info object as options container also
+    this.lipsync.setEvent( "onIdle", function(){console.log("Ended text to lip");});
+  
+  }
+
 // --------------------- FACIAL BLEND ---------------------
 FacialController.prototype.facialBlend = function(dt)
 {
@@ -301,37 +343,23 @@ FacialController.prototype.facialBlend = function(dt)
   
   var smooth = 0.66;
 
-  if(this.lipsync && this.lipsync.speaking)
+  if(this.lipsync && this.lipsync.getCompactState() == 0 ) // when getCompactState==0 lipsync is working, not paused and has sentences to process
   {
-    var facialLexemes = Object.assign({}, this.lipsync.update(dt) )
-    if(facialLexemes )
+    this.lipsync.update(dt);
+    let t2lBSW = this.lipsync.getBSW(); // reference, not a copy
+    if( t2lBSW )
     {    
-      var BS = this._morphDeformers["Body_SSS"]|| this._morphDeformers["Body"];
-
-      for(var i = 0; i<BS.length; i++)
+      let BS =  this._morphDeformers["Body"].morphTargetInfluences;
+      
+      for(let i = 0; i < this.lipsyncBSMapping.length; i++)
       {
-        if(BS[i].mesh.includes(this.mouthOpenBSName))
-          BS[i].weight = (1-smooth)*BS[i].weight + smooth*facialLexemes.open_mouth;
-
-        if(BS[i].mesh.includes(this.kissBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.kiss;
-        
-        if(BS[i].mesh.includes(this.tongueBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.tongue_up;
-    
-        if(BS[i].mesh.includes(this.lowerLipINBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.lower_lip_in;
-        
-        if(BS[i].mesh.includes(this.lowerLipDownBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.lower_lip_down;
-        
-        if(BS[i].mesh.includes(this.mouthNarrowBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.narrow_mouth;
-    
-        if(BS[i].mesh.includes(this.lipsPressedBSName))
-          BS[i].weight =  (1-smooth)*BS[i].weight + smooth*facialLexemes.lips_pressed;
+        let mapping = this.lipsyncBSMapping[i];        
+        // for this model, some blendshapes need to be negative
+        BS[ mapping[0] ] = Math.min( 1, Math.max( -1, t2lBSW[ mapping[1] ] * mapping[2] ) );
       }
     }
+    console.log(t2lBSW);
+
   }
   else if(this.lipsyncModule)
   {
