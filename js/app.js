@@ -43,7 +43,7 @@ class App {
     }
     
     init() {
-        this.createPanel()
+
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
