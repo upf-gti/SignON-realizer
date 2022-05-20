@@ -21,7 +21,7 @@ class App {
         this.spotLight = null;
 
         this.capturer = null;
-        this.recorded = true; // set to true if you don't want to create a video (webm)
+        this.recorded = false; // set to true if you don't want to create a video (webm)
         this.recording = false;
 
         this.mixer = null;
@@ -208,6 +208,7 @@ class App {
         if (firstframe) {
             this.clock.start();
             firstframe = false;
+            return;
         }
 
         if (delta > 0.02) {
@@ -280,6 +281,7 @@ class App {
             // }
             // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             
+            var offset = 0.5;
             let msg = {
                 type: "behaviours",
                 data: [
@@ -294,32 +296,32 @@ class App {
                     // },
                     {
                         type: "faceLexeme",
-                        start: 0.5,
-                        end: 4.5,
+                        start: 0.5 - offset,
+                        end: 4.5 - offset,
                         amount: 0.8,
                         lexeme: 'LOWER_BROWS'
                     },
                     {
                         type: "faceLexeme",
-                        start: 0.3,
-                        attackPeak: 0.8,
-                        relax: 1.5,
-                        end: 2.0,
+                        start: 0.5  - offset,
+                        attackPeak: 0.8  - offset,
+                        relax: 1.5  - offset,
+                        end: 2.0  - offset,
                         amount: 0.4,
                         lexeme: "LIP_CORNER_PULLER"
                     },
                     {
                         type: "speech",
-                        start: 2.0,
-                        end: 2.6,
-                        textToLipInfo : { text: "zeu", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                        start: 1.4  - offset,
+                        end: 2.6 - offset,
+                        textToLipInfo : { text: "zeu     ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
                     },
-                    {
-                        type: "speech",
-                        start: 3.0,
-                        end: 4.2,
-                        textToLipInfo : { text: "ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    },
+                    // {
+                    //     type: "speech",
+                    //     start: 3.0 - offset,
+                    //     end: 4.2 - offset,
+                    //     textToLipInfo : { text: "ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                    // },
                     // {
                     //     type: "faceLexeme",
                     //     start: 0.5,
