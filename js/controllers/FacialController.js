@@ -361,7 +361,7 @@ FacialController.prototype.facialBlend = function(dt)
     console.log(t2lBSW);
 
   }
-  else if(this.lipsyncModule)
+  else if(this.lipsyncModule && this.lipsyncModule.working)
   {
     var facialLexemes = this.lipsyncModule.BSW 
     if(facialLexemes)

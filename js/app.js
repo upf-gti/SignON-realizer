@@ -3,7 +3,6 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
-import { GUI } from '../libs/lil-gui.module.min.js';
 
 class App {
 
@@ -42,25 +41,7 @@ class App {
         this.body = null;
         this.eyelashes = null;
     }
-    createPanel() {
-        let gui = new GUI();
-        let obj = { add:() =>{ 
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "speech",
-                        start: 0,
-                        end: 2,
-                        text: "I have six lamps"
-                    }
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-        }};
-
-        gui.add(obj,'add');
-    }
+    
     init() {
         this.createPanel()
         this.scene = new THREE.Scene();
@@ -277,23 +258,32 @@ class App {
                 type: "behaviours",
                 data: [
                     {
-                        type: "gaze",
-                        start: 0,
-                        ready: 0.5,
-                        relax: 1,
-                        end: 2,
-                        influence: "EYES",
-                        target: "LEFT"
+                        type: "faceLexeme",
+                        start: 0.1,
+                        attackPeak: 0.6,
+                        relax: 1.5,
+                        end: 1.8,
+                        amount: 0.8,
+                        lexeme: "RAISE_BROWS"
                     },
                     {
                         type: "faceLexeme",
-                        start: 2.5,
-                        attackPeak: 3,
-                        relax: 3.5,
-                        end: 5,
-                        amount:1,
-                        lexeme: "RAISE_LEFT_BROW"
-                    }
+                        start: 1.9,
+                        ready: 2.1,
+                        relax: 3.1,
+                        end: 3.4,
+                        amount: 0.5,
+                        lexeme: 'LOWER_BROWS'
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 1.6,
+                        attackPeak: 1.9,
+                        relax: 2.8,
+                        end: 3.2,
+                        amount: 0.5,
+                        lexeme: "LIP_STRECHER"
+                    } 
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));

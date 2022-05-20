@@ -734,7 +734,8 @@ BehaviourManager.prototype.processIntoBMLStack = function(bml, stack, globalStar
 	}
 
 	// Could be called directly? Should always return true
-	var merged = this.mergeBML(bml,stack,globalStart, overwrite);
+	let merge = composition=="MERGE" ? true : false;
+	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
   bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
@@ -746,9 +747,9 @@ BehaviourManager.prototype.processIntoBMLStack = function(bml, stack, globalStar
 }
 
 
-BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite){
+BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite, merge = false){
 	var merged = false;
-
+	
 	// Refs to another block (negative global timestamp)
 	if (bml.start < 0) 
 	bml.start = (-bml.start) - globalStart; // The ref timestamp should be always bigger than globalStart
@@ -801,6 +802,7 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 			else
 				for (var i = 0; i<stack.length-1; i++)
 				{
+					if(merged) break;
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i+1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime)
 					{
@@ -817,6 +819,10 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 						// Remove from bml stack
 						stack.splice(i,1);
 						i--;
+					}
+					else if(merge){
+						stack.push(bml);
+						merged = true;
 					}
 				}
 		}

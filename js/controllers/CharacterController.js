@@ -197,7 +197,7 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
     msg.start = start;
     msg.end = end;
     if(!msg.composition)
-      msg.composition = "OVERWRITE"
+      msg.composition = "MERGE"
     this.BehaviourManager.newBlock(msg, this.time);
   }
   else if(data.constructor == Object)
