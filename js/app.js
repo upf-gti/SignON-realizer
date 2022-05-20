@@ -112,20 +112,22 @@ class App {
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
-        this.eyesTarget = new THREE.Mesh(new THREE.SphereGeometry( 0.5, 5, 16), new THREE.MeshPhongMaterial( { color: 0xffff00 , depthWrite: false } ) );
+        // Behaviour Planner
+        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
         this.eyesTarget.name = "eyesTarget";
-        this.eyesTarget.position.set(0,-5,100); 
-        this.headTarget = new THREE.Mesh(new THREE.SphereGeometry( 0.5, 5, 16), new THREE.MeshPhongMaterial( { color: 0xff0000 , depthWrite: false } ) );
+        this.eyesTarget.position.set(0, 2, 15); 
+        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
         this.headTarget.name = "headTarget";
-        this.headTarget.position.set(0,2,100); 
-        this.neckTarget = new THREE.Mesh(new THREE.SphereGeometry( 0.5, 5, 16), new THREE.MeshPhongMaterial( { color: 0x00fff0 , depthWrite: false } ) );
+        this.headTarget.position.set(0, 2, 15); 
+        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
         this.neckTarget.name = "neckTarget";
-        this.neckTarget.position.set(0,2,100); 
+        this.neckTarget.position.set(0, 2, 15); 
 
         this.scene.add(this.eyesTarget);
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
+        // Load the model
         this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
 
             this.model = glb.scene;
@@ -148,7 +150,6 @@ class App {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
-
 
             this.skeletonHelper = new THREE.SkeletonHelper(this.model);
             this.skeletonHelper.visible = false;
@@ -253,26 +254,45 @@ class App {
             this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             this.mixer.update(0);
             
+            // send the facial actions to do
             let msg = {
                 type: "behaviours",
                 data: [
+                    // {
+                    //     type: "gaze",
+                    //     start: 0,
+                    //     ready: 0.2,
+                    //     relax: 3.3,
+                    //     end: 3.5,
+                    //     influence: "EYES",
+                    //     target: "CAMERA"
+                    // },
                     {
-                        type: "gaze",
-                        start: 0,
-                        ready: 0.5,
-                        relax: 1,
-                        end: 2,
-                        influence: "EYES",
-                        target: "LEFT"
+                        type: "faceLexeme",
+                        start: 0.1,
+                        attackPeak: 0.6,
+                        relax: 1.5,
+                        end: 1.8,
+                        amount: 0.7,
+                        lexeme: "RAISE_BROWS"
                     },
                     {
                         type: "faceLexeme",
-                        start: 2.5,
-                        attackPeak: 3,
-                        relax: 3.5,
-                        end: 5,
-                        amount:1,
-                        lexeme: "RAISE_LEFT_BROW"
+                        start: 1.9,
+                        ready: 2.1,
+                        relax: 3.1,
+                        end: 3.4,
+                        amount: 0.5,
+                        lexeme: 'LOWER_BROWS'
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 1,
+                        attackPeak: 1.4,
+                        relax: 2.1,
+                        end: 2.5,
+                        amount: 0.5,
+                        lexeme: "LIP_STRECHER"
                     }
                 ]
             };
