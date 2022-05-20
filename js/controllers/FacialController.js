@@ -1,7 +1,7 @@
 //@FacialController
 
 import {Blink, FacialExpr, GazeManager, Gaze, HeadBML, GestureManager, Lipsync, AnimationManager, Text2LipInterface, T2LTABLES} from '../bml/BehaviourRealizer.js';
-import * as THREE from 'three';
+import * as THREE from '../../libs/three.module.js';
 
 function FacialController(o) {
   //define some properties
@@ -78,7 +78,7 @@ FacialController.prototype.configure = function(o){
 FacialController.prototype.onStart = function(morphTargets)
 {    
   // Get morph targets
-  var body = this.character.getObjectByName("Body");
+  var body = this.character.getObjectByName("BodyMesh");
   var eyelashes = this.character.getObjectByName("Eyelashes");
 
   this._morphDeformers = { "Body" : body, "Eyelashes": eyelashes};

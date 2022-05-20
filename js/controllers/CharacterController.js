@@ -124,7 +124,7 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
   if (!this.BehaviourManager)
     return;
 
-  this.BehaviourManager.update(this.processBML, this.time);
+  this.BehaviourManager.update(this.processBML.bind(this), this.time);
 
   
 
@@ -369,7 +369,7 @@ CharacterController.prototype.processBML = function(key, bml) {
         	console.log("TTS:" + bml.text)
           /*this.speechController.start = true;
             this.speechController.speak(bml.text);*/
-            bml.textToLipInfo = { text: "ai sii faiv lamps", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+            //bml.textToLipInfo = { text: "ai sii faiv lamps", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
             thatFacial.newTextToLip(bml.textToLipInfo)
         		//thatFacial.newLipSync(bml.text)
             break;

@@ -1,6 +1,6 @@
 //@BehaviorRealizer
 import '../../libs/gl-matrix-min.js'
-import * as THREE from 'three';
+import * as THREE from '../../libs/three.module.js';
 let DEG2RAD = Math.PI/180;
 let RAD2DEG = 180/Math.PI;
 // --------------------- BLINK ---------------------

@@ -4,11 +4,13 @@ import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/load
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
 
+let firstframe = true;
+
 class App {
 
     constructor() {
         
-        this.clock = new THREE.Clock();
+        this.clock = new THREE.Clock(false);
         this.loaderBVH = new BVHLoader();
         this.loaderGLB = new GLTFLoader();
         
@@ -88,10 +90,10 @@ class App {
         let AR = this.recorded ? window.innerWidth/window.innerHeight : W/H;
         this.camera = new THREE.PerspectiveCamera(60, AR, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.5, 3, 8);
+        this.controls.object.position.set(0.0, 3.4, 8);
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 50;
-        this.controls.target.set(-0.8, 3, 0);
+        this.controls.target.set(0.0, 2.6, 0);
         this.controls.update();
 
         // creates GIF encoder
@@ -116,24 +118,24 @@ class App {
         // Behaviour Planner
         this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
         this.eyesTarget.name = "eyesTarget";
-        this.eyesTarget.position.set(0, 2, 15); 
+        this.eyesTarget.position.set(0, 2.5, 15); 
         this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
         this.headTarget.name = "headTarget";
-        this.headTarget.position.set(0, 2, 15); 
+        this.headTarget.position.set(0, 2.5, 15); 
         this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
         this.neckTarget.name = "neckTarget";
-        this.neckTarget.position.set(0, 2, 15); 
+        this.neckTarget.position.set(0, 2.5, 15); 
 
         this.scene.add(this.eyesTarget);
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Thank You.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, 0.75, 0);
+            this.model.position.set(0, -8.0, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
             
@@ -161,7 +163,7 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'Body' );
+            this.body = this.model.getObjectByName( 'BodyMesh' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
 
             let additiveActions = {};
@@ -180,14 +182,21 @@ class App {
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
+
+            glb.animations.forEach(( clip ) => {
+                if (clip.name == "BSL - Thank You") {
+                    this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
+                }
+            });
+
             this.loadBVH('./data/anim/VGT Thanks.bvh');
             
-            this.animate();
             $('#loading').fadeOut(); //hide();
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
+
 
     animate() {
 
@@ -195,6 +204,23 @@ class App {
 
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
+
+        if (firstframe) {
+            this.clock.start();
+            firstframe = false;
+        }
+
+        if (delta > 0.02) {
+            this.clock.stop();
+            this.clock.start();
+            return;
+        }
+
+        if (et == 0) {
+            et = 0.001;
+        }
+
+        console.log("a: " + delta + ", b: " + et);
 
         if (this.mixer) {
             this.mixer.update(delta);
@@ -249,13 +275,11 @@ class App {
     loadBVH( filename ) {
 
         this.loaderBVH.load( filename , (result) => {
-            for (let i = 0; i < result.clip.tracks.length; i++) {
-                result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
-            }
-            this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
-            this.mixer.update(0);
+            // for (let i = 0; i < result.clip.tracks.length; i++) {
+            //     result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+            // }
+            // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             
-            // send the facial actions to do
             let msg = {
                 type: "behaviours",
                 data: [
@@ -270,34 +294,59 @@ class App {
                     // },
                     {
                         type: "faceLexeme",
-                        start: 0.1,
-                        attackPeak: 0.6,
-                        relax: 1.5,
-                        end: 1.8,
-                        amount: 0.7,
-                        lexeme: "RAISE_BROWS"
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 1.9,
-                        ready: 2.1,
-                        relax: 3.1,
-                        end: 3.4,
-                        amount: 0.5,
+                        start: 0.5,
+                        end: 4.5,
+                        amount: 0.8,
                         lexeme: 'LOWER_BROWS'
                     },
                     {
                         type: "faceLexeme",
-                        start: 1,
-                        attackPeak: 1.4,
-                        relax: 2.1,
-                        end: 2.5,
-                        amount: 0.5,
-                        lexeme: "LIP_STRECHER"
-                    }
+                        start: 0.3,
+                        attackPeak: 0.8,
+                        relax: 1.5,
+                        end: 2.0,
+                        amount: 0.4,
+                        lexeme: "LIP_CORNER_PULLER"
+                    },
+                    {
+                        type: "speech",
+                        start: 2.0,
+                        end: 2.6,
+                        textToLipInfo : { text: "zeu", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                    },
+                    {
+                        type: "speech",
+                        start: 3.0,
+                        end: 4.2,
+                        textToLipInfo : { text: "ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                    },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 0.5,
+                    //     attackPeak: 0.8,
+                    //     relax: 1.3,
+                    //     end: 1.6,
+                    //     amount: 1.0,
+                    //     lexeme: "LIP_CORNER_PULLER"
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1,
+                    //     attackPeak: 1.4,
+                    //     relax: 2.1,
+                    //     end: 2.5,
+                    //     amount: 0.5,
+                    //     lexeme: "LIP_STRECHER"
+                    // }
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));
+
+            this.animate();
+            // send the facial actions to do
+            
+
+            //this.mixer.update(0);
         } );
     }
 }
