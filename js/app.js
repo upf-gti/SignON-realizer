@@ -21,7 +21,7 @@ class App {
         this.spotLight = null;
 
         this.capturer = null;
-        this.recorded = false; // set to true if you don't want to create a video (webm)
+        this.recorded = true; // set to true if you don't want to create a video (webm)
         this.recording = false;
 
         this.mixer = null;
@@ -131,7 +131,7 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Thank You.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -184,7 +184,7 @@ class App {
             this.mixer = new THREE.AnimationMixer( this.model );
 
             glb.animations.forEach(( clip ) => {
-                if (clip.name == "BSL - Thank You") {
+                if (clip.name == "BSL - Trying to com") {
                     this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
                 }
             });
@@ -205,20 +205,23 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        if (firstframe) {
-            this.clock.start();
-            firstframe = false;
-            return;
-        }
+        // if (firstframe) {
+        //     this.clock.start();
+        //     firstframe = false;
+        //     requestAnimationFrame( this.animate.bind(this) );
+        //     return;
+        // }
 
-        if (delta > 0.02) {
+        if (delta > 0.1) {
             this.clock.stop();
             this.clock.start();
             return;
-        }
-
-        if (et == 0) {
-            et = 0.001;
+        } else if (firstframe) {
+            //this.capturer.start();
+            //this.recording = true;
+            this.clock.stop();
+            this.clock.start();
+            firstframe = false;
         }
 
         console.log("a: " + delta + ", b: " + et);
@@ -245,13 +248,13 @@ class App {
         if (this.mixer && this.recorded == false) {
             if (this.mixer._actions.length > 0) {
                 if (this.recording == false) {
-                    this.capturer.start();
-                    this.recording = true;
+                    
+                    
                 }
                 if (this.recording) {
                     this.capturer.capture( this.rendererVideo.domElement );
                 } 
-                if (this.mixer._actions[0]._clip.duration - this.mixer._actions[0].time < 0.033) {
+                if (this.mixer._actions[0]._clip.duration - this.mixer._actions[0].time < 0.05) {
                     this.capturer.stop();
                     this.capturer.save( function(blob) {
                         window.open(URL.createObjectURL(blob));
@@ -281,65 +284,29 @@ class App {
             // }
             // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             
-            var offset = 0.5;
             let msg = {
                 type: "behaviours",
                 data: [
-                    // {
-                    //     type: "gaze",
-                    //     start: 0,
-                    //     ready: 0.2,
-                    //     relax: 3.3,
-                    //     end: 3.5,
-                    //     influence: "EYES",
-                    //     target: "CAMERA"
-                    // },
                     {
                         type: "faceLexeme",
-                        start: 0.5 - offset,
-                        end: 4.5 - offset,
+                        start: 1.2,
+                        end: 1.6,
                         amount: 0.8,
-                        lexeme: 'LOWER_BROWS'
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 0.5  - offset,
-                        attackPeak: 0.8  - offset,
-                        relax: 1.5  - offset,
-                        end: 2.0  - offset,
-                        amount: 0.4,
-                        lexeme: "LIP_CORNER_PULLER"
+                        lexeme: 'RAISE_BROWS'
                     },
                     {
                         type: "speech",
-                        start: 1.4  - offset,
-                        end: 2.6 - offset,
-                        textToLipInfo : { text: "zeu     ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                        start: 0.4,
+                        end: 1.0,
+                        textToLipInfo : { text: "ge", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
                     },
-                    // {
-                    //     type: "speech",
-                    //     start: 3.0 - offset,
-                    //     end: 4.2 - offset,
-                    //     textToLipInfo : { text: "ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.5,
-                    //     attackPeak: 0.8,
-                    //     relax: 1.3,
-                    //     end: 1.6,
-                    //     amount: 1.0,
-                    //     lexeme: "LIP_CORNER_PULLER"
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     attackPeak: 1.4,
-                    //     relax: 2.1,
-                    //     end: 2.5,
-                    //     amount: 0.5,
-                    //     lexeme: "LIP_STRECHER"
-                    // }
+                    {
+                        type: "faceLexeme",
+                        start: 1.8,
+                        end: 3.8,
+                        amount: 1.2,
+                        lexeme: 'LIP_PUCKERER'
+                    },
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));
