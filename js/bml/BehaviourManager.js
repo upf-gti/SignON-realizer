@@ -475,7 +475,7 @@ BehaviourManager.prototype.addToStack = function (block) {
 		}
 		// Merge and add to BML stacks
 		else { // Try to merge, if not, add "del" variable to bml
-			if (block.blink)
+			if (block.blink)		
 				this.processIntoBMLStack(block.blink, this.blinkStack, this.time + block.start, block.composition);
 
 			if (block.gaze)
@@ -677,7 +677,7 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 	// Could be called directly? Should always return true
 	let merge = composition=="MERGE" ? true : false;
 	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
-  bml.del = !merged;
+ 	bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
 	// should fit in the stack.
