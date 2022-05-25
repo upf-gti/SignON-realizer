@@ -551,7 +551,6 @@ class App {
             this.animate();
             // send the facial actions to do
             
-            
             //this.mixer.update(0);
         } );
     }
