@@ -196,23 +196,27 @@ FacialController.prototype.onUpdate = function(dt, et, callback)
   // Gaze
   if (this.gazeManager){
     var weights = this.gazeManager.update(dt);
+    var keys = Object.keys(this._facialBS);
     var i = 0;
-    if(weights.eyelids)
+    if(weights.eyelids!=undefined)
       for(var morph in this._morphDeformers)
       {
         for(var j = 0; j< this._eyeLidsBS[i].length; j++){
           
-          this._morphDeformers[morph].morphTargetInfluences[this._eyeLidsBS[i][j]] = weights.eyelids;
+          this._facialBS[keys[i]][this._eyeLidsBS[i][j]] = weights.eyelids;
+          //this._morphDeformers[morph].morphTargetInfluences[this._eyeLidsBS[i][j]] = weights.eyelids;
         }
         i++;
       }
     i = 0
-    if(weights.squint)
+    if(weights.squint!=undefined)
       for(var morph in this._morphDeformers)
       {
         for(var j = 0; j< this._squintBS[i].length; j++){
     
-          this._morphDeformers[morph].morphTargetInfluences[this._squintBS[i][j]] = weights.squint;
+          this._facialBS[keys[i]][this._squintBS[i][j]] = weights.squint;
+
+         // this._morphDeformers[morph].morphTargetInfluences[this._squintBS[i][j]] = weights.squint;
         }
         i++;
       }
@@ -237,10 +241,10 @@ FacialController.prototype.onUpdate = function(dt, et, callback)
   this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
   // Head behavior
   this.headBMLUpdate(dt)
-  /*if(!this.headBMLUpdate(dt))
+  if(!this.headBMLUpdate(dt))
     this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
   this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
-  */
+  
  if(callback)
     callback(dt,et)
 }
@@ -358,7 +362,7 @@ FacialController.prototype.facialBlend = function(dt)
         BS[ mapping[0] ] = Math.min( 1, Math.max( -1, t2lBSW[ mapping[1] ] * mapping[2] ) );
       }
     }
-    console.log(t2lBSW);
+    //console.log(t2lBSW);
 
   }
   else if(this.lipsyncModule && this.lipsyncModule.working)
@@ -439,24 +443,41 @@ FacialController.prototype.facialBlend = function(dt)
       this._blendshapes[this.eyeLidsBSIndex].weight = this._facialBSW[8]; // eyeLids
   }
   */
+    
   // Eye blink
   var keys = Object.keys(this._facialBS);
   var blinkW = this._facialBS[keys[0]][this._eyeLidsBS[0][0]]
-  if(blinkW) this._Blink.time = this._Blink.end;
+  if(blinkW&& this._Blink && this._blinking && blinkW == this._Blink.currentWeight) blinkW = this._Blink.initialWeight;
   if (this._blinking && this._eyeLidsBS.length){
-    var weight = this._Blink.update(dt);
+    var weight = this._Blink.update(dt, blinkW);
     if (weight !== undefined)
+    {
       var i = 0;
       for(var morph in this._morphDeformers)
       {
         for(var j = 0; j< this._eyeLidsBS[i].length; j++){
           
-          this._morphDeformers[morph].morphTargetInfluences[this._eyeLidsBS[i][j]] = weight;
+          this._facialBS[keys[0]][this._eyeLidsBS[i][j]] = this._facialBS[keys[1]][this._eyeLidsBS[i][j]] = weight;
         }
         i++;
       }
+    }
     if (!this._Blink.transition)
       this._blinking = false;
+  }
+
+  for(var i = 0; i<this._morphDeformers["Body"].morphTargetInfluences.length; i++)
+  {
+    var e = null;
+    for(var k in this.map)
+    {
+      if( i == this.map[k]["Body"])
+        e = this.map[k]["Eyelashes"]
+    }
+    var w = this._facialBS["Body"][i];
+    this._morphDeformers["Body"].morphTargetInfluences[i] = this._facialBS["Body"][i];
+    if(e != null)
+      this._morphDeformers["Eyelashes"].morphTargetInfluences[e] = this._facialBS["Eyelashes"][i];
   }
 
 }

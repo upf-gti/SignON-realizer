@@ -473,51 +473,51 @@ BehaviourManager.prototype.addToStack = function (block) {
 		// Merge and add to BML stacks
 		else { // Try to merge, if not, add "del" variable to bml
 			if (block.blink)
-				this.processIntoBMLStack(block.blink, this.blinkStack, this.time + block.start);
+				this.processIntoBMLStack(block.blink, this.blinkStack, this.time + block.start, block.composition );
 
 			if (block.gaze)
-				this.processIntoBMLStack(block.gaze, this.gazeStack, this.time + block.start); // This could be managed differently (gazeManager in BMLRealizer.js)
+				this.processIntoBMLStack(block.gaze, this.gazeStack, this.time + block.start, block.composition); // This could be managed differently (gazeManager in BMLRealizer.js)
 
 			if (block.gazeShift)
-				this.processIntoBMLStack(block.gazeShift, this.gazeStack, this.time + block.start);
+				this.processIntoBMLStack(block.gazeShift, this.gazeStack, this.time + block.start, block.composition);
 
 			if (block.face)
-				this.processIntoBMLStack(block.face, this.faceStack, this.time + block.start);
+				this.processIntoBMLStack(block.face, this.faceStack, this.time + block.start, block.composition);
 
 			if (block.faceLexeme)
-				this.processIntoBMLStack(block.faceLexeme, this.faceStack, this.time + block.start);
+				this.processIntoBMLStack(block.faceLexeme, this.faceStack, this.time + block.start, block.composition);
 
 			if (block.faceFACS)
-				this.processIntoBMLStack(block.faceFACS, this.faceStack, this.time + block.start);
+				this.processIntoBMLStack(block.faceFACS, this.faceStack, this.time + block.start, block.composition);
 			if (block.faceVA)
-				this.processIntoBMLStack(block.faceVA, this.faceStack, this.time + block.start);
+				this.processIntoBMLStack(block.faceVA, this.faceStack, this.time + block.start, block.composition);
 
 			if (block.faceShift)
-				this.processIntoBMLStack(block.faceShift, this.faceStack, this.time + block.start);
+				this.processIntoBMLStack(block.faceShift, this.faceStack, this.time + block.start, block.composition);
 
 			if (block.head)
-				this.processIntoBMLStack(block.head, this.headStack, this.time + block.start);
+				this.processIntoBMLStack(block.head, this.headStack, this.time + block.start, block.composition);
 
 			if (block.headDirectionShift)
-				this.processIntoBMLStack(block.headDirectionShift, this.headDirStack, this.time + block.start);
+				this.processIntoBMLStack(block.headDirectionShift, this.headDirStack, this.time + block.start, block.composition);
 
 			if (block.speech)
-				this.processIntoBMLStack(block.speech, this.speechStack, this.time + block.start);
+				this.processIntoBMLStack(block.speech, this.speechStack, this.time + block.start, block.composition);
 
 			if (block.posture)
-				this.processIntoBMLStack(block.posture, this.postureStack, this.time + block.start);
+				this.processIntoBMLStack(block.posture, this.postureStack, this.time + block.start, block.composition);
 
 			if (block.gesture)
-				this.processIntoBMLStack(block.gesture, this.gestureStack, this.time + block.start);
+				this.processIntoBMLStack(block.gesture, this.gestureStack, this.time + block.start, block.composition);
 
 			if (block.pointing)
-				this.processIntoBMLStack(block.head, this.pointingStack, this.time + block.start);
+				this.processIntoBMLStack(block.head, this.pointingStack, this.time + block.start, block.composition);
 
 			if (block.lg)
-				this.processIntoBMLStack(block.lg, this.lgStack, this.time + block.start);
+				this.processIntoBMLStack(block.lg, this.lgStack, this.time + block.start, block.composition);
 
 			if (block.animation)
-				this.processIntoBMLStack(block.animation, this.animationStack, this.time + block.start);
+				this.processIntoBMLStack(block.animation, this.animationStack, this.time + block.start, block.composition);
 			//TODO - Send warning feedback
 
 			// Clean block
@@ -674,7 +674,7 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 	// Could be called directly? Should always return true
 	let merge = composition=="MERGE" ? true : false;
 	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
-  bml.del = !merged;
+ 	bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
 	// should fit in the stack.

@@ -25,10 +25,9 @@ function Blink (blinkData, eyeLidsBSW){
 }
 
 
-Blink.prototype.update = function(dt){
-
+Blink.prototype.update = function(dt, w){
   this.time += dt;
-
+  //this.initialWeight = w =  0;
   // Waiting to reach start
   if (this.time < this.start)
     return;
@@ -39,12 +38,19 @@ Blink.prototype.update = function(dt){
     // Cosine interpolation
     inter = Math.cos(Math.PI*inter+Math.PI)*0.5 + 0.5;
     // Return value
-    return this.initialWeight*(1-inter) + this.targetWeight * inter;
+    this.currentWeight = this.initialWeight*(1-inter) + this.targetWeight * inter;
+    console.log("TRANSITION CLOSE")
+    console.log("w: "+ this.currentWeight+ ", t: "+ this.time)
+    return this.currentWeight;
   }
   
   // Stay still during attackPeak to relax
-  if (this.time > this.attackPeak && this.time < this.relax)
-    return this.targetWeight;
+  if (this.time > this.attackPeak && this.time < this.relax){
+    this.currentWeight = this.targetWeight;
+    console.log("TRANSITION TO RELAX")
+    console.log("w: "+ this.currentWeight+ ", t: "+ this.time)
+    return this.currentWeight;
+  }
   
   
   // Transition 2 (opening back)
@@ -53,13 +59,17 @@ Blink.prototype.update = function(dt){
     // Cosine interpolation
     inter = Math.cos(Math.PI*inter)*0.5 + 0.5;
     // Interpolate with scene eyeLidsBSW
-    return this.initialWeight*(1-inter) + this.targetWeight * inter;
+    this.currentWeight = w*(1-inter) + this.targetWeight * inter;//this.initialWeight*(1-inter) + this.targetWeight * inter
+    console.log("TRANSITION OPEN")
+    console.log("w: "+ this.currentWeight+ ", t: "+ this.time)
+    return this.currentWeight;
   }
   
   // End 
   if (this.time >= this.end){
     this.transition = false;
-    return this.initialWeight;
+    this.currentWeight = w;
+    return this.currentWeight;//this.initialWeight;
   }
   
 }
@@ -1017,9 +1027,9 @@ GazeManager.prototype.gazePositions = {
 };
 Gaze.prototype.gazeBS = {
   "RIGHT": {squint:0, eyelids:0}, "LEFT": {squint:0, eyelids:0},
-  "UP": {squint:0.3, eyelids:0}, "DOWN": {squint:0, eyelids:0.5},
+  "UP": {squint:0.3, eyelids:0}, "DOWN": {squint:0, eyelids:0.2},
   "UPRIGHT": {squint:0.3, eyelids:0}, "UPLEFT": {squint:0.3, eyelids:0},
-  "DOWNRIGHT": {squint:0, eyelids:0.5}, "DOWNLEFT": {squint:0, eyelids:0.5},
+  "DOWNRIGHT": {squint:0, eyelids:0.2}, "DOWNLEFT": {squint:0, eyelids:0.2},
   "CAMERA": {squint:0, eyelids:0}, "EYESTARGET": {squint:0, eyelids:0}, "HEADTARGET": {squint:0, eyelids:0},"NECKTARGET": {squint:0, eyelids:0}
 };
 
@@ -1078,9 +1088,9 @@ GazeManager.prototype.update = function(dt){
         else
           var eyes = false
         
-          this.gazeActions[i].update(dt, eyes);//update eyelids weight!!!!!!!!!!
-        var eyelidsW = this.gazeActions[i].eyelidsW;
-        var squintW = this.gazeActions[i].squintW;
+        this.gazeActions[i].update(dt, eyes);//update eyelids weight!!!!!!!!!!
+        var eyelidsW = eyelidsW || this.gazeActions[i].eyelidsW;
+        var squintW = squintW || this.gazeActions[i].squintW;
         var blinkW = this.gazeActions[i].blinkW;
       }
     }
@@ -1128,14 +1138,6 @@ function Gaze (gazeData, shift, lookAt, gazePositions){
 
 Gaze.prototype.initGazeData = function(gazeData, shift){
   
-  this.eyelidsW = gazeData.eyelidsWeight|| 0;
-  this.eyelidsInitW = gazeData.eyelidsWeight|| 0;
-  this.squintW = gazeData.squintWeight|| 0;
-  this.squintInitW = gazeData.squintWeight|| 0;
-  this.squintFinW = gazeData.squintWeight|| 0;
-  this.blinkW = gazeData.eyelidsWeight|| 0;
-  this.blinkInitW = gazeData.eyelidsWeight|| 0;
-  this.blinkFinW = gazeData.eyelidsWeight|| 0;
   // Sync
   this.start = gazeData.start || 0.0;
   this.end = gazeData.end || 2.0;
@@ -1166,6 +1168,17 @@ Gaze.prototype.initGazeData = function(gazeData, shift){
   // Extension - Dynamic
   this.dynamic = gazeData.dynamic || false;
 
+  //Blendshapes
+  this.eyelidsW =  0;
+  this.eyelidsInitW =  0;
+  this.eyelidsFinW = gazeData.eyelidsWeight || this.gazeBS[this.target].eyelids;
+  this.squintW = gazeData.squintWeight|| 0;
+  this.squintInitW = gazeData.squintWeight|| 0;
+  this.squintFinW = gazeData.squintWeight || this.gazeBS[this.target].squint;
+  this.blinkW =  0;
+  this.blinkInitW =  0;
+  this.blinkFinW = gazeData.eyelidsWeight || this.gazeBS[this.target].eyelids;
+
 }
 
 
@@ -1186,7 +1199,7 @@ Gaze.prototype.update = function(dt , atEyes){
   // Stay still during ready to relax
   if (this.time > this.ready && this.time < this.relax)
     return;
-  
+
   // Extension - Dynamic (offsets do not work here)
   if (this.dynamic){
     this.EndP.copy(this.gazePositions[this.target]);
@@ -1211,8 +1224,8 @@ Gaze.prototype.update = function(dt , atEyes){
     }
     // inter = Math.cos(Math.PI*inter+Math.PI)*0.5 + 0.5; // to increase curve, keep adding cosines
     // lookAt pos change
-    this.InP.lerp(this.EndP, inter);
-    this.lookAt.position.copy( this.InP)
+    this.lookAt.position.lerpVectors ( this.InP, this.EndP, inter);
+    //this.lookAt.position.copy( this.InP)
 
     this.lookAt.mustUpdate = true;
   }
@@ -1232,8 +1245,8 @@ Gaze.prototype.update = function(dt , atEyes){
     }
     // lookAt pos change
     //vec3.lerp( this.lookAt.transform.position , this.InP, this.EndP, inter);
-    this.InP.lerp(this.EndP, inter);
-    this.lookAt.position.copy(this.InP)
+    this.lookAt.position.lerpVectors ( this.InP, this.EndP, inter);
+    //this.lookAt.position.copy(this.InP)
 
     this.lookAt.mustUpdate = true;
 
@@ -1243,15 +1256,19 @@ Gaze.prototype.update = function(dt , atEyes){
 
   // End
   if (this.time > this.end){
-    /*if(atEyes)
-    {
-      
-        this.eyelidsW =this.eyelidsInitW*(inter)+this.eyelidsFinW*(1-inter); 
-      this.squintW =this.squintInitW*(inter)+this.squintFinW*(1-inter); 
-      this.blinkW =this.blinkInitW*(inter)+this.blinkFinW*(1-inter); 
-    }*/
+    
     if(!this.dynamic)
-        this.transition = false;
+    {
+      this.transition = false;
+      /*if(!atEyes)
+      {*/
+        
+        
+        this.eyelidsW = this.eyelidsInitW 
+        this.squintW = this.squintInitW
+        this.blinkW = this.blinkInitW 
+     /* }*/
+    }
     // Extension - Dynamic
     else{
         this.lookAt.position.copy( this.EndP); 
@@ -1377,8 +1394,9 @@ Gaze.prototype.initGazeValues = function(isEyes){
       /*quat.setAxisAngle(q, v, -45*DEG2RAD);//quat.setAxisAngle(q, v, -90*DEG2RAD);
       vec3.rotateY(v,v, this.offsetAngle*DEG2RAD);
       vec3.transformQuat(v,v,q);*/
+      v = new THREE.Vector3(1,0,0);
       q.setFromAxisAngle(v, -45*DEG2RAD);
-      v.applyAxisAngle(new THREE.Vector3( 0, 1, 0 ), this.offsetAngle*DEG2RAD);
+      v.applyAxisAngle(new THREE.Vector3( 1, 0, 0 ), this.offsetAngle*DEG2RAD);
       v.applyQuaternion(q);
       if(isEyes)
       {
@@ -1390,9 +1408,15 @@ Gaze.prototype.initGazeValues = function(isEyes){
      /* quat.setAxisAngle(q, v, 45*DEG2RAD);//quat.setAxisAngle(q, v, 90*DEG2RAD);
       vec3.rotateY(v,v, this.offsetAngle*DEG2RAD);
       vec3.transformQuat(v,v,q);*/
-      q.setFromAxisAngle(v, 45*DEG2RAD);
-      v.applyAxisAngle(new THREE.Vector3( 0, 1, 0 ), this.offsetAngle*DEG2RAD);
-      v.applyQuaternion(q);
+
+      // let c = v.clone();
+      // c.cross(new THREE.Vector3(0,1,0));
+      // let q = new THREE.Quaternion();
+      // q.setFromAxisAngle(c, this.offsetAngle*DEG2RAD)
+      // //q.setFromAxisAngle(new, 0)//45*DEG2RAD);
+      // //c.applyAxisAngle(c, this.offsetAngle*DEG2RAD);
+      // v.applyQuaternion(q);
+      // v.normalize()
       if(isEyes)
       {
   
