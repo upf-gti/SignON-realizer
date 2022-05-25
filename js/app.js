@@ -341,7 +341,7 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Communicate via App.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -394,7 +394,7 @@ class App {
             this.mixer = new THREE.AnimationMixer( this.model );
 
             glb.animations.forEach(( clip ) => {
-                if (clip.name == "SLE - Thank You") {
+                if (clip.name == "LSE - Communicate via App") {
                     this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
                 }
             });
@@ -498,25 +498,77 @@ class App {
             let msg = {
                 type: "behaviours",
                 data: [
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1.2,
+                    //     end: 1.6,
+                    //     amount: 0.8,
+                    //     lexeme: 'RAISE_BROWS'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 0.7,
+                    //     attackPeak: 1,
+                    //     relax: 1.3,
+                    //     end: 1.5,
+                    //     amount: 0.5,
+                    //     lexeme: 'INNER_BROW_RAISER'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1.5,
+                    //     attackPeak: 1.5,
+                    //     relax: 3.9,
+                    //     end: 4.3,
+                    //     amount: 0.3,
+                    //     lexeme: 'BROW_LOWERER'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 0.8,
+                    //     attackPeak: 1,
+                    //     relax: 2.8,
+                    //     end: 3,
+                    //     amount: 0.6,
+                    //     lexeme: 'LIP_CORNER_PULLER'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 0.7,
+                    //     attackPeak: 0.8,
+                    //     relax: 2.8,
+                    //     end: 3,
+                    //     amount: 0.2,
+                    //     lexeme: 'MOUTH_STRETCH'
+                    // },
+                    // {
+                    //     type: "speech",
+                    //     start: 3.1,
+                    //     end: 4.5,
+                    //     textToLipInfo: { text: "combo", speed: 5 }
+                    // },
                     {
                         type: "faceLexeme",
-                        start: 1.2,
-                        end: 1.6,
-                        amount: 0.8,
-                        lexeme: 'RAISE_BROWS'
-                    },
-                    {
-                        type: "speech",
-                        start: 1.0,
-                        end: 10000,
-                        textToLipInfo: { text: "malamente", speed: 4 }
+                        start: 0,
+                        attackPeak: 1,
+                        relax: 2,
+                        end: 4,
+                        amount: 2,
+                        lexeme: 'LIP_PRESSOR'
                     },
                     // {
                     //     type: "faceLexeme",
-                    //     start: 1.8,
-                    //     end: 3.8,
-                    //     amount: 1.2,
-                    //     lexeme: 'LIP_PUCKERER'
+                    //     start: 1,
+                    //     end: 3,
+                    //     amount: 0.2,
+                    //     lexeme: 'EYES_CLOSED'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1,
+                    //     end: 3,
+                    //     amount: 0.5,
+                    //     lexeme: 'LID_TIGHTENER'
                     // },
                 ]
             };

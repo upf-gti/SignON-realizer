@@ -747,7 +747,7 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 						if (!merged) {
 							tmp = stack.splice(i, stack.length);
 							stack.push(bml);
-							stack.concat(tmp);
+							stack = stack.concat(tmp);
 							merged = true;
 						}
 					}
