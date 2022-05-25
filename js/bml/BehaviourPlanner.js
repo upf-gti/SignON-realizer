@@ -252,7 +252,7 @@ BehaviourPlanner.prototype.createBlock = function () {
       //   }
       // }
       // Redirect gaze to user
-      if (Math.random() < 0.7) {
+      /*if (Math.random() < 0.7) {
         var start = Math.random();
         var end = start + 0.5 + Math.random() * 1;
         block.gazeShift = {
@@ -262,8 +262,8 @@ BehaviourPlanner.prototype.createBlock = function () {
           target: "CAMERA",
           type: "gazeShift"
         }
-        block.composition = "OVERWRITE";
-      }
+        block.composition = "MERGE";
+      }*/
       break;
 
     // PROCESSING
@@ -309,7 +309,7 @@ BehaviourPlanner.prototype.createBlock = function () {
           lexeme: [
             {
               lexeme: "LOWER_BROWS",
-              amount: 0.2 + Math.random() * 0.5
+              amount: 0.05 + Math.random() * 0.5
             }
           ],
           type: "face"
@@ -428,44 +428,44 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function (dt) {
     };
 
     this.blinkCountdown = this.blinkDur;
-    this.blinkIdle = this.blinkDur + 0.5 + Math.random() * 7;
-    this.blinkDur = Math.random() * 0.5 + 0.11;
+    this.blinkIdle = this.blinkDur + 0.5 + Math.random() * 10;
+    this.blinkDur = Math.random() * 0.5 + 0.10;
   }
 
   // Saccade
   this.saccCountdown += dt;
-  if (this.saccCountdown > this.saccIdle) {
-    // Random direction
-    var opts = ["RIGHT", "LEFT", "DOWN", "DOWNRIGHT", "DOWNLEFT", "UP", "UPLEFT", "UPRIGHT"]; // If you are looking at the eyes usually don't look at the hair
-    var randDir = opts[Math.floor(Math.random() * opts.length)];
+  // if (this.saccCountdown > this.saccIdle) {
+  //   // Random direction
+  //   var opts = ["RIGHT", "LEFT", "DOWN", "DOWNRIGHT", "DOWNLEFT", "UP", "UPLEFT", "UPRIGHT"]; // If you are looking at the eyes usually don't look at the hair
+  //   var randDir = opts[Math.floor(Math.random() * opts.length)];
 
-    // Fixed point to saccade around?
-    var target = "EYESTARGET";
-    if (this.state == BehaviourPlanner.LISTENING)
-      target = "CAMERA";
+  //   // Fixed point to saccade around?
+  //   var target = "EYESTARGET";
+  //   if (this.state == BehaviourPlanner.LISTENING)
+  //     target = "CAMERA";
 
-    if (!block)
-      block = {};
+  //   if (!block)
+  //     block = {};
 
-    block.gaze = {
-      start: 0,
-      end: Math.random() * 0.1 + 0.1,
-      target: target,
-      influence: "EYES",
-      offsetDirection: randDir,
-      offsetAngle: Math.random() * 3,// + 2,
-      type: "gaze",
-      shift: false
-    }
+  //   block.gaze = {
+  //     start: 0,
+  //     end: Math.random() * 0.1 + 0.1,
+  //     target: target,
+  //     influence: "EYES",
+  //     offsetDirection: randDir,
+  //     offsetAngle: Math.random() * 3,// + 2,
+  //     type: "gaze",
+  //     shift: false
+  //   }
 
-    this.saccCountdown = this.saccDur;
-    if (this.state == BehaviourPlanner.LISTENING || this.state == BehaviourPlanner.SPEAKING)
-      this.saccIdle = this.saccDur + 2 + Math.random() * 6;
-    else
-      this.saccIdle = this.saccDur + 0.5 + Math.random() * 6;
+  //   this.saccCountdown = this.saccDur;
+  //   if (this.state == BehaviourPlanner.LISTENING || this.state == BehaviourPlanner.SPEAKING)
+  //     this.saccIdle = this.saccDur + 2 + Math.random() * 6;
+  //   else
+  //     this.saccIdle = this.saccDur + 0.5 + Math.random() * 6;
 
-    this.saccDur = Math.random() * 0.5 + 0.5;
-  }
+  //   this.saccDur = Math.random() * 0.5 + 0.5;
+  // }
 
   return block;
 }
@@ -478,14 +478,14 @@ BehaviourPlanner.prototype.attentionToUser = function (block, overwrite) {
   var startGaze = startHead + Math.random() * 0.5; // Late start
 
   // gazeShift
-  var gazeShift = {
+  /*var gazeShift = {
     id: "gazeEnd",
     start: startGaze,
     end: end,
     influence: "EYES",
     target: "CAMERA",
     type: "gazeShift"
-  }
+  }*/
 
   // blink
   var startBlink = -Math.random() * 0.2;
@@ -520,13 +520,13 @@ BehaviourPlanner.prototype.attentionToUser = function (block, overwrite) {
   if (overwrite) {
     block.blink = blink;
     block.faceVA = faceVA;
-    block.gazeShift = gazeShift;
+   // block.gazeShift = gazeShift;
     block.headDirectionShift = headDir;
   }
   else {
     this.addToBlock(blink, block, "blink");
     this.addToBlock(faceVA, block, "faceVA");
-    this.addToBlock(gazeShift, block, "gazeShift");
+    //this.addToBlock(gazeShift, block, "gazeShift");
     this.addToBlock(headDir, block, "headDirectionShift");
   }
 }

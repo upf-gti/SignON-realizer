@@ -3,8 +3,14 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
+import { GUI } from '../libs/lil-gui.module.min.js'
 
 let firstframe = true;
+
+// Correct negative blenshapes shader of ThreeJS
+THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
+THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
+THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
 class App {
 
@@ -43,9 +49,213 @@ class App {
         this.body = null;
         this.eyelashes = null;
     }
-    
-    init() {
+    createPanel() {
+        let gui = new GUI();
+        let button = {add: () =>{ 
+            // send the facial actions to do
+            let msg = {
+                type: "behaviours",
+                data: [
+                    // {
+                    //     type: "gaze",
+                    //     start: 0,
+                    //     ready: 0.2,
+                    //     relax: 3.3,
+                    //     end: 3.5,
+                    //     influence: "EYES",
+                    //     target: "CAMERA"
+                    // },
+                    {
+                        type: "faceLexeme",
+                        start: 0.1,
+                        attackPeak: 0.6,
+                        relax: 1.5,
+                        end: 1.8,
+                        amount: 0.7,
+                        lexeme: "RAISE_BROWS"
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 1.9,
+                        ready: 2.1,
+                        relax: 3.1,
+                        end: 3.4,
+                        amount: 0.5,
+                        lexeme: 'LOWER_BROWS'
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 1,
+                        attackPeak: 1.4,
+                        relax: 2.1,
+                        end: 2.5,
+                        amount: 0.5,
+                        lexeme: "LIP_STRECHER"
+                    },
+                    {
+                        type: "speech",
+                        start: 5,
+                        end: 6,
+                        text: "thanks",
+                        textToLipInfo : { text: "thanks", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                    },
+                    {
+                        type: "gaze",
+                        start: 0.5,
+                        end: 5,
+                        influence: "HEAD",
+                        target: "DOWN",
+                        offsetDirection: "CAMERA",
+                        offsetAngle: 0.5,
+                        shift: false
+                    },
+                ]
+            };
+            this.ECAcontroller.processMsg(JSON.stringify(msg));
+         }};
+        gui.add(button, 'add');
 
+        let blink = {blink: () =>{ 
+            // send the facial actions to do
+            let msg = {
+                type: "behaviours",
+                data: [
+                    {
+                        type: "blink",
+                        start: 0,
+                        ready: 0.5,
+                        relax: 0.8,
+                        end: 1
+                    }
+                ]
+            };
+            this.ECAcontroller.processMsg(JSON.stringify(msg));
+         }};
+        gui.add(blink, 'blink');
+    }
+
+    drawBlocks( BehaviorManager , time) {
+
+        // Stacks (should concide with BMLManager.BMLStacks order)
+        var stacks = ["blink", "gaze", "face", "head", "headDir",
+                    "speech", "lg"]; //gesture, poiting
+
+        // Colors
+        var colors = ["(0,255,0,", "(255,132,0,", "(0,0,255,",
+                    "(255,255,0, 0.5)", "(255,0,0,0.5)", "(0,255,255,",
+                    "(0,133,0,", "(255,0,255,","(255,63,0,",
+                    "(255, 255, 127"];
+
+        // Time scale
+        var timescale = 20;
+
+        let canvas = document.getElementById("blocks");
+        // Viewport
+        let gl = canvas.getContext("2d");
+
+        canvas.width = canvas.parentElement.clientWidth;//canvas.width;
+        var w = canvas.width 
+        var h = canvas.height =  250;// canvas.height;
+        
+    	// ---------------- BML REALIZER----------------------------------
+        // Blocks
+        var blockStack = null;
+        var bmlStacks = null;
+        if (BehaviorManager){
+            blockStack = BehaviorManager.stack;
+            bmlStacks = BehaviorManager.BMLStacks;
+        }
+        
+        
+        // Base rectangle
+        var psize = 0.3;
+        var r={x:0,y:0,w:w,h:h};
+        gl.fillStyle = "rgba(255,255,255,0.5)";
+        gl.clearRect(r.x,r.y,r.w,r.h);
+        gl.fillRect(r.x,r.y,r.w,r.h);
+        
+        // Row lines
+        var maxTextWidth = 0;
+        var numRows = stacks.length +1;
+        gl.font= 14 * Math.max(h/600, 0.5) + "px Arial"; // Compensated
+        for (var i = 0; i < numRows; i++){
+            // Lines
+            gl.strokeStyle = "rgba(0,0,0,0.3)";
+            var height = i/numRows * (h - r.y) + r.y;
+            gl.beginPath(); gl.moveTo(0, height); gl.lineTo(w, height); gl.stroke();
+            height = (i+1.8)/numRows * (h - r.y) + r.y;
+            gl.fillStyle = "rgba(0,0,0,1)";
+            gl.fillText(stacks[i], 10, height);
+            // Adaptive line
+            var text = toString(stacks[i]);
+            maxTextWidth = Math.max(gl.measureText(text).width, maxTextWidth);
+        }
+        
+        // BMLPLANNER STATE
+        /*if (BehaviorPlanner){
+            gl.font= 10 * Math.max(h/600, 0.5) + "px Arial";
+            gl.fillStyle = "rgba(0,0,0,0.5)";
+            height = (-1+1.8)/numRows * (h - r.y) + r.y;
+            gl.fillText(BehaviorPlanner.state, 40, height);
+        }*/
+        
+        
+        // Column line
+        var firstColW = maxTextWidth * 0.5;
+        gl.beginPath(); gl.moveTo(firstColW, r.y); gl.lineTo(firstColW, h); gl.stroke();
+        
+        // Blocks
+        if (!blockStack)
+            return;
+        if (blockStack.length == 0)
+            return;
+        // Get global timestamp
+
+        // Block rectangle
+        var rr = {x: 0, y:0, w: 0, h: 0};
+        for (var i = 0; i<blockStack.length; i++){
+            var block = blockStack[i];
+            var xB = firstColW + timescale * 10 * (block.startGlobalTime - time);
+            var wB = timescale * 10 * Math.min((block.endGlobalTime - time), block.end);
+            rr.x = Math.max(firstColW,xB);
+            rr.y = r.y;
+            rr.w = wB;
+            rr.h = r.h;
+            gl.strokeStyle = "rgba(0,0,0,0.6)";
+            gl.lineWidth = 4;
+            gl.strokeRect(rr.x,rr.y, rr.w, rr.h);
+            // Add block id on top
+            gl.font= 12 * Math.max(h/600, 0.5) + "px Arial"; // Compensated
+            gl.fillStyle = "rgba(0,0,0,0.5)";
+            gl.fillText(block.id, rr.x, 0.8/numRows * (h - r.y) + r.y);
+        }
+        // BML instruction rectangles
+        for (var i = 0; i < stacks.length; i++){ // bmlStacks.length
+            var bmlStack = bmlStacks[i];
+            // Select color
+            gl.fillStyle = "rgba" + colors[i] + "0.3)";
+            for (var j = 0; j < bmlStack.length; j++){
+            var bmlIns = bmlStack[j];
+            if (bmlIns === undefined){
+                console.log("Error in: ", stacks[i], bmlStack);
+                return;
+            }
+            // Paint rectangle
+            xB = firstColW + timescale * 10 * (bmlIns.startGlobalTime - time);
+            wB = timescale * 10 * Math.min((bmlIns.endGlobalTime - time), bmlIns.end);
+            rr.x = Math.max(firstColW,xB);
+            rr.y = (i+1)/numRows * (h - r.y) + r.y;
+            rr.w = Math.max(wB,0);
+            rr.h = 1/numRows * (h - r.y);
+            gl.fillRect(rr.x, rr.y, rr.w, rr.h);
+            gl.lineWidth = 2;
+            gl.strokeRect(rr.x, rr.y, rr.w, rr.h);
+            }
+        }
+        
+    }
+    init() {
+        //this.createPanel();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
@@ -184,7 +394,7 @@ class App {
             this.mixer = new THREE.AnimationMixer( this.model );
 
             glb.animations.forEach(( clip ) => {
-                if (clip.name == "BSL - Trying to com") {
+                if (clip.name == "SLE - Thank You") {
                     this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
                 }
             });
@@ -224,7 +434,7 @@ class App {
             firstframe = false;
         }
 
-        console.log("a: " + delta + ", b: " + et);
+        //console.log("a: " + delta + ", b: " + et);
 
         if (this.mixer) {
             this.mixer.update(delta);
@@ -266,6 +476,7 @@ class App {
                 }
             }
         }
+        //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
     
     onWindowResize() {
@@ -296,17 +507,17 @@ class App {
                     },
                     {
                         type: "speech",
-                        start: 0.4,
-                        end: 1.0,
-                        textToLipInfo : { text: "ge", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+                        start: 1.0,
+                        end: 10000,
+                        textToLipInfo: { text: "malamente", speed: 4 }
                     },
-                    {
-                        type: "faceLexeme",
-                        start: 1.8,
-                        end: 3.8,
-                        amount: 1.2,
-                        lexeme: 'LIP_PUCKERER'
-                    },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1.8,
+                    //     end: 3.8,
+                    //     amount: 1.2,
+                    //     lexeme: 'LIP_PUCKERER'
+                    // },
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));
@@ -314,7 +525,6 @@ class App {
             this.animate();
             // send the facial actions to do
             
-
             //this.mixer.update(0);
         } );
     }

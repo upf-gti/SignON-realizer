@@ -366,10 +366,9 @@ CharacterController.prototype.processBML = function(key, bml) {
             thatFacial.newFA(bml, true);
             break;
         case "speech":
-        	console.log("TTS:" + bml.text)
-          /*this.speechController.start = true;
-            this.speechController.speak(bml.text);*/
-            //bml.textToLipInfo = { text: "ai sii faiv lamps", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+        	  console.log("TTS: " + bml.textToLipInfo.text)
+            if (bml.textToLipInfo.phT)
+              bml.textToLipInfo.phT = new Float32Array(Object.values(bml.textToLipInfo.phT));
             thatFacial.newTextToLip(bml.textToLipInfo)
         		//thatFacial.newLipSync(bml.text)
             break;
@@ -378,7 +377,6 @@ CharacterController.prototype.processBML = function(key, bml) {
         	//this.gesture(bml);
             break;
         case "posture":
-        		
             //this.posture(bml);
             break;
         case "pointing":
