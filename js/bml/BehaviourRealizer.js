@@ -18,7 +18,7 @@ function Blink (blinkData, eyeLidsBSW){
   // Initial eyeLidsBSW
   this.initialWeight = eyeLidsBSW || 0;
   this.targetWeight = blinkData.amount || 0.75;
-
+  this.currentWeight = 0;
   // Transition
   this.transition = true;
   this.time = 0;
@@ -322,7 +322,7 @@ FacialExpr.prototype.initFaceValAro = function(faceData, shift){
   // Sync
   this.start = faceData.start || 0.0;
   this.end = faceData.end;
-  
+  this.amount = faceData.amount || 1.0;
   if (!shift){
     this.attackPeak = faceData.attackPeak || (this.end-this.start)*0.25 + this.start;
     this.relax = faceData.relax || (this.end - this.attackPeak)/2 + this.attackPeak;
@@ -814,193 +814,6 @@ FacialExpr.prototype.VA2BSW = function(valAro, facialBSW){
 }
 
 
-FacialExpr.prototype.VA2BSW_old = function(valAro, facialBSW){
-  
-  maxDist = 0.8;
-
-  var blendValues = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; // Memory leak, could use facialBSW and set to 0 with a for loop
-  var bNumber = 18;
-  
-  this._p.x = valAro[0];
-  this._p.y = valAro[1];
-  this._p.z = 0; // why vec3, if z component is always 0, like pA?
-
-  this._pA[2] = 0;
-  
-  for (var count = 0; count < this._pit.length; count++){
-    this._pA.x = this._pit[count].x;
-    this._pA.y = this._pit[count].y;
-
-
-    var dist = this._pA.distanceTo(this._p);
-    dist = maxDist - dist;
-
-    // If the emotion (each row is an emotion in pit) is too far away from the act-eval point, discard
-    if (dist > 0){
-      for (var i = 0; i < bNumber-2; i++){
-        blendValues[i] += this._pit[count][i+2] * dist;
-      }
-    }
-  }
-
-  this.indicesVA = [];
-  this.initialVABSW = [];
-  this.targetVABSW = [];
-  var j = 0;
-  for(var i=0; i< this.VALexemes.length; i++)
-  {
-    var index = this[this.VALexemes[i]].split("&");
-  
-    if (index !== undefined)
-    {
-      // Indices
-      this.indicesVA[j] = index;
-      this.initialVABSW[j] = [];
-      this.targetVABSW[j] = [];
-      for(var idx in index)
-      {
-        // Initial
-        var sign = 1;
-        if(idx.includes("-"))
-        {
-          sign = -1;
-          var ii = this.indicesVA.indexOf(idx);
-          idx = idx.replace("-","");
-          this.indicesVA[ii] = idx;
-        }
-        this.initialVABSW[j][idx] = this.sceneBSW[FacialExpr.BODY_NAME][index[idx]];
-        // Target
-        this.targetVABSW[j][idx] = sign*blendValues[i];
-      }
-    }
-    j++
-  }
-  //this.sceneBSW[FacialExpr.BODY_NAME][index[idx]]
-  
-/*
-  index = this["LIP_CORNER_PULLER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[1];
-        }
-  }
-  index = this["INNER_BROW_RAISER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[2];
-        }
-  }
-  index = this["BROW_LOWERER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[3];
-        }
-  }
-  index = this["DIMPLER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[4];
-        }
-  }
-  index = this["OUTER_BROW_RAISER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[5];
-        }
-  }
-  index = this["UPPER_LID_RAISER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[6];
-        }
-  }
-  index = this["JAW_DROP"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[7];
-        }
-  }
-  index = this["LID_TIGHTENER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[8];
-        }
-  }
-  index = this["LIP_STRECHER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[9];
-        }
-  }
-  index = this["NOSE_WRINKLER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[10];
-        }
-  }
-  index = this["LIP_CORNER_DEPRESSOR"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[11];
-        }
-  }
-  index = this["CHIN_RAISER"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[12];
-        }
-  }
-  index = this["LIP_CORNER_PULLER_RIGHT"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[13];
-        }
-  }
-  index = this["DIMPLER_RIGHT"].split("&");
-  if (index !== undefined){
-    for(var idx in index)
-        {
-          facialBSW[index[idx]] = blendValues[14];
-        }
-  }*/
-  // Store blend values
-  /*facialBSW [ 0 ] = blendValues[0]; // CHEEK_RAISER
-  facialBSW [ 1 ] = blendValues[1]; // LIP_CORNER_PULLER
-  facialBSW [ 2 ] = blendValues[2]; // INNER_BROW_RAISER
-  facialBSW [ 3 ] = blendValues[3]; // BROW_LOWERER
-  
-  facialBSW [4]  = blendValues[4]; // DIMPLER
-
-  facialBSW [5] = blendValues[5]; // OUTER_BROW_RAISER
-  facialBSW [6] = blendValues[6]; // UPPER_LID_RAISER
-  facialBSW [7] = blendValues[7]; // JAW_DROP
-  facialBSW [8] = blendValues[8]; // LID_TIGHTENER
-  facialBSW [9] = blendValues[9]; // LIP_STRECHER
-  facialBSW [10] = blendValues[10]; // NOSE_WRINKLER
-  facialBSW [11] = blendValues[11]; // LIP_CORNER_DEPRESSOR
-  facialBSW [12] = blendValues[12]; // CHIN_RAISER
-  facialBSW [13] = blendValues[13]; // LIP_CORNER_PULLER_RIGHT
-  facialBSW [15] = blendValues[14]; // DIMPLER_RIGHT
-*/
-}
-
-
-
-
-
 // --------------------- GAZE (AND HEAD SHIFT DIRECTION) ---------------------
 // BML
 // <gaze or gazeShift start ready* relax* end influence target offsetAngle offsetDirection>
@@ -1254,14 +1067,10 @@ Gaze.prototype.update = function(dt , atEyes){
     if(!this.dynamic)
     {
       this.transition = false;
-      /*if(!atEyes)
-      {*/
-        
-        
-        this.eyelidsW = this.eyelidsInitW 
-        this.squintW = this.squintInitW
-        this.blinkW = this.blinkInitW 
-     /* }*/
+      
+      this.eyelidsW = this.eyelidsInitW 
+      this.squintW = this.squintInitW
+      this.blinkW = this.blinkInitW 
     }
     // Extension - Dynamic
     else{
@@ -1528,7 +1337,7 @@ HeadBML.prototype.initHeadData = function(headData){
 
 }
 
-HeadBML.prototype.update = function (dt){
+HeadBML.prototype.update = function (dt, targetVector){
   
   this.headNode.mustUpdate = true;
   
@@ -1673,26 +1482,15 @@ HeadBML.prototype.update = function (dt){
     // Cosine interpolation
     inter = Math.cos(Math.PI*inter+Math.PI)*0.5 + 0.5;
 
-    headRotation.slerp(this.lookAtRot, inter); // Why 0.1?
-      // Should store previous rotation applied, so it is not additive
-     /* if (this.phase == 2){
-          this.prevDeg = 0;
-          this.phase = 3;
-      }
-
-      var angle = inter*this.readyDeg - this.prevDeg;
-      this.prevDeg = inter*this.readyDeg;*/
-      // Apply rotation
-      // Apply rotation
-   /* if (this.lexeme == "NOD")
-      headRotation.setFromAxisAngle( new THREE.Vector3(1,0,0), angle*DEG2RAD);
-      
-    else if (this.lexeme == "SHAKE")
-      headRotation.setFromAxisAngle( new THREE.Vector3(0,1,0), angle*DEG2RAD);
-    
-    else if (this.lexeme == "TILT")
-      headRotation.setFromAxisAngle( new THREE.Vector3(0,0,1), angle*DEG2RAD);
-    */
+    if(targetVector){
+      // lookAt pos change
+      var obj = new THREE.Object3D();
+      obj.lookAt(targetVector);
+      headRotation.slerp(obj.getWorldQuaternion(new THREE.Quaternion()), inter*0.1); // Why 0.1?
+    }
+    else{
+      headRotation.slerp(this.lookAtRot, inter*0.1); // Why 0.1?
+    }
   
   }
 
@@ -1943,9 +1741,9 @@ if (window.location.protocol != "https:")
     window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
 
 
-// Audio context
-if (!Lipsync.AContext)
-Lipsync.AContext = new AudioContext();
+// // Audio context
+// if (!Lipsync.AContext)
+// Lipsync.AContext = new AudioContext();
 
 
 // Audio sources
@@ -1975,6 +1773,8 @@ function Lipsync(threshold, smoothness, pitch) {
   // Initialize buffers
   this.init();
   
+
+
   // Output .csv (debug)
   //this.outstr = "time, e0, e1, e2, e3, bs_kiss, bs_lips_closed, bs_jaw\n";
 
@@ -1987,6 +1787,10 @@ function Lipsync(threshold, smoothness, pitch) {
 
 // Start mic input
 Lipsync.prototype.start = function(URL){
+
+  // Audio context
+  if (!Lipsync.AContext)
+    Lipsync.AContext = new AudioContext();
   // Restart
   this.stopSample();
   
@@ -2007,8 +1811,33 @@ Lipsync.prototype.start = function(URL){
     this.loadSample(URL);
   
 }
+Lipsync.prototype.loadBlob = function(blob){
+  
+  // Audio context
+  if (Lipsync.AContext)
+    Lipsync.AContext.resume();
+  const fileReader = new FileReader()
 
+  // Set up file reader on loaded end event
+  fileReader.onloadend = () => {
 
+    const arrayBuffer = fileReader.result;
+    var that = this;
+    this.context.decodeAudioData(arrayBuffer,
+      function(buffer){
+        //LGAudio.cached_audios[URL] = buffer;
+        that.stopSample();
+        
+        that.sample = Lipsync.AContext.createBufferSource();
+        that.sample.buffer = buffer;
+        console.log("Audio loaded");
+        that.playSample();
+      }, function(e){ console.log("Failed to load audio");});
+  };
+
+  //Load blob
+  fileReader.readAsArrayBuffer(getBlobURL(blob))
+}
 
 Lipsync.prototype.loadSample = function(inURL){
   var URL = LS.RM.getFullURL (inURL);
@@ -2054,7 +1883,7 @@ Lipsync.prototype.playSample = function(){
   // Volume
   this.gainNode.gain.value = 1;
   console.log("Sample rate: ", this.context.sampleRate);
-  that = this;
+  var that = this;
   this.working = true;
   this.sample.onended = function(){that.working = false;};
   // start
@@ -2065,12 +1894,6 @@ Lipsync.prototype.playSample = function(){
   //this.timeStart = thiscene.time;
   //this.outstr = "time, e0, e1, e2, e3, bs_kiss, bs_lips_closed, bs_jaw\n";
 }
-
-
-
-
-
-
 
 // Update lipsync weights
 Lipsync.prototype.update = function(){
@@ -2119,22 +1942,18 @@ Lipsync.prototype.stop = function(dt){
   }
 }
 
-
-
-
-
-
-
 // Define fBins
 Lipsync.prototype.defineFBins = function(pitch){
   for (var i = 0; i<this.refFBins.length; i++)
       this.fBins[i] = this.refFBins[i] * pitch;
 }
 
-
 // Audio buffers and analysers
 Lipsync.prototype.init = function(){
 
+  // Audio context
+  if (!Lipsync.AContext)
+    Lipsync.AContext = new AudioContext();
   var context = this.context = Lipsync.AContext;
   // Sound source
   this.sample = context.createBufferSource();
@@ -2151,7 +1970,6 @@ Lipsync.prototype.init = function(){
   this.data = new Float32Array(this.analyser.frequencyBinCount);
 
 }
-
 
 // Analyze energies
 Lipsync.prototype.binAnalysis = function(){
@@ -2254,6 +2072,18 @@ Lipsync.prototype.stopSample = function(){
 
 }
 
+function getBlobURL(arrayBuffer) {
+  var i, l, d, array;
+        d = arrayBuffer;
+        l = d.length;
+        array = new Uint8Array(l);
+        for (var i = 0; i < l; i++){
+            array[i] = d.charCodeAt(i);
+        }
+        var b = new Blob([array], {type: 'application/octet-stream'});
+ // let blob = blobUtil.arrayBufferToBlob(arrayBuffer, "audio/wav")
+  return b
+}
 
 // ------------------------ TEXT TO LIP --------------------------------------------
 

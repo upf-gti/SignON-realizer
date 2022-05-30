@@ -745,7 +745,7 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i + 1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime) {
 						if (!merged) {
-							tmp = stack.splice(i, stack.length);
+							let tmp = stack.splice(i, stack.length);
 							stack.push(bml);
 							stack = stack.concat(tmp);
 							merged = true;

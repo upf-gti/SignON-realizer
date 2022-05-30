@@ -1,5 +1,5 @@
 //@ECA controller
-import { GestureManager } from '../bml/BehaviourRealizer.js';
+import { Lipsync } from '../bml/BehaviourRealizer.js';
 import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
@@ -98,6 +98,18 @@ CharacterController.prototype.onUpdate = function(dt, et)
 
     if(this.lipsyncModule)
         this.lipsyncModule.update();
+
+    if(this.BehaviourManager.lgStack.length && this.BehaviourManager.time <= this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length -1].endGlobalTime){
+      this.endSpeakingTime = this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length -1].endGlobalTime + 1
+      this.speaking = true;
+    }
+    else if(this.endSpeakingTime > -1 && this.BehaviourManager.time <= this.endSpeakingTime || this.lipsyncModule.working){
+      this.speaking = true;
+    }
+    else{
+      this.endSpeakingTime = -1;
+      this.speaking = false;
+    }
 }
 
 
@@ -205,9 +217,11 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
     msg = data;
     if(data.type == "state" || data.type == "control")
     {
-      msg.control = this[data.parameters.state.toUpperCase()];
-      this.BehaviourPlanner.transition(msg)
-      return;
+      if(data.parameters)
+        msg.control = this[data.parameters.state.toUpperCase()];
+      else
+        this.BehaviourPlanner.transition(msg)
+    
     }
     else if(data.type == "info")
         return;
@@ -385,7 +399,11 @@ CharacterController.prototype.processBML = function(key, bml) {
           this.animationManager.newAnimation(bml)
           break;
         case "lg":
+          if(bml.audio)
+            thatFacial.lipsyncModule.loadBlob(bml.audio);
+          if(bml.url)
             thatFacial.lipsyncModule.loadSample(bml.url)
+            
           //thatFacial.newLipSync()
             //thatFacial._visSeq.sequence = bml.sequence;
            // thatFacial._audio.src = bml.audioURL; // When audio loads it plays

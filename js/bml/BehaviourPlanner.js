@@ -429,7 +429,7 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function (dt) {
 
     this.blinkCountdown = this.blinkDur;
     this.blinkIdle = this.blinkDur + 0.5 + Math.random() * 10;
-    this.blinkDur = Math.random() * 0.5 + 0.10;
+    this.blinkDur = Math.random() * 0.5 + 0.15;
   }
 
   // Saccade
@@ -520,13 +520,13 @@ BehaviourPlanner.prototype.attentionToUser = function (block, overwrite) {
   if (overwrite) {
     block.blink = blink;
     block.faceVA = faceVA;
-   // block.gazeShift = gazeShift;
+    block.gazeShift = gazeShift;
     block.headDirectionShift = headDir;
   }
   else {
     this.addToBlock(blink, block, "blink");
     this.addToBlock(faceVA, block, "faceVA");
-    //this.addToBlock(gazeShift, block, "gazeShift");
+    this.addToBlock(gazeShift, block, "gazeShift");
     this.addToBlock(headDir, block, "headDirectionShift");
   }
 }

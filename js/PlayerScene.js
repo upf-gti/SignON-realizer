@@ -12,7 +12,7 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
-class App {
+class Player {
 
     constructor() {
         
@@ -254,14 +254,14 @@ class App {
         }
         
     }
-    init() {
+    init(onLoaded) {
         //this.createPanel();
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xa0a0a0 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
+        this.scene.background = new THREE.Color( 0x2A2928 );
+        this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
         
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
-        ground.position.y = -7; // it is moved because of the mesh scale
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x151414, depthWrite: false } ) );
+        ground.position.y = 0; // it is moved because of the mesh scale
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
@@ -341,7 +341,7 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Communicate via App.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -373,7 +373,9 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'BodyMesh' );
+            this.body = this.model.getObjectByName( 'Body' );
+            if(!this.body)
+                this.body = this.model.getObjectByName( 'BodyMesh' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
 
             let additiveActions = {};
@@ -388,13 +390,13 @@ class App {
                 'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
                 'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
             }
-            this.ECAcontroller.onStart(morphTargets);
+            this.ECAcontroller.onStart();
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
 
             glb.animations.forEach(( clip ) => {
-                if (clip.name == "LSE - Communicate via App") {
+                if (clip.name == "LSE - Communicate via Player") {
                     this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
                 }
             });
@@ -402,6 +404,9 @@ class App {
             this.loadBVH('./data/anim/VGT Thanks.bvh');
             
             $('#loading').fadeOut(); //hide();
+            this.clock.start()
+            if(onLoaded)
+                onLoaded(this);
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
@@ -422,17 +427,17 @@ class App {
         //     return;
         // }
 
-        if (delta > 0.1) {
-            this.clock.stop();
-            this.clock.start();
-            return;
-        } else if (firstframe) {
-            //this.capturer.start();
-            //this.recording = true;
-            this.clock.stop();
-            this.clock.start();
-            firstframe = false;
-        }
+        // if (delta > 0.1) {
+        //     this.clock.stop();
+        //     this.clock.start();
+        //     return;
+        // } else if (firstframe) {
+        //     //this.capturer.start();
+        //     //this.recording = true;
+        //     this.clock.stop();
+        //     this.clock.start();
+        //     firstframe = false;
+        // }
 
         //console.log("a: " + delta + ", b: " + et);
 
@@ -453,29 +458,7 @@ class App {
             
         this.renderer.render( this.scene, this.camera );
 
-        // generate video
-        this.rendererVideo.render( this.scene, this.camera ); 
-        if (this.mixer && this.recorded == false) {
-            if (this.mixer._actions.length > 0) {
-                if (this.recording == false) {
-                    
-                    
-                }
-                if (this.recording) {
-                    this.capturer.capture( this.rendererVideo.domElement );
-                } 
-                if (this.mixer._actions[0]._clip.duration - this.mixer._actions[0].time < 0.05) {
-                    this.capturer.stop();
-                    this.capturer.save( function(blob) {
-                        window.open(URL.createObjectURL(blob));
-                        download(blob, 'animationVideo');
-                    } );
-                    console.log('Video recorded succesfully');
-                    this.recorded = true;
-                    this.recording = false;
-                }
-            }
-        }
+        
         //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
     
@@ -495,84 +478,7 @@ class App {
             // }
             // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             
-            let msg = {
-                type: "behaviours",
-                data: [
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1.2,
-                    //     end: 1.6,
-                    //     amount: 0.8,
-                    //     lexeme: 'RAISE_BROWS'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.7,
-                    //     attackPeak: 1,
-                    //     relax: 1.3,
-                    //     end: 1.5,
-                    //     amount: 0.5,
-                    //     lexeme: 'INNER_BROW_RAISER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1.5,
-                    //     attackPeak: 1.5,
-                    //     relax: 3.9,
-                    //     end: 4.3,
-                    //     amount: 0.3,
-                    //     lexeme: 'BROW_LOWERER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.8,
-                    //     attackPeak: 1,
-                    //     relax: 2.8,
-                    //     end: 3,
-                    //     amount: 0.6,
-                    //     lexeme: 'LIP_CORNER_PULLER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.7,
-                    //     attackPeak: 0.8,
-                    //     relax: 2.8,
-                    //     end: 3,
-                    //     amount: 0.2,
-                    //     lexeme: 'MOUTH_STRETCH'
-                    // },
-                    // {
-                    //     type: "speech",
-                    //     start: 3.1,
-                    //     end: 4.5,
-                    //     textToLipInfo: { text: "combo", speed: 5 }
-                    // },
-                    {
-                        type: "faceLexeme",
-                        start: 0,
-                        attackPeak: 1,
-                        relax: 2,
-                        end: 4,
-                        amount: 2,
-                        lexeme: 'LIP_PRESSOR'
-                    },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     end: 3,
-                    //     amount: 0.2,
-                    //     lexeme: 'EYES_CLOSED'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     end: 3,
-                    //     amount: 0.5,
-                    //     lexeme: 'LID_TIGHTENER'
-                    // },
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
+            
 
             this.animate();
             // send the facial actions to do
@@ -582,7 +488,7 @@ class App {
     }
 }
 
-let app = new App();
-app.init();
+// let player = new Player();
+// player.init();
 
-export { app };
+export { Player };

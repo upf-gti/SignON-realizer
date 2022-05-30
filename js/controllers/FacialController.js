@@ -77,11 +77,17 @@ FacialController.prototype.configure = function(o){
 
 FacialController.prototype.onStart = function(morphTargets)
 {    
-  // Get morph targets
-  var body = this.character.getObjectByName("BodyMesh");
-  var eyelashes = this.character.getObjectByName("Eyelashes");
+  if(!morphTargets)
+  {
+    // Get morph targets
+    morphTargets = {
+      Body : this.character.getObjectByName("Body") || this.character.getObjectByName("BodyMesh"),
+      Eyelashes : this.character.getObjectByName("Eyelashes")
+    }
+    
+  }
 
-  this._morphDeformers = { "Body" : body, "Eyelashes": eyelashes};
+  this._morphDeformers = { "Body" : morphTargets.Body, "Eyelashes": morphTargets.Eyelashes};
   this._facialBS = {};
   this._eyeLidsBS = []
   this._squintBS = [];
@@ -239,11 +245,13 @@ FacialController.prototype.onUpdate = function(dt, et, callback)
   var lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());//this.character.getObjectByName(this.lookAtNeck).getWorldPosition(new THREE.Vector3());
   this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
   this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
+
   // Head behavior
-  // this.headBMLUpdate(dt)
-  // if(!this.headBMLUpdate(dt))
-  //   this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
-  // this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
+  let gaze = this.gazeManager.gazeActions[1] ? true : false;
+  let headUpdate = this.headBMLUpdate(dt,gaze)
+  if(!headUpdate)
+    this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+  this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
   
  if(callback)
     callback(dt,et)
@@ -371,7 +379,7 @@ FacialController.prototype.facialBlend = function(dt)
     {
       var BS = this._morphDeformers["Body_SSS"]|| this._morphDeformers["Body"];
       var names = Object.keys(BS.morphTargetDictionary);
-      for(var i = 0; i<BS.length; i++)
+      for(var i = 0; i<names.length; i++)
       {
         if(names[i].includes(this.mouthOpenBSName))
           this._facialBS["Body"][i] = (1-smooth)*this._facialBS["Body"][i] + smooth*facialLexemes[2];
@@ -693,15 +701,21 @@ FacialController.prototype.newHeadBML = function(headData){
   }
 }
 // Update
-FacialController.prototype.headBMLUpdate = function(dt){
+FacialController.prototype.headBMLUpdate = function(dt, gaze){
   
-  if (this.headBML){
-    /* if (this.headBML.transition){
-      this._lookAtHeadComponent.applyRotation = false;*/
-      this.headBML.update(dt);
-      return this.headBML.transition;
-    /* } else
-      this._lookAtHeadComponent.applyRotation = true;*/
+  if (this.headBML && this.headBML.transition){
+
+    var targetVector = null;
+    if(gaze){
+      var headPos = this.character.getObjectByName(this.headNode).getWorldPosition(new THREE.Vector3());	
+      var lookAtPos = this.character.getObjectByName(this.lookAtHead).getWorldPosition(new THREE.Vector3());
+      targetVector = new THREE.Vector3();	
+      targetVector.sub(lookAtPos, headPos);	
+      targetVector.normalize();  
+    }
+    this.headBML.update(dt, targetVector);
+    return this.headBML.transition;
+
   }
   return false;
 }
