@@ -32,7 +32,6 @@ class Player {
     }
     
     init(onLoaded) {
-        //this.createPanel();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0x2A2928 );
         this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
@@ -82,8 +81,7 @@ class Player {
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        let W = 540, H = 960;
-        let AR = this.recorded ? window.innerWidth/window.innerHeight : W/H;
+        let AR =  window.innerWidth/window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(60, AR, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set(0.0, 3.4, 8);
@@ -222,12 +220,7 @@ class Player {
             
             //this.model.getObjectByName("Body").material = material;
 
-            glb.animations.forEach(( clip ) => {
-                if (clip.name == "LSE - Communicate via Player") {
-                    this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
-                }
-            });
-
+            
             this.scene.add(this.model);
             $('#loading').fadeOut(); //hide();
             this.clock.start()
@@ -254,13 +247,13 @@ class Player {
     render(){
         this.renderTarget.samples = 7;
         // render scene into target
-        this.renderer.setRenderTarget( this.renderTarget );
+        // this.renderer.setRenderTarget( this.renderTarget );
 
         this.renderer.render( this.scene, this.camera );
         
-        // render post FX
-        this.renderer.setRenderTarget( null );
-        this.renderer.render( this.postScene, this.postCamera );
+        // // render post FX
+        // this.renderer.setRenderTarget( null );
+        // this.renderer.render( this.postScene, this.postCamera );
     }
     onWindowResize() {
 
