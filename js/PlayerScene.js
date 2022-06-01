@@ -218,7 +218,7 @@ class Player {
             material.extensions.drawBuffers = true;
             material.extensions.derivatives = true;
             
-            //this.model.getObjectByName("Body").material = material;
+            this.model.getObjectByName("Body").material = material;
 
             
             this.scene.add(this.model);
@@ -238,28 +238,27 @@ class Player {
 
         let [x, y, z] = [... this.camera.position];
         //this.spotLight.position.set( x + 10, y + 10, z + 10);
-        
+        this.controls.update();
         this.render();
         
         
-        //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
     render(){
         this.renderTarget.samples = 7;
         // render scene into target
-        // this.renderer.setRenderTarget( this.renderTarget );
+        this.renderer.setRenderTarget( this.renderTarget );
 
         this.renderer.render( this.scene, this.camera );
         
-        // // render post FX
-        // this.renderer.setRenderTarget( null );
-        // this.renderer.render( this.postScene, this.postCamera );
+        // render post FX
+        this.renderer.setRenderTarget( null );
+        this.renderer.render( this.postScene, this.postCamera );
     }
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-
+        
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
