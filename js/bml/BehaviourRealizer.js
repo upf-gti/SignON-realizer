@@ -1,6 +1,6 @@
 //@BehaviorRealizer
 import '../../libs/gl-matrix-min.js'
-import * as THREE from '../../libs/three.module.js';
+import * as THREE from 'three';
 let DEG2RAD = Math.PI/180;
 let RAD2DEG = 180/Math.PI;
 // --------------------- BLINK ---------------------
@@ -825,13 +825,13 @@ FacialExpr.prototype.VA2BSW = function(valAro, facialBSW){
 
 
 // Gaze manager (replace BML)
-GazeManager.prototype.gazePositions = {
-  "RIGHT": [60, 125, 400], "LEFT": [-80, 125, 400],
-  "UP": [-10, 200, 400], "DOWN": [-10, 105, 400],
-  "UPRIGHT": [60, 200, 400], "UPLEFT": [-80, 200, 400],
-  "DOWNRIGHT": [60, 105, 400], "DOWNLEFT": [-80, 105, 400],
-  "CAMERA": [-10, 125, 400]
-};
+GazeManager.gazePositions = {
+  "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
+  "UP": new THREE.Vector3(-10, 20, 100), "DOWN": new THREE.Vector3(-10, -20, 100),
+  "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
+  "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
+  "CAMERA": new THREE.Vector3(0, 2, 100)
+  };
 Gaze.prototype.gazeBS = {
   "RIGHT": {squint:0, eyelids:0}, "LEFT": {squint:0, eyelids:0},
   "UP": {squint:0.3, eyelids:0}, "DOWN": {squint:0, eyelids:0.2},
@@ -1107,9 +1107,9 @@ Gaze.prototype.initGazeValues = function(isEyes){
       }
       this.targetP.copy(this.gazePositions[this.target]);
     }else
-      this.targetP.set(0, 110, 400);
+      this.targetP.set(0, 110, 100);
   else
-    this.targetP.set(0, 110, 400);
+    this.targetP.set(0, 110, 100);
   
   
   // Angle offset

@@ -383,7 +383,7 @@ BehaviourManager.prototype.findEndOfBlock = function (block) {
 
 	for (var i = 0; i < keys.length; i++) {
 		var bml = block[keys[i]];
-		if (bml === null) { }
+		if (bml === null || bml === undefined) { }
 		//console.error("Empty bml instruction.", keys[i], block);
 		else if (bml.end !== undefined)
 			latestEnd = Math.max(bml.end, latestEnd);

@@ -4,10 +4,10 @@ import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
 //States
-CharacterController.WAITING    = 0;
-CharacterController.PROCESSING = 1;
-CharacterController.SPEAKING   = 2;
-CharacterController.LISTENING  = 3;
+CharacterController.prototype.WAITING    = 0;
+CharacterController.prototype.PROCESSING = 1;
+CharacterController.prototype.SPEAKING   = 2;
+CharacterController.prototype.LISTENING  = 3;
 
 window.SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
 
@@ -139,29 +139,6 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
   this.BehaviourManager.update(this.processBML.bind(this), this.time);
 
   
-
-  /*  // Add new block to stack
-    if(data.constructor == Array)
-    {
-      for(var i = 0; i < data.length; i++)
-      {
-        var msg = data[i];
-        if(msg.type == "info")
-          continue;
-
-        if(!msg.end &&msg.duration)
-          msg.end = msg.start+msg.duration;
-        var block = {};
-        block[msg.type] = msg;
-        this.BehaviourManager.newBlock(block);
-      }
-    }else
-    { 
-      if(data.type == "info")
-        return;
-      else
-        this.BehaviourManager.newBlock(data, thiscene.time);
-    }*/
     // Add new block to stack
     //this.BehaviourManager.newBlock(msg, thiscene.time);
   var data  = JSON.parse(data);
@@ -210,6 +187,17 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
     msg.end = end;
     if(!msg.composition)
       msg.composition = "MERGE"
+    
+    // Process block
+    // Create new bml if necessary
+    if (this.BehaviourPlanner)
+    {
+
+      this.BehaviourPlanner.newBlock(msg);
+      if(msg.speech)
+        this.BehaviourPlanner.transition({control:this.SPEAKING})
+        //this.processMsg(JSON.stringify({control:this.SPEAKING}));
+    }
     this.BehaviourManager.newBlock(msg, this.time);
   }
   else if(data.constructor == Object)
@@ -219,12 +207,21 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
     {
       if(data.parameters)
         msg.control = this[data.parameters.state.toUpperCase()];
-      else
-        this.BehaviourPlanner.transition(msg)
     
     }
     else if(data.type == "info")
         return;
+  
+    // Process block
+    // Create new bml if necessary
+    if (this.BehaviourPlanner)
+    {
+
+      this.BehaviourPlanner.newBlock(msg);
+      if(msg.speech)
+        this.BehaviourPlanner.transition({control:this.SPEAKING})
+        //this.processMsg(JSON.stringify({control:this.SPEAKING}));
+    }
     this.BehaviourManager.newBlock(msg, this.time);
   }
   
@@ -274,20 +271,6 @@ CharacterController.prototype.processMsg = function(data, fromWS) {
     return;
   }
 
-  // Process block
-  // Create new bml if necessary
-  if (this.BehaviourPlanner)
-  {
-
-    //this.BehaviourPlanner.newBlock(msg);
-    if(msg.speech)
-      this.BehaviourPlanner.transition({control:this.SPEAKING})
-      //this.processMsg(JSON.stringify({control:this.SPEAKING}));
-      }
-  if (!msg) {
-    console.error("An undefined block has been created by BMLPlanner.", msg);
-    return;
-  }
 
   // Update to remove aborted blocks
   if (!this.BehaviourManager)

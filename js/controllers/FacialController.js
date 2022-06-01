@@ -1,7 +1,7 @@
 //@FacialController
 
 import {Blink, FacialExpr, GazeManager, Gaze, HeadBML, GestureManager, Lipsync, AnimationManager, Text2LipInterface, T2LTABLES} from '../bml/BehaviourRealizer.js';
-import * as THREE from '../../libs/three.module.js';
+import * as THREE from 'three';
 
 function FacialController(o) {
   //define some properties
@@ -147,11 +147,11 @@ FacialController.prototype.onStart = function(morphTargets)
     this._gazePositions["HEAD"] = headNode.getWorldPosition(new THREE.Vector3());
     
   }
-  this.character.camera = this.character.getObjectByName("Camera")
-  if (this.character.camera)
-      this._gazePositions["CAMERA"] = this.character.camera.getWorldPosition(new THREE.Vector3());
-  else
-    console.error("Camera position not found for gaze.");
+  // this.character.camera = this.character.getObjectByName("Camera")
+  // if (this.character.camera)
+  //     this._gazePositions["CAMERA"] = this.character.camera.getWorldPosition(new THREE.Vector3());
+  // else
+  //   console.error("Camera position not found for gaze.");
   
   // Get lookAt nodes
   
@@ -193,11 +193,11 @@ FacialController.prototype.onStart = function(morphTargets)
 //example of one method called for ever update event
 FacialController.prototype.onUpdate = function(dt, et, callback)
 {
-  if (this.character.camera)
-  {
-      this._gazePositions["CAMERA"] = this.character.camera.getWorldPosition(new THREE.Vector3());;
-      this._gazePositions["CAMERA"].z = 100;
-  }
+  // if (this.character.camera)
+  // {
+  //     this._gazePositions["CAMERA"] = this.character.camera.getWorldPosition(new THREE.Vector3());;
+  //     this._gazePositions["CAMERA"].z = 100;
+  // }
   
   // Gaze
   if (this.gazeManager){
@@ -694,9 +694,9 @@ FacialController.prototype.head = function(headData, cmdId)
 // New head behavior
 FacialController.prototype.newHeadBML = function(headData){
   
-  var lookAt = this.character.getObjectByName(this.headNode);//this._lookAtHeadComponent;
+  var lookAt = this.character[this.headNode];//this._lookAtHeadComponent;
   if (lookAt){
-    this.headBML = new HeadBML(headData, this.character.getObjectByName(this.headNode), lookAt.quaternion.clone(), lookAt.quaternion.clone()) 
+    this.headBML = new HeadBML(headData, this.character[this.headNode], lookAt.quaternion.clone(), lookAt.quaternion.clone()) 
                                 /*lookAt.limit_vertical[0], lookAt.limit_horizontal[0]);*/
   }
 }
@@ -707,8 +707,8 @@ FacialController.prototype.headBMLUpdate = function(dt, gaze){
 
     var targetVector = null;
     if(gaze){
-      var headPos = this.character.getObjectByName(this.headNode).getWorldPosition(new THREE.Vector3());	
-      var lookAtPos = this.character.getObjectByName(this.lookAtHead).getWorldPosition(new THREE.Vector3());
+      var headPos = this.character[this.headNode].getWorldPosition(new THREE.Vector3());	
+      var lookAtPos = this.character[this.lookAtHead].getWorldPosition(new THREE.Vector3());
       targetVector = new THREE.Vector3();	
       targetVector.sub(lookAtPos, headPos);	
       targetVector.normalize();  

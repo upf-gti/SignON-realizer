@@ -1,10 +1,10 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.136';
+import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
 import { GUI } from '../libs/lil-gui.module.min.js'
-
+import { ShaderChunk } from './shaders.js'
 let firstframe = true;
 
 // Correct negative blenshapes shader of ThreeJS
@@ -25,6 +25,7 @@ class Player {
         this.camera = null;
         this.controls = null;
         this.spotLight = null;
+        this.pointLight = null;
 
         this.capturer = null;
         this.recorded = true; // set to true if you don't want to create a video (webm)
@@ -48,6 +49,10 @@ class Player {
 
         this.body = null;
         this.eyelashes = null;
+
+        this.renderTarget = null;
+        this.postScene = null;
+        this.postCamera = null;
     }
     createPanel() {
         let gui = new GUI();
@@ -266,24 +271,33 @@ class Player {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        // lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-        hemiLight.position.set( 0, 20, 0 );
-        this.scene.add( hemiLight );
+        // // lights
+        // let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+        // hemiLight.position.set( 0, 20, 0 );
+        // this.scene.add( hemiLight );
 
-        let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        spotLight.position.set( -50, 50, 50);
-        spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.00001;
-        spotLight.shadow.mapSize.width = 1024 * 8;
-        spotLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( spotLight );
-        this.spotLight = spotLight;
+        // let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
+        // spotLight.position.set( -50, 50, 50);
+        // spotLight.castShadow = true;
+        // spotLight.shadow.bias = -0.00001;
+        // spotLight.shadow.mapSize.width = 1024 * 8;
+        // spotLight.shadow.mapSize.height = 1024 * 8;
+        // this.scene.add( spotLight );
+        // this.spotLight = spotLight;
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 10, 50 );
-        dirLight.castShadow = false;
-        this.scene.add( dirLight );
+        // let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        // dirLight.position.set( 3, 10, 50 );
+        // dirLight.castShadow = false;
+        // this.scene.add( dirLight );
+
+        let pointLight = new THREE.PointLight( 0xffa95c, 1 );
+        pointLight.position.set( 0, 2.5, 5);
+        pointLight.castShadow = true;
+        pointLight.shadow.bias = -0.00001;
+        pointLight.shadow.mapSize.width = 1024 * 8;
+        pointLight.shadow.mapSize.height = 1024 * 8;
+        this.scene.add( pointLight );
+        this.pointLight = pointLight;
         
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -328,13 +342,13 @@ class Player {
         // Behaviour Planner
         this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
         this.eyesTarget.name = "eyesTarget";
-        this.eyesTarget.position.set(0, 2.5, 15); 
+        this.eyesTarget.position.set(0, 2.5, 100); 
         this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
         this.headTarget.name = "headTarget";
-        this.headTarget.position.set(0, 2.5, 15); 
+        this.headTarget.position.set(0, 2.5, 100); 
         this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
         this.neckTarget.name = "neckTarget";
-        this.neckTarget.position.set(0, 2.5, 15); 
+        this.neckTarget.position.set(0, 2.5, 100); 
 
         this.scene.add(this.eyesTarget);
         this.scene.add(this.headTarget);
@@ -363,6 +377,78 @@ class Player {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
+            
+            
+            // Create a multi render target with Float buffers
+            this.renderTarget = new THREE.WebGLMultipleRenderTargets(
+                window.innerWidth * window.devicePixelRatio,
+                window.innerHeight * window.devicePixelRatio,
+                1
+            );
+
+            for ( let i = 0, il = this.renderTarget.texture.length; i < il; i ++ ) {
+
+                this.renderTarget.texture[ i ].minFilter = THREE.NearestFilter;
+                this.renderTarget.texture[ i ].magFilter = THREE.NearestFilter;
+                this.renderTarget.texture[ i ].type = THREE.FloatType;
+
+            }
+
+            // Name our G-Buffer attachments for debugging
+
+            this.renderTarget.texture[ 0 ].name = 'outColor0';
+            // this.renderTarget.texture[ 1 ].name = 'outColor1';
+           // this.renderTarget.texture[ 2 ].name = 'outColor2';
+            
+            
+            // PostProcessing setup
+
+            this.postScene = new THREE.Scene();
+            this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+
+            this.postScene.add( new THREE.Mesh(
+                new THREE.PlaneGeometry( 2, 2 ),
+                new THREE.RawShaderMaterial( {
+                    vertexShader: ShaderChunk.vertexShaderQuad(),
+                    fragmentShader: ShaderChunk.fragmentShaderQuad(),
+                    uniforms: {
+                        t0: { value: this.renderTarget.texture[ 0 ] },
+                        // t1: { value: this.renderTarget.texture[ 1 ] },
+                        //t2: { value: this.renderTarget.texture[ 2 ] },
+                    },
+                    glslVersion: THREE.GLSL3
+                } )
+            ) );
+            let uniforms =  THREE.UniformsLib.lights;
+            
+            uniforms["u_specular"] =  {type: 'number', value: 1};
+            uniforms["u_roughness"] =  {type: 'number', value: 1};
+            uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
+            uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
+            uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
+            uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
+            uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Diffuse.png")};
+            uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Specular.png")};
+            uniforms["u_normal_texture"] =  {type: "t", texture: this.model.getObjectByName("Body").material.normalMap};
+            uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/woman_body_sss.png")};
+            uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            
+        
+
+            let material =  new THREE.RawShaderMaterial({
+                uniforms: uniforms,
+                fragmentShader: ShaderChunk.fragmentShader(),
+                vertexShader: ShaderChunk.vertexShader(),
+                lights: true,
+                glslVersion: THREE.GLSL3
+            })
+            //material.colorWrite = true;
+            material.extensions.drawBuffers = true;
+            material.extensions.derivatives = true;
+            
+            this.model.getObjectByName("Body").material = material;
+            
 
             this.skeletonHelper = new THREE.SkeletonHelper(this.model);
             this.skeletonHelper.visible = false;
@@ -454,10 +540,18 @@ class Player {
         this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
         
         let [x, y, z] = [... this.camera.position];
-        this.spotLight.position.set( x + 10, y + 10, z + 10);
-            
-        this.renderer.render( this.scene, this.camera );
+        //this.spotLight.position.set( x + 10, y + 10, z + 10);
+        
+          
+        this.renderTarget.samples = 7;
+        // render scene into target
+        this.renderer.setRenderTarget( this.renderTarget );
 
+        this.renderer.render( this.scene, this.camera );
+        
+        // render post FX
+        this.renderer.setRenderTarget( null );
+        this.renderer.render( this.postScene, this.postCamera );
         
         //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
