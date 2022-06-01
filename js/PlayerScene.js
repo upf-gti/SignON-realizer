@@ -291,7 +291,7 @@ class Player {
         // this.scene.add( dirLight );
 
         let pointLight = new THREE.PointLight( 0xffa95c, 1 );
-        pointLight.position.set( 0, 2.5, 5);
+        pointLight.position.set( 0, 2.5, 8);
         pointLight.castShadow = true;
         pointLight.shadow.bias = -0.00001;
         pointLight.shadow.mapSize.width = 1024 * 8;
@@ -407,7 +407,7 @@ class Player {
             this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 
             this.postScene.add( new THREE.Mesh(
-                new THREE.PlaneGeometry( 2, 2 ),
+                new THREE.PlaneGeometry( 2,2 ),
                 new THREE.RawShaderMaterial( {
                     vertexShader: ShaderChunk.vertexShaderQuad(),
                     fragmentShader: ShaderChunk.fragmentShaderQuad(),
@@ -421,19 +421,49 @@ class Player {
             ) );
             let uniforms =  THREE.UniformsLib.lights;
             
+            const loader = new THREE.TextureLoader();
+
+            const color_texture = loader.load( './data/Woman_Body_Diffuse.png', this.render.bind(this) );
+            color_texture.wrapS = THREE.RepeatWrapping;
+            color_texture.wrapT = THREE.RepeatWrapping;
+
+            const specular_texture = loader.load( './data/Woman_Body_Specular.png', this.render.bind(this) );
+            specular_texture.wrapT = THREE.RepeatWrapping;
+            specular_texture.wrapS = THREE.RepeatWrapping;
+
+            // const normal_texture = loader.load( 'textures/hardwood2_diffuse.jpg', render );
+            // normal_texture.wrapS = THREE.RepeatWrapping;
+            // normal_texture.wrapT = THREE.RepeatWrapping;
+
+            const sss_texture = loader.load( './data/woman_body_sss.png', this.render.bind(this) );
+            sss_texture.wrapS = THREE.RepeatWrapping;
+            sss_texture.wrapT = THREE.RepeatWrapping;
+
+            const transmitance_lut_texture = loader.load( './data/transmitance_lut.png',this.render.bind(this) );
+            transmitance_lut_texture.wrapS = THREE.RepeatWrapping;
+            transmitance_lut_texture.wrapT = THREE.RepeatWrapping;
+
+            const specular_lut_texture = loader.load( './data/beckmann_lut.png', this.render.bind(this) );
+            specular_lut_texture.wrapS = THREE.RepeatWrapping;
+            specular_lut_texture.wrapT = THREE.RepeatWrapping;
+            
             uniforms["u_specular"] =  {type: 'number', value: 1};
             uniforms["u_roughness"] =  {type: 'number', value: 1};
             uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
             uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
             uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
             uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
-            uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Diffuse.png")};
-            uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Specular.png")};
+            // uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Diffuse.png")};
+            // uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/Woman_Body_Specular.png")};
             uniforms["u_normal_texture"] =  {type: "t", texture: this.model.getObjectByName("Body").material.normalMap};
-            uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/woman_body_sss.png")};
-            uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            
+            // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/woman_body_sss.png")};
+            // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            uniforms["u_color_texture"] =  {value: color_texture};
+            uniforms["u_specular_texture"] =  {value : specular_texture};
+            uniforms["u_sss_texture"] =  {value: sss_texture};
+            uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
+            uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
         
 
             let material =  new THREE.RawShaderMaterial({
@@ -443,11 +473,11 @@ class Player {
                 lights: true,
                 glslVersion: THREE.GLSL3
             })
-            //material.colorWrite = true;
+            material.colorWrite = true;
             material.extensions.drawBuffers = true;
             material.extensions.derivatives = true;
             
-            this.model.getObjectByName("Body").material = material;
+            //this.model.getObjectByName("Body").material = material;
             
 
             this.skeletonHelper = new THREE.SkeletonHelper(this.model);
@@ -542,7 +572,12 @@ class Player {
         let [x, y, z] = [... this.camera.position];
         //this.spotLight.position.set( x + 10, y + 10, z + 10);
         
-          
+        this.render();
+        
+        
+        //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
+    }
+    render(){
         this.renderTarget.samples = 7;
         // render scene into target
         this.renderer.setRenderTarget( this.renderTarget );
@@ -552,10 +587,7 @@ class Player {
         // render post FX
         this.renderer.setRenderTarget( null );
         this.renderer.render( this.postScene, this.postCamera );
-        
-        //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
-    
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;

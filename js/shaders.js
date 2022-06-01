@@ -9,27 +9,34 @@ const ShaderChunk = {
             in vec3 normal;
             in vec2 uv;
 
+            uniform mat3 uvTransform;
+
+            
             //varyings
             out vec3 vNormal;
             out vec2 vUv;
             out vec3 vPos;
-
+            
             out vec3 vViewPosition;
-
+            
             //matrices
             uniform mat4 modelMatrix;
             uniform mat4 modelViewMatrix;
             uniform mat4 projectionMatrix;
             uniform mat3 normalMatrix;
-
+            
             // #pragma shaderblock "morphing"
             // #pragma shaderblock "skinning"
-
+            
             void applyMorphing( inout vec4 position, inout vec3 normal ) {}
             void applySkinning( inout vec4 position, inout vec3 normal) {}
-
+            
             void main() {
                 
+                
+                vUv = ( uvTransform * vec3( uv, 1 ) ).xy;
+                
+
                 vec4 newPos = vec4(position,1.0);
             
                 //deforms
@@ -37,9 +44,9 @@ const ShaderChunk = {
                  applySkinning( newPos, vNormal );
 
                 //normal
-                vUv = uv;
+                //vUv = uv;
                 
-                vec4 mvPosition = modelViewMatrix * vec4( newPos.xyz, 1.0 );
+                vec4 mvPosition = modelViewMatrix * newPos;
                 vPos = (modelMatrix * newPos).xyz;
                 //  applyLight(mvPosition);
                 
@@ -57,6 +64,7 @@ const ShaderChunk = {
             #define USE_SHADOWMAP true`,
             THREE.ShaderChunk.common,
             THREE.ShaderChunk.packing,
+            THREE.ShaderChunk.uv_pars_fragment,
             
             `layout(location = 0) out vec4 outColor0;
             // layout(location = 1) out vec4 outColor1;
@@ -223,12 +231,12 @@ const ShaderChunk = {
                 vec3 reflectance = KS_Skin_Specular(detailed_normal, L, V, u_roughness, specular) * pointLights[0].color * lit;
                 
                 //outColor [0] = vec4(ambient+diffuse+transmittance+reflectance, 1.0);
-                outColor0  = vec4(texture(u_color_texture, vUv).rgb, 1.0);
+                outColor0  =  vec4(texture(u_color_texture, vUv).rgb, 1.0);
                 // outColor1 = vec4(0.0);
                 // outColor2 = vec4(0.0);
-                #ifdef BLOCK_FIRSTPASS
-                    outColor1 = vec4(sssMask, 0.0, 0.0, 1.0);
-                #endif
+                // #ifdef BLOCK_FIRSTPASS
+                //     outColor1 = vec4(sssMask, 0.0, 0.0, 1.0);
+                // #endif
             }`
         ].join("\n").replaceAll("varying ", "in ").replaceAll("texture2D", "texture");
     },
