@@ -6,9 +6,7 @@
         </style>
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="./js/libs/CCapture.min.js"></script>
-        <script src="./js/libs/webm-writer-0.3.0.js"></script>
-        <script src="./js/download.js"></script>
+    
         <script type="importmap">
 			{
 				"imports": {
@@ -22,25 +20,7 @@
                 display: flex; justify-content: center; align-items: center; z-index: 100; color: white; font-size: larger;">
 			<p>Loading avatar, please wait</p>
 		</div>
-        <!-- The Modal -->
-        <div id="reconnecting" class="modal" style="display: none;">
-            <!-- Modal content -->
-            <div class="modal-content">
-            <span id = "reconnecting-close" class="close">&times;</span>
-            <p id = "modal-msg"></p>
-            </div>
-        </div>
-        <!-- The Server Session Modal -->
-        <div id="session" class="modal" style="display: none;">
-            <!-- Modal content -->
-            <div class="modal-content">
-                <span id ="session-close" class="close">&times;</span>
-                <p>Server session to connect with the tablet:</p>
-                <input id= "token" placeholder="Token...">
-                <button id="btn-session">Connect</button>
-            </div>
-        </div>
         <script src="./js/PlayerScene.js" type="module"></script>
-        <script src="./js/main.js" type="module"></script>
+
     </body>
 </html>
