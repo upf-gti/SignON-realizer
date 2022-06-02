@@ -137,7 +137,7 @@ class Player {
 
             // Name our G-Buffer attachments for debugging
 
-            this.renderTarget.texture[ 0 ].name = 'outColor0';
+            this.renderTarget.texture[ 0 ].name = 'pc_fragColor';
             // this.renderTarget.texture[ 1 ].name = 'outColor1';
            // this.renderTarget.texture[ 2 ].name = 'outColor2';
             
@@ -188,6 +188,24 @@ class Player {
             specular_lut_texture.wrapS = THREE.RepeatWrapping;
             specular_lut_texture.wrapT = THREE.RepeatWrapping;
             
+            // uniforms["u_specular"] =  {type: 'number', value: 1};
+            // uniforms["u_roughness"] =  {type: 'number', value: 1};
+            // uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
+            // uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
+            // uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
+            // uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
+            // // uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Diffuse.png")};
+            // // uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
+            // uniforms["u_normal_texture"] =  {type: "t", texture: this.model.getObjectByName("Body").material.normalMap};
+            // // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/woman_body_sss.png")};
+            // // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            // // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
+            // uniforms["u_color_texture"] =  {value: color_texture};
+            // uniforms["u_specular_texture"] =  {value : specular_texture};
+            // uniforms["u_sss_texture"] =  {value: sss_texture};
+            // uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
+            // uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
+        
             uniforms["u_specular"] =  {type: 'number', value: 1};
             uniforms["u_roughness"] =  {type: 'number', value: 1};
             uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
@@ -196,21 +214,20 @@ class Player {
             uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
             // uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Diffuse.png")};
             // uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
-            uniforms["u_normal_texture"] =  {type: "t", texture: this.model.getObjectByName("Body").material.normalMap};
+            uniforms["normalMap"] =  {type: "t", value: this.model.getObjectByName("Body").material.normalMap};
             // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/woman_body_sss.png")};
             // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
             // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            uniforms["u_color_texture"] =  {value: color_texture};
-            uniforms["u_specular_texture"] =  {value : specular_texture};
+            uniforms["map"] =  { type: 't', value: this.model.getObjectByName("Body").material.map};
+            uniforms["specularMap"] =  {value : specular_texture};
             uniforms["u_sss_texture"] =  {value: sss_texture};
             uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
             uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
-        
 
-            let material =  new THREE.RawShaderMaterial({
+            let material =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
-                fragmentShader: ShaderChunk.fragmentShader(),
-                vertexShader: ShaderChunk.vertexShader(),
+                fragmentShader: ShaderChunk.getFragmentShader(),
+                vertexShader: ShaderChunk.getVertexShader(),
                 lights: true,
                 glslVersion: THREE.GLSL3
             })
@@ -238,13 +255,14 @@ class Player {
 
         let [x, y, z] = [... this.camera.position];
         //this.spotLight.position.set( x + 10, y + 10, z + 10);
+        this.pointLight.position.set( x, y, z);
         this.controls.update();
         this.render();
         
         
     }
     render(){
-        this.renderTarget.samples = 7;
+        this.renderTarget.samples = 4;
         // render scene into target
         this.renderer.setRenderTarget( this.renderTarget );
 
