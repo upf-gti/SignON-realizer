@@ -3,6 +3,7 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 
 import { ShaderChunk } from './shaders.js'
+import { SSS_ShaderChunk } from './sss_shaders.js'
 
 
 // Correct negative blenshapes shader of ThreeJS
@@ -124,7 +125,7 @@ class Player {
             this.renderTarget = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
                 window.innerHeight * window.devicePixelRatio,
-                1
+                3
             );
 
             for ( let i = 0, il = this.renderTarget.texture.length; i < il; i ++ ) {
@@ -137,9 +138,9 @@ class Player {
 
             // Name our G-Buffer attachments for debugging
 
-            this.renderTarget.texture[ 0 ].name = 'pc_fragColor';
-            // this.renderTarget.texture[ 1 ].name = 'outColor1';
-           // this.renderTarget.texture[ 2 ].name = 'outColor2';
+            this.renderTarget.texture[ 0 ].name = 'pc_fragColor0';
+            this.renderTarget.texture[ 1 ].name = 'pc_fragColor1';
+            this.renderTarget.texture[ 2 ].name = 'pc_fragColor2';
             
             
             // PostProcessing setup
@@ -154,12 +155,13 @@ class Player {
                     fragmentShader: ShaderChunk.fragmentShaderQuad(),
                     uniforms: {
                         t0: { value: this.renderTarget.texture[ 0 ] },
-                        // t1: { value: this.renderTarget.texture[ 1 ] },
-                        //t2: { value: this.renderTarget.texture[ 2 ] },
+                        t1: { value: this.renderTarget.texture[ 1 ] },
+                        t2: { value: this.renderTarget.texture[ 2 ] },
                     },
                     glslVersion: THREE.GLSL3
                 } )
             ) );
+            this.postScene.alpha = 0.5;
             let uniforms =  THREE.UniformsLib.lights;
             
             const loader = new THREE.TextureLoader();
@@ -188,45 +190,44 @@ class Player {
             specular_lut_texture.wrapS = THREE.RepeatWrapping;
             specular_lut_texture.wrapT = THREE.RepeatWrapping;
             
-            // uniforms["u_specular"] =  {type: 'number', value: 1};
-            // uniforms["u_roughness"] =  {type: 'number', value: 1};
-            // uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
-            // uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
-            // uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
-            // uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
-            // // uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Diffuse.png")};
-            // // uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
-            // uniforms["u_normal_texture"] =  {type: "t", texture: this.model.getObjectByName("Body").material.normalMap};
-            // // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/woman_body_sss.png")};
-            // // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            // // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            // uniforms["u_color_texture"] =  {value: color_texture};
-            // uniforms["u_specular_texture"] =  {value : specular_texture};
-            // uniforms["u_sss_texture"] =  {value: sss_texture};
-            // uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
-            // uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
-        
-            uniforms["u_specular"] =  {type: 'number', value: 1};
-            uniforms["u_roughness"] =  {type: 'number', value: 1};
+            
+            let mat = this.model.getObjectByName("Body").material.clone();
+
+            // uniform vec3 diffuse;
+            // uniform vec3 emissive;
+            // uniform float roughness;
+            // uniform float metalness;
+            // uniform float opacity;
+            uniforms["ambientLightColor"] =  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)}
+            uniforms["diffuse"] = { type: 'vec3', value: mat.color};
+            uniforms["emissive"] = { type: 'number', value: mat.emissive};
+            uniforms["roughness"] =  {type: 'number', value: mat.roughness};
+            uniforms["metalness"] = { type: 'number', value: 0};
+            uniforms["opacity"] = { type: 'number', value: mat.opacity};
+            uniforms["specularIntensity"] =  {type: 'number', value: 1};
             uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
             uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
             uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
             uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
-            // uniforms["u_color_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Diffuse.png")};
-            // uniforms["u_specular_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
-            uniforms["normalMap"] =  {type: "t", value: this.model.getObjectByName("Body").material.normalMap};
+            uniforms["specularColor"] =  {type: "vec3", value: new THREE.Vector3(1.0,1.0,1.0)}
+            uniforms["specularMap"] =  {type: "t", value: mat.roughnessMap};
+            uniforms["roughnessMap"] =  {type: "t", value: mat.roughnessMap};
+            uniforms["metalnessMap"] =  {type: "t", value: mat.metalnessMap};
+            uniforms["specularColorMap"] =  {type: "t", value: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
+            uniforms["normalMap"] =  {type: "t", value: mat.normalMap};
             // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/woman_body_sss.png")};
             // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
             // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            uniforms["map"] =  { type: 't', value: this.model.getObjectByName("Body").material.map};
-            uniforms["specularMap"] =  {value : specular_texture};
+            uniforms["map"] =  { type: 't', value: mat.map};
+            uniforms["uvTransform"] = {type: "matrix4", value: mat.map.matrix};
+            uniforms["u_enable_translucency"] = {value:true};
             uniforms["u_sss_texture"] =  {value: sss_texture};
             uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
             uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
-
+            uniforms["u_noise_texture"] = {type: "t", value: new THREE.TextureLoader("./data/textures/blue_noise_256x.png")}
             let material =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
-                fragmentShader: ShaderChunk.getFragmentShader(),
+                fragmentShader: SSS_ShaderChunk.deferredFS(),
                 vertexShader: ShaderChunk.getVertexShader(),
                 lights: true,
                 glslVersion: THREE.GLSL3
@@ -262,15 +263,17 @@ class Player {
         
     }
     render(){
-        this.renderTarget.samples = 4;
+        //this.renderTarget.samples = 4;
         // render scene into target
+        
         this.renderer.setRenderTarget( this.renderTarget );
 
         this.renderer.render( this.scene, this.camera );
-        
+        this.renderTarget.alpha = true
         // render post FX
         this.renderer.setRenderTarget( null );
         this.renderer.render( this.postScene, this.postCamera );
+
     }
     onWindowResize() {
 

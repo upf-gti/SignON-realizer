@@ -5,33 +5,85 @@ const ShaderChunk = {
     vertexShader() {
         return `
             precision mediump float;
-            in vec3 position;
-            in vec3 normal;
-            in vec2 uv;
+            precision mediump sampler2DArray;
+            #define attribute in
+            #define varying out
+            #define texture2D texture
+            precision highp float;
+            precision highp int;
+            #define HIGH_PRECISION
+            #define SHADER_NAME MeshStandardMaterial
+            #define STANDARD 
+            #define VERTEX_TEXTURES
+            #define MAX_BONES 1024
+            #define USE_FOG
+            #define USE_MAP
+            #define USE_NORMALMAP
+            #define TANGENTSPACE_NORMALMAP
+            #define USE_ROUGHNESSMAP
+            #define USE_METALNESSMAP
+            #define USE_UV
+            #define USE_SKINNING
+            #define BONE_TEXTURE
+            #define USE_MORPHTARGETS
+            #define USE_MORPHNORMALS
+            #define MORPHTARGETS_TEXTURE
+            #define MORPHTARGETS_COUNT 50
+            #define USE_SHADOWMAP
+            #define SHADOWMAP_TYPE_PCF
 
-            uniform mat3 uvTransform;
-
-            
-            //varyings
-            out vec3 vNormal;
-            out vec2 vUv;
-            out vec3 vPos;
-            
-            out vec3 vViewPosition;
-            
-            //matrices
             uniform mat4 modelMatrix;
             uniform mat4 modelViewMatrix;
             uniform mat4 projectionMatrix;
+            uniform mat4 viewMatrix;
             uniform mat3 normalMatrix;
+            uniform vec3 cameraPosition;
+            uniform bool isOrthographic;
+
+            attribute vec3 position;
+            attribute vec3 normal;
+            attribute vec2 uv;
+
+            #if ( defined( USE_MORPHTARGETS ) && ! defined( MORPHTARGETS_TEXTURE ) )
+                attribute vec3 morphTarget0;
+                attribute vec3 morphTarget1;
+                attribute vec3 morphTarget2;
+                attribute vec3 morphTarget3;
+                #ifdef USE_MORPHNORMALS
+                    attribute vec3 morphNormal0;
+                    attribute vec3 morphNormal1;
+                    attribute vec3 morphNormal2;
+                    attribute vec3 morphNormal3;
+                #else
+                    attribute vec3 morphTarget4;
+                    attribute vec3 morphTarget5;
+                    attribute vec3 morphTarget6;
+                    attribute vec3 morphTarget7;
+                #endif
+            #endif
+            #ifdef USE_SKINNING
+                attribute vec4 skinIndex;
+                attribute vec4 skinWeight;
+            #endif
+         
+            #define STANDARD
+            varying vec3 vViewPosition;
+
+            uniform mat3 uvTransform;`,
+            THREE.ShaderChunk.common,
+            THREE.ShaderChunk.uv_pars_vertex,
+            THREE.ShaderChunk.uv2_pars_vertex,
+            THREE.ShaderChunk.displacementmap_pars_vertex,
+            THREE.ShaderChunk.color_pars_vertex,
+            THREE.ShaderChunk.fog_pars_vertex,
+            THREE.ShaderChunk.normal_pars_vertex,
+            THREE.ShaderChunk.morphtarget_pars_vertex,
+            THREE.ShaderChunk.skinning_pars_vertex,
+            THREE.ShaderChunk.shadowmap_pars_vertex,
+            THREE.ShaderChunk.logdepthbuf_pars_vertex,
+            THREE.ShaderChunk.clipping_planes_pars_vertex,
             
-            // #pragma shaderblock "morphing"
-            // #pragma shaderblock "skinning"
-            
-            void applyMorphing( inout vec4 position, inout vec3 normal ) {}
-            void applySkinning( inout vec4 position, inout vec3 normal) {}
-            
-            void main() {
+            `void main() {
                 
                 
                 vUv = ( uvTransform * vec3( uv, 1 ) ).xy;
@@ -61,24 +113,48 @@ const ShaderChunk = {
     fragmentShader(){
         return [ 
             `precision mediump float;
-            #define USE_SHADOWMAP true`,
+            #define varying in
+            layout(location = 0) out highp vec4 pc_fragColor;
+            #define gl_FragColor pc_fragColor
+            #define gl_FragDepthEXT gl_FragDepth
+            #define texture2D texture
+            #define textureCube texture
+            #define texture2DProj textureProj
+            #define texture2DLodEXT textureLod
+            #define texture2DProjLodEXT textureProjLod
+            #define textureCubeLodEXT textureLod
+            #define texture2DGradEXT textureGrad
+            #define texture2DProjGradEXT textureProjGrad
+            #define textureCubeGradEXT textureGrad
+            precision highp float;
+            precision highp int;
+            #define HIGH_PRECISION
+            #define STANDARD 
+            #define USE_FOG
+            #define USE_MAP
+            #define USE_NORMALMAP
+            #define TANGENTSPACE_NORMALMAP
+            #define USE_ROUGHNESSMAP
+            #define USE_METALNESSMAP
+            #define USE_UV
+            #define USE_SHADOWMAP
+            #define SHADOWMAP_TYPE_PCF
+            #define BLOCK_FIRSTPASS
+
+           `,
             THREE.ShaderChunk.common,
             THREE.ShaderChunk.packing,
             THREE.ShaderChunk.uv_pars_fragment,
             
-            `layout(location = 0) out vec4 outColor0;
+            `//layout(location = 0) out vec4 gl_FragColor;
             // layout(location = 1) out vec4 outColor1;
             // layout(location = 2) out vec4 outColor2;
             
             //varyings
-            in vec3 vPos;
-            in vec3 vNormal;
-            in vec2 vUv;
-            in vec3 vViewPosition;
             
-            uniform vec3 cameraPosition;
-            uniform mat4 viewMatrix;
-            uniform bool isOrthographic;
+            in vec3 vNormal;
+            in vec3 vViewPosition;
+        
             //lights`,
             
             THREE.ShaderChunk.lights_pars_begin,
@@ -87,15 +163,20 @@ const ShaderChunk = {
             
             `uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
             
-            uniform float u_specular;
-            uniform float u_roughness;
+            uniform vec3 diffuse;
+            uniform vec3 emissive;
+            uniform float roughness;
+            uniform float metalness;
+            uniform float opacity;
+            uniform float specularIntensity;
             uniform float u_normalmap_factor;
             uniform float u_shadow_shrinking;
             uniform bool  u_enable_translucency;
             uniform float u_translucency_scale;
             
             //textures
-            uniform sampler2D u_color_texture;
+            uniform sampler2D map;
+            uniform sampler2D specularMap;
             uniform sampler2D u_specular_texture;
             uniform sampler2D u_normal_texture;
             uniform sampler2D u_opacity_texture;
@@ -104,7 +185,7 @@ const ShaderChunk = {
             uniform sampler2D u_transmitance_lut_texture;
             uniform sampler2D u_specular_lut_texture;
         
-            
+            vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
             // #pragma shaderblock "firstPass"`,
             this.perturbNormal(),         
             
@@ -130,10 +211,10 @@ const ShaderChunk = {
                 offset_uv.y = expFunc(offset_uv.y);
                 topleft_uv = floor(topleft_uv) * inv_tex_size;
                 
-                float topleft = texture(light_shadowmap, topleft_uv).x;
-                float topright = texture(light_shadowmap, topleft_uv+vec2(inv_tex_size, 0.0)).x;
-                float bottomleft = texture(light_shadowmap, topleft_uv+vec2(0.0, inv_tex_size)).x;
-                float bottomright = texture(light_shadowmap, topleft_uv+vec2(inv_tex_size, inv_tex_size)).x;
+                float topleft = texture2D(light_shadowmap, topleft_uv).x;
+                float topright = texture2D(light_shadowmap, topleft_uv+vec2(inv_tex_size, 0.0)).x;
+                float bottomleft = texture2D(light_shadowmap, topleft_uv+vec2(0.0, inv_tex_size)).x;
+                float bottomright = texture2D(light_shadowmap, topleft_uv+vec2(inv_tex_size, inv_tex_size)).x;
                 
                 float top = mix(topleft, topright, offset_uv.x);
                 float bottom = mix(bottomleft, bottomright, offset_uv.x);
@@ -143,7 +224,7 @@ const ShaderChunk = {
             }
             
             vec3 T(float s){
-                return texture(u_transmitance_lut_texture, vec2(s, 0.0)).rgb;
+                return texture2D(u_transmitance_lut_texture, vec2(s, 0.0)).rgb;
                 //Is following equation in range [0,4]:
                 //  return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
                 //  vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
@@ -166,22 +247,42 @@ const ShaderChunk = {
                     vec3 h = L + V;
                     vec3 H = normalize(h);
                     float ndoth = dot(N, H);
-                    float PH = pow(2.0*texture(u_specular_lut_texture, vec2(ndoth, m)).x, 10.0);
+                    float PH = pow(2.0*texture2D(u_specular_lut_texture, vec2(ndoth, m)).x, 10.0);
                     float F = fresnelReflactance(H, V, 0.028);
                     float frSpec = max(PH * F / dot(h, h), 0.0);
                     result = ndotl * roh_s * frSpec;
                 }
                 return result;
             }
-            
+            vec3 perturbNormal2Arb( vec3 eye_pos, vec3 surf_norm, vec3 mapN, float faceDirection ) {
+                vec3 q0 = vec3( dFdx( eye_pos.x ), dFdx( eye_pos.y ), dFdx( eye_pos.z ) );
+                vec3 q1 = vec3( dFdy( eye_pos.x ), dFdy( eye_pos.y ), dFdy( eye_pos.z ) );
+                vec2 st0 = dFdx( vUv.st );
+                vec2 st1 = dFdy( vUv.st );
+                vec3 N = surf_norm;
+                vec3 q1perp = cross( q1, N );
+                vec3 q0perp = cross( N, q0 );
+                vec3 T = q1perp * st0.x + q0perp * st1.x;
+                vec3 B = q1perp * st0.y + q0perp * st1.y;
+                float det = max( dot( T, T ), dot( B, B ) );
+                float scale = ( det == 0.0 ) ? 0.0 : faceDirection * inversesqrt( det );
+                return normalize( T * ( mapN.x * scale ) + B * ( mapN.y * scale ) + N * mapN.z );
+              }
+            uniform sampler2D normalMap;
+            uniform vec2 normalScale;
+
             void main() {
+                vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
+                mapN.xy *= normalScale;
                 vec3 normal = vNormal;`,
                 
                 THREE.ShaderChunk.lights_fragment_begin,
                 THREE.ShaderChunk.lights_fragment_end,
                 `vec3 N = normalize(vNormal);
-                vec3 V = normalize(cameraPosition - vPos);
-                vec3 detailed_normal = perturbNormal(N, V, vUv, texture(u_normal_texture, vUv).xyz);
+                vec3 V = normalize(cameraPosition - vViewPosition);
+                float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
+                vec3 detailed_normal  = perturbNormal2Arb( - vViewPosition, N, mapN, faceDirection );
+                //vec3 detailed_normal = perturbNormal(N, V, vUv, texture2D(u_normal_texture, vUv).xyz);
                 detailed_normal = mix(N, detailed_normal, u_normalmap_factor);
                 //u_normalmap_factor
                 
@@ -194,11 +295,11 @@ const ShaderChunk = {
                 float NdotL = max(0.0, dot(detailed_normal,L));
                 NdotL *= attenuation;
                 
-                vec3 albedo =  linearizeColor(texture(u_color_texture, vUv).rgb);
-                float specular = u_specular * texture(u_specular_texture, vUv).x;
+                vec3 albedo =  mapTexelToLinear(texture2D(map, vUv)).rgb;
+                float specular = specularIntensity * texture2D(specularMap, vUv).x;
                 
                 float depth = gl_FragCoord.z;
-                float sssMask = texture(u_sss_texture, vUv).x;
+                float sssMask = texture2D(u_sss_texture, vUv).x;
                 
                 // Shadowmap
                 #if NUM_POINT_LIGHT_SHADOWS > 0
@@ -207,7 +308,7 @@ const ShaderChunk = {
                 float near = pointLightShadows[0].shadowCameraNear;
                 float far = pointLightShadows[0].shadowCameraFar;
                 #endif
-                vec4 lspace_pos = pointShadowMatrix[0] * vec4(vPos - u_shadow_shrinking * N, 1.0); //Shrinking explained by Jimenez et al
+                vec4 lspace_pos = pointShadowMatrix[0] * vec4(vViewPosition - u_shadow_shrinking * N, 1.0); //Shrinking explained by Jimenez et al
                 lspace_pos = 0.5*(lspace_pos+vec4(1.0));
                 float sample_depth = lightDepth(pointShadowMap[0], lspace_pos.xy, inv_tex_size, bias, near, far);
                 float real_depth = lspace_pos.z;
@@ -228,17 +329,17 @@ const ShaderChunk = {
                         transmittance = T(s) * pointLights[0].color * albedo * E * attenuation;
                 vec3 diffuse = albedo * pointLights[0].color * NdotL * lit;
                 
-                vec3 reflectance = KS_Skin_Specular(detailed_normal, L, V, u_roughness, specular) * pointLights[0].color * lit;
+                vec3 reflectance = KS_Skin_Specular(detailed_normal, L, V, roughness, specular) * pointLights[0].color * lit;
                 
                 //outColor [0] = vec4(ambient+diffuse+transmittance+reflectance, 1.0);
-                outColor0  =  vec4(texture(u_color_texture, vUv).rgb, 1.0);
+                gl_FragColor  =  vec4(ambient+diffuse+transmittance+reflectance, sssMask);
                 // outColor1 = vec4(0.0);
                 // outColor2 = vec4(0.0);
                 // #ifdef BLOCK_FIRSTPASS
-                //     outColor1 = vec4(sssMask, 0.0, 0.0, 1.0);
+                     //gl_FragColor = vec4(sssMask, 0.0, 0.0, 1.0);
                 // #endif
             }`
-        ].join("\n ").replaceAll("varying ", "in ").replaceAll("texture2D", "texture");
+        ].join("\n ").replaceAll("varying ", "in ");
     },
     perturbNormal(){
         return `mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)	
@@ -1295,7 +1396,8 @@ const ShaderChunk = {
         vec3 unpackRGBToNormal( const in vec3 rgb ) {
                 return 2.0 * rgb.xyz - 1.0;
         }
-        const float PackUpscale = 256. / 255.;const float UnpackDownscale = 255. / 256.;
+        const float PackUpscale = 256. / 255.;
+        const float UnpackDownscale = 255. / 256.;
         const vec3 PackFactors = vec3( 256. * 256. * 256., 256. * 256., 256. );
         const vec4 UnpackFactors = UnpackDownscale / vec4( PackFactors, 1. );
         const float ShiftRight8 = 1. / 256.;
@@ -2472,16 +2574,21 @@ const ShaderChunk = {
                         #ifdef DITHERING
                             gl_FragColor.rgb = dithering( gl_FragColor.rgb );
                         #endif
-                        vec3 lpos = pointLights[ 0 ].position;
-                        vec3 wpos = -vViewPosition;
-                        vec3 dir1 = normalize( wpos - lpos );
-                        vec3 dir2 = normalize( wpos - cameraPosition );
-                        float ttt = dot( dir1, dir2 );
-                        texelColor = texture2D( map, vUv );
-                        texelColor = mapTexelToLinear( texelColor );
-                        diffuseColor = texelColor;
-                        gl_FragColor.rgb = diffuseColor.rgb;
-                        gl_FragColor.a = 1.0;
+                        reflectedLight.directSpecular = irradiance * BRDF_GGX( directLight.direction, geometry.viewDir, geometry.normal, material.specularColor, material.specularF90, material.roughness );
+                        
+                        float alpha = pow2( roughness );
+                        vec3 halfDir = normalize( directLight.direction + geometry.viewDir );
+                        float dotNL = saturate( dot( normal, directLight.direction ) );
+                        float dotNV = saturate( dot( normal, geometry.viewDir ) );
+                        float dotNH = saturate( dot( normal, halfDir ) );
+                        float dotVH = saturate( dot( geometry.viewDir, halfDir ) );
+                        vec3 F = F_Schlick( material.specularColor, material.specularF90, dotVH );
+                        float V = V_GGX_SmithCorrelated( alpha, dotNL, dotNV );
+                        float D = D_GGX( alpha, dotNH );
+                        float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );
+                        F = material.specularColor * ( 1.0 - fresnel ) + ( material.specularF90 * fresnel );
+
+                         gl_FragColor.rgb =   ambientLightColor;
                     }`
     }
 
