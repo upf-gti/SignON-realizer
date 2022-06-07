@@ -744,12 +744,16 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 					if(merged) break;
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i + 1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime) {
-						if (!merged) {
-							tmp = stack.splice(i, stack.length);
-							stack.push(bml);
-							stack = stack.concat(tmp);
-							merged = true;
-						}
+						if (!merged){
+                            tmp = stack.splice(i, stack.length);
+                            stack.push(bml);
+                            for(var j = 0; j < tmp.length; j++)
+                            {
+                                stack.push(tmp[j]);
+                            }
+                            //stack = stack.concat(tmp);
+                            merged = true;
+                        }
 					}
 					// If it doesn't fit remove if overwrite
 					else if (overwrite) {

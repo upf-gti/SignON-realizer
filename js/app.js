@@ -27,7 +27,7 @@ class App {
         this.spotLight = null;
 
         this.capturer = null;
-        this.recorded = true; // set to true if you don't want to create a video (webm)
+        this.recorded = false; // set to true if you don't want to create a video (webm)
         this.recording = false;
 
         this.mixer = null;
@@ -341,7 +341,7 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Communicate via App.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -394,7 +394,7 @@ class App {
             this.mixer = new THREE.AnimationMixer( this.model );
 
             glb.animations.forEach(( clip ) => {
-                if (clip.name == "LSE - Communicate via App") {
+                if (clip.name == "BSL - Communicate via App") {
                     this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
                 }
             });
@@ -427,8 +427,8 @@ class App {
             this.clock.start();
             return;
         } else if (firstframe) {
-            //this.capturer.start();
-            //this.recording = true;
+            this.capturer.start();
+            this.recording = true;
             this.clock.stop();
             this.clock.start();
             firstframe = false;
@@ -498,12 +498,97 @@ class App {
             let msg = {
                 type: "behaviours",
                 data: [
+                    {
+                        type: "faceLexeme",
+                        start: 0.1,
+                        attackPeak: 0.3,
+                        relax: 4.1,
+                        end: 4.4,
+                        amount: 0.6,
+                        lexeme: 'RAISE_BROWS'
+                    },
+                    {
+                        type: "speech",
+                        start: 0.1,
+                        end: 0.4 ,
+                        textToLipInfo: { text: "mit", speed: 5 }
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 0.5,
+                        end: 1.0,
+                        amount: 0.4,
+                        lexeme: 'LIP_PUCKERER'
+                    },
+                    {
+                        type: "speech",
+                        start: 0.5,
+                        end: 1.0,
+                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                    },
+                    {
+                        type: "speech",
+                        start: 1.0,
+                        end: 2.0,
+                        textToLipInfo: { text: "aaaa", speed: 5 }
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 2.0,
+                        end: 2.6,
+                        amount: 0.4,
+                        lexeme: 'LIP_PUCKERER'
+                    },
+                    {
+                        type: "speech",
+                        start: 2.0,
+                        end: 2.6,
+                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                    },
+                    {
+                        type: "faceLexeme",
+                        start: 2.6,
+                        end: 3.0,
+                        amount: 0.4,
+                        lexeme: 'LIP_PUCKERER'
+                    },
+                    {
+                        type: "speech",
+                        start: 3.0,
+                        end: 3.4,
+                        textToLipInfo: { text: "aaaa", speed: 5 }
+                    },
+                    {
+                        type: "speech",
+                        start: 3.4,
+                        end: 4.4,
+                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                    },
                     // {
                     //     type: "faceLexeme",
-                    //     start: 1.2,
-                    //     end: 1.6,
-                    //     amount: 0.8,
+                    //     start: 2.6,
+                    //     end: 3.5,
+                    //     amount: 0.4,
                     //     lexeme: 'RAISE_BROWS'
+                    // },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 1.9,
+                    //     end: 2.6,
+                    //     amount: 0.3,
+                    //     lexeme: 'LIP_CORNER_DEPRESSOR'
+                    // },
+                    // {
+                    //     type: "speech",
+                    //     start: 3.0,
+                    //     end: 4.0,
+                    //     textToLipInfo: { text: "comocat", speed: 5 }
+                    // },
+                    // {
+                    //     type: "speech",
+                    //     start: 4.0,
+                    //     end: 5.2,
+                    //     textToLipInfo: { text: "mmmmmm", speed: 5 }
                     // },
                     // {
                     //     type: "faceLexeme",
@@ -547,22 +632,22 @@ class App {
                     //     end: 4.5,
                     //     textToLipInfo: { text: "combo", speed: 5 }
                     // },
-                    {
-                        type: "faceLexeme",
-                        start: 0,
-                        attackPeak: 1,
-                        relax: 2,
-                        end: 4,
-                        amount: 2,
-                        lexeme: 'LIP_PRESSOR'
-                    },
+                    // {
+                    //     type: "faceLexeme",
+                    //     start: 7,
+                    //     attackPeak: 8,
+                    //     relax: 9,
+                    //     end: 10,
+                    //     amount: 2,
+                    //     lexeme: 'LIP_PRESSOR'
+                    // },
                     // {
                     //     type: "faceLexeme",
                     //     start: 1,
                     //     end: 3,
                     //     amount: 0.2,
                     //     lexeme: 'EYES_CLOSED'
-                    // },
+                    // }
                     // {
                     //     type: "faceLexeme",
                     //     start: 1,

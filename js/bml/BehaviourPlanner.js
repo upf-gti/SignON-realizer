@@ -417,20 +417,20 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function (dt) {
   var block = null;
 
   // Blink
-  this.blinkCountdown += dt;
-  if (this.blinkCountdown > this.blinkIdle) {
-    block = {
-      blink:
-      {
-        start: 0,
-        end: this.blinkDur
-      }
-    };
+  // this.blinkCountdown += dt;
+  // if (this.blinkCountdown > this.blinkIdle) {
+  //   block = {
+  //     blink:
+  //     {
+  //       start: 0,
+  //       end: this.blinkDur
+  //     }
+  //   };
 
-    this.blinkCountdown = this.blinkDur;
-    this.blinkIdle = this.blinkDur + 0.5 + Math.random() * 10;
-    this.blinkDur = Math.random() * 0.5 + 0.10;
-  }
+  //   this.blinkCountdown = this.blinkDur;
+  //   this.blinkIdle = this.blinkDur + 0.5 + Math.random() * 10;
+  //   this.blinkDur = Math.random() * 0.5 + 0.10;
+  // }
 
   // Saccade
   this.saccCountdown += dt;
