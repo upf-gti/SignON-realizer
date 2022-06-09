@@ -68,16 +68,16 @@ class Player {
         this.dirLight.position.set( 3, 10, 50 );
         this.dirLight.castShadow = false;
         //this.scene.add( this.dirLight );
-        this.postScene.add( this.dirLight );
+        //this.postScene.add( this.dirLight );
 
-        // let pointLight = new THREE.PointLight( 0xffa95c, 1 );
-        // pointLight.position.set( 0, 2.5, 8);
-        // pointLight.castShadow = true;
-        // pointLight.shadow.bias = -0.00001;
-        // pointLight.shadow.mapSize.width = 1024 * 8;
-        // pointLight.shadow.mapSize.height = 1024 * 8;
-        // this.scene.add( pointLight );
-        // this.pointLight = pointLight;
+        let pointLight = new THREE.PointLight( 0xffa95c, 1 );
+        pointLight.position.set( 0, 2.5, 8);
+        pointLight.castShadow = true;
+        pointLight.shadow.bias = -0.00001;
+        pointLight.shadow.mapSize.width = 1024 * 8;
+        pointLight.shadow.mapSize.height = 1024 * 8;
+        this.postScene.add( pointLight );
+        this.pointLight = pointLight;
         
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -133,7 +133,7 @@ class Player {
             this.renderTarget = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
                 window.innerHeight * window.devicePixelRatio,
-                3
+                4
             );
 
             for ( let i = 0, il = this.renderTarget.texture.length; i < il; i ++ ) {
@@ -149,7 +149,7 @@ class Player {
             this.renderTarget.texture[ 0 ].name = 'pc_fragColor0';
             this.renderTarget.texture[ 1 ].name = 'pc_fragColor1';
             this.renderTarget.texture[ 2 ].name = 'pc_fragColor2';
-            //this.renderTarget.texture[ 3 ].name = 'pc_fragColor3';
+            this.renderTarget.texture[ 3 ].name = 'pc_fragColor3';
             
             this.renderTarget.depthTexture = new THREE.DepthTexture();
             
@@ -185,38 +185,15 @@ class Player {
             
             let mat = this.model.getObjectByName("Body").material.clone();
 
-            // uniform vec3 diffuse;
-            // uniform vec3 emissive;
-            // uniform float roughness;
-            // uniform float metalness;
-            // uniform float opacity;
-            uniforms["ambientLightColor"] =  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)}
-            uniforms["diffuse"] = { type: 'vec3', value: mat.color};
-            uniforms["emissive"] = { type: 'number', value: mat.emissive};
-            uniforms["roughness"] =  {type: 'number', value: mat.roughness};
-            uniforms["metalness"] = { type: 'number', value: 0};
-            uniforms["opacity"] = { type: 'number', value: mat.opacity};
-            uniforms["specularIntensity"] =  {type: 'number', value: 1};
-            uniforms["u_normalmap_factor"] =  {type: 'number', value: 1};
-            uniforms["u_shadow_shrinking"] =  {type: 'number', value: 0.05};
-            uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
-            uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
-            uniforms["specularColor"] =  {type: "vec3", value: new THREE.Vector3(1.0,1.0,1.0)}
-            uniforms["specular_texture"] =  {type: "t", value: specular_texture};
-            uniforms["roughnessMap"] =  {type: "t", value: mat.roughnessMap};
-            uniforms["metalnessMap"] =  {type: "t", value: mat.metalnessMap};
-            uniforms["specularColorMap"] =  {type: "t", value: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
+
             uniforms["normalMap"] =  {type: "t", value: mat.normalMap};
-            // uniforms["u_sss_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/woman_body_sss.png")};
-            // uniforms["u_transmitance_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/transmitance_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
-            // uniforms["u_specular_lut_texture"] =  {type: "t", texture: new THREE.TextureLoader("./data/textures/beckmann_lut.png"), wrap: THREE.CLAMP_TO_EDGE};
             uniforms["map"] =  { type: 't', value: mat.map};
             uniforms["uvTransform"] = {type: "matrix4", value: mat.map.matrix};
             uniforms["u_enable_translucency"] = {value:true};
             uniforms["u_sss_texture"] =  {value: sss_texture};
             uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
             uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
-            uniforms["u_noise_texture"] = {type: "t", value: new THREE.TextureLoader("./data/textures/blue_noise_256x.png")}
+            
             let material =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
@@ -233,33 +210,51 @@ class Player {
             this.scene.add(this.model);
             
             let quadUniforms = THREE.UniformsUtils.merge([
-                THREE.UniformsLib.common,
-                THREE.UniformsLib.specularmap,
-               
-                THREE.UniformsLib.aomap,
-                THREE.UniformsLib.lightmap,
-                THREE.UniformsLib.emissivemap,
-                
-                THREE.UniformsLib.normalmap,
-                THREE.UniformsLib.displacementmap,
-                THREE.UniformsLib.lights,
+  
+                //THREE.UniformsLib.lights,
                 {
                     geometry_texture: { value: this.renderTarget.texture[ 0 ] },
                     map: { type: "t", value: this.renderTarget.texture[ 1 ] },
                     normalMap: { value: this.renderTarget.texture[ 2 ] },
-                    //detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
+                    detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
                     depth_texture: { value: this.renderTarget.depthTexture },
                     u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
                     u_shadowShrinking: { type: "number", value: 0.1 },
                     u_translucencyScale: { type: "number", value: 1100 },
-
                     ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
                 }
             ]);
             let quadMaterial = new THREE.ShaderMaterial( {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
                 fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
-                uniforms: quadUniforms,
+                uniforms: {
+                    lightProbe: { value : [] },
+                    directionalLights: { value : []} ,
+                    directionalLightShadows : { value : []} ,
+                    spotLights : { value : []} ,
+                    spotLightShadows: { value : [] },
+                    rectAreaLights: { value : [] },
+                    ltc_1: { value : [] },
+                    ltc_2: { value : [] },
+                    pointLights: { value : [] },
+                    pointLightShadows: { value : [] },
+                    hemisphereLights: { value : [] },
+                    directionalShadowMap: { value : [] },
+                    directionalShadowMatrix: { value : [] },
+                    spotShadowMap: { value : [] },
+                    spotShadowMatrix: { value : [] },
+                    pointShadowMap: { value : [] },
+                    pointShadowMatrix: { value : [] },
+                    geometry_texture: { value: this.renderTarget.texture[ 0 ] },
+                    map: { type: "t", value: this.renderTarget.texture[ 1 ] },
+                    normalMap: { value: this.renderTarget.texture[ 2 ] },
+                    detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
+                    depth_texture: { value: this.renderTarget.depthTexture },
+                    u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
+                    u_shadowShrinking: { type: "number", value: 0.1 },
+                    u_translucencyScale: { type: "number", value: 1100 },
+                    ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
+                },
                 lights: true,
                 glslVersion: THREE.GLSL3
             } )
