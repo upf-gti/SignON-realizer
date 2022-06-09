@@ -332,7 +332,7 @@ const ShaderChunk = {
                 vec3 reflectance = KS_Skin_Specular(detailed_normal, L, V, roughness, specular) * pointLights[0].color * lit;
                 
                 //outColor [0] = vec4(ambient+diffuse+transmittance+reflectance, 1.0);
-                gl_FragColor  =  vec4(ambient+diffuse+transmittance+reflectance, sssMask);
+                gl_FragColor  =  vec4(ambient+diffuse+transmittance+reflectance, 1.0);
                 // outColor1 = vec4(0.0);
                 // outColor2 = vec4(0.0);
                 // #ifdef BLOCK_FIRSTPASS
@@ -383,44 +383,146 @@ const ShaderChunk = {
         }`;
     },
     vertexShaderQuad(){
-        return `in vec3 position;
-            in vec2 uv;
+        return `           
 
             out vec2 vUv;
-
-            uniform mat4 modelViewMatrix;
-            uniform mat4 projectionMatrix;
+            out vec3 vViewPosition;
+            out vec3 vNormal;
 
             void main() {
-
+                vNormal = vec3( normal );
                 vUv = uv;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
+                vec4 mvPosition = vec4( position, 1.0 );
+                mvPosition = modelViewMatrix * mvPosition;
+                vViewPosition = - mvPosition.xyz;
+                gl_Position = projectionMatrix * mvPosition;
             }
 
         `
     },
     fragmentShaderQuad(){
         return `
+        #define RE_Direct RE_Direct_BlinnPhong
         precision highp float;
         precision highp int;
 
         layout(location = 0) out vec4 pc_FragColor;
 
         in vec2 vUv;
+        #include <common>
+        #include <packing>
+        #include <normal_pars_fragment>
+        #include <lights_pars_begin>
+        #include <bsdfs>
+        #include <lights_phong_pars_fragment>
 
-        uniform sampler2D t0;
-        // uniform sampler2D t1;
-        // uniform sampler2D t2;
+        uniform sampler2D color_texture;
+        uniform sampler2D normal_texture;
+        uniform sampler2D depth_texture;
+        uniform sampler2D detailed_normal_texture;
+        
+        uniform sampler2D specular_texture;
+        uniform float specularIntensity;
 
+        uniform float u_ambientIntensity;
+        uniform float u_shadowShrinking;
+        uniform float u_translucencyScale;
+        
+        uniform mat4 projectionMatrix;
+        
+        mat4 u_invvp;
+
+        
+        #if NUM_DIR_LIGHT_SHADOWS > 0
+        uniform mat4 directionalShadowMatrix[ 0 ];
+        varying vec4 vDirectionalShadowCoord[ 0 ];
+        struct DirectionalLightShadow {
+            float shadowBias;
+            float shadowNormalBias;
+            float shadowRadius;
+            vec2 shadowMapSize;
+        };
+        uniform DirectionalLightShadow directionalLightShadows[ 0 ];
+        #endif
+        #if NUM_DIR_LIGHTS > 0 
+        struct DirectionalLight {
+            vec3 direction;
+            vec3 color;
+        };
+        // uniform DirectionalLight directionalLights[ 0 ];
+        // void getDirectionalLightInfo( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight light ) {
+        //     light.color = directionalLight.color;
+        //     light.direction = directionalLight.direction;
+        //     light.visible = true;
+        // }
+        #endif
+        vec3 getPositionWSFromDepth(float depth){
+            //build pixel info
+            depth = depth * 2.0 - 1.0;
+            vec2 pos2D = vUv * 2.0 - vec2(1.0);
+            vec4 pos = vec4( pos2D, depth, 1.0 );
+            pos = u_invvp * pos;
+            pos.xyz = pos.xyz / pos.w;
+            return pos.xyz;
+        }
+        
+        float linearDepthNormalized(float z, float near, float far){
+            float z_n = 2.0 * z - 1.0;
+            return 2.0 * near * far / (far + near - z_n * (far - near));
+        }
+        
         void main() {
+            
+            
+            vec3 normal = normalize( vNormal );
+            ReflectedLight reflectedLight;
+            
+            #include <lights_fragment_begin>
+            
+            u_invvp = inverse( projectionMatrix * viewMatrix );
+            
+            vec3 albedo = texture( color_texture, vUv ).rgb;
+            float sss = texture( color_texture, vUv ).a;
+            float mask = texture( normal_texture, vUv ).a;
+            vec3 specular = texture( specular_texture, vUv ).rgb;
 
-            vec3 texture0 = texture( t0, vUv ).rgb;
-            // vec3 texture1 = texture( t1, vUv ).rgb;
-            // vec3 texture2 = texture( t2, vUv ).rgb;
+            BlinnPhongMaterial material;
+            material.diffuseColor = albedo;
+            material.specularColor = specular;
+            material.specularShininess = specularIntensity;
+            material.specularStrength = u_shadowShrinking;
 
-            pc_FragColor.rgb =  texture0;
-            pc_FragColor.a = 1.0;
+            #if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )
+                DirectionalLight directionalLight;
+                #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+                    DirectionalLightShadow directionalLightShadow;
+                #endif
+                #pragma unroll_loop_start
+                for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+                        directionalLight = directionalLights[ i ];
+                    getDirectionalLightInfo( directionalLight, geometry, directLight );
+                    #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
+                        directionalLightShadow = directionalLightShadows[ i ];
+                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+                    #endif
+                    L += directLight.direction;
+                    RE_Direct( directLight, geometry, material, reflectedLight );
+                }
+                #pragma unroll_loop_end
+                #endif
+                
+               
+
+            // vec3 N = normalize(texture( normal_texture, vUv ).rgb * 2.0 - 1.0);
+            // vec3 hN = normalize(texture2D( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
+            // float light_distance = length(L);
+            // L /= light_distance;
+
+
+            vec3 ambient = albedo * u_ambientIntensity;
+            vec3 diffuse = albedo * reflectedLight.directDiffuse;
+            pc_FragColor.rgb = reflectedLight.directDiffuse;
+            pc_FragColor.a = mask;
            
 
         }
@@ -980,7 +1082,7 @@ const ShaderChunk = {
             #endif
         #endif
         #ifdef USE_SHADOWMAP
-            #if 0 > 0
+            #if NUM_DIR_LIGHT_SHADOWS > 0
              uniform mat4 directionalShadowMatrix[ 0 ];
              varying vec4 vDirectionalShadowCoord[ 0 ];
              struct DirectionalLightShadow {
@@ -991,7 +1093,7 @@ const ShaderChunk = {
                  };
              uniform DirectionalLightShadow directionalLightShadows[ 0 ];
             #endif
-            #if 0 > 0
+            #if NUM_SPOT_LIGHT_SHADOWS > 0
              uniform mat4 spotShadowMatrix[ 0 ];
              varying vec4 vSpotShadowCoord[ 0 ];
              struct SpotLightShadow {
@@ -1002,7 +1104,7 @@ const ShaderChunk = {
                  };
              uniform SpotLightShadow spotLightShadows[ 0 ];
             #endif
-            #if 1 > 0
+            #if NUM_POINT_LIGHT_SHADOWS > 0
              uniform mat4 pointShadowMatrix[ 1 ];
              varying vec4 vPointShadowCoord[ 1 ];
              struct PointLightShadow {
@@ -1168,17 +1270,17 @@ const ShaderChunk = {
              worldPosition = modelMatrix * worldPosition;
             #endif
             #ifdef USE_SHADOWMAP
-             #if 0 > 0 || 0 > 0 || 1 > 0
+            #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
                 vec3 shadowWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
               vec4 shadowWorldPosition;
                #endif
-               #if 0 > 0
+               #if NUM_DIR_LIGHT_SHADOWS > 0
                 
               #endif
               #if 0 > 0
                
              #endif
-             #if 1 > 0
+             #if NUM_POINT_LIGHT_SHADOWS > 0
               
                 shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
              vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;

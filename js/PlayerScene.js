@@ -23,7 +23,7 @@ class Player {
         this.camera = null;
         this.controls = null;
         this.spotLight = null;
-        this.pointLight = null;
+        this.dirLight = null;
  
         this.model = null;
 
@@ -57,19 +57,27 @@ class Player {
         // this.scene.add( spotLight );
         // this.spotLight = spotLight;
 
-        // let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        // dirLight.position.set( 3, 10, 50 );
-        // dirLight.castShadow = false;
-        // this.scene.add( dirLight );
+        // PostProcessing setup
 
-        let pointLight = new THREE.PointLight( 0xffa95c, 1 );
-        pointLight.position.set( 0, 2.5, 8);
-        pointLight.castShadow = true;
-        pointLight.shadow.bias = -0.00001;
-        pointLight.shadow.mapSize.width = 1024 * 8;
-        pointLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( pointLight );
-        this.pointLight = pointLight;
+        this.postScene = new THREE.Scene();
+        this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
+
+
+
+        this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        this.dirLight.position.set( 3, 10, 50 );
+        this.dirLight.castShadow = false;
+        //this.scene.add( this.dirLight );
+        this.postScene.add( this.dirLight );
+
+        // let pointLight = new THREE.PointLight( 0xffa95c, 1 );
+        // pointLight.position.set( 0, 2.5, 8);
+        // pointLight.castShadow = true;
+        // pointLight.shadow.bias = -0.00001;
+        // pointLight.shadow.mapSize.width = 1024 * 8;
+        // pointLight.shadow.mapSize.height = 1024 * 8;
+        // this.scene.add( pointLight );
+        // this.pointLight = pointLight;
         
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -141,31 +149,15 @@ class Player {
             this.renderTarget.texture[ 0 ].name = 'pc_fragColor0';
             this.renderTarget.texture[ 1 ].name = 'pc_fragColor1';
             this.renderTarget.texture[ 2 ].name = 'pc_fragColor2';
+            //this.renderTarget.texture[ 3 ].name = 'pc_fragColor3';
+            
+            this.renderTarget.depthTexture = new THREE.DepthTexture();
             
             
-            // PostProcessing setup
-
-            this.postScene = new THREE.Scene();
-            this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-
-            this.postScene.add( new THREE.Mesh(
-                new THREE.PlaneGeometry( 2,2 ),
-                new THREE.RawShaderMaterial( {
-                    vertexShader: ShaderChunk.vertexShaderQuad(),
-                    fragmentShader: ShaderChunk.fragmentShaderQuad(),
-                    uniforms: {
-                        t0: { value: this.renderTarget.texture[ 0 ] },
-                        t1: { value: this.renderTarget.texture[ 1 ] },
-                        t2: { value: this.renderTarget.texture[ 2 ] },
-                    },
-                    glslVersion: THREE.GLSL3
-                } )
-            ) );
-            this.postScene.alpha = 0.5;
             let uniforms =  THREE.UniformsLib.lights;
             
             const loader = new THREE.TextureLoader();
-
+            
             const color_texture = loader.load( './data/textures/Woman_Body_Diffuse.png', this.render.bind(this) );
             color_texture.wrapS = THREE.RepeatWrapping;
             color_texture.wrapT = THREE.RepeatWrapping;
@@ -173,19 +165,19 @@ class Player {
             const specular_texture = loader.load( './data/textures/Woman_Body_Specular.png', this.render.bind(this) );
             specular_texture.wrapT = THREE.RepeatWrapping;
             specular_texture.wrapS = THREE.RepeatWrapping;
-
+            
             // const normal_texture = loader.load( 'textures/hardwood2_diffuse.jpg', render );
             // normal_texture.wrapS = THREE.RepeatWrapping;
             // normal_texture.wrapT = THREE.RepeatWrapping;
-
+            
             const sss_texture = loader.load( './data/textures/woman_body_sss.png', this.render.bind(this) );
             sss_texture.wrapS = THREE.RepeatWrapping;
             sss_texture.wrapT = THREE.RepeatWrapping;
-
+            
             const transmitance_lut_texture = loader.load( './data/textures/transmitance_lut.png',this.render.bind(this) );
             transmitance_lut_texture.wrapS = THREE.RepeatWrapping;
             transmitance_lut_texture.wrapT = THREE.RepeatWrapping;
-
+            
             const specular_lut_texture = loader.load( './data/textures/beckmann_lut.png', this.render.bind(this) );
             specular_lut_texture.wrapS = THREE.RepeatWrapping;
             specular_lut_texture.wrapT = THREE.RepeatWrapping;
@@ -210,7 +202,7 @@ class Player {
             uniforms["u_translucency_scale"] =  {type: 'number', value: 150.0};
             uniforms["u_enable_translucency"] =  {type: 'boolean', value: true};
             uniforms["specularColor"] =  {type: "vec3", value: new THREE.Vector3(1.0,1.0,1.0)}
-            uniforms["specularMap"] =  {type: "t", value: mat.roughnessMap};
+            uniforms["specular_texture"] =  {type: "t", value: specular_texture};
             uniforms["roughnessMap"] =  {type: "t", value: mat.roughnessMap};
             uniforms["metalnessMap"] =  {type: "t", value: mat.metalnessMap};
             uniforms["specularColorMap"] =  {type: "t", value: new THREE.TextureLoader("./data/textures/Woman_Body_Specular.png")};
@@ -237,26 +229,68 @@ class Player {
             material.extensions.derivatives = true;
             
             this.model.getObjectByName("Body").material = material;
-
-            
+            this.model.receiveShadow = true;
             this.scene.add(this.model);
+            
+            let quadUniforms = THREE.UniformsUtils.merge([
+                THREE.UniformsLib.common,
+                THREE.UniformsLib.specularmap,
+               
+                THREE.UniformsLib.aomap,
+                THREE.UniformsLib.lightmap,
+                THREE.UniformsLib.emissivemap,
+                
+                THREE.UniformsLib.normalmap,
+                THREE.UniformsLib.displacementmap,
+                THREE.UniformsLib.lights,
+                {
+                    geometry_texture: { value: this.renderTarget.texture[ 0 ] },
+                    map: { type: "t", value: this.renderTarget.texture[ 1 ] },
+                    normalMap: { value: this.renderTarget.texture[ 2 ] },
+                    //detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
+                    depth_texture: { value: this.renderTarget.depthTexture },
+                    u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
+                    u_shadowShrinking: { type: "number", value: 0.1 },
+                    u_translucencyScale: { type: "number", value: 1100 },
+
+                    ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
+                }
+            ]);
+            let quadMaterial = new THREE.ShaderMaterial( {
+                vertexShader: ShaderChunk.vertexShaderQuad(),
+                fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
+                uniforms: quadUniforms,
+                lights: true,
+                glslVersion: THREE.GLSL3
+            } )
+            // quadMaterial.colorWrite = true;
+            // quadMaterial.extensions.drawBuffers = true;
+            let quad = new THREE.Mesh(
+                new THREE.PlaneGeometry( 2,2 ),
+                quadMaterial
+            );
+
+            quad.name = "quad";
+            //quad.receiveShadow = true;
+            this.postScene.add( quad );
+            
             $('#loading').fadeOut(); //hide();
             this.clock.start()
             if(onLoaded)
-                onLoaded(this);
+            onLoaded(this);
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
-
-
+    
+    
     animate() {
-
+        
         requestAnimationFrame( this.animate.bind(this) );
-
+        
         let [x, y, z] = [... this.camera.position];
         //this.spotLight.position.set( x + 10, y + 10, z + 10);
-        this.pointLight.position.set( x, y, z);
+        //this.dirLight.position.set( x, y, z);
         this.controls.update();
         this.render();
         
@@ -269,8 +303,8 @@ class Player {
         this.renderer.setRenderTarget( this.renderTarget );
 
         this.renderer.render( this.scene, this.camera );
-        this.renderTarget.alpha = true
-        // render post FX
+        
+        // // render post FX
         this.renderer.setRenderTarget( null );
         this.renderer.render( this.postScene, this.postCamera );
 
