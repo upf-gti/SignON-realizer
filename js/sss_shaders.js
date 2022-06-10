@@ -125,10 +125,16 @@ const SSS_ShaderChunk = {
     deferredFinalFS(){
         return `
         #define RE_Direct RE_Direct_BlinnPhong
+        #define USE_SHADOWMAP
+        #define SHADOWMAP_TYPE_PCF
+
         precision highp float;
         precision highp int;
 
-        layout(location = 0) out vec4 pc_FragColor;
+        
+        layout(location = 0) out highp vec4 pc_fragLight;
+        layout(location = 1) out highp vec4 pc_fragTransmitance;
+        layout(location = 2) out highp vec4 pc_fragDepth;
 
         in vec2 vUv;
         #include <common>
@@ -159,21 +165,22 @@ const SSS_ShaderChunk = {
         //uniform Light lights[NR_LIGHTS];
 
         #if NUM_DIR_LIGHT_SHADOWS > 0
-            uniform mat4 directionalShadowMatrix[ 0 ];
-            varying vec4 vDirectionalShadowCoord[ 0 ];
+            uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+            varying vec4 vDirectionalShadowCoord[NUM_DIR_LIGHT_SHADOWS ];
             struct DirectionalLightShadow {
                 float shadowBias;
                 float shadowNormalBias;
                 float shadowRadius;
                 vec2 shadowMapSize;
             };
-            uniform DirectionalLightShadow directionalLightShadows[ 0 ];
+            uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS];
+            uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
         #endif
         #if NUM_SPOT_LIGHT_SHADOWS > 0
             uniform sampler2D spotShadowMap[ NUM_SPOT_LIGHT_SHADOWS ];
             varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
             struct SpotLightShadow {
-                    float shadowBias;
+                float shadowBias;
                 float shadowNormalBias;
                 float shadowRadius;
                 vec2 shadowMapSize;
@@ -181,7 +188,7 @@ const SSS_ShaderChunk = {
             uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
         #endif
         #if NUM_POINT_LIGHT_SHADOWS > 0
-            uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ]
+            uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
             uniform sampler2D pointShadowMap[ NUM_POINT_LIGHT_SHADOWS ];
             varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
             struct PointLightShadow {
@@ -255,9 +262,23 @@ const SSS_ShaderChunk = {
             float z_n = 2.0 * z - 1.0;
             return 2.0 * near * far / (far + near - z_n * (far - near));
         }
-        uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ]
+        //can be precomputed
+        vec3 T(float s){
+            return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
+            vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
+            vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
+            vec3(0.113, 0.007, 0.007) * exp(-s*s/0.567) +
+            vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
+            vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
+        }
+        float expFunc(float f)
+        {
+            return f*f*f*(f*(f*6.0-15.0)+10.0);
+        }
         void main() {
             
+            vec3 transmitance;
+
             vec3 albedo = texture( map, vUv ).rgb;
             vec3 position = texture( geometry_texture, vUv ).rgb;
             vec3 normal = normalize( texture( normalMap, vUv ).rgb * 2.0 - 1.0);
@@ -286,7 +307,7 @@ const SSS_ShaderChunk = {
             geometry.position = - position;
             geometry.normal = hN;
             geometry.viewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( position );
-   
+            float light_depth;
             IncidentLight directLight;
             #if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )
                 PointLight pointLight;
@@ -304,28 +325,44 @@ const SSS_ShaderChunk = {
                     RE_Direct( directLight, geometry, material, reflectedLight );
 
                     //Shadowmap
-                    float invtexsize = pointLightShadow.shadowMapSize[0]*pointLightShadow.shadowMapSize[1];
-                    float texsize = 1.0/invtexsize;
+                    vec2 invtexsize = pointLightShadow.shadowMapSize * vec2( 4.0, 2.0 );
+                    float texsize = 1.0/invtexsize.y;
                     float bias = pointLightShadow.shadowBias;
                     float near = pointLightShadow.shadowCameraNear;
                     float far = pointLightShadow.shadowCameraFar;
-                    
-                    vec4 lspace_pos = pointShadowMatrix[ i ] * vec4(position - u_shadowShrinking * N, 1.0); //Shrinking explained bt Jimenez et al
+                    L = directLight.direction;
+
+                    vec4 lspace_pos = pointShadowMatrix[ i ] * vec4(position - u_shadowShrinking * normal, 1.0); //Shrinking explained bt Jimenez et al
                     lspace_pos = 0.5*(lspace_pos+vec4(1.0));
 
-                    vec2 sample = lspace_pos.xy;
-                    vec2 topleft_uv = sample * texsize;
+                    vec2 samples = lspace_pos.xy;
+                    vec2 topleft_uv = samples * texsize;
                     vec2 offset_uv = fract(topleft_uv);
                     offset_uv.x = expFunc(offset_uv.x);
                     offset_uv.y = expFunc(offset_uv.y);
-                    topleft_uv = floor(topleft_uv) * invtexsize;
-                    
+                    topleft_uv = floor(topleft_uv) * invtexsize.y;
 
+                    vec2 topright_uv = (topleft_uv+vec2(invtexsize.x, 0.0));
+                    vec2 bottomright_uv = (topleft_uv+vec2(invtexsize.x, invtexsize.y));
+
+                    float topleft = texture2D(pointShadowMap[ i ], topleft_uv).x;
+                    float topright = texture2D(pointShadowMap[ i ], topright_uv ).x;
+                    float bottomleft = texture2D(pointShadowMap[ i ], topleft_uv+vec2(0.0, invtexsize.y)).x;
+                    float bottomright = texture2D(pointShadowMap[ i ], bottomright_uv ).x;
+                    float top = mix(topleft, topright, offset_uv.x);
+                    float bottom = mix(bottomleft, bottomright, offset_uv.x);
+                    float sample_depth = mix(top, bottom, offset_uv.y);// getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, vPointShadowCoord[ i ], pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar );
+                
+                    float real_depth = lspace_pos.z;
+
+                    
+                    light_depth = topleft;//(sample_depth == 1.0) ? 1.0e9 : sample_depth;
                     //Transmitance (we use vertex normal because it does not contain high frequency detail)
                     float u_scale = u_translucencyScale; //To be defined with uniform 
-                    // float s = u_scale * abs(linearDepthNormalized(light_depth, pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar) - linearDepthNormalized(real_depth, near, far));
-                    // float E = max(0.3 + dot(-N, L), 0.0);
-
+                    float s = u_scale * abs(linearDepthNormalized(light_depth, near, far) - linearDepthNormalized(real_depth, near, far));
+                    float E = max(0.3 + dot(-normal, L), 0.0);
+                    transmitance += T(s) * pointLight.color * albedo * E;
+                 
                 }
                 #pragma unroll_loop_end
             #endif
@@ -399,19 +436,85 @@ const SSS_ShaderChunk = {
             // float s = u_scale * abs(linearDepthNormalized(light_depth, near, far) - linearDepthNormalized(real_depth, near, far));
             // float E = max(0.3 + dot(-N, L), 0.0);
 
-            vec3 transmitance = T(s) * u_light_color * albedo * E;
+            // vec3 transmitance = T(s) * u_light_color * albedo * E;
 
             vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
             vec3 ambient = albedo * u_ambientIntensity;
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
-            pc_FragColor.rgb = final_color;
-            pc_FragColor.a = mask;
            
+            pc_fragLight = vec4(vec3(light_depth), sss);
+            pc_fragTransmitance = vec4(transmitance, 1.0);
+            pc_fragDepth = vec4((mask == 1.0)?light_depth:0.0, 1.0, sss, 1.0);
 
         }
 
         `
+    },
+
+    horizontalBlurFS(){
+
+        return `
+        precision highp float;
+        precision highp int;
+        
+        layout(location = 0) out highp vec4 pc_fragData;
+
+        in vec2 vUv;
+        #include <common>
+        uniform float u_width;
+        uniform float u_sssLevel;
+        uniform float u_correction;
+        uniform float u_maxdd;
+        uniform vec2 u_invPixelSize;
+
+        uniform float camera_near;
+        uniform float camera_far;
+
+        uniform sampler2D irradiance_texture;
+        uniform sampler2D depth_aux_texture;
+
+        float linearDepthNormalized(float z, float near, float far){
+            float z_n = 2.0 * z - 1.0;
+            return 2.0 * near * far / (far + near - z_n * (far - near));
+        }
+
+        void main() {
+            float w[6];
+            w[0] = w[5] = 0.006;
+            w[1] = w[4] = 0.061;
+            w[2] = w[3] = 0.242;
+            float o[6];
+            o[0] = -1.0;
+            o[1] = -0.667;
+            o[2] = -0.333;
+            o[3] = 0.333;
+            o[4] = 0.667;
+            o[5] = 1.0;
+        
+            vec3 depth_aux_value = texture2D(depth_aux_texture, vUv).xyz;
+            float depth = linearDepthNormalized(depth_aux_value.x, camera_near, camera_far);
+            float mask = depth_aux_value.x > 0.0 ? 1.0 : 0.0;
+            vec3 color = texture2D(irradiance_texture, vUv).rgb;
+        
+            if(mask == 1.0 && depth >= camera_near && depth <= camera_far){
+            color *= 0.382;
+            
+            float s_x = u_sssLevel / (depth + u_correction * min(abs(dFdx(depth)), u_maxdd));
+            vec2 finalWidth = s_x * u_width * u_invPixelSize * vec2(1.0, 0.0);
+            vec2 offset;
+        
+                for(int i=0; i<6; i++){
+                    offset = vUv + finalWidth*o[i];
+                    vec3 tap = texture2D(irradiance_texture, offset).rgb;
+                    color.rgb += w[i] * (texture2D(depth_aux_texture, offset).x > 0.0 ? tap : color);
+                }
+            }
+            
+            pc_fragData = texture2D(irradiance_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
+            
+        }
+        `;
     }
 
 }

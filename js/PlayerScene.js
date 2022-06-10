@@ -27,9 +27,14 @@ class Player {
  
         this.model = null;
 
-        this.renderTarget = null;
+        this.renderTargetDef = null;
+        this.renderTargetHblur = null;
         this.postScene = null;
         this.postCamera = null;
+
+        this.deferredMaterial = null;
+        this.hBlurMaterial = null;
+        
     }
     
     init(onLoaded) {
@@ -130,28 +135,45 @@ class Player {
             
             
             // Create a multi render target with Float buffers
-            this.renderTarget = new THREE.WebGLMultipleRenderTargets(
+            this.renderTargetDef = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
                 window.innerHeight * window.devicePixelRatio,
                 4
             );
 
-            for ( let i = 0, il = this.renderTarget.texture.length; i < il; i ++ ) {
+            for ( let i = 0, il = this.renderTargetDef.texture.length; i < il; i ++ ) {
 
-                this.renderTarget.texture[ i ].minFilter = THREE.NearestFilter;
-                this.renderTarget.texture[ i ].magFilter = THREE.NearestFilter;
-                this.renderTarget.texture[ i ].type = THREE.FloatType;
+                this.renderTargetDef.texture[ i ].minFilter = THREE.NearestFilter;
+                this.renderTargetDef.texture[ i ].magFilter = THREE.NearestFilter;
+                this.renderTargetDef.texture[ i ].type = THREE.FloatType;
 
             }
 
+            // Create a multi render target with Float buffers
+            this.renderTargetHblur = new THREE.WebGLMultipleRenderTargets(
+                window.innerWidth * window.devicePixelRatio,
+                window.innerHeight * window.devicePixelRatio,
+                3
+            );
+
+            for ( let i = 0, il = this.renderTargetHblur.texture.length; i < il; i ++ ) {
+
+                this.renderTargetHblur.texture[ i ].minFilter = THREE.NearestFilter;
+                this.renderTargetHblur.texture[ i ].magFilter = THREE.NearestFilter;
+                this.renderTargetHblur.texture[ i ].type = THREE.FloatType;
+
+            }
             // Name our G-Buffer attachments for debugging
 
-            this.renderTarget.texture[ 0 ].name = 'pc_fragColor0';
-            this.renderTarget.texture[ 1 ].name = 'pc_fragColor1';
-            this.renderTarget.texture[ 2 ].name = 'pc_fragColor2';
-            this.renderTarget.texture[ 3 ].name = 'pc_fragColor3';
+            this.renderTargetDef.texture[ 0 ].name = 'pc_fragColor0';
+            this.renderTargetDef.texture[ 1 ].name = 'pc_fragColor1';
+            this.renderTargetDef.texture[ 2 ].name = 'pc_fragColor2';
+            this.renderTargetDef.texture[ 3 ].name = 'pc_fragColor3';
+            this.renderTargetHblur.texture[ 0 ].name = 'pc_fragLight';
+            this.renderTargetHblur.texture[ 1 ].name = 'pc_fragTransmitance';
+            this.renderTargetHblur.texture[ 2 ].name = 'pc_fragDepth';
             
-            this.renderTarget.depthTexture = new THREE.DepthTexture();
+            this.renderTargetDef.depthTexture = new THREE.DepthTexture();
             
             
             let uniforms =  THREE.UniformsLib.lights;
@@ -209,22 +231,7 @@ class Player {
             this.model.receiveShadow = true;
             this.scene.add(this.model);
             
-            let quadUniforms = THREE.UniformsUtils.merge([
-  
-                //THREE.UniformsLib.lights,
-                {
-                    geometry_texture: { value: this.renderTarget.texture[ 0 ] },
-                    map: { type: "t", value: this.renderTarget.texture[ 1 ] },
-                    normalMap: { value: this.renderTarget.texture[ 2 ] },
-                    detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
-                    depth_texture: { value: this.renderTarget.depthTexture },
-                    u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
-                    u_shadowShrinking: { type: "number", value: 0.1 },
-                    u_translucencyScale: { type: "number", value: 1100 },
-                    ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
-                }
-            ]);
-            let quadMaterial = new THREE.ShaderMaterial( {
+            this.deferredMaterial = new THREE.ShaderMaterial( {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
                 fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
                 uniforms: {
@@ -245,11 +252,11 @@ class Player {
                     spotShadowMatrix: { value : [] },
                     pointShadowMap: { value : [] },
                     pointShadowMatrix: { value : [] },
-                    geometry_texture: { value: this.renderTarget.texture[ 0 ] },
-                    map: { type: "t", value: this.renderTarget.texture[ 1 ] },
-                    normalMap: { value: this.renderTarget.texture[ 2 ] },
-                    detailed_normal_texture: { value: this.renderTarget.texture[ 3 ] },
-                    depth_texture: { value: this.renderTarget.depthTexture },
+                    geometry_texture: { value: this.renderTargetDef.texture[ 0 ] },
+                    map: { type: "t", value: this.renderTargetDef.texture[ 1 ] },
+                    normalMap: { value: this.renderTargetDef.texture[ 2 ] },
+                    detailed_normal_texture: { value: this.renderTargetDef.texture[ 3 ] },
+                    depth_texture: { value: this.renderTargetDef.depthTexture },
                     u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
                     u_shadowShrinking: { type: "number", value: 0.1 },
                     u_translucencyScale: { type: "number", value: 1100 },
@@ -262,13 +269,31 @@ class Player {
             // quadMaterial.extensions.drawBuffers = true;
             let quad = new THREE.Mesh(
                 new THREE.PlaneGeometry( 2,2 ),
-                quadMaterial
+                this.deferredMaterial
             );
 
             quad.name = "quad";
             //quad.receiveShadow = true;
             this.postScene.add( quad );
-            
+
+            this.hBlurMaterial = new THREE.ShaderMaterial( {
+                vertexShader: ShaderChunk.vertexShaderQuad(),
+                fragmentShader: SSS_ShaderChunk.horizontalBlurFS(),
+                uniforms: {
+                    irradiance_texture: { value: this.renderTargetHblur.texture[ 0 ] },
+                    depth_aux_texture: { value: this.renderTargetHblur.texture[ 1 ] },
+                    u_sssLevel: { value: 200 },
+                    u_correction: { value: 800 },
+                    u_maxdd: { value: 0.001 },
+                    u_invPixelSize: { value: [1/this.renderTargetHblur.texture[ 2 ].image.width, 1/this.renderTargetHblur.texture[ 2 ].image.height] },
+                    u_width: { value: 0.0 },
+                    camera_near: { value : this.camera.near},
+                    camera_far: { value : this.camera.far},
+                
+                },
+                glslVersion: THREE.GLSL3
+            } )
+
             $('#loading').fadeOut(); //hide();
             this.clock.start()
             if(onLoaded)
@@ -294,12 +319,16 @@ class Player {
     render(){
         //this.renderTarget.samples = 4;
         // render scene into target
+        let quad = this.postScene.getObjectByName("quad");
         
-        this.renderer.setRenderTarget( this.renderTarget );
-
+        this.renderer.setRenderTarget( this.renderTargetDef );
         this.renderer.render( this.scene, this.camera );
         
+        quad.material = this.deferredMaterial;
+        this.renderer.setRenderTarget( this.renderTargetHblur );
+        this.renderer.render( this.postScene, this.postCamera );
         // // render post FX
+        quad.material = this.hBlurMaterial;
         this.renderer.setRenderTarget( null );
         this.renderer.render( this.postScene, this.postCamera );
 
