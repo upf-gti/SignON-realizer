@@ -341,6 +341,7 @@ const ShaderChunk = {
             }`
         ].join("\n ").replaceAll("varying ", "in ");
     },
+
     perturbNormal(){
         return `mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)	
         {	
@@ -382,6 +383,7 @@ const ShaderChunk = {
             return normalize(TBN * normal_pixel);		
         }`;
     },
+
     vertexShaderQuad(){
         return `           
 
@@ -439,7 +441,9 @@ const ShaderChunk = {
 
         `
     },
-    fragmentShaderQuad(){
+
+    fragmentShaderQuad() {
+
         return `
         #define RE_Direct RE_Direct_BlinnPhong
         precision highp float;
@@ -568,8 +572,10 @@ const ShaderChunk = {
 
         `
     },
-    getVertexShaderReduced(){
-        reutrn [
+
+    getVertexShaderReduced() {
+
+        return [
             `   
             precision mediump sampler2DArray;
             #define attribute in
@@ -688,7 +694,8 @@ const ShaderChunk = {
         ].joint("\n");
     },
 
-    getFragmentShaderReduced(){
+    getFragmentShaderReduced() {
+
         return [
             `
             #define varying in
@@ -886,9 +893,9 @@ const ShaderChunk = {
         ].joint("\n");
     },
 
-    getVertexShader(){
+    getVertexShader() {
+
         return `
-    
         precision mediump sampler2DArray;
         #define attribute in
         #define varying out
@@ -963,9 +970,7 @@ const ShaderChunk = {
         
         #define STANDARD
         varying vec3 vViewPosition;
-        #ifdef USE_TRANSMISSION
-            varying vec3 vWorldPosition;
-        #endif
+        varying vec3 vWorldPosition;
         #define PI 3.141592653589793
         #define PI2 6.283185307179586
         #define PI_HALF 1.5707963267948966
@@ -1329,9 +1334,7 @@ const ShaderChunk = {
             #ifdef USE_FOG
                vFogDepth = - mvPosition.z;
             #endif
-            #ifdef USE_TRANSMISSION
-             vWorldPosition = worldPosition.xyz;
-            #endif
+            vWorldPosition = worldPosition.xyz;
         }
         `
     },

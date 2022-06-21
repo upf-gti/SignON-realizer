@@ -29,6 +29,15 @@ const SSS_ShaderChunk = {
             return mat3( T * invmax, B * invmax, N );
         }
 
+        vec3 perturbNormal( vec3 N, vec3 V, vec2 texcoord, vec3 normal_pixel ){
+            // assume N, the interpolated vertex normal and
+            // V, the view vector (vertex to eye)
+            //vec3 normal_pixel = texture2D(normalmap, texcoord ).xyz;
+            normal_pixel = normal_pixel * 255./127. - 128./127.;
+            mat3 TBN = cotangent_frame(N, V, texcoord);
+            return normalize(TBN * normal_pixel);
+        }
+
         vec3 perturbNormal2Arb( vec3 eye_pos, vec3 surf_norm, vec3 mapN, float faceDirection ) {
             vec3 q0 = vec3( dFdx( eye_pos.x ), dFdx( eye_pos.y ), dFdx( eye_pos.z ) );
             vec3 q1 = vec3( dFdy( eye_pos.x ), dFdy( eye_pos.y ), dFdy( eye_pos.z ) );
@@ -80,13 +89,13 @@ const SSS_ShaderChunk = {
             `
             varying vec3 vNormal;
             varying vec3 vViewPosition;
+            varying vec3 vWorldPosition;
         
             uniform vec2 normalScale;
 
             uniform vec4 u_clipping_plane;
             uniform float u_time;
             uniform vec3 u_background_color;
-            uniform vec3 u_camera_eye;
 
             uniform sampler2D map;
             uniform sampler2D normalMap;
@@ -107,16 +116,15 @@ const SSS_ShaderChunk = {
                 float n = 0.6;
                 //if(n > t) discard;
 
-                vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
-                mapN.xy *= normalScale;
+                vec3 mapN = texture2D( normalMap, vUv ).rgb;
                 vec3 N = normalize( vNormal );
-                float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
-                vec3 detailedN  = perturbNormal2Arb( - vViewPosition, N, mapN, faceDirection );
+                vec3 V = normalize( cameraPosition - vWorldPosition );
+                vec3 detailedN  = perturbNormal( N, V, vUv, mapN );
                 
-                pc_fragColor1 = vec4(vViewPosition, 1.0);
-                pc_fragColor0 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
-                pc_fragColor2 = vec4(N*0.5 + vec3(0.5),0.8);
-                pc_fragColor3 = vec4(detailedN*0.5 + vec3(0.5), 1.0);
+                pc_fragColor0 = vec4(vWorldPosition, 1.0);
+                pc_fragColor1 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
+                pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 0.0);
+                pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0);
             }
         `].join("\n");
     },
@@ -252,21 +260,11 @@ const SSS_ShaderChunk = {
     			return texture2DCompare( shadowMap, cubeToUV( bd3D, texelSize.y ), dp );
     		#endif
         }
-        vec3 getPositionWSFromDepth(float depth){
-            //build pixel info
-            depth = depth * 2.0 - 1.0;
-            vec2 pos2D = vUv * 2.0 - vec2(1.0);
-            vec4 pos = vec4( pos2D, depth, 1.0 );
-            pos = u_invvp * pos;
-            pos.xyz = pos.xyz / pos.w;
-            return pos.xyz;
-        }
-        
         float linearDepthNormalized(float z, float near, float far){
             float z_n = 2.0 * z - 1.0;
             return 2.0 * near * far / (far + near - z_n * (far - near));
         }
-        //can be precomputed
+        // Can be precomputed
         vec3 T(float s){
             return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
             vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
@@ -287,10 +285,10 @@ const SSS_ShaderChunk = {
             vec3 position = texture( geometry_texture, vUv ).rgb;
             vec3 normal = normalize( texture( normalMap, vUv ).rgb * 2.0 - 1.0);
             float sss = texture( map, vUv ).a;
-            float mask = texture( normalMap, vUv ).a;
+            float mask = 1.0 - texture( normalMap, vUv ).a;
             vec3 specular = texture( specular_texture, vUv ).rgb;
             
-            vec3 hN = normalize(texture2D( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
+            vec3 dNormals = normalize(texture( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
             vec3 L;
             
             float NdotL = 1.0;
@@ -309,7 +307,7 @@ const SSS_ShaderChunk = {
             
             GeometricContext geometry;
             geometry.position = - position;
-            geometry.normal = hN;
+            geometry.normal = dNormals;
             geometry.viewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( position );
             float light_depth;
             IncidentLight directLight;
@@ -404,7 +402,7 @@ const SSS_ShaderChunk = {
                     L = directionalLight.direction;
                     float light_distance = length(L);
                     L /= light_distance;
-                    NdotL *= max(0.0, dot(hN,L));
+                    NdotL *= max(0.0, dot(dNormals,L));
                     //NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
                 }
                 #pragma unroll_loop_end
@@ -447,11 +445,9 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
            
-            pc_fragLight = vec4(final_color, sss);
-
+            pc_fragLight = vec4(dNormals, 1);
             pc_fragTransmitance = vec4(transmitance, 1.0);
-            pc_fragDepth = vec4(vec3(mask), 1.0);
-
+            pc_fragDepth = vec4( mask == 1.0 ? light_depth : 0.0, 1.0, sss, 1.0);
         }
 
         `

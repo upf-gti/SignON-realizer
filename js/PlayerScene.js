@@ -43,14 +43,14 @@ class Player {
     init() {
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0x2A2928 );
-        this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
+        this.scene.background = new THREE.Color( 0x252525 );
+        // this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
         
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x151414, depthWrite: false } ) );
-        ground.position.y = 0; // it is moved because of the mesh scale
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        this.scene.add( ground );
+        // let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x151414, depthWrite: false } ) );
+        // ground.position.y = 0; // it is moved because of the mesh scale
+        // ground.rotation.x = -Math.PI / 2;
+        // ground.receiveShadow = true;
+        // this.scene.add( ground );
         
         // // lights
         // let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
@@ -175,13 +175,14 @@ class Player {
             let uniforms =  THREE.UniformsLib.lights;
             
             const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
+            const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
             const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
             
             let mat = this.model.getObjectByName("Body").material.clone();
 
             uniforms["normalMap"] =  { type: "t", value: mat.normalMap };
-            uniforms["map"] =  { type: 't', value: mat.map };
+            uniforms["map"] =  { type: 't', value: color_texture };
             uniforms["uvTransform"] = { type: "matrix4", value: mat.map.matrix };
             uniforms["u_enable_translucency"] = { value: true };
             uniforms["u_sss_texture"] =  { value: sss_texture };
@@ -190,8 +191,8 @@ class Player {
             
             let gBufferMaterial =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
-                fragmentShader: SSS_ShaderChunk.deferredFS(),
                 vertexShader: ShaderChunk.getVertexShader(),
+                fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
                 glslVersion: THREE.GLSL3
             });
@@ -290,21 +291,22 @@ class Player {
     render() {
 
         // Fill GBuffers
-        this.toScreen(); // this.renderer.setRenderTarget( this.renderTargetDef );
+        this.renderer.setRenderTarget( this.renderTargetDef );
         this.renderer.render( this.scene, this.camera );
-        return;
 
-        // SSS
+        // Lights
         let quad = this.postScene.getObjectByName("quad");
         quad.material = this.deferredMaterial;
         this.toScreen(); // this.setRenderTarget( this.renderTargetHblur );
         this.renderer.render( this.postScene, this.postCamera );
-        
+
         // Blur steps
         // quad.material = this.hBlurMaterial;
         // this.setRenderTarget( null );
         // this.renderer.render( this.postScene, this.postCamera );
 
+        // SSS (todo)
+        // ....
     }
 
     loadTexture( path, onload) {
