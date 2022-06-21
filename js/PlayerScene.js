@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import Stats from './stats.module.js';
 
 import { ShaderChunk } from './shaders.js'
 import { SSS_ShaderChunk } from './sss_shaders.js'
-
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -17,6 +17,7 @@ class Player {
         
         this.clock = new THREE.Clock(false);
         this.loaderGLB = new GLTFLoader();
+        this.textureLoader = new THREE.TextureLoader();
         
         this.scene = null;
         this.renderer = null;
@@ -34,10 +35,13 @@ class Player {
 
         this.deferredMaterial = null;
         this.hBlurMaterial = null;
-        
+
+        this.stats = new Stats();
+        document.body.appendChild( this.stats.dom )
     }
     
-    init(onLoaded) {
+    init() {
+
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0x2A2928 );
         this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
@@ -66,8 +70,6 @@ class Player {
 
         this.postScene = new THREE.Scene();
         this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
-
-
 
         this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
         this.dirLight.position.set( 3, 10, 50 );
@@ -103,8 +105,6 @@ class Player {
         this.controls.maxDistance = 50;
         this.controls.target.set(0.0, 2.6, 0);
 
-       
-
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
@@ -132,7 +132,6 @@ class Player {
                 }
             } );
             
-            
             // Create a multi render target with Float buffers
             this.renderTargetDef = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
@@ -145,7 +144,6 @@ class Player {
                 this.renderTargetDef.texture[ i ].minFilter = THREE.NearestFilter;
                 this.renderTargetDef.texture[ i ].magFilter = THREE.NearestFilter;
                 this.renderTargetDef.texture[ i ].type = THREE.FloatType;
-
             }
 
             // Create a multi render target with Float buffers
@@ -160,77 +158,54 @@ class Player {
                 this.renderTargetHblur.texture[ i ].minFilter = THREE.NearestFilter;
                 this.renderTargetHblur.texture[ i ].magFilter = THREE.NearestFilter;
                 this.renderTargetHblur.texture[ i ].type = THREE.FloatType;
-
             }
-            // Name our G-Buffer attachments for debugging
 
+            // Name our G-Buffer attachments for debugging
             this.renderTargetDef.texture[ 0 ].name = 'pc_fragColor0';
             this.renderTargetDef.texture[ 1 ].name = 'pc_fragColor1';
             this.renderTargetDef.texture[ 2 ].name = 'pc_fragColor2';
             this.renderTargetDef.texture[ 3 ].name = 'pc_fragColor3';
+
             this.renderTargetHblur.texture[ 0 ].name = 'pc_fragLight';
             this.renderTargetHblur.texture[ 1 ].name = 'pc_fragTransmitance';
             this.renderTargetHblur.texture[ 2 ].name = 'pc_fragDepth';
             
             this.renderTargetDef.depthTexture = new THREE.DepthTexture();
             
-            
             let uniforms =  THREE.UniformsLib.lights;
             
-            const loader = new THREE.TextureLoader();
-            
-            const color_texture = loader.load( './data/textures/Woman_Body_Diffuse.png', this.render.bind(this) );
-            color_texture.wrapS = THREE.RepeatWrapping;
-            color_texture.wrapT = THREE.RepeatWrapping;
-
-            const specular_texture = loader.load( './data/textures/Woman_Body_Specular.png', this.render.bind(this) );
-            specular_texture.wrapT = THREE.RepeatWrapping;
-            specular_texture.wrapS = THREE.RepeatWrapping;
-            
-            // const normal_texture = loader.load( 'textures/hardwood2_diffuse.jpg', render );
-            // normal_texture.wrapS = THREE.RepeatWrapping;
-            // normal_texture.wrapT = THREE.RepeatWrapping;
-            
-            const sss_texture = loader.load( './data/textures/woman_body_sss.png', this.render.bind(this) );
-            sss_texture.wrapS = THREE.RepeatWrapping;
-            sss_texture.wrapT = THREE.RepeatWrapping;
-            
-            const transmitance_lut_texture = loader.load( './data/textures/transmitance_lut.png',this.render.bind(this) );
-            transmitance_lut_texture.wrapS = THREE.RepeatWrapping;
-            transmitance_lut_texture.wrapT = THREE.RepeatWrapping;
-            
-            const specular_lut_texture = loader.load( './data/textures/beckmann_lut.png', this.render.bind(this) );
-            specular_lut_texture.wrapS = THREE.RepeatWrapping;
-            specular_lut_texture.wrapT = THREE.RepeatWrapping;
-            
+            const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
+            const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
+            const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
             
             let mat = this.model.getObjectByName("Body").material.clone();
 
-
-            uniforms["normalMap"] =  {type: "t", value: mat.normalMap};
-            uniforms["map"] =  { type: 't', value: mat.map};
-            uniforms["uvTransform"] = {type: "matrix4", value: mat.map.matrix};
-            uniforms["u_enable_translucency"] = {value:true};
-            uniforms["u_sss_texture"] =  {value: sss_texture};
-            uniforms["u_transmitance_lut_texture"] =  {value: transmitance_lut_texture};
-            uniforms["u_specular_lut_texture"] =  {value: specular_lut_texture};
+            uniforms["normalMap"] =  { type: "t", value: mat.normalMap };
+            uniforms["map"] =  { type: 't', value: mat.map };
+            uniforms["uvTransform"] = { type: "matrix4", value: mat.map.matrix };
+            uniforms["u_enable_translucency"] = { value: true };
+            uniforms["u_sss_texture"] =  { value: sss_texture };
+            uniforms["u_transmitance_lut_texture"] =  { value: transmitance_lut_texture };
+            uniforms["u_specular_lut_texture"] =  { value: specular_lut_texture };
             
-            let material =  new THREE.ShaderMaterial({
+            let gBufferMaterial =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 vertexShader: ShaderChunk.getVertexShader(),
                 lights: true,
                 glslVersion: THREE.GLSL3
-            })
-            material.colorWrite = true;
-            material.extensions.drawBuffers = true;
-            material.extensions.derivatives = true;
+            });
+
+            gBufferMaterial.colorWrite = true;
+            gBufferMaterial.extensions.drawBuffers = true;
+            gBufferMaterial.extensions.derivatives = true;
             
-            this.model.getObjectByName("Body").material = material;
+            this.model.getObjectByName("Body").material = gBufferMaterial;
             this.model.receiveShadow = true;
             this.scene.add(this.model);
             
- 
+            // Create POST FX Materials
+
             this.deferredMaterial = new THREE.ShaderMaterial( {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
                 fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
@@ -267,16 +242,14 @@ class Player {
                 },
                 lights: true,
                 glslVersion: THREE.GLSL3
-            } )
-            // quadMaterial.colorWrite = true;
-            // quadMaterial.extensions.drawBuffers = true;
+            });
+
             let quad = new THREE.Mesh(
                 new THREE.PlaneGeometry( 2,2 ),
                 this.deferredMaterial
             );
 
             quad.name = "quad";
-            //quad.receiveShadow = true;
             this.postScene.add( quad );
 
             this.hBlurMaterial = new THREE.ShaderMaterial( {
@@ -295,60 +268,72 @@ class Player {
                 
                 },
                 glslVersion: THREE.GLSL3
-            } )
+            });
 
-            $('#loading').fadeOut(); //hide();
-            this.clock.start()
-            if(onLoaded)
-                onLoaded(this);
-
+            $('#loading').fadeOut();
+            this.clock.start();
             this.animate();
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
     
-    
     animate() {
         
         requestAnimationFrame( this.animate.bind(this) );
-        
-        let [x, y, z] = [... this.camera.position];
-        //this.spotLight.position.set( x + 10, y + 10, z + 10);
-        //this.dirLight.position.set( x, y, z);
-        this.controls.update();
+
         this.render();
-        
-        
+        this.controls.update();
+        this.stats.update();
     }
-    render(){
-        //this.renderTarget.samples = 4;
-        // render scene into target
-        let quad = this.postScene.getObjectByName("quad");
-        
-        this.renderer.setRenderTarget( this.renderTargetDef );
+
+    render() {
+
+        // Fill GBuffers
+        this.toScreen(); // this.renderer.setRenderTarget( this.renderTargetDef );
         this.renderer.render( this.scene, this.camera );
-        
+        return;
+
+        // SSS
+        let quad = this.postScene.getObjectByName("quad");
         quad.material = this.deferredMaterial;
-        this.renderer.setRenderTarget( this.renderTargetHblur );
+        this.toScreen(); // this.setRenderTarget( this.renderTargetHblur );
         this.renderer.render( this.postScene, this.postCamera );
-        // // render post FX
-        quad.material = this.hBlurMaterial;
-        this.renderer.setRenderTarget( null );
-        this.renderer.render( this.postScene, this.postCamera );
+        
+        // Blur steps
+        // quad.material = this.hBlurMaterial;
+        // this.setRenderTarget( null );
+        // this.renderer.render( this.postScene, this.postCamera );
 
     }
+
+    loadTexture( path, onload) {
+        const texture = this.textureLoader.load( path, onload );
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.flipY = false;
+
+        return texture;
+    }
+
+    setRenderTarget( rt ) {
+        this.renderer.setRenderTarget( rt );
+    }
+
+    toScreen() {
+        this.renderer.setRenderTarget( null );
+    }
+
     onWindowResize() {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-        
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
 }
 
- let player = new Player();
- player.init();
+let player = new Player();
+player.init();
 
 export { Player };

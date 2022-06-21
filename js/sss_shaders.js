@@ -2,63 +2,9 @@ import * as THREE from 'three'
 
 const SSS_ShaderChunk = {
 
-    deferredFS(){
+    perturbNormal: `
+        mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv) {
 
-        return [`
-        precision mediump float;
-        #define varying in
-        layout(location = 0) out highp vec4 pc_fragColor0;
-        layout(location = 1) out highp vec4 pc_fragColor1;
-        layout(location = 2) out highp vec4 pc_fragColor2;
-        layout(location = 3) out highp vec4 pc_fragColor3;
-
-        #define gl_FragDepthEXT gl_FragDepth
-        #define texture2D texture
-        #define textureCube texture
-        #define texture2DProj textureProj
-        #define texture2DLodEXT textureLod
-        #define texture2DProjLodEXT textureProjLod
-        #define textureCubeLodEXT textureLod
-        #define texture2DGradEXT textureGrad
-        #define texture2DProjGradEXT textureProjGrad
-        #define textureCubeGradEXT textureGrad
-        #define texture2D texture
-        #define HIGH_PRECISION
-        #define STANDARD 
-    
-        #define USE_UV
-        precision highp float;
-        precision highp int;
-        
-        `,
-        THREE.ShaderChunk.common,
-        THREE.ShaderChunk.packing,
-        THREE.ShaderChunk.uv_pars_fragment,
-        
-        `
-        //varyings
-        varying vec3 vNormal;
-        varying vec3 vViewPosition;
-    
-        //globals
-        uniform vec2 normalScale;
-
-        uniform vec4 u_clipping_plane;
-        uniform float u_time;
-        uniform vec3 u_background_color;
-
-        uniform vec3 u_camera_eye;
-
-        //material
-        uniform sampler2D map;
-        uniform sampler2D normalMap;
-        uniform sampler2D u_opacity_texture;
-        uniform sampler2D u_sss_texture;
-
-        uniform vec4 u_material_color; //color and alpha
-  
-
-        mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv){
             // get edge vectors of the pixel triangle
             #ifdef STANDARD_DERIVATIVES
             
@@ -97,32 +43,86 @@ const SSS_ShaderChunk = {
             float scale = ( det == 0.0 ) ? 0.0 : faceDirection * inversesqrt( det );
             return normalize( T * ( mapN.x * scale ) + B * ( mapN.y * scale ) + N * mapN.z );
         }
-        vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
+    `,
 
-        void main() {
-            vec3 normal = vNormal;
-         
-            float t = texture2D(u_opacity_texture, vUv).x;
-            float n = 0.6;
-            //if(n > t) discard;
+    deferredFS() {
 
-            vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
-            mapN.xy *= normalScale;
-            vec3 N = normalize( vNormal );
-            float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
-            vec3 detailedN  = perturbNormal2Arb( - vViewPosition, N, mapN, faceDirection );
+        return [`
+            precision mediump float;
+            #define varying in
+            layout(location = 0) out highp vec4 pc_fragColor0;
+            layout(location = 1) out highp vec4 pc_fragColor1;
+            layout(location = 2) out highp vec4 pc_fragColor2;
+            layout(location = 3) out highp vec4 pc_fragColor3;
+
+            #define gl_FragDepthEXT gl_FragDepth
+            #define texture2D texture
+            #define textureCube texture
+            #define texture2DProj textureProj
+            #define texture2DLodEXT textureLod
+            #define texture2DProjLodEXT textureProjLod
+            #define textureCubeLodEXT textureLod
+            #define texture2DGradEXT textureGrad
+            #define texture2DProjGradEXT textureProjGrad
+            #define textureCubeGradEXT textureGrad
+            #define texture2D texture
+            #define HIGH_PRECISION
+            #define STANDARD 
+        
+            #define USE_UV
+            precision highp float;
+            precision highp int;
             
-            
-            pc_fragColor0 = vec4(vViewPosition, 1.0);
-            pc_fragColor1 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
+            `,
+            THREE.ShaderChunk.common,
+            THREE.ShaderChunk.packing,
+            THREE.ShaderChunk.uv_pars_fragment,
+            `
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+        
+            uniform vec2 normalScale;
 
-            pc_fragColor2 = vec4(N*0.5 + vec3(0.5),0.8);
-            pc_fragColor3 = vec4(detailedN*0.5 + vec3(0.5), 1.0);
-        }
+            uniform vec4 u_clipping_plane;
+            uniform float u_time;
+            uniform vec3 u_background_color;
+            uniform vec3 u_camera_eye;
+
+            uniform sampler2D map;
+            uniform sampler2D normalMap;
+            uniform sampler2D u_opacity_texture;
+            uniform sampler2D u_sss_texture;
+
+            uniform vec4 u_material_color; //color and alpha
+
+            `, 
+            this.perturbNormal, 
+            `
+            vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
+
+            void main() {
+                vec3 normal = vNormal;
+            
+                float t = texture2D(u_opacity_texture, vUv).x;
+                float n = 0.6;
+                //if(n > t) discard;
+
+                vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;
+                mapN.xy *= normalScale;
+                vec3 N = normalize( vNormal );
+                float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
+                vec3 detailedN  = perturbNormal2Arb( - vViewPosition, N, mapN, faceDirection );
+                
+                pc_fragColor1 = vec4(vViewPosition, 1.0);
+                pc_fragColor0 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
+                pc_fragColor2 = vec4(N*0.5 + vec3(0.5),0.8);
+                pc_fragColor3 = vec4(detailedN*0.5 + vec3(0.5), 1.0);
+            }
         `].join("\n");
     },
 
-    deferredFinalFS(){
+    deferredFinalFS() {
+
         return `
         #define RE_Direct RE_Direct_BlinnPhong
         #define USE_SHADOWMAP
