@@ -116,7 +116,7 @@ const SSS_ShaderChunk = {
             pc_fragColor0 = vec4(vViewPosition, 1.0);
             pc_fragColor1 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
 
-            pc_fragColor2 = vec4(N*0.5 + vec3(0.5),1.0);
+            pc_fragColor2 = vec4(N*0.5 + vec3(0.5),0.8);
             pc_fragColor3 = vec4(detailedN*0.5 + vec3(0.5), 1.0);
         }
         `].join("\n");
@@ -157,6 +157,10 @@ const SSS_ShaderChunk = {
         uniform float u_shadowShrinking;
         uniform float u_translucencyScale;
         
+        uniform float camera_near;
+        uniform float camera_far;
+        uniform vec3 camera_eye;
+
         uniform mat4 projectionMatrix;
         
         mat4 u_invvp;
@@ -443,9 +447,10 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
            
-            pc_fragLight = vec4(vec3(light_depth), sss);
+            pc_fragLight = vec4(final_color, sss);
+
             pc_fragTransmitance = vec4(transmitance, 1.0);
-            pc_fragDepth = vec4((mask == 1.0)?light_depth:0.0, 1.0, sss, 1.0);
+            pc_fragDepth = vec4(vec3(mask), 1.0);
 
         }
 
@@ -511,7 +516,7 @@ const SSS_ShaderChunk = {
                 }
             }
             
-            pc_fragData = texture2D(irradiance_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
+            pc_fragData = texture2D(depth_aux_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
             
         }
         `;

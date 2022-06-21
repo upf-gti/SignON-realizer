@@ -102,7 +102,6 @@ class Player {
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 50;
         this.controls.target.set(0.0, 2.6, 0);
-        this.controls.update();
 
        
 
@@ -231,6 +230,7 @@ class Player {
             this.model.receiveShadow = true;
             this.scene.add(this.model);
             
+ 
             this.deferredMaterial = new THREE.ShaderMaterial( {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
                 fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
@@ -261,6 +261,9 @@ class Player {
                     u_shadowShrinking: { type: "number", value: 0.1 },
                     u_translucencyScale: { type: "number", value: 1100 },
                     ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
+                    camera_near: { value : this.camera.near},
+                    camera_far: { value : this.camera.far},
+                    camera_eye: {value: this.camera.position}
                 },
                 lights: true,
                 glslVersion: THREE.GLSL3
@@ -281,11 +284,11 @@ class Player {
                 fragmentShader: SSS_ShaderChunk.horizontalBlurFS(),
                 uniforms: {
                     irradiance_texture: { value: this.renderTargetHblur.texture[ 0 ] },
-                    depth_aux_texture: { value: this.renderTargetHblur.texture[ 1 ] },
+                    depth_aux_texture: { value: this.renderTargetHblur.texture[ 2 ] },
                     u_sssLevel: { value: 200 },
                     u_correction: { value: 800 },
                     u_maxdd: { value: 0.001 },
-                    u_invPixelSize: { value: [1/this.renderTargetHblur.texture[ 2 ].image.width, 1/this.renderTargetHblur.texture[ 2 ].image.height] },
+                    u_invPixelSize: { value: [1/this.renderTargetHblur.texture[ 0 ].image.width, 1/this.renderTargetHblur.texture[ 0 ].image.height] },
                     u_width: { value: 0.0 },
                     camera_near: { value : this.camera.near},
                     camera_far: { value : this.camera.far},
@@ -297,7 +300,9 @@ class Player {
             $('#loading').fadeOut(); //hide();
             this.clock.start()
             if(onLoaded)
-            onLoaded(this);
+                onLoaded(this);
+
+            this.animate();
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
