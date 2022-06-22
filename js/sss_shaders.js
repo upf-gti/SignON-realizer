@@ -64,16 +64,6 @@ const SSS_ShaderChunk = {
             layout(location = 2) out highp vec4 pc_fragColor2;
             layout(location = 3) out highp vec4 pc_fragColor3;
 
-            #define gl_FragDepthEXT gl_FragDepth
-            #define texture2D texture
-            #define textureCube texture
-            #define texture2DProj textureProj
-            #define texture2DLodEXT textureLod
-            #define texture2DProjLodEXT textureProjLod
-            #define textureCubeLodEXT textureLod
-            #define texture2DGradEXT textureGrad
-            #define texture2DProjGradEXT textureProjGrad
-            #define textureCubeGradEXT textureGrad
             #define texture2D texture
             #define HIGH_PRECISION
             #define STANDARD 
@@ -90,20 +80,11 @@ const SSS_ShaderChunk = {
             varying vec3 vNormal;
             varying vec3 vViewPosition;
             varying vec3 vWorldPosition;
-        
-            uniform vec2 normalScale;
-
-            uniform vec4 u_clipping_plane;
-            uniform float u_time;
-            uniform vec3 u_background_color;
 
             uniform sampler2D map;
             uniform sampler2D normalMap;
-            uniform sampler2D u_opacity_texture;
+            uniform sampler2D opacityMap;
             uniform sampler2D u_sss_texture;
-
-            uniform vec4 u_material_color; //color and alpha
-
             `, 
             this.perturbNormal, 
             `
@@ -112,17 +93,16 @@ const SSS_ShaderChunk = {
             void main() {
                 vec3 normal = vNormal;
             
-                float t = texture2D(u_opacity_texture, vUv).x;
-                float n = 0.6;
-                //if(n > t) discard;
-
+                float alpha = texture2D(opacityMap, vUv).x;
+                vec4 diffuse = texture2D( map, vUv);
                 vec3 mapN = texture2D( normalMap, vUv ).rgb;
                 vec3 N = normalize( vNormal );
                 vec3 V = normalize( cameraPosition - vWorldPosition );
                 vec3 detailedN  = perturbNormal( N, V, vUv, mapN );
-                
-                pc_fragColor0 = vec4(vWorldPosition, 1.0);
-                pc_fragColor1 = vec4(mapTexelToLinear(texture2D( map, vUv)).rgb, texture2D( u_sss_texture, vUv ).r);
+                float sss = texture2D( u_sss_texture, vUv ).r;
+
+                pc_fragColor1 = vec4(vWorldPosition, sss);
+                pc_fragColor0 = mapTexelToLinear(diffuse);
                 pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 0.0);
                 pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0);
             }
@@ -445,7 +425,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
            
-            pc_fragLight = vec4(dNormals, 1);
+            pc_fragLight = vec4(final_color, sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? light_depth : 0.0, 1.0, sss, 1.0);
         }

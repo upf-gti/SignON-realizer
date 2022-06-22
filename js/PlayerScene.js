@@ -74,7 +74,7 @@ class Player {
         this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
         this.dirLight.position.set( 3, 10, 50 );
         this.dirLight.castShadow = false;
-        //this.scene.add( this.dirLight );
+        this.scene.add( this.dirLight );
         //this.postScene.add( this.dirLight );
 
         let pointLight = new THREE.PointLight( 0xffa95c, 1 );
@@ -123,8 +123,10 @@ class Player {
                     object.frustumCulled = false;
                     object.castShadow = true;
                     object.receiveShadow = true;
-                    if (object.name == "Eyelashes")
+                    if (object.name == "Eyelashes") {
+                        object.material.side = THREE.DoubleSide;
                         object.castShadow = false;
+                    }
                     if(object.material.map) object.material.map.anisotropy = 16; 
                     
                 } else if (object.isBone) {
@@ -176,6 +178,7 @@ class Player {
             
             const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
             const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
+            const opacity_texture = this.loadTexture( './data/textures/Woman_Body_Opacity.png' );
             const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
             
@@ -188,6 +191,7 @@ class Player {
             uniforms["u_sss_texture"] =  { value: sss_texture };
             uniforms["u_transmitance_lut_texture"] =  { value: transmitance_lut_texture };
             uniforms["u_specular_lut_texture"] =  { value: specular_lut_texture };
+            uniforms["opacityMap"] =  { value: opacity_texture };
             
             let gBufferMaterial =  new THREE.ShaderMaterial({
                 uniforms: uniforms,
@@ -201,10 +205,19 @@ class Player {
             gBufferMaterial.extensions.drawBuffers = true;
             gBufferMaterial.extensions.derivatives = true;
             
-            this.model.getObjectByName("Body").material = gBufferMaterial;
             this.model.receiveShadow = true;
             this.scene.add(this.model);
+
+            const armature = this.scene.getObjectByName("Armature");
             
+            console.log( "Original:", this.model.getObjectByName("Eyelashes").material );
+
+            for( const obj of armature.children ) {
+
+                if(obj.material && obj.material.name.includes( "Bodymat" ))
+                    obj.material = obj.name === "Eyelashes" ? gBufferMaterial.clone() : gBufferMaterial;
+            }
+
             // Create POST FX Materials
 
             this.deferredMaterial = new THREE.ShaderMaterial( {
@@ -291,8 +304,9 @@ class Player {
     render() {
 
         // Fill GBuffers
-        this.renderer.setRenderTarget( this.renderTargetDef );
+        // this.renderer.setRenderTarget( this.renderTargetDef );
         this.renderer.render( this.scene, this.camera );
+        return;
 
         // Lights
         let quad = this.postScene.getObjectByName("quad");
@@ -337,5 +351,6 @@ class Player {
 
 let player = new Player();
 player.init();
+window.player = player;
 
 export { Player };
