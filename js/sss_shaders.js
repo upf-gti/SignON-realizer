@@ -499,10 +499,30 @@ const SSS_ShaderChunk = {
                 }
             }
             
-            pc_fragData = texture2D(depth_aux_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
+            pc_fragData = texture2D(irradiance_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
             
         }
         `;
+    },
+
+    accumulativeFS(){
+        return `	
+        
+        precision highp float;
+	
+        varying vec2 vUv;
+    
+        uniform vec3 u_weight;
+        uniform sampler2D u_color_texture;
+        uniform sampler2D u_depth_aux_tex;
+        
+    
+        void main() {
+            vec4 color = texture2D( u_color_texture, vUv );
+            float sssIntensity = texture2D( u_depth_aux_tex, vUv ).y;
+            gl_FragColor = vec4(color.rgb * u_weight, sssIntensity);
+        }
+    `
     }
 
 }

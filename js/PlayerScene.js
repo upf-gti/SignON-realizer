@@ -31,6 +31,8 @@ class Player {
         this.multiRT = true;
         this.renderTargetDef = null;
         this.renderTargetHblur = null;
+        this.renderTargetAcc = null;
+
         this.postScene = null;
         this.postCamera = null;
 
@@ -160,6 +162,19 @@ class Player {
                 this.renderTargetHblur.texture[ i ].type = THREE.FloatType;
             }
 
+            this.renderTargetAcc = new THREE.WebGLMultipleRenderTargets(
+                window.innerWidth * window.devicePixelRatio,
+                window.innerHeight * window.devicePixelRatio,
+                1
+            );
+
+            for ( let i = 0, il = this.renderTargetAcc.texture.length; i < il; i ++ ) {
+
+                this.renderTargetAcc.texture[ i ].minFilter = THREE.NearestFilter;
+                this.renderTargetAcc.texture[ i ].magFilter = THREE.NearestFilter;
+                this.renderTargetAcc.texture[ i ].type = THREE.FloatType;
+            }
+
             // Name our G-Buffer attachments for debugging
             this.renderTargetDef.texture[ 0 ].name = 'pc_fragColor0';
             this.renderTargetDef.texture[ 1 ].name = 'pc_fragColor1';
@@ -169,6 +184,9 @@ class Player {
             this.renderTargetHblur.texture[ 0 ].name = 'pc_fragLight';
             this.renderTargetHblur.texture[ 1 ].name = 'pc_fragTransmitance';
             this.renderTargetHblur.texture[ 2 ].name = 'pc_fragDepth';
+
+            this.renderTargetAcc.texture[ 0 ].name = 'pc_finalColor';
+            
             
             this.renderTargetDef.depthTexture = new THREE.DepthTexture();
             
@@ -315,9 +333,9 @@ class Player {
         // Lights
         let quad = this.postScene.getObjectByName("quad");
         quad.material = this.deferredMaterial;
-        this.toScreen(); // this.setRenderTarget( this.renderTargetHblur );
+        this.setRenderTarget( this.renderTargetHblur );
+        this.toScreen()
         this.renderer.render( this.postScene, this.postCamera );
-
         // Blur steps
         // quad.material = this.hBlurMaterial;
         // this.setRenderTarget( null );
