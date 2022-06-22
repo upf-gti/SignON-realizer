@@ -28,6 +28,7 @@ class Player {
  
         this.model = null;
 
+        this.multiRT = true;
         this.renderTargetDef = null;
         this.renderTargetHblur = null;
         this.postScene = null;
@@ -105,9 +106,6 @@ class Player {
         this.controls.maxDistance = 50;
         this.controls.target.set(0.0, 2.6, 0);
 
-        // so the screen is not black while loading
-        this.renderer.render( this.scene, this.camera );
-        
         // Load the model
         this.loaderGLB.load( './data/models/Eva_Y.glb', (glb) => {
 
@@ -133,7 +131,7 @@ class Player {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
-            
+
             // Create a multi render target with Float buffers
             this.renderTargetDef = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
@@ -178,7 +176,6 @@ class Player {
             
             const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
             const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
-            const opacity_texture = this.loadTexture( './data/textures/Woman_Body_Opacity.png' );
             const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
             
@@ -191,15 +188,22 @@ class Player {
             uniforms["u_sss_texture"] =  { value: sss_texture };
             uniforms["u_transmitance_lut_texture"] =  { value: transmitance_lut_texture };
             uniforms["u_specular_lut_texture"] =  { value: specular_lut_texture };
-            uniforms["opacityMap"] =  { value: opacity_texture };
-            
-            let gBufferMaterial =  new THREE.ShaderMaterial({
+            uniforms["alphaTest"] =  { value: 0.5 };
+
+            const gBufferConfig = {
                 uniforms: uniforms,
                 vertexShader: ShaderChunk.getVertexShader(),
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
                 glslVersion: THREE.GLSL3
-            });
+            };
+
+            let gBufferMaterial = new THREE.ShaderMaterial( gBufferConfig );
+            let gBufferTransparentMaterial =  new THREE.ShaderMaterial( Object.assign( gBufferConfig, { 
+                transparent: true, 
+                depthWrite: false, 
+                side: THREE.DoubleSide
+            } ));
 
             gBufferMaterial.colorWrite = true;
             gBufferMaterial.extensions.drawBuffers = true;
@@ -208,14 +212,9 @@ class Player {
             this.model.receiveShadow = true;
             this.scene.add(this.model);
 
-            const armature = this.scene.getObjectByName("Armature");
-            
-            console.log( "Original:", this.model.getObjectByName("Eyelashes").material );
-
-            for( const obj of armature.children ) {
-
+            for( const obj of this.scene.getObjectByName("Armature").children ) {
                 if(obj.material && obj.material.name.includes( "Bodymat" ))
-                    obj.material = obj.name === "Eyelashes" ? gBufferMaterial.clone() : gBufferMaterial;
+                    obj.material = obj.name === "Eyelashes" ? gBufferTransparentMaterial : gBufferMaterial;
             }
 
             // Create POST FX Materials
@@ -241,8 +240,8 @@ class Player {
                     spotShadowMatrix: { value : [] },
                     pointShadowMap: { value : [] },
                     pointShadowMatrix: { value : [] },
-                    geometry_texture: { value: this.renderTargetDef.texture[ 0 ] },
-                    map: { type: "t", value: this.renderTargetDef.texture[ 1 ] },
+                    map: { type: "t", value: this.renderTargetDef.texture[ 0 ] },
+                    geometry_texture: { value: this.renderTargetDef.texture[ 1 ] },
                     normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                     detailed_normal_texture: { value: this.renderTargetDef.texture[ 3 ] },
                     depth_texture: { value: this.renderTargetDef.depthTexture },
@@ -303,10 +302,15 @@ class Player {
 
     render() {
 
-        // Fill GBuffers
-        // this.renderer.setRenderTarget( this.renderTargetDef );
+        if( this.multiRT ) {
+            // Fill GBuffers
+            this.renderer.setRenderTarget( this.renderTargetDef );
+        }
+
         this.renderer.render( this.scene, this.camera );
-        return;
+
+        if( !this.multiRT ) 
+            return;
 
         // Lights
         let quad = this.postScene.getObjectByName("quad");

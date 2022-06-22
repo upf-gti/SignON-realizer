@@ -93,16 +93,16 @@ const SSS_ShaderChunk = {
             void main() {
                 vec3 normal = vNormal;
             
-                float alpha = texture2D(opacityMap, vUv).x;
                 vec4 diffuse = texture2D( map, vUv);
+                float alpha = diffuse.a;
                 vec3 mapN = texture2D( normalMap, vUv ).rgb;
                 vec3 N = normalize( vNormal );
                 vec3 V = normalize( cameraPosition - vWorldPosition );
                 vec3 detailedN  = perturbNormal( N, V, vUv, mapN );
                 float sss = texture2D( u_sss_texture, vUv ).r;
 
+                pc_fragColor0 = vec4(mapTexelToLinear(diffuse).rgb, alpha);
                 pc_fragColor1 = vec4(vWorldPosition, sss);
-                pc_fragColor0 = mapTexelToLinear(diffuse);
                 pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 0.0);
                 pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0);
             }
@@ -140,6 +140,7 @@ const SSS_ShaderChunk = {
         
         uniform sampler2D specular_texture;
         uniform float specularIntensity;
+        uniform float alphaTest;
 
         uniform float u_ambientIntensity;
         uniform float u_shadowShrinking;
@@ -259,18 +260,24 @@ const SSS_ShaderChunk = {
         }
         void main() {
             
-            vec3 transmitance;
+            vec4 colorBuffer = texture( map, vUv );
+            vec3 albedo = colorBuffer.rgb;
+            float alpha = colorBuffer.a;
 
-            vec3 albedo = texture( map, vUv ).rgb;
-            vec3 position = texture( geometry_texture, vUv ).rgb;
+            // if ( alpha < alphaTest ) discard;
+
+            vec4 positionBuffer = texture( geometry_texture, vUv );
+            vec3 position = positionBuffer.rgb;
+            float sss = positionBuffer.a;
+
             vec3 normal = normalize( texture( normalMap, vUv ).rgb * 2.0 - 1.0);
-            float sss = texture( map, vUv ).a;
             float mask = 1.0 - texture( normalMap, vUv ).a;
-            vec3 specular = texture( specular_texture, vUv ).rgb;
-            
             vec3 dNormals = normalize(texture( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
-            vec3 L;
             
+            vec3 specular = texture( specular_texture, vUv ).rgb;
+            vec3 transmitance;
+            
+            vec3 L;
             float NdotL = 1.0;
             //NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
             
@@ -278,7 +285,6 @@ const SSS_ShaderChunk = {
             
             u_invvp = inverse( projectionMatrix * viewMatrix );
             
-
             BlinnPhongMaterial material;
             material.diffuseColor = albedo;
             material.specularColor = specular;
@@ -425,6 +431,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
            
+            // pc_fragLight = vec4(vec3(1.0 - colorBuffer.a), sss);
             pc_fragLight = vec4(final_color, sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? light_depth : 0.0, 1.0, sss, 1.0);
