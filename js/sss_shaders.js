@@ -56,6 +56,7 @@ const SSS_ShaderChunk = {
 
     deferredFS() {
 
+        
         return [`
             precision mediump float;
             #define varying in
@@ -85,11 +86,48 @@ const SSS_ShaderChunk = {
             uniform sampler2D normalMap;
             uniform sampler2D opacityMap;
             uniform sampler2D u_sss_texture;
+            
             `, 
             this.perturbNormal, 
             `
             vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
 
+            float hash_2d(vec2 p) {
+                return fract(1.0e4 * sin(17.0 * p.x + 0.1 * p.y) * (0.1 + abs(sin(13.0 * p.y + p.x))));
+            }
+            
+            float hash_3d(vec3 p) {
+                return hash_2d(vec2(hash_2d(p.xy), p.z));
+            }
+            
+            float compute_alpha_hash_threshold(vec3 pos, float hash_scale) {
+                vec3 dx = dFdx(pos);
+                vec3 dy = dFdx(pos);
+                float delta_max_sqr = max(length(dx), length(dy));
+                float pix_scale = 1.0 / (hash_scale * delta_max_sqr);
+            
+                vec2 pix_scales =
+                        vec2(exp2(floor(log2(pix_scale))), exp2(ceil(log2(pix_scale))));
+            
+                vec2 a_thresh = vec2(hash_3d(floor(pix_scales.x * pos.xyz)),
+                        hash_3d(floor(pix_scales.y * pos.xyz)));
+            
+                float lerp_factor = fract(log2(pix_scale));
+            
+                float a_interp = (1.0 - lerp_factor) * a_thresh.x + lerp_factor * a_thresh.y;
+            
+                float min_lerp = min(lerp_factor, 1.0 - lerp_factor);
+            
+                vec3 cases = vec3(a_interp * a_interp / (2.0 * min_lerp * (1.0 - min_lerp)),
+                        (a_interp - 0.5 * min_lerp) / (1.0 - min_lerp),
+                        1.0 - ((1.0 - a_interp) * (1.0 - a_interp) /
+                                      (2.0 * min_lerp * (1.0 - min_lerp))));
+            
+                float alpha_hash_threshold =
+                        (lerp_factor < (1.0 - min_lerp)) ? ((lerp_factor < min_lerp) ? cases.x : cases.y) : cases.z;
+            
+                return clamp(alpha_hash_threshold, 0.0, 1.0);
+            }
             void main() {
                 vec3 normal = vNormal;
             
@@ -100,11 +138,17 @@ const SSS_ShaderChunk = {
                 vec3 V = normalize( cameraPosition - vWorldPosition );
                 vec3 detailedN  = perturbNormal( N, V, vUv, mapN );
                 float sss = texture2D( u_sss_texture, vUv ).r;
+                
+                if (alpha < compute_alpha_hash_threshold(vViewPosition, 1.5)) {
+                    discard;
+                }
 
                 pc_fragColor0 = vec4(mapTexelToLinear(diffuse).rgb, alpha);
                 pc_fragColor1 = vec4(vWorldPosition, sss);
+
                 pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 0.0);
                 pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0);
+               
             }
         `].join("\n");
     },
@@ -113,7 +157,6 @@ const SSS_ShaderChunk = {
 
         return `
         #define RE_Direct RE_Direct_BlinnPhong
-        #define USE_SHADOWMAP
         #define SHADOWMAP_TYPE_PCF
 
         precision highp float;
@@ -262,9 +305,10 @@ const SSS_ShaderChunk = {
             
             vec4 colorBuffer = texture( map, vUv );
             vec3 albedo = colorBuffer.rgb;
+            colorBuffer.a =colorBuffer.a;
             float alpha = colorBuffer.a;
 
-            // if ( alpha < alphaTest ) discard;
+            //if ( alpha < alphaTest ) discard;
 
             vec4 positionBuffer = texture( geometry_texture, vUv );
             vec3 position = positionBuffer.rgb;
@@ -431,7 +475,8 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight;// * NdotL;
             vec3 final_color = ambient + diffuse;
            
-            // pc_fragLight = vec4(vec3(1.0 - colorBuffer.a), sss);
+            
+            //pc_fragLight = vec4(texture( normalMap, vUv ).rgb, alpha) ;
             pc_fragLight = vec4(final_color, sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? light_depth : 0.0, 1.0, sss, 1.0);
@@ -510,6 +555,9 @@ const SSS_ShaderChunk = {
         
         precision highp float;
 	
+        layout(location = 0) out highp vec4 pc_finalColor;
+        #define varying in
+        #define texture2 texture
         varying vec2 vUv;
     
         uniform vec3 u_weight;
@@ -520,7 +568,26 @@ const SSS_ShaderChunk = {
         void main() {
             vec4 color = texture2D( u_color_texture, vUv );
             float sssIntensity = texture2D( u_depth_aux_tex, vUv ).y;
-            gl_FragColor = vec4(color.rgb * u_weight, sssIntensity);
+            pc_finalColor = vec4(color.rgb * u_weight, sssIntensity);
+        }
+    `
+    },
+
+    finalGammaFS(){
+        return `	
+        
+        precision highp float;
+        layout(location = 0) out highp vec4 pc_finalColor;
+        
+        #define varying in
+        #define texture2 texture
+
+        varying vec2 vUv;
+
+        uniform sampler2D u_texture;
+        
+        void main() {
+            pc_finalColor = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
         }
     `
     }

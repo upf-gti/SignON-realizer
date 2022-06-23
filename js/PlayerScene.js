@@ -38,6 +38,7 @@ class Player {
 
         this.deferredMaterial = null;
         this.hBlurMaterial = null;
+        this.accMaterial = null;
 
         this.stats = new Stats();
         document.body.appendChild( this.stats.dom )
@@ -149,10 +150,24 @@ class Player {
             }
 
             // Create a multi render target with Float buffers
-            this.renderTargetHblur = new THREE.WebGLMultipleRenderTargets(
+            this.renderTargetLights = new THREE.WebGLMultipleRenderTargets(
                 window.innerWidth * window.devicePixelRatio,
                 window.innerHeight * window.devicePixelRatio,
                 3
+            );
+
+            for ( let i = 0, il = this.renderTargetLights.texture.length; i < il; i ++ ) {
+
+                this.renderTargetLights.texture[ i ].minFilter = THREE.NearestFilter;
+                this.renderTargetLights.texture[ i ].magFilter = THREE.NearestFilter;
+                this.renderTargetLights.texture[ i ].type = THREE.FloatType;
+            }
+
+            // Create a multi render target with Float buffers
+            this.renderTargetHblur = new THREE.WebGLMultipleRenderTargets(
+                window.innerWidth * window.devicePixelRatio,
+                window.innerHeight * window.devicePixelRatio,
+                1
             );
 
             for ( let i = 0, il = this.renderTargetHblur.texture.length; i < il; i ++ ) {
@@ -181,9 +196,11 @@ class Player {
             this.renderTargetDef.texture[ 2 ].name = 'pc_fragColor2';
             this.renderTargetDef.texture[ 3 ].name = 'pc_fragColor3';
 
-            this.renderTargetHblur.texture[ 0 ].name = 'pc_fragLight';
-            this.renderTargetHblur.texture[ 1 ].name = 'pc_fragTransmitance';
-            this.renderTargetHblur.texture[ 2 ].name = 'pc_fragDepth';
+            this.renderTargetLights.texture[ 0 ].name = 'pc_fragLight';
+            this.renderTargetLights.texture[ 1 ].name = 'pc_fragTransmitance';
+            this.renderTargetLights.texture[ 2 ].name = 'pc_fragDepth';
+
+            this.renderTargetHblur.texture[ 0 ].name = 'pc_fragData';
 
             this.renderTargetAcc.texture[ 0 ].name = 'pc_finalColor';
             
@@ -196,6 +213,7 @@ class Player {
             const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
             const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
+            const opacity_texture = this.loadTexture( './data/textures/Woman_Body_Opacity.png' );
             
             let mat = this.model.getObjectByName("Body").material.clone();
 
@@ -207,6 +225,7 @@ class Player {
             uniforms["u_transmitance_lut_texture"] =  { value: transmitance_lut_texture };
             uniforms["u_specular_lut_texture"] =  { value: specular_lut_texture };
             uniforms["alphaTest"] =  { value: 0.5 };
+            uniforms["opacityMap"] =  { value: opacity_texture };
 
             const gBufferConfig = {
                 uniforms: uniforms,
@@ -220,12 +239,18 @@ class Player {
             let gBufferTransparentMaterial =  new THREE.ShaderMaterial( Object.assign( gBufferConfig, { 
                 transparent: true, 
                 depthWrite: false, 
-                side: THREE.DoubleSide
+                defines: {'PEPE': 1},
+                blending: THREE.NormalBlending,
+                side: THREE.DoubleSide,
             } ));
 
             gBufferMaterial.colorWrite = true;
             gBufferMaterial.extensions.drawBuffers = true;
             gBufferMaterial.extensions.derivatives = true;
+            
+            gBufferTransparentMaterial.colorWrite = true;
+            gBufferTransparentMaterial.extensions.drawBuffers = true;
+            gBufferTransparentMaterial.extensions.derivatives = true;
             
             this.model.receiveShadow = true;
             this.scene.add(this.model);
@@ -239,7 +264,7 @@ class Player {
 
             this.deferredMaterial = new THREE.ShaderMaterial( {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
-                fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
+                fragmentShader: SSS_ShaderChunk.deferredFinalFS(true),
                 uniforms: {
                     lightProbe: { value : [] },
                     directionalLights: { value : []} ,
@@ -269,7 +294,8 @@ class Player {
                     ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0)},
                     camera_near: { value : this.camera.near},
                     camera_far: { value : this.camera.far},
-                    camera_eye: {value: this.camera.position}
+                    camera_eye: {value: this.camera.position},
+                    alphaTest :  { value: 0.5 }
                 },
                 lights: true,
                 glslVersion: THREE.GLSL3
@@ -287,16 +313,38 @@ class Player {
                 vertexShader: ShaderChunk.vertexShaderQuad(),
                 fragmentShader: SSS_ShaderChunk.horizontalBlurFS(),
                 uniforms: {
-                    irradiance_texture: { value: this.renderTargetHblur.texture[ 0 ] },
-                    depth_aux_texture: { value: this.renderTargetHblur.texture[ 2 ] },
+                    irradiance_texture: { value: this.renderTargetLights.texture[ 0 ] },
+                    depth_aux_texture: { value: this.renderTargetLights.texture[ 2 ] },
                     u_sssLevel: { value: 200 },
                     u_correction: { value: 800 },
                     u_maxdd: { value: 0.001 },
-                    u_invPixelSize: { value: [1/this.renderTargetHblur.texture[ 0 ].image.width, 1/this.renderTargetHblur.texture[ 0 ].image.height] },
+                    u_invPixelSize: { value: [1/this.renderTargetLights.texture[ 0 ].image.width, 1/this.renderTargetLights.texture[ 0 ].image.height] },
                     u_width: { value: 0.0 },
                     camera_near: { value : this.camera.near},
                     camera_far: { value : this.camera.far},
                 
+                },
+                glslVersion: THREE.GLSL3
+            });
+
+            this.accMaterial = new THREE.ShaderMaterial( {
+                vertexShader: ShaderChunk.vertexShaderQuad(),
+                fragmentShader: SSS_ShaderChunk.accumulativeFS(),
+                uniforms: {
+                    u_color_texture: { value: this.renderTargetLights.texture[ 0 ] },
+                    depth_aux_texture: { value: this.renderTargetLights.texture[ 2 ] },
+                    u_weight: { value: new THREE.Vector3(1,1,1) },
+                    
+                },
+                glslVersion: THREE.GLSL3
+            });
+
+            this.gammaMaterial = new THREE.ShaderMaterial( {
+                vertexShader: ShaderChunk.vertexShaderQuad(),
+                fragmentShader: SSS_ShaderChunk.finalGammaFS(),
+                uniforms: {
+                    u_texture: { value:  this.renderTargetAcc.texture[ 0 ] },
+                    
                 },
                 glslVersion: THREE.GLSL3
             });
@@ -320,29 +368,61 @@ class Player {
 
     render() {
 
+        let quad = this.postScene.getObjectByName("quad");
+        
         if( this.multiRT ) {
             // Fill GBuffers
             this.renderer.setRenderTarget( this.renderTargetDef );
         }
-
+        
         this.renderer.render( this.scene, this.camera );
-
+        
         if( !this.multiRT ) 
-            return;
-
-        // Lights
-        let quad = this.postScene.getObjectByName("quad");
+        return;
+        
         quad.material = this.deferredMaterial;
-        this.setRenderTarget( this.renderTargetHblur );
-        this.toScreen()
+        // Lights
+        this.setRenderTarget( this.renderTargetLights );
         this.renderer.render( this.postScene, this.postCamera );
-        // Blur steps
-        // quad.material = this.hBlurMaterial;
-        // this.setRenderTarget( null );
-        // this.renderer.render( this.postScene, this.postCamera );
-
+        
+        
         // SSS (todo)
         // ....
+        let V = [0.0064, 0.0516, 0.2719, 2.0062];
+        let pv = 0;
+        let RGB = [new THREE.Vector3(0.2405, 0.4474, 0.6157), new THREE.Vector3(0.1158, 0.3661, 0.3439), new THREE.Vector3(0.1836, 0.1864, 0.0), new THREE.Vector3(0.46, 0.0, 0.0402)];
+        for(let i = 0; i < 4; i++){
+            
+            // Blur steps
+            quad.material = this.hBlurMaterial;
+            quad.material.uniforms.u_width = Math.sqrt(V[i]-pv);
+            pv = V[i];
+            this.setRenderTarget( this.renderTargetHblur );
+            this.renderer.render( this.postScene, this.postCamera );
+            
+            
+            this.accMaterial.blendSrc = THREE.SrcAlphaFactor;
+            quad.material = this.accMaterial;
+            quad.material.uniforms.irradiance_texture = this.renderTargetHblur.texture[0];
+            quad.material.uniforms.u_weight.value = RGB[i];
+            
+            this.setRenderTarget( this.renderTargetAcc );
+            this.renderer.render( this.postScene, this.postCamera );
+        }
+        quad.material.blendSrc = THREE.OneMinusSrcAlphaFactor;
+        quad.material.uniforms.u_weight.value = new THREE.Vector3(1.0,1.0,1.0);
+
+        this.renderer.render( this.postScene, this.postCamera );
+
+        quad.material.blendSrc = THREE.OneFactor;
+        quad.material.uniforms.u_color_texture = this.renderTargetLights.texture[1];
+        this.renderer.render( this.postScene, this.postCamera );
+
+
+        quad.material = this.gammaMaterial;
+        quad.material.needsUpdate = true;
+        this.toScreen()
+        this.renderer.render( this.postScene, this.postCamera );
     }
 
     loadTexture( path, onload) {

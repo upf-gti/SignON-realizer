@@ -606,6 +606,7 @@ const ShaderChunk = {
         #define MAX_BONES 1024
         #define USE_FOG
         #define USE_MAP
+        #define USE_COLOR_ALPHA
         #define USE_NORMALMAP
         #define TANGENTSPACE_NORMALMAP
         #define USE_ROUGHNESSMAP
@@ -1024,7 +1025,7 @@ const ShaderChunk = {
              #if NUM_POINT_LIGHT_SHADOWS > 0
               
                 shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
-             vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;
+                vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;
              
                #endif
             #endif
