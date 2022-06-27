@@ -544,7 +544,7 @@ const SSS_ShaderChunk = {
                 }
             }
             
-            pc_fragData = texture2D(irradiance_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
+            pc_fragData = vec4(color, 1.0);//texture2D(irradiance_texture, vUv);
             
         }
         `;
@@ -568,7 +568,7 @@ const SSS_ShaderChunk = {
         void main() {
             vec4 color = texture2D( u_color_texture, vUv );
             float sssIntensity = texture2D( u_depth_aux_tex, vUv ).y;
-            pc_finalColor = vec4(color.rgb * u_weight, sssIntensity);
+            pc_finalColor = vec4(color.rgb,sssIntensity);//vec4(color.rgb * u_weight, sssIntensity);
         }
     `
     },
@@ -577,7 +577,7 @@ const SSS_ShaderChunk = {
         return `	
         
         precision highp float;
-        layout(location = 0) out highp vec4 pc_finalColor;
+        layout(location = 0) out highp vec4 pc_Color;
         
         #define varying in
         #define texture2 texture
@@ -587,7 +587,7 @@ const SSS_ShaderChunk = {
         uniform sampler2D u_texture;
         
         void main() {
-            pc_finalColor = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
+            pc_Color = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
         }
     `
     }
