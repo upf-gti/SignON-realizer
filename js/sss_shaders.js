@@ -114,7 +114,7 @@ const SSS_ShaderChunk = {
             THREE.ShaderChunk.packing,
             THREE.ShaderChunk.uv_pars_fragment,
             `
-            varying vec3 vNormal;
+            varying vec3 vWorldNormal;
             varying vec3 vViewPosition;
             varying vec3 vWorldPosition;
 
@@ -130,7 +130,6 @@ const SSS_ShaderChunk = {
             vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
 
             void main() {
-                vec3 normal = vNormal;
             
                 vec4 diffuse = texture2D( map, vUv );
                 float alpha = diffuse.a;
@@ -138,7 +137,7 @@ const SSS_ShaderChunk = {
                 float specularValue = texture2D( specularMap, vUv).r;
 
                 vec3 normalMapColor = texture2D( normalMap, vUv ).rgb;
-                vec3 N = normalize( vNormal );
+                vec3 N = normalize( vWorldNormal );
                 vec3 V = normalize( cameraPosition - vWorldPosition );
                 vec3 detailedN  = perturbNormal( N, V, vUv, normalMapColor );
                 float sss = texture2D( sssMap, vUv ).r;
