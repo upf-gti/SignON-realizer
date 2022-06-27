@@ -232,6 +232,7 @@ class Player {
                 vertexShader: ShaderChunk.getVertexShader(),
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
+                colorWrite: true,
                 glslVersion: THREE.GLSL3,
                 defines: this.multiRT ? { MULTI_RT: 1 } : {}
             };
@@ -242,13 +243,12 @@ class Player {
                 depthWrite: false, 
                 blending: THREE.NormalBlending,
                 side: THREE.DoubleSide,
+                defines: { SKIP_NORMALS: 1 }
             } ));
 
-            gBufferMaterial.colorWrite = true;
             gBufferMaterial.extensions.drawBuffers = true;
             gBufferMaterial.extensions.derivatives = true;
             
-            gBufferTransparentMaterial.colorWrite = true;
             gBufferTransparentMaterial.extensions.drawBuffers = true;
             gBufferTransparentMaterial.extensions.derivatives = true;
             
@@ -381,12 +381,13 @@ class Player {
         if( !this.multiRT ) 
         return;
         
-        quad.material = this.deferredMaterial;
         // Lights
-        this.setRenderTarget( this.renderTargetLights );
+        quad.material = this.deferredMaterial;
+        this.toScreen(); // this.setRenderTarget( this.renderTargetLights );
         this.renderer.render( this.postScene, this.postCamera );
         
-        
+        return;
+
         // SSS (todo)
         // ....
         let V = [0.0064, 0.0516, 0.2719, 2.0062];
