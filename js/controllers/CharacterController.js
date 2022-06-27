@@ -366,7 +366,7 @@ CharacterController.prototype.processBML = function(key, bml) {
             thatFacial.newFA(bml, true);
             break;
         case "speech":
-        	console.log("TTS:" + bml.text)
+        	console.log("TTS:" + bml.textToLipInfo.text)
           /*this.speechController.start = true;
             this.speechController.speak(bml.text);*/
             //bml.textToLipInfo = { text: "ai sii faiv lamps", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }

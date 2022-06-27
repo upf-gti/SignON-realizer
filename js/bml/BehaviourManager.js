@@ -106,7 +106,7 @@ BehaviourManager.prototype.newBlock = function (block, time) {
 
 	// Time now
 	//var d = new Date();
-	if (this.time == 0) {
+	if (time == 0) {
 		time = 0.001;
 	}
 	this.time = time;
@@ -475,7 +475,7 @@ BehaviourManager.prototype.addToStack = function (block) {
 		}
 		// Merge and add to BML stacks
 		else { // Try to merge, if not, add "del" variable to bml
-			if (block.blink)
+			if (block.blink)		
 				this.processIntoBMLStack(block.blink, this.blinkStack, this.time + block.start, block.composition);
 
 			if (block.gaze)
@@ -677,7 +677,7 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 	// Could be called directly? Should always return true
 	let merge = composition=="MERGE" ? true : false;
 	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
-  bml.del = !merged;
+ 	bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
 	// should fit in the stack.
@@ -744,12 +744,16 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 					if(merged) break;
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i + 1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime) {
-						if (!merged) {
-							tmp = stack.splice(i, stack.length);
-							stack.push(bml);
-							stack.concat(tmp);
-							merged = true;
-						}
+						if (!merged){
+                            tmp = stack.splice(i, stack.length);
+                            stack.push(bml);
+                            for(var j = 0; j < tmp.length; j++)
+                            {
+                                stack.push(tmp[j]);
+                            }
+                            //stack = stack.concat(tmp);
+                            merged = true;
+                        }
 					}
 					// If it doesn't fit remove if overwrite
 					else if (overwrite) {

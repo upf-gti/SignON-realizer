@@ -1,10 +1,17 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.136';
+import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
 
 let firstframe = true;
+
+
+// Correct negative blenshapes shader of ThreeJS
+THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
+THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
+THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
+
 
 class App {
 
@@ -18,11 +25,6 @@ class App {
         this.renderer = null;
         this.camera = null;
         this.controls = null;
-        this.spotLight = null;
-
-        this.capturer = null;
-        this.recorded = true; // set to true if you don't want to create a video (webm)
-        this.recording = false;
 
         this.mixer = null;
         this.skeletonHelper = null;
@@ -57,24 +59,65 @@ class App {
         this.scene.add( ground );
         
         // lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-        hemiLight.position.set( 0, 20, 0 );
+        let aLight = new THREE.AmbientLight( 0x404040, 0.4 ); // soft white light
+        this.scene.add( aLight );
+
+        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.4 );
+        hemiLight.position.set(0, 10, 0);
         this.scene.add( hemiLight );
 
-        let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        spotLight.position.set( -50, 50, 50);
-        spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.00001;
-        spotLight.shadow.mapSize.width = 1024 * 8;
-        spotLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( spotLight );
-        this.spotLight = spotLight;
+        let keyLight = new THREE.SpotLight( 0xffffff, 0.9, 100,  );
+        keyLight.position.set( 7, 15, 11 ); //.set( 8, 10, 15 );
+        keyLight.castShadow = true;
+        keyLight.shadow.bias = -0.000001;
+        keyLight.shadow.mapSize.width = 1024 * 8;
+        keyLight.shadow.mapSize.height = 1024 * 8;
+        this.scene.add( keyLight );
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 10, 50 );
-        dirLight.castShadow = false;
-        this.scene.add( dirLight );
+        let targetKey = new THREE.Object3D();
+        targetKey.position.set( -0, 0, -0 );
+        keyLight.target = targetKey;
+        this.scene.add( keyLight.target );
+
+        let fillLight = new THREE.SpotLight( 0xffffff, 0.5, 100 );
+        fillLight.position.set( -7, 15, -11 );
+        fillLight.castShadow = true;
+        fillLight.shadow.bias = -0.0001;
+        fillLight.shadow.mapSize.width = 1024 * 2;
+        fillLight.shadow.mapSize.height = 1024 * 2;
+        this.scene.add( fillLight );
+
+        let targetFill = new THREE.Object3D();
+        targetFill.position.set( 0, 0, 0 );
+        fillLight.target = targetFill;
+        this.scene.add( fillLight.target );
         
+        let rimLight = new THREE.SpotLight( 0xffffff, 0.2, 100 );
+        rimLight.position.set( 0, 12, -4 );
+        rimLight.castShadow = true;
+        rimLight.shadow.bias = -0.0001;
+        rimLight.shadow.mapSize.width = 1024 * 2;
+        rimLight.shadow.mapSize.height = 1024 * 2;
+        this.scene.add( rimLight );
+
+        let targetRim = new THREE.Object3D();
+        targetRim.position.set( 0, 3, 0 );
+        rimLight.target = targetRim;
+        this.scene.add( rimLight.target );
+
+        let sideLight = new THREE.SpotLight( 0xffffff, 0.3, 100 );
+        sideLight.position.set( -4, 12, 6 );
+        sideLight.castShadow = true;
+        sideLight.shadow.bias = -0.0001;
+        sideLight.shadow.mapSize.width = 1024 * 2;
+        sideLight.shadow.mapSize.height = 1024 * 2;
+        this.scene.add( sideLight );
+
+        let targetSide = new THREE.Object3D();
+        targetSide.position.set( 0, 3, 0 );
+        sideLight.target = targetSide;
+        this.scene.add( sideLight.target );
+
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
@@ -86,43 +129,25 @@ class App {
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        let W = 540, H = 960;
-        let AR = this.recorded ? window.innerWidth/window.innerHeight : W/H;
-        this.camera = new THREE.PerspectiveCamera(60, AR, 0.01, 1000);
+        this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.01, 1000 );
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set(0.0, 3.4, 8);
         this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 50;
+        this.controls.maxDistance = 100;
         this.controls.target.set(0.0, 2.6, 0);
         this.controls.update();
-
-        // creates GIF encoder
-        this.rendererVideo = new THREE.WebGLRenderer( { antialias: true } ); // aux renderer for desired W,H
-        this.rendererVideo.setPixelRatio( window.devicePixelRatio );
-        this.rendererVideo.setSize( W, H );
-        this.rendererVideo.toneMapping = THREE.ACESFilmicToneMapping;
-        this.rendererVideo.toneMappingExposure = 0.7;
-        this.rendererVideo.outputEncoding = THREE.sRGBEncoding;
-        this.rendererVideo.shadowMap.enabled = true;
-        this.capturer = new CCapture( {
-            name: 'signAnimation',
-            format: 'webm',
-            workersPath: './',
-            framerate: 30,
-            quality: 100,
-        } );
 
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
-        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
+        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: true }) );
         this.eyesTarget.name = "eyesTarget";
         this.eyesTarget.position.set(0, 2.5, 15); 
-        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
+        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: true }) );
         this.headTarget.name = "headTarget";
         this.headTarget.position.set(0, 2.5, 15); 
-        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
+        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: true }) );
         this.neckTarget.name = "neckTarget";
         this.neckTarget.position.set(0, 2.5, 15); 
 
@@ -131,11 +156,11 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Thank You.glb', (glb) => {
+        this.loaderGLB.load( 'data/Eva_Y.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, -8.0, 0);
+            this.model.position.set(0, 0.75, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
             
@@ -163,14 +188,15 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'BodyMesh' );
+            this.body = this.model.getObjectByName( 'Body' );
+            if(!this.body)
+                this.body = this.model.getObjectByName( 'BodyMesh' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
 
             let additiveActions = {};
             const expressions = Object.keys( this.body.morphTargetDictionary );
-            for ( let i = 0; i < expressions.length; i ++ ) {
+            for ( let i = 0; i < expressions.length; i++ ) {
                 additiveActions[expressions[i]] = {weight: this.body.morphTargetInfluences[i]}
-
             }
             
             this.ECAcontroller = new CharacterController({character: this.model});
@@ -178,30 +204,23 @@ class App {
                 'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
                 'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
             }
-            this.ECAcontroller.onStart(morphTargets);
-
+            this.ECAcontroller.onStart();
+            
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
-
-            glb.animations.forEach(( clip ) => {
-                if (clip.name == "BSL - Thank You") {
-                    this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
-                }
-            });
-
-            this.loadBVH('./data/anim/VGT Thanks.bvh');
+            this.loadBVH('data/anim/NGT Thanks.bvh');
             
-            $('#loading').fadeOut(); //hide();
-        } );
+            $('#loading').fadeOut();
+        } );            
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+        document.addEventListener( 'keydown', this.onKeyDown.bind(this) );
     }
-
 
     animate() {
 
         requestAnimationFrame( this.animate.bind(this) );
-
+        
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
@@ -220,8 +239,6 @@ class App {
             et = 0.001;
         }
 
-        console.log("a: " + delta + ", b: " + et);
-
         if (this.mixer) {
             this.mixer.update(delta);
         }
@@ -233,35 +250,8 @@ class App {
         let BSw = this.ECAcontroller.facialController._morphDeformers;
         this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
         this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
-        
-        let [x, y, z] = [... this.camera.position];
-        this.spotLight.position.set( x + 10, y + 10, z + 10);
             
         this.renderer.render( this.scene, this.camera );
-
-        // generate video
-        this.rendererVideo.render( this.scene, this.camera ); 
-        if (this.mixer && this.recorded == false) {
-            if (this.mixer._actions.length > 0) {
-                if (this.recording == false) {
-                    this.capturer.start();
-                    this.recording = true;
-                }
-                if (this.recording) {
-                    this.capturer.capture( this.rendererVideo.domElement );
-                } 
-                if (this.mixer._actions[0]._clip.duration - this.mixer._actions[0].time < 0.033) {
-                    this.capturer.stop();
-                    this.capturer.save( function(blob) {
-                        window.open(URL.createObjectURL(blob));
-                        download(blob, 'animationVideo');
-                    } );
-                    console.log('Video recorded succesfully');
-                    this.recorded = true;
-                    this.recording = false;
-                }
-            }
-        }
     }
     
     onWindowResize() {
@@ -272,81 +262,48 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
+    onKeyDown( e ) {
+        // basic movement
+        switch(e.key) {
+            default: break; // skip
+        }
+    }
+
     loadBVH( filename ) {
 
         this.loaderBVH.load( filename , (result) => {
-            // for (let i = 0; i < result.clip.tracks.length; i++) {
-            //     result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
-            // }
-            // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
-            
+            for (let i = 0; i < result.clip.tracks.length; i++) {
+                result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+            }
+            this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
+            this.mixer.update(0);
+
             let msg = {
                 type: "behaviours",
                 data: [
-                    // {
-                    //     type: "gaze",
-                    //     start: 0,
-                    //     ready: 0.2,
-                    //     relax: 3.3,
-                    //     end: 3.5,
-                    //     influence: "EYES",
-                    //     target: "CAMERA"
-                    // },
                     {
                         type: "faceLexeme",
                         start: 0.5,
-                        end: 4.5,
-                        amount: 0.8,
-                        lexeme: 'LOWER_BROWS'
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 0.3,
                         attackPeak: 0.8,
-                        relax: 1.5,
-                        end: 2.0,
-                        amount: 0.4,
+                        relax: 2.5,
+                        end: 3,
+                        amount: 0.6,
                         lexeme: "LIP_CORNER_PULLER"
                     },
                     {
-                        type: "speech",
-                        start: 2.0,
-                        end: 2.6,
-                        textToLipInfo : { text: "zeu", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    },
-                    {
-                        type: "speech",
-                        start: 3.0,
-                        end: 4.2,
-                        textToLipInfo : { text: "ai u tuat", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.5,
-                    //     attackPeak: 0.8,
-                    //     relax: 1.3,
-                    //     end: 1.6,
-                    //     amount: 1.0,
-                    //     lexeme: "LIP_CORNER_PULLER"
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     attackPeak: 1.4,
-                    //     relax: 2.1,
-                    //     end: 2.5,
-                    //     amount: 0.5,
-                    //     lexeme: "LIP_STRECHER"
-                    // }
+                        type: "faceLexeme",
+                        start: 1,
+                        attackPeak: 1.4,
+                        relax: 3.5,
+                        end: 4,
+                        amount: 1,
+                        lexeme: "LOWER_BROWS"
+                    }
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));
 
             this.animate();
-            // send the facial actions to do
-            
-
-            //this.mixer.update(0);
         } );
     }
 }
