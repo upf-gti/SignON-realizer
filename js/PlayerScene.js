@@ -40,6 +40,8 @@ class Player {
         this.hBlurMaterial = null;
         this.accMaterial = null;
 
+        this.firstRender = false;
+
         this.stats = new Stats();
         document.body.appendChild( this.stats.dom )
     }
@@ -204,42 +206,40 @@ class Player {
 
             this.renderTargetAcc.texture[ 0 ].name = 'pc_finalColor';
             
-            
             this.renderTargetDef.depthTexture = new THREE.DepthTexture();
             
             let uniforms =  THREE.UniformsLib.lights;
             
             const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
             const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
+            const specular_texture = this.loadTexture( './data/textures/Woman_Body_Specular.png' );
             const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
-            const opacity_texture = this.loadTexture( './data/textures/Woman_Body_Opacity.png' );
             
             let mat = this.model.getObjectByName("Body").material.clone();
 
-            uniforms["normalMap"] =  { type: "t", value: mat.normalMap };
             uniforms["map"] =  { type: 't', value: color_texture };
+            uniforms["normalMap"] =  { type: "t", value: mat.normalMap };
+            uniforms["specularMap"] =  { type: "t", specular_texture };
+            uniforms["sssMap"] =  { value: sss_texture };
             uniforms["uvTransform"] = { type: "matrix4", value: mat.map.matrix };
             uniforms["u_enable_translucency"] = { value: true };
-            uniforms["u_sss_texture"] =  { value: sss_texture };
             uniforms["u_transmitance_lut_texture"] =  { value: transmitance_lut_texture };
             uniforms["u_specular_lut_texture"] =  { value: specular_lut_texture };
-            uniforms["alphaTest"] =  { value: 0.5 };
-            uniforms["opacityMap"] =  { value: opacity_texture };
 
             const gBufferConfig = {
                 uniforms: uniforms,
                 vertexShader: ShaderChunk.getVertexShader(),
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
-                glslVersion: THREE.GLSL3
+                glslVersion: THREE.GLSL3,
+                defines: this.multiRT ? { MULTI_RT: 1 } : {}
             };
 
             let gBufferMaterial = new THREE.ShaderMaterial( gBufferConfig );
             let gBufferTransparentMaterial =  new THREE.ShaderMaterial( Object.assign( gBufferConfig, { 
                 transparent: true, 
                 depthWrite: false, 
-                defines: {'PEPE': 1},
                 blending: THREE.NormalBlending,
                 side: THREE.DoubleSide,
             } ));
@@ -288,6 +288,7 @@ class Player {
                     normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                     detailed_normal_texture: { value: this.renderTargetDef.texture[ 3 ] },
                     depth_texture: { value: this.renderTargetDef.depthTexture },
+                    u_specularIntensity: { type: "number", value: 0.4852941176470588 },
                     u_ambientIntensity: { type: "number", value: 0.4852941176470588 },
                     u_shadowShrinking: { type: "number", value: 0.1 },
                     u_translucencyScale: { type: "number", value: 1100 },
@@ -332,7 +333,7 @@ class Player {
                 fragmentShader: SSS_ShaderChunk.accumulativeFS(),
                 uniforms: {
                     u_color_texture: { value: this.renderTargetLights.texture[ 0 ] },
-                    depth_aux_texture: { value: this.renderTargetLights.texture[ 2 ] },
+                    u_depth_aux_tex: { value: this.renderTargetLights.texture[ 2 ] },
                     u_weight: { value: new THREE.Vector3(1,1,1) },
                     
                 },
@@ -391,38 +392,61 @@ class Player {
         let V = [0.0064, 0.0516, 0.2719, 2.0062];
         let pv = 0;
         let RGB = [new THREE.Vector3(0.2405, 0.4474, 0.6157), new THREE.Vector3(0.1158, 0.3661, 0.3439), new THREE.Vector3(0.1836, 0.1864, 0.0), new THREE.Vector3(0.46, 0.0, 0.0402)];
+        let irrad_sss_texture = this.renderTargetLights.texture[0];
+        let depth_aux_texture = this.renderTargetLights.texture[ 2 ];
+        
+        this.hBlurMaterial.blending = THREE.NoBlending;
+        this.accMaterial.blending = THREE.CustomBlending;
+        this.gammaMaterial.blending = THREE.NoBlending;
+        this.setRenderTarget( this.renderTargetAcc );
+        this.renderer.clearColor();
+
         for(let i = 0; i < 4; i++){
             
             // Blur steps
+
+            //Horizontal
             quad.material = this.hBlurMaterial;
-            quad.material.uniforms.u_width = Math.sqrt(V[i]-pv);
+            quad.material.uniforms.u_width.value = Math.sqrt(V[i]-pv);
+            quad.material.uniforms.irradiance_texture.value = irrad_sss_texture;
+            quad.material.uniforms.depth_aux_texture.value = depth_aux_texture;
             pv = V[i];
             this.setRenderTarget( this.renderTargetHblur );
             this.renderer.render( this.postScene, this.postCamera );
             
-            
+            //Vertical
+            //...
+
+            //Accumulative
             this.accMaterial.blendSrc = THREE.SrcAlphaFactor;
             quad.material = this.accMaterial;
-            quad.material.uniforms.irradiance_texture = this.renderTargetHblur.texture[0];
+            quad.material.uniforms.u_depth_aux_tex = depth_aux_texture;
+            quad.material.uniforms.u_color_texture = this.renderTargetHblur.texture[0];
             quad.material.uniforms.u_weight.value = RGB[i];
             
             this.setRenderTarget( this.renderTargetAcc );
             this.renderer.render( this.postScene, this.postCamera );
         }
+        
+        quad.material = this.accMaterial;
         quad.material.blendSrc = THREE.OneMinusSrcAlphaFactor;
+        quad.material.uniforms.u_color_texture.value =  this.renderTargetHblur.texture[0];
+        quad.material.uniforms.u_depth_aux_tex.value = depth_aux_texture;
         quad.material.uniforms.u_weight.value = new THREE.Vector3(1.0,1.0,1.0);
-
+        
         this.renderer.render( this.postScene, this.postCamera );
-
+                
         quad.material.blendSrc = THREE.OneFactor;
-        quad.material.uniforms.u_color_texture = this.renderTargetLights.texture[1];
+        quad.material.uniforms.u_color_texture.value = this.renderTargetLights.texture[1];
         this.renderer.render( this.postScene, this.postCamera );
 
-
+        //Final FX
         quad.material = this.gammaMaterial;
         quad.material.needsUpdate = true;
+        quad.material.uniforms.u_texture.value = this.renderTargetAcc.texture[0];
         this.toScreen()
         this.renderer.render( this.postScene, this.postCamera );
+        
     }
 
     loadTexture( path, onload) {

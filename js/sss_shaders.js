@@ -83,9 +83,9 @@ const SSS_ShaderChunk = {
             varying vec3 vWorldPosition;
 
             uniform sampler2D map;
+            uniform sampler2D specularMap;
             uniform sampler2D normalMap;
-            uniform sampler2D opacityMap;
-            uniform sampler2D u_sss_texture;
+            uniform sampler2D sssMap;
             
             `, 
             this.perturbNormal, 
@@ -133,20 +133,25 @@ const SSS_ShaderChunk = {
             
                 vec4 diffuse = texture2D( map, vUv);
                 float alpha = diffuse.a;
-                vec3 mapN = texture2D( normalMap, vUv ).rgb;
+
+                float specularValue = texture2D( specularMap, vUv).r;
+
+                vec3 normalMapColor = texture2D( normalMap, vUv ).rgb;
                 vec3 N = normalize( vNormal );
                 vec3 V = normalize( cameraPosition - vWorldPosition );
-                vec3 detailedN  = perturbNormal( N, V, vUv, mapN );
-                float sss = texture2D( u_sss_texture, vUv ).r;
+                vec3 detailedN  = perturbNormal( N, V, vUv, normalMapColor );
+                float sss = texture2D( sssMap, vUv ).r;
                 
-                if (alpha < compute_alpha_hash_threshold(vViewPosition, 1.5)) {
-                    discard;
-                }
+                #ifdef MULTI_RT
+                    if (alpha < compute_alpha_hash_threshold(vViewPosition, 1.5)) {
+                        discard;
+                    }
+                #endif
 
                 pc_fragColor0 = vec4(mapTexelToLinear(diffuse).rgb, alpha);
                 pc_fragColor1 = vec4(vWorldPosition, sss);
 
-                pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 0.0);
+                pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), specularValue);
                 pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0);
                
             }
@@ -181,11 +186,8 @@ const SSS_ShaderChunk = {
         uniform sampler2D depth_texture;
         uniform sampler2D detailed_normal_texture;
         
-        uniform sampler2D specular_texture;
-        uniform float specularIntensity;
-        uniform float alphaTest;
-
         uniform float u_ambientIntensity;
+        uniform float u_specularIntensity;
         uniform float u_shadowShrinking;
         uniform float u_translucencyScale;
         
@@ -308,22 +310,19 @@ const SSS_ShaderChunk = {
             colorBuffer.a =colorBuffer.a;
             float alpha = colorBuffer.a;
 
-            //if ( alpha < alphaTest ) discard;
-
             vec4 positionBuffer = texture( geometry_texture, vUv );
             vec3 position = positionBuffer.rgb;
             float sss = positionBuffer.a;
 
-            vec3 normal = normalize( texture( normalMap, vUv ).rgb * 2.0 - 1.0);
+            vec4 normalBuffer = texture( normalMap, vUv );
+            vec3 normal = normalize( normalBuffer.rgb * 2.0 - 1.0);
             float mask = 1.0 - texture( normalMap, vUv ).a;
             vec3 dNormals = normalize(texture( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
             
-            vec3 specular = texture( specular_texture, vUv ).rgb;
             vec3 transmitance;
-            
             vec3 L;
             float NdotL = 1.0;
-            //NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
+            // NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
             
             ReflectedLight reflectedLight;
             
@@ -331,8 +330,8 @@ const SSS_ShaderChunk = {
             
             BlinnPhongMaterial material;
             material.diffuseColor = albedo;
-            material.specularColor = specular;
-            material.specularShininess = specularIntensity;
+            material.specularColor = vec3( normalBuffer.a );
+            material.specularShininess = u_specularIntensity;
             material.specularStrength = u_shadowShrinking;
             
             GeometricContext geometry;
@@ -544,7 +543,7 @@ const SSS_ShaderChunk = {
                 }
             }
             
-            pc_fragData = texture2D(irradiance_texture, vUv);//vec4(vec3(1.0,0.0,0.0), 1.0);
+            pc_fragData = vec4(color, 1.0);//texture2D(irradiance_texture, vUv);
             
         }
         `;
@@ -568,7 +567,7 @@ const SSS_ShaderChunk = {
         void main() {
             vec4 color = texture2D( u_color_texture, vUv );
             float sssIntensity = texture2D( u_depth_aux_tex, vUv ).y;
-            pc_finalColor = vec4(color.rgb * u_weight, sssIntensity);
+            pc_finalColor = vec4(color.rgb,sssIntensity);//vec4(color.rgb * u_weight, sssIntensity);
         }
     `
     },
@@ -577,7 +576,7 @@ const SSS_ShaderChunk = {
         return `	
         
         precision highp float;
-        layout(location = 0) out highp vec4 pc_finalColor;
+        layout(location = 0) out highp vec4 pc_Color;
         
         #define varying in
         #define texture2 texture
@@ -587,7 +586,7 @@ const SSS_ShaderChunk = {
         uniform sampler2D u_texture;
         
         void main() {
-            pc_finalColor = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
+            pc_Color = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
         }
     `
     }
