@@ -4,9 +4,10 @@ import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/load
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
+import { EffectComposer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/postprocessing/EffectComposer.js';
+import { SSAOPass } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/postprocessing/SSAOPass.js';
 
 let firstframe = true;
-
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -50,8 +51,8 @@ class App {
     init() {
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xe7e6e5 );
-        this.scene.fog = new THREE.Fog( 0xe7e6e5, 100, 150 );
+        this.scene.background = new THREE.Color( 0xbfbebd );
+        this.scene.fog = new THREE.Fog( 0xbfbebd, 100, 150 );
         
         let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
         ground.position.y = -7; // it is moved because of the mesh scale
@@ -70,7 +71,7 @@ class App {
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.01, 1000 );
+        this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.5, 50 );
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         // this.controls.object.position.set(0.0, 3.4, 8);
         this.camera.position.set(0.0, 3.6, 8)
@@ -83,7 +84,7 @@ class App {
 
         new RGBELoader()
             .setPath( 'data/hdrs/' )
-            .load( 'studio.hdr', function ( texture ) {
+            .load( 'cafe.hdr', function ( texture ) {
 
                 texture.mapping = THREE.EquirectangularReflectionMapping;
 
@@ -165,10 +166,11 @@ class App {
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
             this.loadBVH('data/anim/NGT Thanks.bvh');
-            
+
             $('#loading').fadeOut();
         } );            
-        
+
+
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
         document.addEventListener( 'keydown', this.onKeyDown.bind(this) );
     }
@@ -206,7 +208,7 @@ class App {
         let BSw = this.ECAcontroller.facialController._morphDeformers;
         this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
         this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
-            
+
         this.renderer.render( this.scene, this.camera );
     }
     
