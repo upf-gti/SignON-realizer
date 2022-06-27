@@ -49,41 +49,29 @@ class Player {
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0x252525 );
-        // this.scene.fog = new THREE.Fog( 0x2A2928, 100, 150 );
-        
-        // let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x151414, depthWrite: false } ) );
-        // ground.position.y = 0; // it is moved because of the mesh scale
-        // ground.rotation.x = -Math.PI / 2;
-        // ground.receiveShadow = true;
-        // this.scene.add( ground );
-        
-        // let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        // spotLight.position.set( -50, 50, 50);
-        // spotLight.castShadow = true;
-        // spotLight.shadow.bias = -0.00001;
-        // spotLight.shadow.mapSize.width = 1024 * 8;
-        // spotLight.shadow.mapSize.height = 1024 * 8;
-        // this.scene.add( spotLight );
-        // this.spotLight = spotLight;
 
         // PostProcessing setup
 
         this.postScene = new THREE.Scene();
         this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 
-        this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        this.dirLight.position.set( 3, 10, 50 );
-        this.dirLight.castShadow = false;
-        this.scene.add( this.dirLight );
-
-        let pointLight = new THREE.PointLight( 0xffa95c, 1 );
-        pointLight.position.set( 0, 2.5, 8);
+        let pointLight = new THREE.PointLight( 0x5600ff, 1.5 );
+        pointLight.position.set( 8, 2.5, 8);
         pointLight.castShadow = true;
         pointLight.shadow.bias = -0.00001;
         pointLight.shadow.mapSize.width = 1024 * 8;
         pointLight.shadow.mapSize.height = 1024 * 8;
         this.postScene.add( pointLight );
         this.pointLight = pointLight;
+
+        let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
+        spotLight.position.set( -50, 50, 50);
+        spotLight.castShadow = true;
+        spotLight.shadow.bias = -0.00001;
+        spotLight.shadow.mapSize.width = 1024 * 8;
+        spotLight.shadow.mapSize.height = 1024 * 8;
+        this.postScene.add( spotLight );
+        this.spotLight = spotLight;
         
         // Renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -131,10 +119,13 @@ class Player {
             } );
 
             this.prepareRenderTargets();
-            
-            const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
+
+            // Store useful textures
+            this.black_texture = this.loadTexture( './data/textures/black.png' );
+
             const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
             const specular_texture = this.loadTexture( './data/textures/Woman_Body_Specular.png' );
+            const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
             // const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             // const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
 
@@ -143,7 +134,7 @@ class Player {
             const uniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map:  { type: 't', value: color_texture },
                 normalMap:  { type: "t", value: mat.normalMap },
-                specularMap:  { type: "t", specular_texture },
+                specularMap:  { type: "t", value: specular_texture },
                 sssMap:  { value: sss_texture },
                 uvTransform: { type: "matrix4", value: mat.map.matrix }
             } );
@@ -183,19 +174,7 @@ class Player {
                 if(obj.material.name.includes( "Bodymat" ))
                     obj.material = obj.name === "Eyelashes" ? gBufferTransparentMaterial : gBufferMaterial;
                 else {
-                    obj.material = new THREE.ShaderMaterial( {
-                        uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
-                            map:  { type: 't', value: obj.material.map },
-                            normalMap:  { type: "t", value: obj.material.normalMap },
-                            uvTransform: { type: "matrix4", value: obj.material.map.matrix }
-                        } ),
-                        vertexShader: ShaderChunk.getVertexShader(),
-                        fragmentShader: SSS_ShaderChunk.deferredFS(),
-                        lights: true,
-                        colorWrite: true,
-                        glslVersion: THREE.GLSL3,
-                        defines: this.multiRT ? { MULTI_RT: 1 } : {}
-                    } );
+                    obj.material = this.createGBufferMaterialFromSrc( obj.material );
                 }
             }
 
@@ -528,11 +507,29 @@ class Player {
         this.renderTargetAcc.texture[ 0 ].name = 'pc_finalColor';
     }
 
-    loadTexture( path, onload) {
+    createGBufferMaterialFromSrc( mat ) {
+        return new THREE.ShaderMaterial( {
+            uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
+                map:  { type: 't', value: mat.map },
+                normalMap:  { type: "t", value: mat.normalMap },
+                sssMap: { type: 't', value: this.black_texture },
+                specularMap: { type: 't', value: mat.metalnessMap },
+                uvTransform: { type: "matrix4", value: mat.map.matrix }
+            } ),
+            vertexShader: ShaderChunk.getVertexShader(),
+            fragmentShader: SSS_ShaderChunk.deferredFS(),
+            lights: true,
+            colorWrite: true,
+            glslVersion: THREE.GLSL3,
+            defines: this.multiRT ? { MULTI_RT: 1 } : {}
+        } );
+    }
+
+    loadTexture( path, flip, onload ) {
         const texture = this.textureLoader.load( path, onload );
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.flipY = false;
+        texture.flipY = flip;
         return texture;
     }
 
