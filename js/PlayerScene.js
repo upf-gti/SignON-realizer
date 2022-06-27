@@ -137,7 +137,7 @@ class Player {
             const specular_texture = this.loadTexture( './data/textures/Woman_Body_Specular.png' );
             // const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
             // const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
-            
+
             let mat = this.model.getObjectByName("Body").material.clone();
 
             const uniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
@@ -177,8 +177,26 @@ class Player {
             this.scene.add(this.model);
 
             for( const obj of this.scene.getObjectByName("Armature").children ) {
-                if(obj.material && obj.material.name.includes( "Bodymat" ))
+                if(!obj.material)
+                continue; 
+                
+                if(obj.material.name.includes( "Bodymat" ))
                     obj.material = obj.name === "Eyelashes" ? gBufferTransparentMaterial : gBufferMaterial;
+                else {
+                    obj.material = new THREE.ShaderMaterial( {
+                        uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
+                            map:  { type: 't', value: obj.material.map },
+                            normalMap:  { type: "t", value: obj.material.map.normalMap },
+                            uvTransform: { type: "matrix4", value: obj.material.map.matrix }
+                        } ),
+                        vertexShader: ShaderChunk.getVertexShader(),
+                        fragmentShader: SSS_ShaderChunk.deferredFS(),
+                        lights: true,
+                        colorWrite: true,
+                        glslVersion: THREE.GLSL3,
+                        defines: this.multiRT ? { MULTI_RT: 1 } : {}
+                    } );
+                }
             }
 
             // Create POST FX Materials
@@ -245,8 +263,8 @@ class Player {
                     u_maxdd: { value: 0.001 },
                     u_invPixelSize: { value: [1/this.renderTargetLights.texture[ 0 ].image.width, 1/this.renderTargetLights.texture[ 0 ].image.height] },
                     u_width: { value: 0.0 },
-                    camera_near: { value : this.camera.near},
-                    camera_far: { value : this.camera.far},
+                    camera_near: { value : this.camera.near },
+                    camera_far: { value : this.camera.far },
                 
                 },
                 depthTest: false,
@@ -263,11 +281,10 @@ class Player {
                     u_sssLevel: { value: 200 },
                     u_correction: { value: 800 },
                     u_maxdd: { value: 0.001 },
-                    u_invPixelSize: { value: [1/this.renderTargetLights.texture[ 0 ].image.width, 1/this.renderTargetLights.texture[ 0 ].image.height] },
+                    u_invPixelSize: { value: [1/this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
                     u_width: { value: 0.0 },
-                    camera_near: { value : this.camera.near},
-                    camera_far: { value : this.camera.far},
-                
+                    camera_near: { value : this.camera.near },
+                    camera_far: { value : this.camera.far },
                 },
                 depthTest: false,
                 blending: THREE.NoBlending,
@@ -281,7 +298,6 @@ class Player {
                     u_color_texture: { value: this.renderTargetLights.texture[ 0 ] },
                     u_depth_aux_tex: { value: this.renderTargetLights.texture[ 2 ] },
                     u_weight: { value: new THREE.Vector3(1,1,1) },
-                    
                 },
                 depthTest: false,
                 blending: THREE.CustomBlending,
@@ -294,7 +310,6 @@ class Player {
                 fragmentShader: SSS_ShaderChunk.finalGammaFS(),
                 uniforms: {
                     u_texture: { value:  this.renderTargetAcc.texture[ 0 ] },
-                    
                 },
                 depthTest: false,
                 blending: THREE.NoBlending,
@@ -333,6 +348,7 @@ class Player {
         
         // Lights
         this.applyDeferred();
+        return;
         
         // SSS
         const V = [0.0064, 0.0516, 0.2719, 2.0062];
@@ -384,7 +400,7 @@ class Player {
     applyDeferred(){
 
         this.quad.material = this.deferredLightingMaterial;
-        this.setRenderTarget( this.renderTargetLights );
+        this.toScreen(); //this.setRenderTarget( this.renderTargetLights );
         this.renderer.render( this.postScene, this.postCamera );
     }
 
@@ -441,8 +457,6 @@ class Player {
         this.renderTargetDef.texture[ 1 ].name = 'pc_fragColor1';
         this.renderTargetDef.texture[ 2 ].name = 'pc_fragColor2';
         this.renderTargetDef.texture[ 3 ].name = 'pc_fragColor3';
-
-        this.renderTargetDef.depthTexture = new THREE.DepthTexture();
 
         // Deferred: Light pass
         this.renderTargetLights = new THREE.WebGLMultipleRenderTargets(
