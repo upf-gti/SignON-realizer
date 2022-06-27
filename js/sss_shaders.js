@@ -187,9 +187,9 @@ const SSS_ShaderChunk = {
         #include <bsdfs>
         #include <lights_phong_pars_fragment>
 
-        uniform sampler2D geometry_texture;
         uniform sampler2D map;
         uniform sampler2D normalMap;
+        uniform sampler2D positionMap;
         uniform sampler2D depth_texture;
         uniform sampler2D detailed_normal_texture;
         
@@ -313,7 +313,7 @@ const SSS_ShaderChunk = {
             vec3 albedo = colorBuffer.rgb;
             colorBuffer.a =colorBuffer.a;
             
-            vec4 positionBuffer = texture( geometry_texture, vUv );
+            vec4 positionBuffer = texture( positionMap, vUv );
             vec3 position = positionBuffer.rgb;
             float sss = positionBuffer.a;
             
