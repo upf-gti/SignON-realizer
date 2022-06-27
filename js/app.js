@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
 
 let firstframe = true;
@@ -49,81 +50,21 @@ class App {
     init() {
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xa0a0a0 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
+        this.scene.background = new THREE.Color( 0xe7e6e5 );
+        this.scene.fog = new THREE.Fog( 0xe7e6e5, 100, 150 );
         
         let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
         ground.position.y = -7; // it is moved because of the mesh scale
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
-        this.scene.add( ground );
-        
-        // lights
-        let aLight = new THREE.AmbientLight( 0x404040, 0.4 ); // soft white light
-        this.scene.add( aLight );
-
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.4 );
-        hemiLight.position.set(0, 10, 0);
-        this.scene.add( hemiLight );
-
-        let keyLight = new THREE.SpotLight( 0xffffff, 0.9, 100,  );
-        keyLight.position.set( 7, 15, 11 ); //.set( 8, 10, 15 );
-        keyLight.castShadow = true;
-        keyLight.shadow.bias = -0.000001;
-        keyLight.shadow.mapSize.width = 1024 * 8;
-        keyLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( keyLight );
-
-        let targetKey = new THREE.Object3D();
-        targetKey.position.set( -0, 0, -0 );
-        keyLight.target = targetKey;
-        this.scene.add( keyLight.target );
-
-        let fillLight = new THREE.SpotLight( 0xffffff, 0.5, 100 );
-        fillLight.position.set( -7, 15, -11 );
-        fillLight.castShadow = true;
-        fillLight.shadow.bias = -0.0001;
-        fillLight.shadow.mapSize.width = 1024 * 2;
-        fillLight.shadow.mapSize.height = 1024 * 2;
-        this.scene.add( fillLight );
-
-        let targetFill = new THREE.Object3D();
-        targetFill.position.set( 0, 0, 0 );
-        fillLight.target = targetFill;
-        this.scene.add( fillLight.target );
-        
-        let rimLight = new THREE.SpotLight( 0xffffff, 0.2, 100 );
-        rimLight.position.set( 0, 12, -4 );
-        rimLight.castShadow = true;
-        rimLight.shadow.bias = -0.0001;
-        rimLight.shadow.mapSize.width = 1024 * 2;
-        rimLight.shadow.mapSize.height = 1024 * 2;
-        this.scene.add( rimLight );
-
-        let targetRim = new THREE.Object3D();
-        targetRim.position.set( 0, 3, 0 );
-        rimLight.target = targetRim;
-        this.scene.add( rimLight.target );
-
-        let sideLight = new THREE.SpotLight( 0xffffff, 0.3, 100 );
-        sideLight.position.set( -4, 12, 6 );
-        sideLight.castShadow = true;
-        sideLight.shadow.bias = -0.0001;
-        sideLight.shadow.mapSize.width = 1024 * 2;
-        sideLight.shadow.mapSize.height = 1024 * 2;
-        this.scene.add( sideLight );
-
-        let targetSide = new THREE.Object3D();
-        targetSide.position.set( 0, 3, 0 );
-        sideLight.target = targetSide;
-        this.scene.add( sideLight.target );
+        // this.scene.add( ground );
 
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.7;
+        this.renderer.toneMappingExposure = 1.0;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.shadowMap.enabled = true;
         document.body.appendChild( this.renderer.domElement );
@@ -131,11 +72,26 @@ class App {
         // camera
         this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.01, 1000 );
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 3.4, 8);
+        // this.controls.object.position.set(0.0, 3.4, 8);
+        this.camera.position.set(0.0, 3.6, 8)
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 100;
-        this.controls.target.set(0.0, 2.6, 0);
+        this.controls.target.set(0.0, 3.0, 0);
         this.controls.update();
+        
+        var that = this
+
+        new RGBELoader()
+            .setPath( 'data/hdrs/' )
+            .load( 'studio.hdr', function ( texture ) {
+
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+
+                // that.scene.background = texture;
+                that.scene.environment = texture;
+
+                that.renderer.render( that.scene, that.camera );
+        } );
 
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
