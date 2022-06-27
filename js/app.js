@@ -128,6 +128,8 @@ class App {
                     object.receiveShadow = true;
                     if (object.name == "Eyelashes")
                         object.castShadow = false;
+                    if (object.name == "Hair")
+                        object.material.side = THREE.DoubleSide;
                     if(object.material.map) object.material.map.anisotropy = 16; 
                     
                 } else if (object.isBone) {
