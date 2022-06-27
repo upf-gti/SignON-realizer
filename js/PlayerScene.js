@@ -186,7 +186,7 @@ class Player {
                     obj.material = new THREE.ShaderMaterial( {
                         uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                             map:  { type: 't', value: obj.material.map },
-                            normalMap:  { type: "t", value: obj.material.map.normalMap },
+                            normalMap:  { type: "t", value: obj.material.normalMap },
                             uvTransform: { type: "matrix4", value: obj.material.map.matrix }
                         } ),
                         vertexShader: ShaderChunk.getVertexShader(),
