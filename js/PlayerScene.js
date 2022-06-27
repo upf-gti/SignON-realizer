@@ -48,7 +48,7 @@ class Player {
     init() {
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0x252525 );
+        this.scene.background = new THREE.Color( 0xffffff );
 
         // PostProcessing setup
 
@@ -107,7 +107,7 @@ class Player {
                     object.frustumCulled = false;
                     object.castShadow = true;
                     object.receiveShadow = true;
-                    if (object.name == "Eyelashes") {
+                    if (object.name == "Eyelashes" || object.name == "Hair") {
                         object.material.side = THREE.DoubleSide;
                         object.castShadow = false;
                     }
@@ -521,6 +521,7 @@ class Player {
             lights: true,
             colorWrite: true,
             glslVersion: THREE.GLSL3,
+            side: mat.side,
             defines: this.multiRT ? { MULTI_RT: 1 } : {}
         } );
     }
