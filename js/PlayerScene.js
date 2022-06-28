@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
-import Stats from './stats.module.js';
+import Stats from './libs/stats.module.js';
+import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.16/+esm';
+
 
 import { ShaderChunk } from './shaders.js'
 import { SSS_ShaderChunk } from './sss_shaders.js'
@@ -11,10 +13,20 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
+const TextureChunk = {
+    
+    get( matWType ) {
+        return "data/textures/" + this[ matWType ];
+    },
+
+    'Hairmat.004@opacity': 'Woman_Hair_Opacity.png'
+}
+
 class Player {
 
     constructor() {
         
+        this.gui = new GUI();
         this.clock = new THREE.Clock(false);
         this.loaderGLB = new GLTFLoader();
         this.textureLoader = new THREE.TextureLoader();
@@ -145,8 +157,7 @@ class Player {
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
                 colorWrite: true,
-                glslVersion: THREE.GLSL3,
-                defines: this.multiRT ? { MULTI_RT: 1 } : {}
+                glslVersion: THREE.GLSL3
             };
 
             let gBufferMaterial = new THREE.ShaderMaterial( gBufferConfig );
@@ -301,8 +312,68 @@ class Player {
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+
+        this.initUI();
     }
     
+    initUI() {
+
+        const gui = this.gui;
+        gui.title("Scene")
+
+        const pointLight = {
+            pointLightX: this.pointLight.position.x,
+            pointLightY: this.pointLight.position.y,
+            pointLightZ: this.pointLight.position.z,
+            pointColor: this.pointLight.color,
+            pointIntensity: this.pointLight.intensity
+        };
+        
+        const pointFolder = gui.addFolder( 'Point Light' );
+        pointFolder.close();
+
+        pointFolder.add( pointLight, 'pointLightX', -50, 50).name( 'X' ).onChange( v => {
+            this.pointLight.position.set( v, this.pointLight.position.y, this.pointLight.position.z );
+        } );
+        pointFolder.add( pointLight, 'pointLightY', -50, 50 ).name( 'Y' ).onChange( v => {
+            this.pointLight.position.set( this.pointLight.position.x, v, this.pointLight.position.z );
+        } );
+        pointFolder.add( pointLight, 'pointLightZ', -50, 50 ).name( 'Z' ).onChange( v => {
+            this.pointLight.position.set( this.pointLight.position.x, this.pointLight.position.y, v );
+        } );
+
+        pointFolder.addColor( pointLight, 'pointColor' ).name( 'Color' );
+        pointFolder.add( pointLight, 'pointIntensity', 0, 10 ).name( 'Intensity' ).onChange( v => {
+            this.pointLight.intensity = v;
+        } );
+
+        const spotLight = {
+            spotLightX: this.spotLight.position.x,
+            spotLightY: this.spotLight.position.y,
+            spotLightZ: this.spotLight.position.z,
+            spotColor: this.spotLight.color,
+            spotIntensity: this.spotLight.intensity
+        };
+        
+        const spotFolder = gui.addFolder( 'Spot Light' );
+        spotFolder.close();
+
+        spotFolder.add( spotLight, 'spotLightX', -50, 50).name( 'X' ).onChange( v => {
+            this.spotLight.position.set( v, this.spotLight.position.y, this.spotLight.position.z );
+        } );
+        spotFolder.add( spotLight, 'spotLightY', -50, 50 ).name( 'Y' ).onChange( v => {
+            this.spotLight.position.set( this.spotLight.position.x, v, this.spotLight.position.z );
+        } );
+        spotFolder.add( spotLight, 'spotLightZ', -50, 50 ).name( 'Z' ).onChange( v => {
+            this.spotLight.position.set( this.spotLight.position.x, this.spotLight.position.y, v );
+        } );
+
+        spotFolder.addColor( spotLight, 'spotColor' ).name( 'Color' );
+        spotFolder.add( spotLight, 'spotIntensity', 0, 10 ).name( 'Intensity' ).onChange( v => {
+            this.spotLight.intensity = v;
+        } );
+    }
+
     animate() {
         
         requestAnimationFrame( this.animate.bind(this) );
@@ -508,7 +579,8 @@ class Player {
     }
 
     createGBufferMaterialFromSrc( mat ) {
-        return new THREE.ShaderMaterial( {
+
+        const materialConfig = {
             uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map:  { type: 't', value: mat.map },
                 normalMap:  { type: "t", value: mat.normalMap },
@@ -522,8 +594,17 @@ class Player {
             colorWrite: true,
             glslVersion: THREE.GLSL3,
             side: mat.side,
-            defines: this.multiRT ? { MULTI_RT: 1 } : {}
-        } );
+            // transparent: mat.transparent,
+            defines: {}
+        };
+
+        if(materialConfig.transparent) {
+            // const textureName = TextureChunk.get( mat.name + "@opacity" );
+            // materialConfig.uniforms[ "alphaMap" ] = { type: 't', value: this.loadTexture( textureName ) };
+            // materialConfig.defines[ 'ALPHA_TEST' ] = 1;
+        }
+
+        return new THREE.ShaderMaterial( materialConfig );
     }
 
     loadTexture( path, flip, onload ) {

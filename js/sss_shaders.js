@@ -121,6 +121,7 @@ const SSS_ShaderChunk = {
             uniform sampler2D map;
             uniform sampler2D specularMap;
             uniform sampler2D normalMap;
+            uniform sampler2D alphaMap;
             uniform sampler2D sssMap;
             
             `, 
@@ -135,7 +136,7 @@ const SSS_ShaderChunk = {
                 vec4 diffuse = texture2D( map, vUv );
                 float alpha = diffuse.a;
 
-                float specularValue = texture2D( specularMap, vUv).r;
+                float specularValue = texture2D( specularMap, vUv ).r;
 
                 vec3 normalMapColor = texture2D( normalMap, vUv ).rgb;
                 vec3 N = normalize( vWorldNormal );
@@ -143,10 +144,11 @@ const SSS_ShaderChunk = {
                 vec3 detailedN  = perturbNormal( N, V, vUv, normalMapColor );
                 float sss = texture2D( sssMap, vUv ).r;
                 
-                #ifdef MULTI_RT
-                    // if (alpha < compute_alpha_hash_threshold(vViewPosition, 1.5)) {
-                    //     discard;
-                    // }
+                #ifdef ALPHA_TEST
+                    alpha = texture2D( alphaMap, vUv ).r;
+                    if (alpha < compute_alpha_hash_threshold(vViewPosition, 1.5)) {
+                        discard;
+                    }
                 #endif
 
                 pc_fragColor0 = vec4(diffuse.rgb, alpha);
