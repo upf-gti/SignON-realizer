@@ -127,7 +127,8 @@ const SSS_ShaderChunk = {
             this.perturbNormal, 
             this.alphaNoise,
             `
-            vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }    
+            // GLTF textures come in linear space
+            vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
 
             void main() {
             
@@ -148,7 +149,7 @@ const SSS_ShaderChunk = {
                     // }
                 #endif
 
-                pc_fragColor0 = vec4(mapTexelToLinear(diffuse).rgb, alpha);
+                pc_fragColor0 = vec4(diffuse.rgb, alpha);
                 pc_fragColor1 = vec4(vWorldPosition, sss);
 
                 #ifndef SKIP_NORMALS
@@ -231,11 +232,12 @@ const SSS_ShaderChunk = {
         {
             return f*f*f*(f*(f*6.0-15.0)+10.0);
         }
+        vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
+        vec4 LinearToGamma( vec4 value ) { return vec4( pow(value.rgb, vec3(1.0/2.2)), value.a ); }    
         void main() {
             
             vec4 colorBuffer = texture( map, vUv );
             vec3 albedo = colorBuffer.rgb;
-            colorBuffer.a =colorBuffer.a;
             
             vec4 positionBuffer = texture( positionMap, vUv );
             vec3 position = positionBuffer.rgb;
@@ -404,7 +406,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
-            pc_fragLight = vec4(final_color, sss);
+            pc_fragLight = LinearToGamma(vec4(final_color, sss));
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? light_depth : 0.0, 1.0, sss, 1.0);
         }`

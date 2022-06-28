@@ -55,7 +55,7 @@ class Player {
         this.postScene = new THREE.Scene();
         this.postCamera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 );
 
-        let pointLight = new THREE.PointLight( 0x5600ff, 1.5 );
+        let pointLight = new THREE.PointLight( 0x5600ff, 1 );
         pointLight.position.set( 8, 2.5, 8);
         pointLight.castShadow = true;
         pointLight.shadow.bias = -0.00001;
@@ -100,6 +100,7 @@ class Player {
             this.model.position.set(0, -8.0, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
+            this.spotLight.target = this.model;
             
             this.model.traverse( (object) => {
                 if ( object.isMesh || object.isSkinnedMesh ) {
@@ -123,7 +124,6 @@ class Player {
             // Store useful textures
             this.black_texture = this.loadTexture( './data/textures/black.png' );
 
-            const color_texture = this.loadTexture( './data/textures/Woman_Body_Diffuse.png' );
             const specular_texture = this.loadTexture( './data/textures/Woman_Body_Specular.png' );
             const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
             // const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
@@ -132,7 +132,7 @@ class Player {
             let mat = this.model.getObjectByName("Body").material.clone();
 
             const uniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
-                map:  { type: 't', value: color_texture },
+                map:  { type: 't', value: mat.map },
                 normalMap:  { type: "t", value: mat.normalMap },
                 specularMap:  { type: "t", value: specular_texture },
                 sssMap:  { value: sss_texture },
