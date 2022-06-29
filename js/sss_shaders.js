@@ -114,9 +114,10 @@ const SSS_ShaderChunk = {
             THREE.ShaderChunk.packing,
             THREE.ShaderChunk.uv_pars_fragment,
             `
-            varying vec3 vWorldNormal;
             varying vec3 vViewPosition;
             varying vec3 vWorldPosition;
+            varying vec3 vNormal;
+            varying vec3 vWorldNormal;
 
             uniform sampler2D map;
             uniform sampler2D specularMap;
@@ -192,8 +193,7 @@ const SSS_ShaderChunk = {
         uniform sampler2D normalMap;
         uniform sampler2D positionMap;
         uniform sampler2D depthMap;
-        uniform sampler2D shadowMap;
-        uniform sampler2D detailed_normal_texture;
+        uniform sampler2D detailedNormalMap;
         
         uniform float ambientIntensity;
         uniform float specularIntensity;
@@ -250,11 +250,10 @@ const SSS_ShaderChunk = {
             vec3 normal = normalize( normalBuffer.rgb * 2.0 - 1.0);
             float mask = normalBuffer.a > 1.0 ? 1.0 : 0.0;
             
-            vec4 dNormalsMap = texture( detailed_normal_texture, vUv );
+            vec4 dNormalsMap = texture( detailedNormalMap, vUv );
             vec3 dNormals = normalize(dNormalsMap.xyz * 2.0 - 1.0);
             float alpha = 1.0 - dNormalsMap.a;
             
-            float shadowDepth = texture( shadowMap, vUv ).r;
             float depth = texture( depthMap, vUv ).r;
             float linearDepth = linearDepthNormalized(depth, cameraNear, cameraFar);
 
@@ -272,9 +271,9 @@ const SSS_ShaderChunk = {
             material.specularStrength = shadowShrinking;
             
             GeometricContext geometry;
-            geometry.position = position;
-            geometry.normal = dNormals;
-            geometry.viewDir = normalize( cameraEye - position );
+            geometry.position = - vViewPosition;
+            geometry.normal = normal;
+            geometry.viewDir = normalize( vViewPosition );
             float light_depth;
 
             ReflectedLight reflectedLight;
@@ -366,8 +365,10 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
-            // pc_fragLight = vec4(vec3(shadowDepth), 1.0);
-            pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
+            float shadowDepth = texture( spotShadowMap[ 0 ], vUv ).r;
+
+            pc_fragLight = vec4(vec3(shadowDepth), 1.0);
+            // pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);
         }`

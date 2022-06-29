@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
+import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/utils/ShadowMapViewer.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import Stats from './libs/stats.module.js';
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.16/+esm';
@@ -86,18 +87,19 @@ class Player {
         let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
         spotLight.position.set( -15, 15, 15);
         spotLight.castShadow = true;
-        spotLight.angle = Math.PI / 4;
-        spotLight.penumbra = 0.1;
-        spotLight.decay = 2;
+        spotLight.angle = Math.PI / 3;
+        spotLight.penumbra = 0.3;
         spotLight.shadow.mapSize.width = 1024;
         spotLight.shadow.mapSize.height = 1024;
-        spotLight.shadow.camera.near = 0.1;
+        spotLight.shadow.camera.near = 1;
         spotLight.shadow.camera.far = 10000;
-        spotLight.shadow.focus = 1;
         this.spotLight = spotLight;
         this.spotLightForward = this.spotLight.clone();
         this.scene.add( this.spotLightForward );
         this.postScene.add( this.spotLight );
+
+        this.shadowMapViewer = new ShadowMapViewer( this.spotLightForward );
+        this.resizeShadowMapViewers();
         
         // Renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -105,7 +107,7 @@ class Player {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
        
         this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		this.renderer.shadowMap.type = THREE.BasicShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild( this.renderer.domElement );
 
@@ -147,21 +149,15 @@ class Player {
 
             this.prepareRenderTargets();
 
-            // Store useful textures
             this.black_texture = this.loadTexture( './data/textures/black.png' );
-
-            const specular_texture = this.loadTexture( './data/textures/Woman_Body_Specular.png' );
-            const sss_texture = this.loadTexture( './data/textures/woman_body_sss.png' );
-            // const transmitance_lut_texture = this.loadTexture( './data/textures/transmitance_lut.png' );
-            // const specular_lut_texture = this.loadTexture( './data/textures/beckmann_lut.png' );
 
             let mat = this.model.getObjectByName("Body").material.clone();
 
             const uniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map:  { type: 't', value: mat.map },
                 normalMap:  { type: "t", value: mat.normalMap },
-                specularMap:  { type: "t", value: specular_texture },
-                sssMap:  { value: sss_texture },
+                specularMap:  { type: "t", value: this.loadTexture( './data/textures/Woman_Body_Specular.png' ) },
+                sssMap:  { value: this.loadTexture( './data/textures/woman_body_sss.png' ) },
                 uvTransform: { type: "matrix4", value: mat.map.matrix }
             } );
 
@@ -191,7 +187,6 @@ class Player {
             gBufferTransparentMaterial.extensions.drawBuffers = true;
             gBufferTransparentMaterial.extensions.derivatives = true;
             
-            this.model.receiveShadow = true;
             this.model.name = "Model";
             this.scene.add(this.model);
 
@@ -216,14 +211,13 @@ class Player {
                     map: { type: "t", value: this.renderTargetDef.texture[ 0 ] },
                     positionMap: { value: this.renderTargetDef.texture[ 1 ] },
                     normalMap: { value: this.renderTargetDef.texture[ 2 ] },
+                    detailedNormalMap: { value: this.renderTargetDef.texture[ 3 ] },
                     depthMap: { value: this.renderTargetDef.depthTexture },
-                    shadowMap: { value: null },
-                    detailed_normal_texture: { value: this.renderTargetDef.texture[ 3 ] },
                     specularIntensity: { type: "number", value: 0.5 },
                     ambientIntensity: { type: "number", value: 0.5 },
                     shadowShrinking: { type: "number", value: 0.1 },
                     translucencyScale: { type: "number", value: 1100 },
-                    ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256.0,256.0,256.0) },
+                    ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256, 256, 256) },
                     cameraNear: { value : this.camera.near },
                     cameraFar: { value : this.camera.far },
                     cameraEye: { value : this.camera.position }
@@ -239,6 +233,7 @@ class Player {
             );
 
             quad.name = "quad";
+            quad.castShadow = true;
             quad.receiveShadow = true;
             this.postScene.add( quad );
             this.quad = quad;
@@ -326,7 +321,7 @@ class Player {
 
     textureToViewport( texture ) {
 
-        this.showTexture = !this.showTexture;
+        this.showTexture = !!texture;
         this.textureScene.children[ 0 ].material.map = texture;
     }
 
@@ -361,6 +356,9 @@ class Player {
         
         // Lights
         this.applyDeferred();
+
+        this.shadowMapViewer.render( this.renderer );
+
         return;
         
         // SSS
@@ -653,11 +651,24 @@ class Player {
         this.renderer.setRenderTarget( null );
     }
 
+    resizeShadowMapViewers( width ) {
+
+        const uWidth = width || window.innerWidth;
+        const size = uWidth * 0.15;
+        this.shadowMapViewer.size.set( size, size );
+        this.shadowMapViewer.position.set( size + 20, 10 );
+    }
+
     onWindowResize() {
 
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.setSize( width, height );
+        this.resizeShadowMapViewers( width );
+
+        this.shadowMapViewer.updateForWindowResize();
     }
 
 }
