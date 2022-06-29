@@ -650,7 +650,6 @@ const ShaderChunk = {
              attribute vec3 morphTarget7;
             #endif
         #endif
-        #define STANDARD
         varying vec3 vViewPosition;
         varying vec3 vWorldPosition;
         #define PI 3.141592653589793
@@ -669,67 +668,67 @@ const ShaderChunk = {
         float max3( const in vec3 v ) { return max( max( v.x, v.y ), v.z ); }
         float average( const in vec3 color ) { return dot( color, vec3( 0.3333 ) ); }
         highp float rand( const in vec2 uv ) {
-                const highp float a = 12.9898, b = 78.233, c = 43758.5453;
-                highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );
-                return fract( sin( sn ) * c );
+            const highp float a = 12.9898, b = 78.233, c = 43758.5453;
+            highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );
+            return fract( sin( sn ) * c );
         }
         #ifdef HIGH_PRECISION
             float precisionSafeLength( vec3 v ) { return length( v ); }
         #else
             float precisionSafeLength( vec3 v ) {
-                 float maxComponent = max3( abs( v ) );
-                 return length( v / maxComponent ) * maxComponent;
+                float maxComponent = max3( abs( v ) );
+                return length( v / maxComponent ) * maxComponent;
             }
         #endif
         struct IncidentLight {
-                vec3 color;
-                vec3 direction;
-                bool visible;
+            vec3 color;
+            vec3 direction;
+            bool visible;
         };
         struct ReflectedLight {
-                vec3 directDiffuse;
-                vec3 directSpecular;
-                vec3 indirectDiffuse;
-                vec3 indirectSpecular;
+            vec3 directDiffuse;
+            vec3 directSpecular;
+            vec3 indirectDiffuse;
+            vec3 indirectSpecular;
         };
         struct GeometricContext {
-                vec3 position;
-                vec3 normal;
-                vec3 viewDir;
-            #ifdef USE_CLEARCOAT
-                vec3 clearcoatNormal;
-            #endif
+            vec3 position;
+            vec3 normal;
+            vec3 viewDir;
+        #ifdef USE_CLEARCOAT
+            vec3 clearcoatNormal;
+        #endif
         };
         vec3 transformDirection( in vec3 dir, in mat4 matrix ) {
-                return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );
+            return normalize( ( matrix * vec4( dir, 0.0 ) ).xyz );
         }
         vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
-                return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
+            return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
         }
         mat3 transposeMat3( const in mat3 m ) {
-                mat3 tmp;
-                tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );
-                tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );
-                tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );
-                return tmp;
+            mat3 tmp;
+            tmp[ 0 ] = vec3( m[ 0 ].x, m[ 1 ].x, m[ 2 ].x );
+            tmp[ 1 ] = vec3( m[ 0 ].y, m[ 1 ].y, m[ 2 ].y );
+            tmp[ 2 ] = vec3( m[ 0 ].z, m[ 1 ].z, m[ 2 ].z );
+            return tmp;
         }
         float linearToRelativeLuminance( const in vec3 color ) {
-                vec3 weights = vec3( 0.2126, 0.7152, 0.0722 );
-                return dot( weights, color.rgb );
+            vec3 weights = vec3( 0.2126, 0.7152, 0.0722 );
+            return dot( weights, color.rgb );
         }
         bool isPerspectiveMatrix( mat4 m ) {
-                return m[ 2 ][ 3 ] == - 1.0;
+            return m[ 2 ][ 3 ] == - 1.0;
         }
         vec2 equirectUv( in vec3 dir ) {
-                float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;
-                float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;
-                return vec2( u, v );
+            float u = atan( dir.z, dir.x ) * RECIPROCAL_PI2 + 0.5;
+            float v = asin( clamp( dir.y, - 1.0, 1.0 ) ) * RECIPROCAL_PI + 0.5;
+            return vec2( u, v );
         }
         #ifdef USE_UV
             #ifdef UVS_VERTEX_ONLY
-             vec2 vUv;
+            vec2 vUv;
             #else
-             varying vec2 vUv;
+            varying vec2 vUv;
             #endif
             uniform mat3 uvTransform;
         #endif
@@ -755,8 +754,8 @@ const ShaderChunk = {
         #ifndef FLAT_SHADED
             varying vec3 vNormal;
             #ifdef USE_TANGENT
-             varying vec3 vTangent;
-             varying vec3 vBitangent;
+            varying vec3 vTangent;
+            varying vec3 vBitangent;
             #endif
         #endif
         #ifdef USE_MORPHTARGETS
@@ -852,9 +851,6 @@ const ShaderChunk = {
             #else
              uniform float logDepthBufFC;
             #endif
-        #endif
-        #if 0 > 0
-            varying vec3 vClipPosition;
         #endif
         void main() {
             #ifdef USE_UV
@@ -985,20 +981,16 @@ const ShaderChunk = {
                 }
              #endif
             #endif
-            #if 0 > 0
-              vClipPosition = - mvPosition.xyz;
-            #endif
-               vViewPosition =  - mvPosition.xyz;
+            vViewPosition =  - mvPosition.xyz;
             #if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION )
-             vec4 worldPosition = vec4( transformed, 1.0 );
-             #ifdef USE_INSTANCING
-              worldPosition = instanceMatrix * worldPosition;
-             #endif
-             worldPosition = modelMatrix * worldPosition;
+                vec4 worldPosition = vec4( transformed, 1.0 );
+                #ifdef USE_INSTANCING
+                    worldPosition = instanceMatrix * worldPosition;
+                #endif
+                worldPosition = modelMatrix * worldPosition;
             #endif
             #ifdef USE_SHADOWMAP
                 #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
-                    transformedNormal = vec3(0.0);
                     vec3 shadowWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
                     vec4 shadowWorldPosition;
                 #endif
@@ -1006,7 +998,8 @@ const ShaderChunk = {
                     
                 #endif
                 #if NUM_SPOT_LIGHT_SHADOWS > 0
-                
+                    shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * spotLightShadows[ 0 ].shadowNormalBias, 0 );
+                    vSpotShadowCoord[ 0 ] = spotShadowMatrix[ 0 ] * shadowWorldPosition;
                 #endif
                 #if NUM_POINT_LIGHT_SHADOWS > 0
                     shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
@@ -1016,7 +1009,7 @@ const ShaderChunk = {
             #ifdef USE_FOG
                vFogDepth = - mvPosition.z;
             #endif
-            vWorldNormal = (inverse(viewMatrix) * vec4(transformedNormal, 0.0)).xyz;
+            vWorldNormal = shadowWorldNormal;
             vWorldPosition = worldPosition.xyz;
         }
         `

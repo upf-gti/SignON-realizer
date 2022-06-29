@@ -192,6 +192,7 @@ const SSS_ShaderChunk = {
         uniform sampler2D normalMap;
         uniform sampler2D positionMap;
         uniform sampler2D depthMap;
+        uniform sampler2D shadowMap;
         uniform sampler2D detailed_normal_texture;
         
         uniform float ambientIntensity;
@@ -253,6 +254,7 @@ const SSS_ShaderChunk = {
             vec3 dNormals = normalize(dNormalsMap.xyz * 2.0 - 1.0);
             float alpha = 1.0 - dNormalsMap.a;
             
+            float shadowDepth = texture( shadowMap, vUv ).r;
             float depth = texture( depthMap, vUv ).r;
             float linearDepth = linearDepthNormalized(depth, cameraNear, cameraFar);
 
@@ -278,15 +280,15 @@ const SSS_ShaderChunk = {
             ReflectedLight reflectedLight;
             IncidentLight directLight;
             #if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )
-                PointLight pointLight;
-                #if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
-                PointLightShadow pointLightShadow;
-                #endif
-                #pragma unroll_loop_start
-                for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
-                    pointLight = pointLights[ i ];
-                    getPointLightInfo( pointLight, geometry, directLight );
-                    #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
+            PointLight pointLight;
+            #if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
+            PointLightShadow pointLightShadow;
+            #endif
+            #pragma unroll_loop_start
+            for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+                pointLight = pointLights[ i ];
+                getPointLightInfo( pointLight, geometry, directLight );
+                #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
                         pointLightShadow = pointLightShadows[ i ];
                         directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, vPointShadowCoord[ i ], pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
                     #endif
@@ -364,6 +366,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
+            // pc_fragLight = vec4(vec3(shadowDepth), 1.0);
             pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);

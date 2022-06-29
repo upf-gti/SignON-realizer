@@ -65,19 +65,6 @@ class Player {
         document.body.appendChild( this.stats.dom )
     }
     
-    replaceNumLights( shaderString, parameters ) {
-        
-        return shaderString;
-        shaderString.replace( /NUM_DIR_LIGHTS/g, parameters.numDirLights || 0 )
-            .replace( /NUM_SPOT_LIGHTS/g, parameters.numSpotLights || 0 )
-            .replace( /NUM_RECT_AREA_LIGHTS/g, parameters.numRectAreaLights || 0 )
-            .replace( /NUM_POINT_LIGHTS/g, parameters.numPointLights || 0 )
-            .replace( /NUM_HEMI_LIGHTS/g, parameters.numHemiLights || 0 )
-            .replace( /NUM_DIR_LIGHT_SHADOWS/g, parameters.numDirLightShadows || 0 )
-            .replace( /NUM_SPOT_LIGHT_SHADOWS/g, parameters.numSpotLightShadows || 0 )
-            .replace( /NUM_POINT_LIGHT_SHADOWS/g, parameters.numPointLightShadows || 0 );
-    }
-
     init() {
 
         this.scene = new THREE.Scene();
@@ -92,29 +79,39 @@ class Player {
         pointLight.position.set( 8, 2.5, 8);
         pointLight.castShadow = true;
         this.pointLight = pointLight;
-        this.postScene.add( this.pointLight );
+        this.pointLightForward = this.pointLight.clone();
+        // this.scene.add( this.pointLightForward );
+        // this.postScene.add( this.pointLight );
 
         let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        spotLight.position.set( -5, 5, 5);
+        spotLight.position.set( -15, 15, 15);
         spotLight.castShadow = true;
-        // this.scene.add( spotLight );
-        // this.postScene.add( spotLight.clone() );
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.1;
+        spotLight.decay = 2;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        spotLight.shadow.camera.near = 0.1;
+        spotLight.shadow.camera.far = 10000;
+        spotLight.shadow.focus = 1;
         this.spotLight = spotLight;
+        this.spotLightForward = this.spotLight.clone();
+        this.scene.add( this.spotLightForward );
+        this.postScene.add( this.spotLight );
         
         // Renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.7;
+       
         this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild( this.renderer.domElement );
 
         // Camera
-        let AR =  window.innerWidth/window.innerHeight;
-        this.camera = new THREE.PerspectiveCamera(45, AR, 0.01, 1000);
+        let AR =  window.innerWidth / window.innerHeight;
+        this.camera = new THREE.PerspectiveCamera(45, AR, 0.1, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set(0.0, 3.4, 8);
         this.controls.minDistance = 0.1;
@@ -171,9 +168,7 @@ class Player {
             const gBufferConfig = {
                 name: "gBuffer",
                 uniforms: uniforms,
-                vertexShader: this.replaceNumLights( ShaderChunk.getVertexShader(), {
-                    numPointLightShadows: 1
-                }),
+                vertexShader: ShaderChunk.getVertexShader(),
                 fragmentShader: SSS_ShaderChunk.deferredFS(),
                 lights: true,
                 colorWrite: true,
@@ -222,6 +217,7 @@ class Player {
                     positionMap: { value: this.renderTargetDef.texture[ 1 ] },
                     normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                     depthMap: { value: this.renderTargetDef.depthTexture },
+                    shadowMap: { value: null },
                     detailed_normal_texture: { value: this.renderTargetDef.texture[ 3 ] },
                     specularIntensity: { type: "number", value: 0.5 },
                     ambientIntensity: { type: "number", value: 0.5 },
@@ -243,6 +239,7 @@ class Player {
             );
 
             quad.name = "quad";
+            quad.receiveShadow = true;
             this.postScene.add( quad );
             this.quad = quad;
 
@@ -317,6 +314,20 @@ class Player {
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
         this.createUI();
+
+        this.textureScene = new THREE.Scene();
+        this.textureScene.add( new THREE.Mesh(
+            new THREE.PlaneGeometry( 2,2 ),
+            new THREE.MeshBasicMaterial({
+                map: this.black_texture
+            })
+        ) );
+    }
+
+    textureToViewport( texture ) {
+
+        this.showTexture = !this.showTexture;
+        this.textureScene.children[ 0 ].material.map = texture;
     }
 
     animate() {
@@ -329,6 +340,12 @@ class Player {
     }
 
     render() {
+
+        if( this.showTexture ) {
+            this.toScreen();
+            this.renderer.render( this.textureScene, this.postCamera );
+            return;
+        }
 
         this.renderer.clear();
 
@@ -543,17 +560,21 @@ class Player {
 
         pointFolder.add( pointLight, 'pointLightX', -50, 50).name( 'X' ).onChange( v => {
             this.pointLight.position.set( v, this.pointLight.position.y, this.pointLight.position.z );
+            this.pointLightForward.position.set( v, this.pointLightForward.position.y, this.pointLightForward.position.z );
         } );
         pointFolder.add( pointLight, 'pointLightY', -50, 50 ).name( 'Y' ).onChange( v => {
             this.pointLight.position.set( this.pointLight.position.x, v, this.pointLight.position.z );
+            this.pointLightForward.position.set( this.pointLightForward.position.x, v, this.pointLightForward.position.z );
         } );
         pointFolder.add( pointLight, 'pointLightZ', -50, 50 ).name( 'Z' ).onChange( v => {
             this.pointLight.position.set( this.pointLight.position.x, this.pointLight.position.y, v );
+            this.pointLightForward.position.set( this.pointLightForward.position.x, this.pointLightForward.position.y, v );
         } );
 
         pointFolder.addColor( pointLight, 'pointColor' ).name( 'Color' );
         pointFolder.add( pointLight, 'pointIntensity', 0, 10 ).name( 'Intensity' ).onChange( v => {
             this.pointLight.intensity = v;
+            this.pointLightForward.intensity = v;
         } );
 
         const spotLight = {
@@ -569,17 +590,21 @@ class Player {
 
         spotFolder.add( spotLight, 'spotLightX', -50, 50).name( 'X' ).onChange( v => {
             this.spotLight.position.set( v, this.spotLight.position.y, this.spotLight.position.z );
+            this.spotLightForward.position.set( v, this.spotLightForward.position.y, this.spotLightForward.position.z );
         } );
         spotFolder.add( spotLight, 'spotLightY', -50, 50 ).name( 'Y' ).onChange( v => {
             this.spotLight.position.set( this.spotLight.position.x, v, this.spotLight.position.z );
+            this.spotLightForward.position.set( this.spotLightForward.position.x, v, this.spotLightForward.position.z );
         } );
         spotFolder.add( spotLight, 'spotLightZ', -50, 50 ).name( 'Z' ).onChange( v => {
             this.spotLight.position.set( this.spotLight.position.x, this.spotLight.position.y, v );
+            this.spotLightForward.position.set( this.spotLightForward.position.x, this.spotLightForward.position.y, v );
         } );
 
         spotFolder.addColor( spotLight, 'spotColor' ).name( 'Color' );
         spotFolder.add( spotLight, 'spotIntensity', 0, 10 ).name( 'Intensity' ).onChange( v => {
             this.spotLight.intensity = v;
+            this.spotLightForward.intensity = v;
         } );
     }
 
