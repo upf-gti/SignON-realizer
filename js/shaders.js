@@ -600,7 +600,6 @@ const ShaderChunk = {
         precision highp float;
         precision highp int;
         #define HIGH_PRECISION
-        //#define SHADER_NAME MeshStandardMaterial
         #define STANDARD 
         #define VERTEX_TEXTURES
         #define MAX_BONES 1024
@@ -651,11 +650,6 @@ const ShaderChunk = {
              attribute vec3 morphTarget7;
             #endif
         #endif
-        // #ifdef USE_SKINNING
-        //     attribute vec4 skinIndex;
-        //     attribute vec4 skinWeight;
-        // #endif
-        
         #define STANDARD
         varying vec3 vViewPosition;
         varying vec3 vWorldPosition;
@@ -816,30 +810,30 @@ const ShaderChunk = {
         #endif
         #ifdef USE_SHADOWMAP
             #if NUM_DIR_LIGHT_SHADOWS > 0
-             uniform mat4 directionalShadowMatrix[ 0 ];
-             varying vec4 vDirectionalShadowCoord[ 0 ];
+             uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+             varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
              struct DirectionalLightShadow {
                   float shadowBias;
                   float shadowNormalBias;
                   float shadowRadius;
                   vec2 shadowMapSize;
                  };
-             uniform DirectionalLightShadow directionalLightShadows[ 0 ];
+             uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
             #endif
             #if NUM_SPOT_LIGHT_SHADOWS > 0
-             uniform mat4 spotShadowMatrix[ 0 ];
-             varying vec4 vSpotShadowCoord[ 0 ];
+             uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
+             varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
              struct SpotLightShadow {
                   float shadowBias;
                   float shadowNormalBias;
                   float shadowRadius;
                   vec2 shadowMapSize;
                  };
-             uniform SpotLightShadow spotLightShadows[ 0 ];
+             uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
             #endif
             #if NUM_POINT_LIGHT_SHADOWS > 0
-             uniform mat4 pointShadowMatrix[ 1 ];
-             varying vec4 vPointShadowCoord[ 1 ];
+             uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
+             varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
              struct PointLightShadow {
                   float shadowBias;
                   float shadowNormalBias;
@@ -848,7 +842,7 @@ const ShaderChunk = {
                   float shadowCameraNear;
                   float shadowCameraFar;
                  };
-             uniform PointLightShadow pointLightShadows[ 1 ];
+             uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
             #endif
         #endif
         #ifdef USE_LOGDEPTHBUF
@@ -1003,22 +997,21 @@ const ShaderChunk = {
              worldPosition = modelMatrix * worldPosition;
             #endif
             #ifdef USE_SHADOWMAP
-            #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
-                vec3 shadowWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
-              vec4 shadowWorldPosition;
-               #endif
-               #if NUM_DIR_LIGHT_SHADOWS > 0
+                #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
+                    transformedNormal = vec3(0.0);
+                    vec3 shadowWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
+                    vec4 shadowWorldPosition;
+                #endif
+                #if NUM_DIR_LIGHT_SHADOWS > 0
+                    
+                #endif
+                #if NUM_SPOT_LIGHT_SHADOWS > 0
                 
-              #endif
-              #if 0 > 0
-               
-             #endif
-             #if NUM_POINT_LIGHT_SHADOWS > 0
-              
-                shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
-                vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;
-             
-               #endif
+                #endif
+                #if NUM_POINT_LIGHT_SHADOWS > 0
+                    shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
+                    vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;
+                #endif
             #endif
             #ifdef USE_FOG
                vFogDepth = - mvPosition.z;
