@@ -70,20 +70,20 @@ class App {
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        this.camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.01, 1000 );
+        this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.01, 1000 );
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         // this.controls.object.position.set(0.0, 3.4, 8);
-        this.camera.position.set(0.0, 3.6, 8)
+        this.camera.position.set(0.0, 10.6, 8)
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 100;
-        this.controls.target.set(0.0, 3.0, 0);
+        this.controls.target.set(0.0, 10.0, 0);
         this.controls.update();
         
         var that = this
 
         new RGBELoader()
             .setPath( 'data/hdrs/' )
-            .load( 'studio.hdr', function ( texture ) {
+            .load( 'cafe.hdr', function ( texture ) {
 
                 texture.mapping = THREE.EquirectangularReflectionMapping;
 
@@ -97,26 +97,26 @@ class App {
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
-        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: true }) );
-        this.eyesTarget.name = "eyesTarget";
-        this.eyesTarget.position.set(0, 2.5, 15); 
-        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: true }) );
-        this.headTarget.name = "headTarget";
-        this.headTarget.position.set(0, 2.5, 15); 
-        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: true }) );
-        this.neckTarget.name = "neckTarget";
-        this.neckTarget.position.set(0, 2.5, 15); 
+        // this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: true }) );
+        // this.eyesTarget.name = "eyesTarget";
+        // this.eyesTarget.position.set(0, 2.5, 15); 
+        // this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: true }) );
+        // this.headTarget.name = "headTarget";
+        // this.headTarget.position.set(0, 2.5, 15); 
+        // this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: true }) );
+        // this.neckTarget.name = "neckTarget";
+        // this.neckTarget.position.set(0, 2.5, 15); 
 
-        this.scene.add(this.eyesTarget);
-        this.scene.add(this.headTarget);
-        this.scene.add(this.neckTarget);
+        // this.scene.add(this.eyesTarget);
+        // this.scene.add(this.headTarget);
+        // this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( 'data/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( 'data/eva.glb', (glb) => {
 
             this.model = glb.scene;
-            this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, 0.75, 0);
+            //this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+            //this.model.position.set(0, 0.75, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
             
@@ -146,28 +146,29 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'Body' );
-            if(!this.body)
-                this.body = this.model.getObjectByName( 'BodyMesh' );
-            this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
+            // this.body = this.model.getObjectByName( 'Body' );
+            // if(!this.body)
+            //     this.body = this.model.getObjectByName( 'BodyMesh' );
+            // this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
 
-            let additiveActions = {};
-            const expressions = Object.keys( this.body.morphTargetDictionary );
-            for ( let i = 0; i < expressions.length; i++ ) {
-                additiveActions[expressions[i]] = {weight: this.body.morphTargetInfluences[i]}
-            }
+            // let additiveActions = {};
+            // const expressions = Object.keys( this.body.morphTargetDictionary );
+            // for ( let i = 0; i < expressions.length; i++ ) {
+            //     additiveActions[expressions[i]] = {weight: this.body.morphTargetInfluences[i]}
+            // }
             
-            this.ECAcontroller = new CharacterController({character: this.model});
-            var morphTargets = { 
-                'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
-                'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
-            }
-            this.ECAcontroller.onStart();
+            // this.ECAcontroller = new CharacterController({character: this.model});
+            // var morphTargets = { 
+            //     'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
+            //     'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
+            // }
+            // this.ECAcontroller.onStart();
             
-            // load the actual animation to play
-            this.mixer = new THREE.AnimationMixer( this.model );
-            this.loadBVH('data/anim/NGT Thanks.bvh');
-            
+            // // load the actual animation to play
+            // this.mixer = new THREE.AnimationMixer( this.model );
+            // this.loadBVH('data/anim/NGT Thanks.bvh');
+            this.animate();
+
             $('#loading').fadeOut();
         } );            
         
@@ -197,17 +198,17 @@ class App {
             et = 0.001;
         }
 
-        if (this.mixer) {
-            this.mixer.update(delta);
-        }
+        // if (this.mixer) {
+        //     this.mixer.update(delta);
+        // }
 
-        this.ECAcontroller.time = et;
-        // Update the animation mixer, the stats panel, and render this frame
-        this.ECAcontroller.facialController.onUpdate(delta, et, this.ECAcontroller.onUpdate.bind(this.ECAcontroller) );
-        //this.ECAcontroller.onUpdate(dt, et);
-        let BSw = this.ECAcontroller.facialController._morphDeformers;
-        this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
-        this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
+        // this.ECAcontroller.time = et;
+        // // Update the animation mixer, the stats panel, and render this frame
+        // this.ECAcontroller.facialController.onUpdate(delta, et, this.ECAcontroller.onUpdate.bind(this.ECAcontroller) );
+        // //this.ECAcontroller.onUpdate(dt, et);
+        // let BSw = this.ECAcontroller.facialController._morphDeformers;
+        // this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
+        // this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
             
         this.renderer.render( this.scene, this.camera );
     }
