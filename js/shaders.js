@@ -84,510 +84,32 @@ const ShaderChunk = {
     vertexShaderQuad(){
         return `           
 
-            out vec2 vUv;
-            out vec3 vViewPosition;
-            out vec3 vNormal;
+        out vec2 vUv;
+        out vec3 vViewPosition;
+        out vec3 vNormal;
 
-            #define USE_SHADOWMAP
-
-            #ifdef USE_SHADOWMAP
-            	#if NUM_DIR_LIGHT_SHADOWS > 0
-            		uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
-            		varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
-            		struct DirectionalLightShadow {
-                        float shadowBias;
-                        float shadowNormalBias;
-                        float shadowRadius;
-                        vec2 shadowMapSize;
-                    };
-                        uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
-                    #endif
-                    #if NUM_SPOT_LIGHT_SHADOWS > 0
-                        uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
-                        varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
-                        struct SpotLightShadow {
-                                float shadowBias;
-                                float shadowNormalBias;
-                                float shadowRadius;
-                                vec2 shadowMapSize;
-                        };
-                        uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
-                        	#endif
-                        	#if NUM_POINT_LIGHT_SHADOWS > 0
-                        		uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
-                        		varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
-                        		struct PointLightShadow {
-                            			float shadowBias;
-                            			float shadowNormalBias;
-                            			float shadowRadius;
-                            			vec2 shadowMapSize;
-                            			float shadowCameraNear;
-                            			float shadowCameraFar;
-                        };
-                        uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
-                    #endif
-                #endif
-            void main() {
-                vNormal = vec3( normal );
-                vUv = uv;
-                vec4 mvPosition = vec4( position, 1.0 );
-                mvPosition = modelViewMatrix * mvPosition;
-                vViewPosition = - mvPosition.xyz;
-                gl_Position = projectionMatrix * mvPosition;
-            }
-
-        `
-    },
-
-    fragmentShaderQuad() {
-
-        return `
-        #define RE_Direct RE_Direct_BlinnPhong
-        precision highp float;
-        precision highp int;
-
-        layout(location = 0) out vec4 pc_FragColor;
-
-        in vec2 vUv;
-        #include <common>
-        #include <packing>
-        #include <normal_pars_fragment>
-        #include <lights_pars_begin>
-        #include <bsdfs>
-        #include <lights_phong_pars_fragment>
-
-        uniform sampler2D color_texture;
-        uniform sampler2D normal_texture;
-        uniform sampler2D depth_texture;
-        uniform sampler2D detailed_normal_texture;
-        
-        uniform sampler2D specular_texture;
-        uniform float specularIntensity;
-
-        uniform float u_ambientIntensity;
-        uniform float u_shadowShrinking;
-        uniform float u_translucencyScale;
-        
-        uniform mat4 projectionMatrix;
-        
-        mat4 u_invvp;
-
-        
-        #if NUM_DIR_LIGHT_SHADOWS > 0
-        uniform mat4 directionalShadowMatrix[ 0 ];
-        varying vec4 vDirectionalShadowCoord[ 0 ];
-        struct DirectionalLightShadow {
-            float shadowBias;
-            float shadowNormalBias;
-            float shadowRadius;
-            vec2 shadowMapSize;
-        };
-        uniform DirectionalLightShadow directionalLightShadows[ 0 ];
+        #ifdef USE_SHADOWMAP
+            #if NUM_DIR_LIGHT_SHADOWS > 0
+                varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
+            #endif
+            #if NUM_SPOT_LIGHT_SHADOWS > 0
+                varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
+            #endif
+            #if NUM_POINT_LIGHT_SHADOWS > 0
+                varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
+            #endif
         #endif
-        #if NUM_DIR_LIGHTS > 0 
-        struct DirectionalLight {
-            vec3 direction;
-            vec3 color;
-        };
-        // uniform DirectionalLight directionalLights[ 0 ];
-        // void getDirectionalLightInfo( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight light ) {
-        //     light.color = directionalLight.color;
-        //     light.direction = directionalLight.direction;
-        //     light.visible = true;
-        // }
-        #endif
-        vec3 getPositionWSFromDepth(float depth){
-            //build pixel info
-            depth = depth * 2.0 - 1.0;
-            vec2 pos2D = vUv * 2.0 - vec2(1.0);
-            vec4 pos = vec4( pos2D, depth, 1.0 );
-            pos = u_invvp * pos;
-            pos.xyz = pos.xyz / pos.w;
-            return pos.xyz;
-        }
-        
-        float linearDepthNormalized(float z, float near, float far){
-            float z_n = 2.0 * z - 1.0;
-            return 2.0 * near * far / (far + near - z_n * (far - near));
-        }
-        
+
         void main() {
-            
-            
-            vec3 normal = normalize( vNormal );
-            ReflectedLight reflectedLight;
-            
-            #include <lights_fragment_begin>
-            
-            u_invvp = inverse( projectionMatrix * viewMatrix );
-            
-            vec3 albedo = texture( color_texture, vUv ).rgb;
-            float sss = texture( color_texture, vUv ).a;
-            float mask = texture( normal_texture, vUv ).a;
-            vec3 specular = texture( specular_texture, vUv ).rgb;
-
-            BlinnPhongMaterial material;
-            material.diffuseColor = albedo;
-            material.specularColor = specular;
-            material.specularShininess = specularIntensity;
-            material.specularStrength = u_shadowShrinking;
-
-            #if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )
-                DirectionalLight directionalLight;
-                #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
-                    DirectionalLightShadow directionalLightShadow;
-                #endif
-                #pragma unroll_loop_start
-                for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
-                        directionalLight = directionalLights[ i ];
-                    getDirectionalLightInfo( directionalLight, geometry, directLight );
-                    #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
-                        directionalLightShadow = directionalLightShadows[ i ];
-                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
-                    #endif
-                    L += directLight.direction;
-                    RE_Direct( directLight, geometry, material, reflectedLight );
-                }
-                #pragma unroll_loop_end
-                #endif
-                
-               
-
-            // vec3 N = normalize(texture( normal_texture, vUv ).rgb * 2.0 - 1.0);
-            // vec3 hN = normalize(texture2D( detailed_normal_texture, vUv ).xyz * 2.0 - 1.0);
-            // float light_distance = length(L);
-            // L /= light_distance;
-
-
-            vec3 ambient = albedo * u_ambientIntensity;
-            vec3 diffuse = albedo * reflectedLight.directDiffuse;
-            pc_FragColor.rgb = reflectedLight.directDiffuse;
-            pc_FragColor.a = mask;
-           
-
+            vNormal = vec3( normal );
+            vUv = uv;
+            vec4 mvPosition = vec4( position, 1.0 );
+            mvPosition = modelViewMatrix * mvPosition;
+            vViewPosition = - mvPosition.xyz;
+            gl_Position = projectionMatrix * mvPosition;
         }
 
         `
-    },
-
-    getVertexShaderReduced() {
-
-        return [
-            `   
-            precision mediump sampler2DArray;
-            #define attribute in
-            #define varying out
-            #define texture2D texture
-            precision highp float;
-            precision highp int;
-            #define HIGH_PRECISION
-            #define SHADER_NAME MeshStandardMaterial
-            #define STANDARD 
-            #define VERTEX_TEXTURES
-            #define MAX_BONES 1024
-            #define USE_FOG
-            #define USE_MAP
-            #define USE_NORMALMAP
-            #define TANGENTSPACE_NORMALMAP
-            #define USE_ROUGHNESSMAP
-            #define USE_METALNESSMAP
-            #define USE_UV
-            #define USE_SKINNING
-            #define BONE_TEXTURE
-            #define USE_MORPHTARGETS
-            #define USE_MORPHNORMALS
-            #define MORPHTARGETS_TEXTURE
-            #define MORPHTARGETS_COUNT 50
-            #define USE_SHADOWMAP
-            #define SHADOWMAP_TYPE_PCF
-            uniform mat4 modelMatrix;
-            uniform mat4 modelViewMatrix;
-            uniform mat4 projectionMatrix;
-            uniform mat4 viewMatrix;
-            uniform mat3 normalMatrix;
-            uniform vec3 cameraPosition;
-            uniform bool isOrthographic;
-            #ifdef USE_INSTANCING
-                attribute mat4 instanceMatrix;
-            #endif
-            #ifdef USE_INSTANCING_COLOR
-                attribute vec3 instanceColor;
-            #endif
-            attribute vec3 position;
-            attribute vec3 normal;
-            attribute vec2 uv;
-            #ifdef USE_TANGENT
-                attribute vec4 tangent;
-            #endif
-            #if defined( USE_COLOR_ALPHA )
-                attribute vec4 color;
-            #elif defined( USE_COLOR )
-                attribute vec3 color;
-            #endif
-            #if ( defined( USE_MORPHTARGETS ) && ! defined( MORPHTARGETS_TEXTURE ) )
-                attribute vec3 morphTarget0;
-                attribute vec3 morphTarget1;
-                attribute vec3 morphTarget2;
-                attribute vec3 morphTarget3;
-                #ifdef USE_MORPHNORMALS
-                    attribute vec3 morphNormal0;
-                    attribute vec3 morphNormal1;
-                    attribute vec3 morphNormal2;
-                    attribute vec3 morphNormal3;
-                #else
-                    attribute vec3 morphTarget4;
-                    attribute vec3 morphTarget5;
-                    attribute vec3 morphTarget6;
-                    attribute vec3 morphTarget7;
-                #endif
-            #endif
-            #ifdef USE_SKINNING
-                attribute vec4 skinIndex;
-                attribute vec4 skinWeight;
-            #endif
-         
-            #define STANDARD
-            varying vec3 vViewPosition;
-            #ifdef USE_TRANSMISSION
-                varying vec3 vWorldPosition;
-            #endif`,
-            THREE.ShaderChunk.common,
-            THREE.ShaderChunk.uv_pars_vertex,
-            THREE.ShaderChunk.uv2_pars_vertex,
-            THREE.ShaderChunk.displacementmap_pars_vertex,
-            THREE.ShaderChunk.color_pars_vertex,
-            THREE.ShaderChunk.fog_pars_vertex,
-            THREE.ShaderChunk.normal_pars_vertex,
-            THREE.ShaderChunk.morphtarget_pars_vertex,
-            THREE.ShaderChunk.skinning_pars_vertex,
-            THREE.ShaderChunk.shadowmap_pars_vertex,
-            THREE.ShaderChunk.logdepthbuf_pars_vertex,
-            THREE.ShaderChunk.clipping_planes_pars_vertex,
-            `void main() {`,
-                THREE.ShaderChunk.uv_vertex,
-                THREE.ShaderChunk.uv2_vertex,
-                THREE.ShaderChunk.color_vertex,
-                THREE.ShaderChunk.beginnormal_vertex,
-                THREE.ShaderChunk.morphnormal_vertex,
-                THREE.ShaderChunk.skinbase_vertex,
-                THREE.ShaderChunk.skinnormal_vertex,
-                THREE.ShaderChunk.defaultnormal_vertex,
-                THREE.ShaderChunk.normal_vertex,
-                THREE.ShaderChunk.begin_vertex,
-                THREE.ShaderChunk.morphtarget_vertex,
-                THREE.ShaderChunk.skinning_vertex,
-                THREE.ShaderChunk.displacementmap_vertex,
-                THREE.ShaderChunk.project_vertex,
-                THREE.ShaderChunk.logdepthbuf_vertex,
-                THREE.ShaderChunk.clipping_planes_vertex,
-                `vViewPosition = - mvPosition.xyz;`,
-                THREE.ShaderChunk.worldpos_vertex,
-                THREE.ShaderChunk.shadowmap_vertex,
-                THREE.ShaderChunk.fog_vertex,
-            `#ifdef USE_TRANSMISSION
-                vWorldPosition = worldPosition.xyz;
-            #endif
-            }`
-        ].joint("\n");
-    },
-
-    getFragmentShaderReduced() {
-
-        return [
-            `
-            #define varying in
-            layout(location = 0) out highp vec4 pc_fragColor;
-            #define gl_FragColor pc_fragColor
-            #define gl_FragDepthEXT gl_FragDepth
-            #define texture2D texture
-            #define textureCube texture
-            #define texture2DProj textureProj
-            #define texture2DLodEXT textureLod
-            #define texture2DProjLodEXT textureProjLod
-            #define textureCubeLodEXT textureLod
-            #define texture2DGradEXT textureGrad
-            #define texture2DProjGradEXT textureProjGrad
-            #define textureCubeGradEXT textureGrad
-            precision highp float;
-            precision highp int;
-            #define HIGH_PRECISION
-            #define SHADER_NAME MeshStandardMaterial
-            #define STANDARD 
-            #define USE_FOG
-            #define USE_MAP
-            #define USE_NORMALMAP
-            #define TANGENTSPACE_NORMALMAP
-            #define USE_ROUGHNESSMAP
-            #define USE_METALNESSMAP
-            #define USE_UV
-            #define USE_SHADOWMAP
-            #define SHADOWMAP_TYPE_PCF
-            uniform mat4 viewMatrix;
-            uniform vec3 cameraPosition;
-            uniform bool isOrthographic;
-            #define TONE_MAPPING
-            #ifndef saturate
-            #define saturate( a ) clamp( a, 0.0, 1.0 )
-            #endif
-            uniform float toneMappingExposure;
-            vec3 LinearToneMapping( vec3 color ) {
-                return toneMappingExposure * color;
-            }
-            vec3 ReinhardToneMapping( vec3 color ) {
-                color *= toneMappingExposure;
-                return saturate( color / ( vec3( 1.0 ) + color ) );
-            }
-            vec3 OptimizedCineonToneMapping( vec3 color ) {
-                color *= toneMappingExposure;
-                color = max( vec3( 0.0 ), color - 0.004 );
-                return pow( ( color * ( 6.2 * color + 0.5 ) ) / ( color * ( 6.2 * color + 1.7 ) + 0.06 ), vec3( 2.2 ) );
-            }
-            vec3 RRTAndODTFit( vec3 v ) {
-                vec3 a = v * ( v + 0.0245786 ) - 0.000090537;
-                vec3 b = v * ( 0.983729 * v + 0.4329510 ) + 0.238081;
-                return a / b;
-            }
-            vec3 ACESFilmicToneMapping( vec3 color ) {
-                const mat3 ACESInputMat = mat3(
-                    vec3( 0.59719, 0.07600, 0.02840 ),		vec3( 0.35458, 0.90834, 0.13383 ),
-                    vec3( 0.04823, 0.01566, 0.83777 )
-                );
-                const mat3 ACESOutputMat = mat3(
-                    vec3(  1.60475, -0.10208, -0.00327 ),		vec3( -0.53108,  1.10813, -0.07276 ),
-                    vec3( -0.07367, -0.00605,  1.07602 )
-                );
-                color *= toneMappingExposure / 0.6;
-                color = ACESInputMat * color;
-                color = RRTAndODTFit( color );
-                color = ACESOutputMat * color;
-                return saturate( color );
-            }
-            vec3 CustomToneMapping( vec3 color ) { return color; }
-            vec3 toneMapping( vec3 color ) { return ACESFilmicToneMapping( color ); }
-            #define OPAQUE
-            vec4 LinearToLinear( in vec4 value ) {
-                return value;
-            }
-            vec4 sRGBToLinear( in vec4 value ) {
-                return vec4( mix( pow( value.rgb * 0.9478672986 + vec3( 0.0521327014 ), vec3( 2.4 ) ), value.rgb * 0.0773993808, vec3( lessThanEqual( value.rgb, vec3( 0.04045 ) ) ) ), value.a );
-            }
-            vec4 LinearTosRGB( in vec4 value ) {
-                return vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.a );
-            }
-            vec4 mapTexelToLinear( vec4 value ) { return LinearToLinear( value ); }
-            vec4 linearToOutputTexel( vec4 value ) { return LinearToLinear( value ); }
-            #define STANDARD
-            
-            #ifdef PHYSICAL
-                #define IOR
-                #define SPECULAR
-            #endif
-            uniform vec3 diffuse;
-            uniform vec3 emissive;
-            uniform float roughness;
-            uniform float metalness;
-            uniform float opacity;
-            #ifdef IOR
-                uniform float ior;
-            #endif
-            #ifdef SPECULAR
-                uniform float specularIntensity;
-                uniform vec3 specularColor;
-                #ifdef USE_SPECULARINTENSITYMAP
-                    uniform sampler2D specularIntensityMap;
-                #endif
-                #ifdef USE_SPECULARCOLORMAP
-                    uniform sampler2D specularColorMap;
-                #endif
-            #endif
-            #ifdef USE_CLEARCOAT
-                uniform float clearcoat;
-                uniform float clearcoatRoughness;
-            #endif
-            #ifdef USE_SHEEN
-                uniform vec3 sheenColor;
-                uniform float sheenRoughness;
-                #ifdef USE_SHEENCOLORMAP
-                    uniform sampler2D sheenColorMap;
-                #endif
-                #ifdef USE_SHEENROUGHNESSMAP
-                    uniform sampler2D sheenRoughnessMap;
-                #endif
-            #endif
-            varying vec3 vViewPosition;
-            #include <common>
-            #include <packing>
-            #include <dithering_pars_fragment>
-            #include <color_pars_fragment>
-            #include <uv_pars_fragment>
-            #include <uv2_pars_fragment>
-            #include <map_pars_fragment>
-            #include <alphamap_pars_fragment>
-            #include <alphatest_pars_fragment>
-            #include <aomap_pars_fragment>
-            #include <lightmap_pars_fragment>
-            #include <emissivemap_pars_fragment>
-            #include <bsdfs>
-            #include <cube_uv_reflection_fragment>
-            #include <envmap_common_pars_fragment>
-            #include <envmap_physical_pars_fragment>
-            #include <fog_pars_fragment>
-            #include <lights_pars_begin>
-            #include <normal_pars_fragment>
-            #include <lights_physical_pars_fragment>
-            #include <transmission_pars_fragment>
-            #include <shadowmap_pars_fragment>
-            #include <bumpmap_pars_fragment>
-            #include <normalmap_pars_fragment>
-            #include <clearcoat_pars_fragment>
-            #include <roughnessmap_pars_fragment>
-            #include <metalnessmap_pars_fragment>
-            #include <logdepthbuf_pars_fragment>
-            #include <clipping_planes_pars_fragment>
-            void main() {
-                #include <clipping_planes_fragment>
-                vec4 diffuseColor = vec4( diffuse, opacity );
-                ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
-                vec3 totalEmissiveRadiance = emissive;
-                #include <logdepthbuf_fragment>
-                #include <map_fragment>
-                #include <color_fragment>
-                #include <alphamap_fragment>
-                #include <alphatest_fragment>
-                #include <roughnessmap_fragment>
-                #include <metalnessmap_fragment>
-                #include <normal_fragment_begin>
-                #include <normal_fragment_maps>
-                #include <clearcoat_normal_fragment_begin>
-                #include <clearcoat_normal_fragment_maps>
-                #include <emissivemap_fragment>
-                #include <lights_physical_fragment>
-                #include <lights_fragment_begin>
-                #include <lights_fragment_maps>
-                #include <lights_fragment_end>
-                #include <aomap_fragment>
-                vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-                vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
-                #include <transmission_fragment>
-                vec3 outgoingLight = totalDiffuse + totalSpecular + totalEmissiveRadiance;
-                #ifdef USE_SHEEN
-                    float sheenEnergyComp = 1.0 - 0.157 * max3( material.sheenColor );
-                    outgoingLight = outgoingLight * sheenEnergyComp + sheenSpecular;
-                #endif
-                #ifdef USE_CLEARCOAT
-                    float dotNVcc = saturate( dot( geometry.clearcoatNormal, geometry.viewDir ) );
-                    vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-                    outgoingLight = outgoingLight * ( 1.0 - material.clearcoat * Fcc ) + clearcoatSpecular * material.clearcoat;
-                #endif
-                #include <output_fragment>
-                #include <tonemapping_fragment>
-                #include <encodings_fragment>
-                #include <fog_fragment>
-                #include <premultiplied_alpha_fragment>
-                #include <dithering_fragment>
-            }
-            `
-        ].joint("\n");
     },
 
     getVertexShader() {
@@ -800,56 +322,56 @@ const ShaderChunk = {
               return bone;
              }
             #else
-             uniform mat4 boneMatrices[ MAX_BONES ];
-             mat4 getBoneMatrix( const in float i ) {
-                  mat4 bone = boneMatrices[ int(i) ];
-                  return bone;
-                 }
+                uniform mat4 boneMatrices[ MAX_BONES ];
+                mat4 getBoneMatrix( const in float i ) {
+                    mat4 bone = boneMatrices[ int(i) ];
+                    return bone;
+                }
             #endif
         #endif
         #ifdef USE_SHADOWMAP
             #if NUM_DIR_LIGHT_SHADOWS > 0
-             uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
-             varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
-             struct DirectionalLightShadow {
-                  float shadowBias;
-                  float shadowNormalBias;
-                  float shadowRadius;
-                  vec2 shadowMapSize;
-                 };
+                uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+                varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
+                struct DirectionalLightShadow {
+                    float shadowBias;
+                    float shadowNormalBias;
+                    float shadowRadius;
+                    vec2 shadowMapSize;
+                };
              uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
             #endif
             #if NUM_SPOT_LIGHT_SHADOWS > 0
-             uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
-             varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
-             struct SpotLightShadow {
-                  float shadowBias;
-                  float shadowNormalBias;
-                  float shadowRadius;
-                  vec2 shadowMapSize;
-                 };
-             uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
+                uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
+                varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
+                struct SpotLightShadow {
+                    float shadowBias;
+                    float shadowNormalBias;
+                    float shadowRadius;
+                    vec2 shadowMapSize;
+                };
+                uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
             #endif
             #if NUM_POINT_LIGHT_SHADOWS > 0
-             uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
-             varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
-             struct PointLightShadow {
-                  float shadowBias;
-                  float shadowNormalBias;
-                  float shadowRadius;
-                  vec2 shadowMapSize;
-                  float shadowCameraNear;
-                  float shadowCameraFar;
-                 };
-             uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
+                uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
+                varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
+                struct PointLightShadow {
+                    float shadowBias;
+                    float shadowNormalBias;
+                    float shadowRadius;
+                    vec2 shadowMapSize;
+                    float shadowCameraNear;
+                    float shadowCameraFar;
+                };
+                uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
             #endif
         #endif
         #ifdef USE_LOGDEPTHBUF
             #ifdef USE_LOGDEPTHBUF_EXT
-             varying float vFragDepth;
-             varying float vIsPerspective;
+                varying float vFragDepth;
+                varying float vIsPerspective;
             #else
-             uniform float logDepthBufFC;
+                uniform float logDepthBufFC;
             #endif
         #endif
         void main() {
@@ -971,15 +493,15 @@ const ShaderChunk = {
             mvPosition = modelViewMatrix * mvPosition;
             gl_Position = projectionMatrix * mvPosition;
             #ifdef USE_LOGDEPTHBUF
-             #ifdef USE_LOGDEPTHBUF_EXT
-             vFragDepth = 1.0 + gl_Position.w;
-              vIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );
-              #else
-               if ( isPerspectiveMatrix( projectionMatrix ) ) {
-                 gl_Position.z = log2( max( EPSILON, gl_Position.w + 1.0 ) ) * logDepthBufFC - 1.0;
-                 gl_Position.z *= gl_Position.w;
-                }
-             #endif
+                #ifdef USE_LOGDEPTHBUF_EXT
+                    vFragDepth = 1.0 + gl_Position.w;
+                    vIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );
+                #else
+                    if ( isPerspectiveMatrix( projectionMatrix ) ) {
+                        gl_Position.z = log2( max( EPSILON, gl_Position.w + 1.0 ) ) * logDepthBufFC - 1.0;
+                        gl_Position.z *= gl_Position.w;
+                    }
+                #endif
             #endif
             vViewPosition =  - mvPosition.xyz;
             #if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION )
@@ -989,9 +511,10 @@ const ShaderChunk = {
                 #endif
                 worldPosition = modelMatrix * worldPosition;
             #endif
+            vWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
             #ifdef USE_SHADOWMAP
                 #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
-                    vec3 shadowWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
+                    vec3 shadowWorldNormal = vWorldNormal;
                     vec4 shadowWorldPosition;
                 #endif
                 #if NUM_DIR_LIGHT_SHADOWS > 0
@@ -1009,7 +532,6 @@ const ShaderChunk = {
             #ifdef USE_FOG
                vFogDepth = - mvPosition.z;
             #endif
-            vWorldNormal = shadowWorldNormal;
             vWorldPosition = worldPosition.xyz;
         }
         `

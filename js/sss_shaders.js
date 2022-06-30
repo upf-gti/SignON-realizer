@@ -1,4 +1,4 @@
-import * as THREE from 'three'
+import * as THREE from 'three';
 
 const SSS_ShaderChunk = {
 
@@ -204,26 +204,22 @@ const SSS_ShaderChunk = {
         uniform float cameraFar;
         uniform vec3  cameraEye;
 
-        uniform mat4 projectionMatrix;
-        
-        mat4 u_invvp;
-
         #if NUM_DIR_LIGHT_SHADOWS > 0
-            uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
-            varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
-            uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS];
             uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
         #endif
         #if NUM_POINT_LIGHT_SHADOWS > 0
             uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
         #endif
+        #if NUM_SPOT_LIGHT_SHADOWS > 0
+            uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
+        #endif
        
-        float linearDepthNormalized(float z, float near, float far){
+        float linearDepthNormalized(float z, float near, float far) {
             float z_n = 2.0 * z - 1.0;
             return 2.0 * near * far / (far + near - z_n * (far - near));
         }
         // Can be precomputed
-        vec3 T(float s){
+        vec3 T(float s) {
             return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
             vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
             vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
@@ -231,10 +227,7 @@ const SSS_ShaderChunk = {
             vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
             vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
         }
-        float expFunc(float f)
-        {
-            return f*f*f*(f*(f*6.0-15.0)+10.0);
-        }
+        float ExpFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
         vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
         vec4 LinearToGamma( vec4 value ) { return vec4( pow(value.rgb, vec3(1.0/2.2)), value.a ); }    
         void main() {
@@ -260,10 +253,7 @@ const SSS_ShaderChunk = {
             vec3 transmitance;
             vec3 L;
             float NdotL = 1.0;
-            // NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
 
-            u_invvp = inverse( projectionMatrix * viewMatrix );
-            
             BlinnPhongMaterial material;
             material.diffuseColor = albedo;
             material.specularColor = vec3( normalBuffer.a - 10.0 );
@@ -271,25 +261,27 @@ const SSS_ShaderChunk = {
             material.specularStrength = shadowShrinking;
             
             GeometricContext geometry;
-            geometry.position = - vViewPosition;
-            geometry.normal = normal;
-            geometry.viewDir = normalize( vViewPosition );
-            float light_depth;
+            geometry.position = position;
+            geometry.normal = dNormals;
+            geometry.viewDir = normalize( cameraPosition - position );
 
             ReflectedLight reflectedLight;
             IncidentLight directLight;
+
             #if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )
-            PointLight pointLight;
-            #if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
-            PointLightShadow pointLightShadow;
-            #endif
-            #pragma unroll_loop_start
-            for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
-                pointLight = pointLights[ i ];
-                getPointLightInfo( pointLight, geometry, directLight );
-                #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
+                PointLight pointLight;
+                #if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
+                PointLightShadow pointLightShadow;
+                #endif
+                #pragma unroll_loop_start
+                for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+                    pointLight = pointLights[ i ];
+                    getPointLightInfo( pointLight, geometry, directLight );
+                    #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
                         pointLightShadow = pointLightShadows[ i ];
-                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, vPointShadowCoord[ i ], pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
+                        vec4 pointShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * pointLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                        vec4 pointShadowCoord = pointShadowMatrix[ 0 ] * pointShadowWorldPosition;
+                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, pointShadowCoord, pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                 }
@@ -306,7 +298,9 @@ const SSS_ShaderChunk = {
                     getSpotLightInfo( spotLight, geometry, directLight );
                     #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS )
                         spotLightShadow = spotLightShadows[ i ];
-                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, vSpotShadowCoord[ i ] ) : 1.0;
+                        vec4 spotShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * spotLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                        vec4 spotShadowCoord = spotShadowMatrix[ 0 ] * spotShadowWorldPosition;
+                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, spotShadowCoord ) : 1.0;
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                 }
@@ -323,14 +317,15 @@ const SSS_ShaderChunk = {
                     getDirectionalLightInfo( directionalLight, geometry, directLight );
                     #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
                         directionalLightShadow = directionalLightShadows[ i ];
-                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+                        vec4 directionalShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * directionalLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                        vec4 directionalShadowCoord = directionalShadowMatrix[ 0 ] * directionalShadowWorldPosition;
+                        directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                     L = directionalLight.direction;
                     float light_distance = length(L);
                     L /= light_distance;
                     NdotL *= max(0.0, dot(dNormals,L));
-                    //NdotL *= 1.0 - (light_distance - u_light_att.x) / (u_light_att.y - u_light_att.x);
                 }
                 #pragma unroll_loop_end
             #endif
@@ -338,7 +333,7 @@ const SSS_ShaderChunk = {
                 RectAreaLight rectAreaLight;
                 #pragma unroll_loop_start
                 for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
-                        rectAreaLight = rectAreaLights[ i ];
+                    rectAreaLight = rectAreaLights[ i ];
                     RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
                 }
                 #pragma unroll_loop_end
@@ -350,7 +345,7 @@ const SSS_ShaderChunk = {
                 #if ( NUM_HEMI_LIGHTS > 0 )
                     #pragma unroll_loop_start
                     for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
-                            irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometry.normal );
+                        irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometry.normal );
                     }
                     #pragma unroll_loop_end
                 #endif
@@ -365,10 +360,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
-            float shadowDepth = texture( spotShadowMap[ 0 ], vUv ).r;
-
-            pc_fragLight = vec4(vec3(shadowDepth), 1.0);
-            // pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
+            pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);
         }`
