@@ -74,7 +74,7 @@ class Player {
                 } else if (object.isBone) object.scale.set(1.0, 1.0, 1.0);
             } );
 
-            this.prepareMaterials();
+            this.prepareMaterials.bind(this)();
 
             $('#loading').fadeOut();
             this.clock.start();
@@ -142,12 +142,12 @@ class Player {
         spotLight.name = 'Spot';
         spotLight.position.set( -8, 6, 3);
         spotLight.castShadow = true;
-        spotLight.angle = Math.PI / 3;
+        spotLight.angle = Math.PI / 4;
         spotLight.penumbra = 0.3;
         spotLight.shadow.mapSize.width = 1024;
         spotLight.shadow.mapSize.height = 1048;
         spotLight.shadow.camera.near = 1;
-        spotLight.shadow.camera.far = 100;
+        spotLight.shadow.camera.far = 200;
         this.spotLight = spotLight;
         this.scene.add( this.spotLight );
 
@@ -341,12 +341,11 @@ class Player {
         // this.renderer.clearColor(); 
         
         //Final FX
-        this.quad.material = this.gammaMaterial;
-        this.quad.material.needsUpdate = true;
+        this.useScreenMaterial( this.gammaMaterial );
         this.quad.material.uniforms.u_texture.value = this.renderTargetHblur.texture[ 0 ];
+        this.quad.material.needsUpdate = true;
 
         this.toScreen()
-        // this.renderer.clearColor();
         this.renderer.render( this.scene, this.postCamera );
     }
 
@@ -446,6 +445,9 @@ class Player {
                 normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                 detailedNormalMap: { value: this.renderTargetDef.texture[ 3 ] },
                 depthMap: { value: this.renderTargetDef.depthTexture },
+                transmitanceLut: { value: this.loadTexture( './data/textures/transmitance_lut.png' , {
+                    wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping
+                })},
                 specularIntensity: { type: "number", value: 0.5 },
                 ambientIntensity: { type: "number", value: 0.5 },
                 shadowShrinking: { type: "number", value: 0.1 },
@@ -660,11 +662,13 @@ class Player {
         object.layers.mask = mask;
     }
 
-    loadTexture( path, flip, onload ) {
-        const texture = this.textureLoader.load( path, onload );
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.flipY = flip;
+    loadTexture( path, parameters = {} ) {
+        const texture = this.textureLoader.load( path, parameters.onload );
+        texture.wrapS = parameters.wrapS || THREE.RepeatWrapping;
+        texture.wrapT = parameters.wrapT || THREE.RepeatWrapping;
+        texture.minFilter = parameters.minFilter || THREE.LinearMipmapLinearFilter;
+        texture.magFilter = parameters.magFilter || THREE.LinearFilter;
+        texture.flipY = parameters.flip;
         return texture;
     }
 

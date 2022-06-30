@@ -166,6 +166,46 @@ const SSS_ShaderChunk = {
         `].join("\n");
     },
 
+    SSS_Transmitance: `
+
+        float texSize = pointLightShadow.shadowMapSize.x;
+        float invSize = 1.0 / texSize;
+        float bias = pointLightShadow.shadowBias;
+        float near = pointLightShadow.shadowCameraNear;
+        float far = pointLightShadow.shadowCameraFar;
+
+        vec3 lVector = directLight.direction;
+        vec4 lightSpacePos = pointShadowMatrix[ i ] * vec4(position - shadowShrinking * normal, 1.0); // Shrinking explained bt Jimenez et al
+        lightSpacePos = 0.5 * ( lightSpacePos + vec4(1.0) );
+
+        vec2 samples = lightSpacePos.xy;
+        vec2 topLeftUV = samples * texSize;
+        vec2 offsetUV = fract(topLeftUV);
+        offsetUV.x = expFunc( offsetUV.x );
+        offsetUV.y = expFunc( offsetUV.y );
+        topLeftUV = floor( topLeftUV ) * invSize;
+
+        vec2 topRightUV = topLeftUV + vec2(invSize, 0.0);
+        vec2 bottomRightUV = topLeftUV + vec2(invSize, invSize);
+
+        float topLeft = texture( pointShadowMap[ i ], topLeftUV ).x;
+        float topRight = texture( pointShadowMap[ i ], topRightUV ).x;
+        float bottomLeft = texture( pointShadowMap[ i ], topLeftUV + vec2(0.0, invSize) ).x;
+        float bottomRight = texture( pointShadowMap[ i ], bottomRightUV ).x;
+        float top = mix(topLeft, topRight, offsetUV.x);
+        float bottom = mix(bottomLeft, bottomRight, offsetUV.x);
+        float sampleDepth = mix(top, bottom, offsetUV.y);
+    
+        float zLightDepth = lightSpacePos.z;
+        float lit = ((zLightDepth <= sampleDepth + bias) ? 1.0 : 0.0);
+        float lightDepth = sampleDepth == 1.0 ? 1.0e9 : sampleDepth;
+        
+        // Transmitance (we use vertex normal because it does not contain high frequency detail)
+        float s = translucencyScale * abs(linearDepthNormalized(lightDepth, near, far) - linearDepthNormalized(zLightDepth, near, far));
+        float E = max(0.3 + dot(-normal, lVector), 0.0);
+        transmitance = vec3(lit);//T(s) * pointLight.color * albedo * E;
+    `,
+
     deferredFinalFS() {
 
         return `
@@ -194,6 +234,7 @@ const SSS_ShaderChunk = {
         uniform sampler2D positionMap;
         uniform sampler2D depthMap;
         uniform sampler2D detailedNormalMap;
+        uniform sampler2D transmitanceLut;
         
         uniform float ambientIntensity;
         uniform float specularIntensity;
@@ -218,15 +259,20 @@ const SSS_ShaderChunk = {
             float z_n = 2.0 * z - 1.0;
             return 2.0 * near * far / (far + near - z_n * (far - near));
         }
+        
         // Can be precomputed
         vec3 T(float s) {
-            return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
-            vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
-            vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
-            vec3(0.113, 0.007, 0.007) * exp(-s*s/0.567) +
-            vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
-            vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
+            return texture2D(transmitanceLut, vec2(s, 0.0)).rgb;
+            // return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
+            // vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
+            // vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
+            // vec3(0.113, 0.007, 0.007) * exp(-s*s/0.567) +
+            // vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
+            // vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
         }
+
+        float expFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
+
         float ExpFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
         vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
         vec4 LinearToGamma( vec4 value ) { return vec4( pow(value.rgb, vec3(1.0/2.2)), value.a ); }    
@@ -251,8 +297,6 @@ const SSS_ShaderChunk = {
             float linearDepth = linearDepthNormalized(depth, cameraNear, cameraFar);
 
             vec3 transmitance;
-            vec3 L;
-            float NdotL = 1.0;
 
             BlinnPhongMaterial material;
             material.diffuseColor = albedo;
@@ -301,6 +345,9 @@ const SSS_ShaderChunk = {
                         vec4 spotShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * spotLightShadows[ 0 ].shadowNormalBias, 0.0 );
                         vec4 spotShadowCoord = spotShadowMatrix[ 0 ] * spotShadowWorldPosition;
                         directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, spotShadowCoord ) : 1.0;
+                        
+                        ` + this.SSS_Transmitance + `
+
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                 }
@@ -322,10 +369,6 @@ const SSS_ShaderChunk = {
                         directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
-                    L = directionalLight.direction;
-                    float light_distance = length(L);
-                    L /= light_distance;
-                    NdotL *= max(0.0, dot(dNormals,L));
                 }
                 #pragma unroll_loop_end
             #endif
@@ -360,6 +403,7 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
+            //pc_fragLight = vec4(transmitance * mask, sss);
             pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
             pc_fragTransmitance = vec4(transmitance, 1.0);
             pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);

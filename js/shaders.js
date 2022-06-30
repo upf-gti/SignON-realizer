@@ -996,30 +996,30 @@ const ShaderChunk = {
                 #define v6 0.0038
                 #define m6 4.0
                 float roughnessToMip( float roughness ) {
-                      float mip = 0.0;
-                      if ( roughness >= r1 ) {
-                          mip = ( r0 - roughness ) * ( m1 - m0 ) / ( r0 - r1 ) + m0;
-                  } else if ( roughness >= r4 ) {
-                          mip = ( r1 - roughness ) * ( m4 - m1 ) / ( r1 - r4 ) + m1;
-                  } else if ( roughness >= r5 ) {
-                          mip = ( r4 - roughness ) * ( m5 - m4 ) / ( r4 - r5 ) + m4;
-                  } else if ( roughness >= r6 ) {
-                          mip = ( r5 - roughness ) * ( m6 - m5 ) / ( r5 - r6 ) + m5;
-                  } else {
-                          mip = - 2.0 * log2( 1.16 * roughness );    }
-                  return mip;
+                    float mip = 0.0;
+                    if ( roughness >= r1 ) {
+                        mip = ( r0 - roughness ) * ( m1 - m0 ) / ( r0 - r1 ) + m0;
+                    } else if ( roughness >= r4 ) {
+                        mip = ( r1 - roughness ) * ( m4 - m1 ) / ( r1 - r4 ) + m1;
+                    } else if ( roughness >= r5 ) {
+                        mip = ( r4 - roughness ) * ( m5 - m4 ) / ( r4 - r5 ) + m4;
+                    } else if ( roughness >= r6 ) {
+                        mip = ( r5 - roughness ) * ( m6 - m5 ) / ( r5 - r6 ) + m5;
+                    } else {
+                        mip = - 2.0 * log2( 1.16 * roughness );    }
+                    return mip;
                 }
                 vec4 textureCubeUV( sampler2D envMap, vec3 sampleDir, float roughness ) {
-                      float mip = clamp( roughnessToMip( roughness ), m0, cubeUV_maxMipLevel );
-                      float mipF = fract( mip );
-                      float mipInt = floor( mip );
-                      vec3 color0 = bilinearCubeUV( envMap, sampleDir, mipInt );
-                      if ( mipF == 0.0 ) {
-                          return vec4( color0, 1.0 );
-                      } else {
-                          vec3 color1 = bilinearCubeUV( envMap, sampleDir, mipInt + 1.0 );
-                          return vec4( mix( color0, color1, mipF ), 1.0 );
-                      }
+                    float mip = clamp( roughnessToMip( roughness ), m0, cubeUV_maxMipLevel );
+                    float mipF = fract( mip );
+                    float mipInt = floor( mip );
+                    vec3 color0 = bilinearCubeUV( envMap, sampleDir, mipInt );
+                    if ( mipF == 0.0 ) {
+                        return vec4( color0, 1.0 );
+                    } else {
+                        vec3 color1 = bilinearCubeUV( envMap, sampleDir, mipInt + 1.0 );
+                        return vec4( mix( color0, color1, mipF ), 1.0 );
+                    }
                 }
             #endif
             #ifdef USE_ENVMAP
@@ -1034,220 +1034,220 @@ const ShaderChunk = {
             #endif
             #if defined( USE_ENVMAP )
                 #ifdef ENVMAP_MODE_REFRACTION
-                  uniform float refractionRatio;
+                    uniform float refractionRatio;
                 #endif
                 vec3 getIBLIrradiance( const in vec3 normal ) {
-                      #if defined( ENVMAP_TYPE_CUBE_UV )
-                          vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
-                          vec4 envMapColor = textureCubeUV( envMap, worldNormal, 1.0 );
-                          return PI * envMapColor.rgb * envMapIntensity;
-                      #else
-                          return vec3( 0.0 );
-                      #endif
+                    #if defined( ENVMAP_TYPE_CUBE_UV )
+                        vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+                        vec4 envMapColor = textureCubeUV( envMap, worldNormal, 1.0 );
+                        return PI * envMapColor.rgb * envMapIntensity;
+                    #else
+                        return vec3( 0.0 );
+                    #endif
                     }
                 vec3 getIBLRadiance( const in vec3 viewDir, const in vec3 normal, const in float roughness ) {
-                      #if defined( ENVMAP_TYPE_CUBE_UV )
-                          vec3 reflectVec;
-                          #ifdef ENVMAP_MODE_REFLECTION
+                    #if defined( ENVMAP_TYPE_CUBE_UV )
+                        vec3 reflectVec;
+                        #ifdef ENVMAP_MODE_REFLECTION
                             reflectVec = reflect( - viewDir, normal );
                             reflectVec = normalize( mix( reflectVec, normal, roughness * roughness) );
-                          #else
+                        #else
                             reflectVec = refract( - viewDir, normal, refractionRatio );
-                          #endif
-                          reflectVec = inverseTransformDirection( reflectVec, viewMatrix );
-                          vec4 envMapColor = textureCubeUV( envMap, reflectVec, roughness );
-                          return envMapColor.rgb * envMapIntensity;
-                      #else
-                          return vec3( 0.0 );
-                      #endif
+                        #endif
+                        reflectVec = inverseTransformDirection( reflectVec, viewMatrix );
+                        vec4 envMapColor = textureCubeUV( envMap, reflectVec, roughness );
+                        return envMapColor.rgb * envMapIntensity;
+                    #else
+                        return vec3( 0.0 );
+                    #endif
                     }
             #endif
             #ifdef USE_FOG
                 uniform vec3 fogColor;
                 varying float vFogDepth;
                 #ifdef FOG_EXP2
-                  uniform float fogDensity;
+                    uniform float fogDensity;
                 #else
-                  uniform float fogNear;
-                  uniform float fogFar;
+                    uniform float fogNear;
+                    uniform float fogFar;
                 #endif
             #endif
             uniform bool receiveShadow;
             uniform vec3 ambientLightColor;
             uniform vec3 lightProbe[ 9 ];
             vec3 shGetIrradianceAt( in vec3 normal, in vec3 shCoefficients[ 9 ] ) {
-                    float x = normal.x, y = normal.y, z = normal.z;
-                    vec3 result = shCoefficients[ 0 ] * 0.886227;
-                    result += shCoefficients[ 1 ] * 2.0 * 0.511664 * y;
-                    result += shCoefficients[ 2 ] * 2.0 * 0.511664 * z;
-                    result += shCoefficients[ 3 ] * 2.0 * 0.511664 * x;
-                    result += shCoefficients[ 4 ] * 2.0 * 0.429043 * x * y;
-                    result += shCoefficients[ 5 ] * 2.0 * 0.429043 * y * z;
-                    result += shCoefficients[ 6 ] * ( 0.743125 * z * z - 0.247708 );
-                    result += shCoefficients[ 7 ] * 2.0 * 0.429043 * x * z;
-                    result += shCoefficients[ 8 ] * 0.429043 * ( x * x - y * y );
-                    return result;
+                float x = normal.x, y = normal.y, z = normal.z;
+                vec3 result = shCoefficients[ 0 ] * 0.886227;
+                result += shCoefficients[ 1 ] * 2.0 * 0.511664 * y;
+                result += shCoefficients[ 2 ] * 2.0 * 0.511664 * z;
+                result += shCoefficients[ 3 ] * 2.0 * 0.511664 * x;
+                result += shCoefficients[ 4 ] * 2.0 * 0.429043 * x * y;
+                result += shCoefficients[ 5 ] * 2.0 * 0.429043 * y * z;
+                result += shCoefficients[ 6 ] * ( 0.743125 * z * z - 0.247708 );
+                result += shCoefficients[ 7 ] * 2.0 * 0.429043 * x * z;
+                result += shCoefficients[ 8 ] * 0.429043 * ( x * x - y * y );
+                return result;
             }
-                vec3 getLightProbeIrradiance( const in vec3 lightProbe[ 9 ], const in vec3 normal ) {
-                        vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
-                        vec3 irradiance = shGetIrradianceAt( worldNormal, lightProbe );
-                        return irradiance;
-                }
-                vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
-                        vec3 irradiance = ambientLightColor;
-                        return irradiance;
-                }
-                float getDistanceAttenuation( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
-                        #if defined ( PHYSICALLY_CORRECT_LIGHTS )
-                          float distanceFalloff = 1.0 / max( pow( lightDistance, decayExponent ), 0.01 );
-                      if ( cutoffDistance > 0.0 ) {
-                              distanceFalloff *= pow2( saturate( 1.0 - pow4( lightDistance / cutoffDistance ) ) );
-                      }
-                      return distanceFalloff;
-                    #else
-                      if ( cutoffDistance > 0.0 && decayExponent > 0.0 ) {
-                              return pow( saturate( - lightDistance / cutoffDistance + 1.0 ), decayExponent );
-                      }
-                      return 1.0;
-                    #endif
+            vec3 getLightProbeIrradiance( const in vec3 lightProbe[ 9 ], const in vec3 normal ) {
+                vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+                vec3 irradiance = shGetIrradianceAt( worldNormal, lightProbe );
+                return irradiance;
             }
-                float getSpotAttenuation( const in float coneCosine, const in float penumbraCosine, const in float angleCosine ) {
-                        return smoothstep( coneCosine, penumbraCosine, angleCosine );
-                }
-                #if 0 > 0
-                    struct DirectionalLight {
-                          vec3 direction;
-                          vec3 color;
-                        };
-                    uniform DirectionalLight directionalLights[ 0 ];
-                    void getDirectionalLightInfo( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight light ) {
-                          light.color = directionalLight.color;
-                          light.direction = directionalLight.direction;
-                          light.visible = true;
-                        }
-                #endif
-                #if 1 > 0
-                    struct PointLight {
-                          vec3 position;
-                          vec3 color;
-                          float distance;
-                          float decay;
-                        };
-                    uniform PointLight pointLights[ 1 ];
-                    void getPointLightInfo( const in PointLight pointLight, const in GeometricContext geometry, out IncidentLight light ) {
-                          vec3 lVector = pointLight.position - geometry.position;
-                          light.direction = normalize( lVector );
-                          float lightDistance = length( lVector );
-                          light.color = pointLight.color;
-                          light.color *= getDistanceAttenuation( lightDistance, pointLight.distance, pointLight.decay );
-                          light.visible = ( light.color != vec3( 0.0 ) );
-                        }
-                #endif
-                #if 0 > 0
-                    struct SpotLight {
-                          vec3 position;
-                          vec3 direction;
-                          vec3 color;
-                          float distance;
-                          float decay;
-                          float coneCos;
-                          float penumbraCos;
-                        };
-                    uniform SpotLight spotLights[ 0 ];
-                    void getSpotLightInfo( const in SpotLight spotLight, const in GeometricContext geometry, out IncidentLight light ) {
-                          vec3 lVector = spotLight.position - geometry.position;
-                          light.direction = normalize( lVector );
-                          float angleCos = dot( light.direction, spotLight.direction );
-                          float spotAttenuation = getSpotAttenuation( spotLight.coneCos, spotLight.penumbraCos, angleCos );
-                          if ( spotAttenuation > 0.0 ) {
-                              float lightDistance = length( lVector );
-                              light.color = spotLight.color * spotAttenuation;
-                              light.color *= getDistanceAttenuation( lightDistance, spotLight.distance, spotLight.decay );
-                              light.visible = ( light.color != vec3( 0.0 ) );
-                          } else {
-                              light.color = vec3( 0.0 );
-                              light.visible = false;
-                          }
+            vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
+                vec3 irradiance = ambientLightColor;
+                return irradiance;
+            }
+            float getDistanceAttenuation( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
+                #if defined ( PHYSICALLY_CORRECT_LIGHTS )
+                        float distanceFalloff = 1.0 / max( pow( lightDistance, decayExponent ), 0.01 );
+                    if ( cutoffDistance > 0.0 ) {
+                            distanceFalloff *= pow2( saturate( 1.0 - pow4( lightDistance / cutoffDistance ) ) );
                     }
+                    return distanceFalloff;
+                #else
+                    if ( cutoffDistance > 0.0 && decayExponent > 0.0 ) {
+                            return pow( saturate( - lightDistance / cutoffDistance + 1.0 ), decayExponent );
+                    }
+                    return 1.0;
                 #endif
-                #if 0 > 0
-                    struct RectAreaLight {
-                          vec3 color;
-                          vec3 position;
-                          vec3 halfWidth;
-                          vec3 halfHeight;
-                        };
-                    uniform sampler2D ltc_1;  uniform sampler2D ltc_2;
-                    uniform RectAreaLight rectAreaLights[ 0 ];
-                #endif
-                #if 0 > 0
-                    struct HemisphereLight {
-                          vec3 direction;
-                          vec3 skyColor;
-                          vec3 groundColor;
-                        };
-                    uniform HemisphereLight hemisphereLights[ 0 ];
-                    vec3 getHemisphereLightIrradiance( const in HemisphereLight hemiLight, const in vec3 normal ) {
-                          float dotNL = dot( normal, hemiLight.direction );
-                          float hemiDiffuseWeight = 0.5 * dotNL + 0.5;
-                          vec3 irradiance = mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
-                          return irradiance;
+            }
+            float getSpotAttenuation( const in float coneCosine, const in float penumbraCosine, const in float angleCosine ) {
+                    return smoothstep( coneCosine, penumbraCosine, angleCosine );
+            }
+            #if 0 > 0
+                struct DirectionalLight {
+                        vec3 direction;
+                        vec3 color;
+                    };
+                uniform DirectionalLight directionalLights[ 0 ];
+                void getDirectionalLightInfo( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight light ) {
+                        light.color = directionalLight.color;
+                        light.direction = directionalLight.direction;
+                        light.visible = true;
+                    }
+            #endif
+            #if 1 > 0
+                struct PointLight {
+                        vec3 position;
+                        vec3 color;
+                        float distance;
+                        float decay;
+                    };
+                uniform PointLight pointLights[ 1 ];
+                void getPointLightInfo( const in PointLight pointLight, const in GeometricContext geometry, out IncidentLight light ) {
+                        vec3 lVector = pointLight.position - geometry.position;
+                        light.direction = normalize( lVector );
+                        float lightDistance = length( lVector );
+                        light.color = pointLight.color;
+                        light.color *= getDistanceAttenuation( lightDistance, pointLight.distance, pointLight.decay );
+                        light.visible = ( light.color != vec3( 0.0 ) );
+                    }
+            #endif
+            #if 0 > 0
+                struct SpotLight {
+                        vec3 position;
+                        vec3 direction;
+                        vec3 color;
+                        float distance;
+                        float decay;
+                        float coneCos;
+                        float penumbraCos;
+                    };
+                uniform SpotLight spotLights[ 0 ];
+                void getSpotLightInfo( const in SpotLight spotLight, const in GeometricContext geometry, out IncidentLight light ) {
+                        vec3 lVector = spotLight.position - geometry.position;
+                        light.direction = normalize( lVector );
+                        float angleCos = dot( light.direction, spotLight.direction );
+                        float spotAttenuation = getSpotAttenuation( spotLight.coneCos, spotLight.penumbraCos, angleCos );
+                        if ( spotAttenuation > 0.0 ) {
+                            float lightDistance = length( lVector );
+                            light.color = spotLight.color * spotAttenuation;
+                            light.color *= getDistanceAttenuation( lightDistance, spotLight.distance, spotLight.decay );
+                            light.visible = ( light.color != vec3( 0.0 ) );
+                        } else {
+                            light.color = vec3( 0.0 );
+                            light.visible = false;
                         }
+                }
+            #endif
+            #if 0 > 0
+                struct RectAreaLight {
+                        vec3 color;
+                        vec3 position;
+                        vec3 halfWidth;
+                        vec3 halfHeight;
+                    };
+                uniform sampler2D ltc_1;  uniform sampler2D ltc_2;
+                uniform RectAreaLight rectAreaLights[ 0 ];
+            #endif
+            #if 0 > 0
+                struct HemisphereLight {
+                        vec3 direction;
+                        vec3 skyColor;
+                        vec3 groundColor;
+                    };
+                uniform HemisphereLight hemisphereLights[ 0 ];
+                vec3 getHemisphereLightIrradiance( const in HemisphereLight hemiLight, const in vec3 normal ) {
+                        float dotNL = dot( normal, hemiLight.direction );
+                        float hemiDiffuseWeight = 0.5 * dotNL + 0.5;
+                        vec3 irradiance = mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
+                        return irradiance;
+                    }
+            #endif
+            #ifndef FLAT_SHADED
+                varying vec3 vNormal;
+                #ifdef USE_TANGENT
+                    varying vec3 vTangent;
+                    varying vec3 vBitangent;
                 #endif
-                #ifndef FLAT_SHADED
-                    varying vec3 vNormal;
-                    #ifdef USE_TANGENT
-                      varying vec3 vTangent;
-                      varying vec3 vBitangent;
-                    #endif
+            #endif
+            struct PhysicalMaterial {
+                vec3 diffuseColor;
+                float roughness;
+                vec3 specularColor;
+                float specularF90;
+                #ifdef USE_CLEARCOAT
+                    float clearcoat;
+                    float clearcoatRoughness;
+                    vec3 clearcoatF0;
+                    float clearcoatF90;
                 #endif
-                struct PhysicalMaterial {
-                        vec3 diffuseColor;
-                        float roughness;
-                        vec3 specularColor;
-                        float specularF90;
-                        #ifdef USE_CLEARCOAT
-                          float clearcoat;
-                          float clearcoatRoughness;
-                          vec3 clearcoatF0;
-                          float clearcoatF90;
-                        #endif
-                        #ifdef USE_SHEEN
-                          vec3 sheenColor;
-                          float sheenRoughness;
-                        #endif
-                };
-                vec3 clearcoatSpecular = vec3( 0.0 );
-                vec3 sheenSpecular = vec3( 0.0 );
-                float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float roughness) {
-                        float dotNV = saturate( dot( normal, viewDir ) );
-                        float r2 = roughness * roughness;
-                        float a = roughness < 0.25 ? -339.2 * r2 + 161.4 * roughness - 25.9 : -8.48 * r2 + 14.3 * roughness - 9.95;
-                        float b = roughness < 0.25 ? 44.0 * r2 - 23.7 * roughness + 3.26 : 1.97 * r2 - 3.27 * roughness + 0.72;
-                        float DG = exp( a * dotNV + b ) + ( roughness < 0.25 ? 0.0 : 0.1 * ( roughness - 0.25 ) );
-                        return saturate( DG * RECIPROCAL_PI );
-                }
-                vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
-                        float dotNV = saturate( dot( normal, viewDir ) );
-                        const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
-                        const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
-                        vec4 r = roughness * c0 + c1;
-                        float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
-                        vec2 fab = vec2( - 1.04, 1.04 ) * a004 + r.zw;
-                        return fab;
-                }
-                vec3 EnvironmentBRDF( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness ) {
-                        vec2 fab = DFGApprox( normal, viewDir, roughness );
-                        return specularColor * fab.x + specularF90 * fab.y;
-                }
-                void computeMultiscattering( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness, inout vec3 singleScatter, inout vec3 multiScatter ) {
-                        vec2 fab = DFGApprox( normal, viewDir, roughness );
-                        vec3 FssEss = specularColor * fab.x + specularF90 * fab.y;
-                        float Ess = fab.x + fab.y;
-                        float Ems = 1.0 - Ess;
-                        vec3 Favg = specularColor + ( 1.0 - specularColor ) * 0.047619;   vec3 Fms = FssEss * Favg / ( 1.0 - Ems * Favg );
-                    singleScatter += FssEss;
-                    multiScatter += Fms * Ems;
+                #ifdef USE_SHEEN
+                    vec3 sheenColor;
+                    float sheenRoughness;
+                #endif
+            };
+            vec3 clearcoatSpecular = vec3( 0.0 );
+            vec3 sheenSpecular = vec3( 0.0 );
+            float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float roughness) {
+                float dotNV = saturate( dot( normal, viewDir ) );
+                float r2 = roughness * roughness;
+                float a = roughness < 0.25 ? -339.2 * r2 + 161.4 * roughness - 25.9 : -8.48 * r2 + 14.3 * roughness - 9.95;
+                float b = roughness < 0.25 ? 44.0 * r2 - 23.7 * roughness + 3.26 : 1.97 * r2 - 3.27 * roughness + 0.72;
+                float DG = exp( a * dotNV + b ) + ( roughness < 0.25 ? 0.0 : 0.1 * ( roughness - 0.25 ) );
+                return saturate( DG * RECIPROCAL_PI );
+            }
+            vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
+                float dotNV = saturate( dot( normal, viewDir ) );
+                const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
+                const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
+                vec4 r = roughness * c0 + c1;
+                float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
+                vec2 fab = vec2( - 1.04, 1.04 ) * a004 + r.zw;
+                return fab;
+            }
+            vec3 EnvironmentBRDF( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness ) {
+                vec2 fab = DFGApprox( normal, viewDir, roughness );
+                return specularColor * fab.x + specularF90 * fab.y;
+            }
+            void computeMultiscattering( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness, inout vec3 singleScatter, inout vec3 multiScatter ) {
+                vec2 fab = DFGApprox( normal, viewDir, roughness );
+                vec3 FssEss = specularColor * fab.x + specularF90 * fab.y;
+                float Ess = fab.x + fab.y;
+                float Ems = 1.0 - Ess;
+                vec3 Favg = specularColor + ( 1.0 - specularColor ) * 0.047619;   vec3 Fms = FssEss * Favg / ( 1.0 - Ems * Favg );
+                singleScatter += FssEss;
+                multiScatter += Fms * Ems;
             }
                 #if 0 > 0
                     void RE_Direct_RectArea_Physical( const in RectAreaLight rectAreaLight, const in GeometricContext geometry, const in PhysicalMaterial material, inout ReflectedLight reflectedLight ) {
@@ -1506,47 +1506,47 @@ const ShaderChunk = {
                           return shadow;
                         }
                         vec2 cubeToUV( vec3 v, float texelSizeY ) {
-                              vec3 absV = abs( v );
-                              float scaleToCube = 1.0 / max( absV.x, max( absV.y, absV.z ) );
-                          absV *= scaleToCube;
-                          v *= scaleToCube * ( 1.0 - 2.0 * texelSizeY );
-                          vec2 planar = v.xy;
-                          float almostATexel = 1.5 * texelSizeY;
-                          float almostOne = 1.0 - almostATexel;
-                          if ( absV.z >= almostOne ) {
-                                  if ( v.z > 0.0 )
-                                    planar.x = 4.0 - v.x;
-                              } else if ( absV.x >= almostOne ) {
-                                  float signX = sign( v.x );
-                                  planar.x = v.z * signX + 2.0 * signX;
-                              } else if ( absV.y >= almostOne ) {
-                                  float signY = sign( v.y );
-                                  planar.x = v.x + 2.0 * signY + 2.0;
-                                  planar.y = v.z * signY - 2.0;
-                              }
-                          return vec2( 0.125, 0.25 ) * planar + vec2( 0.375, 0.75 );
+                            vec3 absV = abs( v );
+                            float scaleToCube = 1.0 / max( absV.x, max( absV.y, absV.z ) );
+                            absV *= scaleToCube;
+                            v *= scaleToCube * ( 1.0 - 2.0 * texelSizeY );
+                            vec2 planar = v.xy;
+                            float almostATexel = 1.5 * texelSizeY;
+                            float almostOne = 1.0 - almostATexel;
+                            if ( absV.z >= almostOne ) {
+                                if ( v.z > 0.0 )
+                                planar.x = 4.0 - v.x;
+                            } else if ( absV.x >= almostOne ) {
+                                float signX = sign( v.x );
+                                planar.x = v.z * signX + 2.0 * signX;
+                            } else if ( absV.y >= almostOne ) {
+                                float signY = sign( v.y );
+                                planar.x = v.x + 2.0 * signY + 2.0;
+                                planar.y = v.z * signY - 2.0;
+                            }
+                            return vec2( 0.125, 0.25 ) * planar + vec2( 0.375, 0.75 );
                         }
                         float getPointShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec4 shadowCoord, float shadowCameraNear, float shadowCameraFar ) {
-                              vec2 texelSize = vec2( 1.0 ) / ( shadowMapSize * vec2( 4.0, 2.0 ) );
-                          vec3 lightToPosition = shadowCoord.xyz;
-                          float dp = ( length( lightToPosition ) - shadowCameraNear ) / ( shadowCameraFar - shadowCameraNear );    dp += shadowBias;
-                          vec3 bd3D = normalize( lightToPosition );
-                          #if defined( SHADOWMAP_TYPE_PCF ) || defined( SHADOWMAP_TYPE_PCF_SOFT ) || defined( SHADOWMAP_TYPE_VSM )
-                              vec2 offset = vec2( - 1, 1 ) * shadowRadius * texelSize.y;
-                              return (
-                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xyy, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yyy, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xyx, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yyx, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xxy, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yxy, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xxx, texelSize.y ), dp ) +
-                                texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yxx, texelSize.y ), dp )
-                              ) * ( 1.0 / 9.0 );
-                          #else
-                              return texture2DCompare( shadowMap, cubeToUV( bd3D, texelSize.y ), dp );
-                          #endif
+                            vec2 texelSize = vec2( 1.0 ) / ( shadowMapSize * vec2( 4.0, 2.0 ) );
+                            vec3 lightToPosition = shadowCoord.xyz;
+                            float dp = ( length( lightToPosition ) - shadowCameraNear ) / ( shadowCameraFar - shadowCameraNear );    dp += shadowBias;
+                            vec3 bd3D = normalize( lightToPosition );
+                            #if defined( SHADOWMAP_TYPE_PCF ) || defined( SHADOWMAP_TYPE_PCF_SOFT ) || defined( SHADOWMAP_TYPE_VSM )
+                                vec2 offset = vec2( - 1, 1 ) * shadowRadius * texelSize.y;
+                                return (
+                                        texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xyy, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yyy, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xyx, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yyx, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xxy, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yxy, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.xxx, texelSize.y ), dp ) +
+                                    texture2DCompare( shadowMap, cubeToUV( bd3D + offset.yxx, texelSize.y ), dp )
+                                ) * ( 1.0 / 9.0 );
+                            #else
+                                return texture2DCompare( shadowMap, cubeToUV( bd3D, texelSize.y ), dp );
+                            #endif
                         }
                     #endif
                     #ifdef USE_BUMPMAP
