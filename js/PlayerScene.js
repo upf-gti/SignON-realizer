@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
-import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/utils/ShadowMapViewer.js';
-import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import Stats from './libs/stats.module.js';
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.16/+esm';
 
+import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
+import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/utils/ShadowMapViewer.js';
+import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { DisplayUI } from './ui.js'
 import { ShaderChunk } from './shaders.js'
 import { SSS_ShaderChunk } from './sss_shaders.js'
@@ -23,12 +23,13 @@ const TextureChunk = {
     'Hairmat.004@opacity': 'Woman_Hair_Opacity.png'
 }
 
-const V = [0.0064, 0.0516, 0.2719, 2.0062];
+const Vector3One = new THREE.Vector3( 1.0, 1.0, 1.0 );
+const V = [ 0.0064, 0.0516, 0.2719, 2.0062 ];
 const RGB = [
-        new THREE.Vector3(0.2405, 0.4474, 0.6157), 
-        new THREE.Vector3(0.1158, 0.3661, 0.3439), 
-        new THREE.Vector3(0.1836, 0.1864, 0.0), 
-        new THREE.Vector3(0.46, 0.0, 0.0402)
+        new THREE.Vector3( 0.2405, 0.4474, 0.6157 ), 
+        new THREE.Vector3( 0.1158, 0.3661, 0.3439 ), 
+        new THREE.Vector3( 0.1836, 0.1864, 0.0 ), 
+        new THREE.Vector3( 0.46, 0.0, 0.0402 )
 ];
 
 class Player {
@@ -40,7 +41,7 @@ class Player {
         this.clock              = new THREE.Clock(false);
         this.textureLoader      = new THREE.TextureLoader();
 
-        this.debugShadowmaps    = true;
+        this.debugShadowmaps    = false;
     }
     
     init() {
@@ -76,14 +77,14 @@ class Player {
 
             this.prepareMaterials.bind(this)();
 
+            this.initUI();
+
             $('#loading').fadeOut();
             this.clock.start();
             this.animate();
         } );
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
-
-        this.initUI();
     }
 
     initScene() {
@@ -91,7 +92,6 @@ class Player {
         // Scene to render
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xffffff );
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
         // To render textures to screen        
@@ -110,9 +110,9 @@ class Player {
 
         // Scene lights
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 1.2 );
         dirLight.name = 'Directional';
-        dirLight.position.set( 0, 7, 0 );
+        dirLight.position.set( -8, 6, 3);
         dirLight.castShadow = true;
         dirLight.shadow.radius = 3.5;
         dirLight.shadow.camera.near = 1;
@@ -121,17 +121,17 @@ class Player {
         dirLight.shadow.camera.left = - 15;
         dirLight.shadow.camera.top	= 15;
         dirLight.shadow.camera.bottom = - 15;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
         this.scene.add( dirLight );
         this.directionalLight = dirLight;
 
-        let pointLight = new THREE.PointLight( 0x5644ff, 1 );
+        let pointLight = new THREE.PointLight( 0xee44dd, 0.8 );
         pointLight.name = 'Point';
         pointLight.position.set( 8, 2.5, 8);
         pointLight.castShadow = true;
-        pointLight.shadow.mapSize.width = 1024;
-        pointLight.shadow.mapSize.height = 1024;
+        pointLight.shadow.mapSize.width = 2048;
+        pointLight.shadow.mapSize.height = 2048;
         pointLight.shadow.camera.near = 1;
         pointLight.shadow.camera.far = 100;
         pointLight.shadow.radius = 3.5;
@@ -144,12 +144,14 @@ class Player {
         spotLight.castShadow = true;
         spotLight.angle = Math.PI / 4;
         spotLight.penumbra = 0.3;
-        spotLight.shadow.mapSize.width = 1024;
-        spotLight.shadow.mapSize.height = 1048;
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
         spotLight.shadow.camera.near = 1;
         spotLight.shadow.camera.far = 200;
         this.spotLight = spotLight;
         this.scene.add( this.spotLight );
+
+        // To render shadowmap helpers in screen
 
         this.shadowMapViewers = [
             new ShadowMapViewer( this.directionalLight ),
@@ -171,10 +173,14 @@ class Player {
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-       
+        this.renderer.setClearColor( new THREE.Color( 0x222222 ) ) ;
         this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		this.renderer.shadowMap.type = THREE.PCFShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+        this.enableShadowmaps = () => { this.renderer.shadowMap.enabled = true; }
+        this.disableShadowmaps = () => { this.renderer.shadowMap.enabled = false; }
+
         document.body.appendChild( this.renderer.domElement );
 
         // Load some assets
@@ -204,9 +210,9 @@ class Player {
 
         gui.add( this, 'debugShadowmaps' );
 
-        function CreateObjectUI( folder, object ) {
+        function CreateObjectUI( folder, object, isUniform ) {
             for( const p in object ) {
-                const value = object[ p ];
+                const value = isUniform ? object[ p ].value : object[ p ];
                 if( value === undefined 
                     || value === null
                     || value.constructor === Function 
@@ -216,33 +222,45 @@ class Player {
                     || value.constructor === THREE.Quaternion 
                     || value.constructor === THREE.Vector4 ) continue;
 
+                let dataObject = isUniform ? object[ p ] : object;
+
                 const r = DisplayUI[ p ];
                 if( r ) {
-                    folder.add( object, p, r.min, r.max, r.step );
+                    if( isUniform )
+                        folder.add( dataObject, 'value', r.min, r.max, r.step ).name( p );       
+                    else
+                        folder.add( dataObject, p, r.min, r.max, r.step );
                     continue;
-                } else if( r === null ) continue;
+                } else if( DisplayUI.Off( p ) ) continue;
+                else if ( DisplayUI.IsCombo( p ) ) {
+                    folder.add( object, p, DisplayUI.combos[ p ] ).onChange( v => { object[ p ] = v; });
+                    continue;
+                }
 
                 switch( value.constructor ) {
 
                     case Object:
                         if( Object.keys( value ).length )
-                            CreateObjectUI( folder.addFolder( p ), value )
+                            CreateObjectUI( folder.addFolder( p ), value, p === 'uniforms' )
                         continue;
                     case Number: // default number, add it to display ui if necessary
-                        folder.add( object, p, 0, 1, 0.01 );        
+                        if( isUniform )
+                            folder.add( dataObject, 'value', 0, 1, 0.01 ).name( p );        
+                        else
+                            folder.add( dataObject, p, 0, 1, 0.01 );        
                         continue;
                     case THREE.Color: // default number, add it to display ui if necessary
-                        folder.addColor( object, p );        
+                        folder.addColor( dataObject, p );        
                         continue;
                     case THREE.Euler:
                     case THREE.Vector3:
-                        // folder.add( object, p+"x").name('X').onChange( v => { object[ p ].set( v, object[ p ].y, object[ p ].z ); } );
-                        // folder.add( object, p+"y").name('Y').onChange( v => { object[ p ].set( object[ p ].x, v, object[ p ].z ); } );
-                        // folder.add( object, p+"z").name('Z').onChange( v => { object[ p ].set( object[ p ].x, object[ p ].z, v ); } );
+                        // folder.add( dataObject, p+"x").name('X').onChange( v => { dataObject[ p ].set( v, dataObject[ p ].y, dataObject[ p ].z ); } );
+                        // folder.add( dataObject, p+"y").name('Y').onChange( v => { dataObject[ p ].set( dataObject[ p ].x, v, dataObject[ p ].z ); } );
+                        // folder.add( dataObject, p+"z").name('Z').onChange( v => { dataObject[ p ].set( dataObject[ p ].x, dataObject[ p ].z, v ); } );
                         continue;
                 }
 
-                folder.add( object, p );
+                folder.add( dataObject, p );
             }
 
             return folder;
@@ -263,6 +281,9 @@ class Player {
         CreateObjectUI( pointLight.addFolder( 'Shadow' ), this.pointLight.shadow );
         CreateObjectUI( pointLight.addFolder( 'Camera' ), this.pointLight.shadow.camera );
 
+        CreateObjectUI( gui.addFolder( 'Deferred Material' ), this.deferredLightingMaterial ).close();
+        CreateObjectUI( gui.addFolder( 'Acc Material' ), this.accMaterial ).close();
+
         console.error = errorFunc;
     }
 
@@ -278,7 +299,8 @@ class Player {
     render() {
 
         // Render model
-
+        
+        this.enableShadowmaps();
         this.applyLayer( this.quad, 0 );
         this.applyLayer( this.model, 1 );
 
@@ -287,13 +309,18 @@ class Player {
         
         // Render screen quad
 
+        this.disableShadowmaps();
         this.applyLayer( this.quad, 1 );
         this.applyLayer( this.model, 0 );
 
         // Apply lighting
 
-        this.useScreenMaterial( this.deferredLightingMaterial );
-        this.toScreen(); // this.setRenderTarget( this.renderTargetLights );
+        this.useQuadMaterial( this.deferredLightingMaterial );
+        this.setRenderTarget( this.renderTargetLights );
+
+        if( this.debugShadowmaps ) 
+            this.toScreen();
+
         this.renderer.render( this.scene, this.postCamera );
 
         // Debug: Show Lights Shadowmap
@@ -301,85 +328,58 @@ class Player {
         if( this.debugShadowmaps ) {
             for( const viewer of this.shadowMapViewers )
                 viewer.render( this.renderer );
+            return;
         }
-
-        return;
         
-        // SSS
-        let pv = 0;
-        let irrad_sss_texture = this.renderTargetLights.texture[ 0 ];
-        let depth_aux_texture = this.renderTargetLights.texture[ 2 ];
-        
-        this.setRenderTarget( this.renderTargetAcc );
-        this.renderer.clearColor();
-        this.setRenderTarget( this.renderTargetHblur );
-        this.renderer.clearColor();
-        this.setRenderTarget( this.renderTargetVblur );
-        this.renderer.clearColor();
-
         this.renderer.autoClear = false;
 
-        for(let i = 0; i < 1; i++) {
-            
-            // Blur steps
-            var width = Math.sqrt(V[i] - pv);
-            pv = V[i];
+        let irradianceMap = this.renderTargetLights.texture[ 1 ];
 
-            //---- Horizontal
-            this.horizontalStep( width );
+        for(let i = 0, pv = 0; i < V.length; i++) {
             
-            //---- Vertical
-            // this.verticalStep(this.renderTargetHblur.texture[0], depth_aux_texture, width);
+            var width = Math.sqrt( V[i] - pv );
+            pv = V[ i ];
 
-            //Accumulative
-            // this.accStep(this.renderTargetVblur.texture[0], depth_aux_texture, RGB[i], THREE.SrcAlphaFactor)
+            this.blurStep( 'h', width, irradianceMap );
+
+            irradianceMap = this.renderTargetHblur.texture[ 0 ];
+
+            this.blurStep( 'v', width, irradianceMap );
+
+            irradianceMap = this.renderTargetVblur.texture[ 0 ];
+
+            this.accumulateStep( irradianceMap, RGB[ i ], THREE.OneMinusSrcAlphaFactor );
         }
 
-        //Accumulative
-        // this.accStep(this.renderTargetLights.texture[ 0 ], depth_aux_texture, new THREE.Vector3(1.0,1.0,1.0), THREE.OneMinusSrcAlphaFactor);
-        // this.accStep(this.renderTargetLights.texture[ 1 ], depth_aux_texture, new THREE.Vector3(1.0,1.0,1.0), THREE.OneFactor);
-        // this.renderer.clearColor(); 
-        
-        //Final FX
-        this.useScreenMaterial( this.gammaMaterial );
-        this.quad.material.uniforms.u_texture.value = this.renderTargetHblur.texture[ 0 ];
-        this.quad.material.needsUpdate = true;
+        this.accumulateStep( this.renderTargetLights.texture[ 0 ], Vector3One, THREE.SrcAlphaFactor );
+        // this.accumulateStep( this.renderTargetLights.texture[ 1 ], Vector3One, THREE.OneFactor);
 
+        // Final FX
+        this.renderer.autoClear = true;
+        this.useQuadMaterial( this.gammaMaterial );
         this.toScreen()
         this.renderer.render( this.scene, this.postCamera );
     }
 
-    horizontalStep( width ) {
-        this.quad.material = this.hBlurMaterial;
+    blurStep( type, width, map ) {
+        this.useQuadMaterial( type === 'h' ? this.hBlurMaterial : this.vBlurMaterial );
         this.quad.material.uniforms.width.value = width;
-        this.setRenderTarget( this.renderTargetHblur );
+        if( map ) this.quad.material.uniforms.irradianceMap.value = map;
+        this.setRenderTarget( type === 'h' ? this.renderTargetHblur : this.renderTargetVblur );
         this.renderer.render( this.scene, this.postCamera );
     }
 
-    verticalStep(irrad_sss_texture, depth_aux_texture, width) {
-        
-        this.quad.material = this.vBlurMaterial;
-        this.quad.material.uniforms.u_width.value = width;
-        this.quad.material.uniforms.irradiance_texture.value = irrad_sss_texture;
-        this.quad.material.uniforms.depth_aux_texture.value = depth_aux_texture;
+    accumulateStep( colorMap, weight, blendDst ) {
 
-        this.setRenderTarget( this.renderTargetVblur );
-        this.renderer.render( this.scene, this.postCamera );
-    }
-
-    accStep(color_texture, depth_aux_tex, weight, srcBlend) {
-        
-        this.accMaterial.blendSrc = srcBlend;
-        this.quad.material = this.accMaterial;
-        this.quad.material.uniforms.u_color_texture = color_texture;
-        this.quad.material.uniforms.u_depth_aux_tex = depth_aux_tex;
-        this.quad.material.uniforms.u_weight.value = weight;
-        
+        this.accMaterial.blendDst = blendDst;
+        this.useQuadMaterial( this.accMaterial );
+        this.quad.material.uniforms.colorMap.value = colorMap;
+        this.quad.material.uniforms.weight.value = weight;
         this.setRenderTarget( this.renderTargetAcc );
         this.renderer.render( this.scene, this.postCamera );
     }
 
-    useScreenMaterial( material ) {
+    useQuadMaterial( material ) {
         this.quad.material = material;
     }
 
@@ -404,12 +404,13 @@ class Player {
             fragmentShader: SSS_ShaderChunk.deferredFS(),
             lights: true,
             colorWrite: true,
-            glslVersion: THREE.GLSL3
+            glslVersion: THREE.GLSL3,
+            defines: { IS_BODY: 1 }
         };
 
         let gBufferMaterial = new THREE.ShaderMaterial( gBufferConfig );
         let gBufferTransparentMaterial =  new THREE.ShaderMaterial( Object.assign( gBufferConfig, { 
-            name: "gBufferTransparent",
+            name: 'gBufferTransparent',
             transparent: true, 
             depthWrite: false, 
             blending: THREE.NormalBlending,
@@ -422,25 +423,25 @@ class Player {
         gBufferTransparentMaterial.extensions.drawBuffers = true;
         gBufferTransparentMaterial.extensions.derivatives = true;
         
-        this.model.name = "Model";
+        this.model.name = 'Model';
         this.scene.add(this.model);
 
-        for( const obj of this.scene.getObjectByName("Armature").children ) {
+        for( const obj of this.scene.getObjectByName('Armature').children ) {
             if(!obj.material)
             continue; 
-            if(obj.material.name.includes( "Bodymat" ))
-                obj.material = obj.name === "Eyelashes" ? gBufferTransparentMaterial : gBufferMaterial;
+            if(obj.name !== 'Eyes' && obj.material.name.includes( 'Bodymat' ))
+                obj.material = obj.name === 'Eyelashes' ? gBufferTransparentMaterial : gBufferMaterial;
             else {
                 obj.material = this.createGBufferMaterialFromSrc( obj.material );
             }
         }
 
         this.deferredLightingMaterial = new THREE.ShaderMaterial( {
-            name: "deferredLighting",
+            name: 'deferredLighting',
             vertexShader: ShaderChunk.vertexShaderQuad(),
             fragmentShader: SSS_ShaderChunk.deferredFinalFS(true),
             uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
-                map: { type: "t", value: this.renderTargetDef.texture[ 0 ] },
+                map: { type: 't', value: this.renderTargetDef.texture[ 0 ] },
                 positionMap: { value: this.renderTargetDef.texture[ 1 ] },
                 normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                 detailedNormalMap: { value: this.renderTargetDef.texture[ 3 ] },
@@ -448,11 +449,11 @@ class Player {
                 transmitanceLut: { value: this.loadTexture( './data/textures/transmitance_lut.png' , {
                     wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping
                 })},
-                specularIntensity: { type: "number", value: 0.5 },
-                ambientIntensity: { type: "number", value: 0.5 },
-                shadowShrinking: { type: "number", value: 0.1 },
-                translucencyScale: { type: "number", value: 1100 },
-                ambientLightColor:  {type: "vec3", value: new THREE.Vector3(256, 256, 256) },
+                specularIntensity: { type: 'number', value: 0.5 },
+                ambientIntensity: { type: 'number', value: 0.5 },
+                shadowShrinking: { type: 'number', value: 0.1 },
+                translucencyScale: { type: 'number', value: 1.4 },
+                ambientLightColor:  {type: 'vec3', value: Vector3One },
                 cameraNear: { value : this.camera.near },
                 cameraFar: { value : this.camera.far },
                 cameraEye: { value : this.camera.position }
@@ -485,15 +486,15 @@ class Player {
             vertexShader: ShaderChunk.vertexShaderQuad(),
             fragmentShader: SSS_ShaderChunk.verticalBlurFS(),
             uniforms: {
-                irradiance_texture: { value: this.renderTargetHblur.texture[ 0 ] },
-                depth_aux_texture: { value: this.renderTargetLights.texture[ 2 ] },
-                u_sssLevel: { value: 200 },
-                u_correction: { value: 800 },
-                u_maxdd: { value: 0.001 },
-                u_invPixelSize: { value: [1/this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
-                u_width: { value: 0.0 },
-                camera_near: { value : this.camera.near },
-                camera_far: { value : this.camera.far },
+                irradianceMap: { value: this.renderTargetHblur.texture[ 0 ] },
+                depthMap: { value: this.renderTargetLights.texture[ 2 ] },
+                sssLevel: { value: 200 },
+                correction: { value: 800 },
+                maxdd: { value: 0.001 },
+                invPixelSize: { value: [1 / this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
+                width: { value: 0.0 },
+                cameraNear: { value : this.camera.near },
+                cameraFar: { value : this.camera.far },
             },
             depthTest: false,
             blending: THREE.NoBlending,
@@ -504,22 +505,21 @@ class Player {
             vertexShader: ShaderChunk.vertexShaderQuad(),
             fragmentShader: SSS_ShaderChunk.accumulativeFS(),
             uniforms: {
-                u_color_texture: { value: this.renderTargetLights.texture[ 0 ] },
-                u_depth_aux_tex: { value: this.renderTargetLights.texture[ 2 ] },
-                u_weight: { value: new THREE.Vector3(1,1,1) },
+                colorMap: { value: this.renderTargetLights.texture[ 0 ] },
+                depthMap: { value: this.renderTargetLights.texture[ 2 ] },
+                normalMap: { value: this.renderTargetDef.texture[ 2 ] },
+                weight: { value: Vector3One },
             },
             depthTest: false,
             blending: THREE.CustomBlending,
-            blendDst: THREE.OneFactor,
+            blendSrc: THREE.OneFactor,
             glslVersion: THREE.GLSL3
         });
 
         this.gammaMaterial = new THREE.ShaderMaterial( {
             vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.finalGammaFS(),
-            uniforms: {
-                u_texture: { value:  this.renderTargetAcc.texture[ 0 ] },
-            },
+            fragmentShader: SSS_ShaderChunk.gammaCorrection(),
+            uniforms: { colorMap: { value: this.renderTargetAcc.texture[ 0 ] } },
             depthTest: false,
             blending: THREE.NoBlending,
             glslVersion: THREE.GLSL3
@@ -660,6 +660,9 @@ class Player {
         // Hide or show object
 
         object.layers.mask = mask;
+        object.traverse( child => {
+            child.layers.mask = mask;
+        } );
     }
 
     loadTexture( path, parameters = {} ) {

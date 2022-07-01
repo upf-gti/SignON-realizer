@@ -155,8 +155,14 @@ const SSS_ShaderChunk = {
                 pc_fragColor0 = vec4(diffuse.rgb, alpha);
                 pc_fragColor1 = vec4(vWorldPosition, sss);
 
+                float maskValue = 0.0;
+
+                #ifdef IS_BODY
+                    maskValue = 10.0; // It has to be greater than 1..
+                #endif
+
                 #ifndef SKIP_NORMALS
-                    pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), 10.0 + specularValue);
+                    pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), maskValue + specularValue);
                     pc_fragColor3 = vec4(detailedN * 0.5 + 0.5, 1.0 - alpha);
                 #else
                     pc_fragColor2 = vec4(0.0);
@@ -168,42 +174,54 @@ const SSS_ShaderChunk = {
 
     SSS_Transmitance: `
 
-        float texSize = pointLightShadow.shadowMapSize.x;
-        float invSize = 1.0 / texSize;
-        float bias = pointLightShadow.shadowBias;
-        float near = pointLightShadow.shadowCameraNear;
-        float far = pointLightShadow.shadowCameraFar;
+        vec4 shadowCoord = directionalShadowCoord;
+        vec2 shadowMapSize = directionalLightShadow.shadowMapSize;
+        float shadowBias = directionalLightShadow.shadowBias;
+        float shadowRadius = directionalLightShadow.shadowRadius;
 
-        vec3 lVector = directLight.direction;
-        vec4 lightSpacePos = pointShadowMatrix[ i ] * vec4(position - shadowShrinking * normal, 1.0); // Shrinking explained bt Jimenez et al
-        lightSpacePos = 0.5 * ( lightSpacePos + vec4(1.0) );
-
-        vec2 samples = lightSpacePos.xy;
-        vec2 topLeftUV = samples * texSize;
-        vec2 offsetUV = fract(topLeftUV);
-        offsetUV.x = expFunc( offsetUV.x );
-        offsetUV.y = expFunc( offsetUV.y );
-        topLeftUV = floor( topLeftUV ) * invSize;
-
-        vec2 topRightUV = topLeftUV + vec2(invSize, 0.0);
-        vec2 bottomRightUV = topLeftUV + vec2(invSize, invSize);
-
-        float topLeft = texture( pointShadowMap[ i ], topLeftUV ).x;
-        float topRight = texture( pointShadowMap[ i ], topRightUV ).x;
-        float bottomLeft = texture( pointShadowMap[ i ], topLeftUV + vec2(0.0, invSize) ).x;
-        float bottomRight = texture( pointShadowMap[ i ], bottomRightUV ).x;
-        float top = mix(topLeft, topRight, offsetUV.x);
-        float bottom = mix(bottomLeft, bottomRight, offsetUV.x);
-        float sampleDepth = mix(top, bottom, offsetUV.y);
-    
-        float zLightDepth = lightSpacePos.z;
-        float lit = ((zLightDepth <= sampleDepth + bias) ? 1.0 : 0.0);
-        float lightDepth = sampleDepth == 1.0 ? 1.0e9 : sampleDepth;
+        float shadow = 1.0;
+        shadowCoord.xyz /= shadowCoord.w;
+        shadowCoord.z += shadowBias;
+        bvec4 inFrustumVec = bvec4 ( shadowCoord.x >= 0.0, shadowCoord.x <= 1.0, shadowCoord.y >= 0.0, shadowCoord.y <= 1.0 );
+        bool inFrustum = all( inFrustumVec );
+        bvec2 frustumTestVec = bvec2( inFrustum, shadowCoord.z <= 1.0 );
+        bool frustumTest = all( frustumTestVec );
+        if ( frustumTest ) {
+            vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
+            float dx0 = - texelSize.x * shadowRadius;
+            float dy0 = - texelSize.y * shadowRadius;
+            float dx1 = + texelSize.x * shadowRadius;
+            float dy1 = + texelSize.y * shadowRadius;
+            float dx2 = dx0 / 2.0;
+            float dy2 = dy0 / 2.0;
+            float dx3 = dx1 / 2.0;
+            float dy3 = dy1 / 2.0;
+            shadow = (
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy2 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy2 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy2 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, 0.0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, 0.0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, 0.0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, 0.0 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy3 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy3 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy3 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy1 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy1 ) ).x +
+                texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy1 ) ).x
+            ) * ( 1.0 / 17.0 );
+            shadow = abs( shadow -  shadowCoord.z );
+        }
         
         // Transmitance (we use vertex normal because it does not contain high frequency detail)
-        float s = translucencyScale * abs(linearDepthNormalized(lightDepth, near, far) - linearDepthNormalized(zLightDepth, near, far));
-        float E = max(0.3 + dot(-normal, lVector), 0.0);
-        transmitance = vec3(lit);//T(s) * pointLight.color * albedo * E;
+        float s = translucencyScale * shadow;
+        float E = max(0.3 + dot(-normal, directLight.direction), 0.0) * mask;
+        transmitance = T(s) * directionalLight.color * albedo * E;
     `,
 
     deferredFinalFS() {
@@ -259,6 +277,16 @@ const SSS_ShaderChunk = {
             float z_n = 2.0 * z - 1.0;
             return 2.0 * near * far / (far + near - z_n * (far - near));
         }
+
+        float meshDepth;
+
+        float pixelShadow( sampler2D shadowMap, vec2 uv ) {
+            float sampleDepth = texture( shadowMap, uv ).r;
+            sampleDepth = (sampleDepth == 1.0) ? 1.0e9 : sampleDepth; // on empty data send it to far away
+            if (sampleDepth > 0.0) 
+                return meshDepth > sampleDepth ? 0.0 : 1.0;
+            return 0.0;
+        }
         
         // Can be precomputed
         vec3 T(float s) {
@@ -296,7 +324,7 @@ const SSS_ShaderChunk = {
             float depth = texture( depthMap, vUv ).r;
             float linearDepth = linearDepthNormalized(depth, cameraNear, cameraFar);
 
-            vec3 transmitance;
+            vec3 transmitance = vec3(0.0);
 
             BlinnPhongMaterial material;
             material.diffuseColor = albedo;
@@ -345,9 +373,6 @@ const SSS_ShaderChunk = {
                         vec4 spotShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * spotLightShadows[ 0 ].shadowNormalBias, 0.0 );
                         vec4 spotShadowCoord = spotShadowMatrix[ 0 ] * spotShadowWorldPosition;
                         directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, spotShadowCoord ) : 1.0;
-                        
-                        ` + this.SSS_Transmitance + `
-
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                 }
@@ -367,6 +392,9 @@ const SSS_ShaderChunk = {
                         vec4 directionalShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * directionalLightShadows[ 0 ].shadowNormalBias, 0.0 );
                         vec4 directionalShadowCoord = directionalShadowMatrix[ 0 ] * directionalShadowWorldPosition;
                         directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
+
+                        ` + this.SSS_Transmitance + `
+
                     #endif
                     RE_Direct( directLight, geometry, material, reflectedLight );
                 }
@@ -403,9 +431,8 @@ const SSS_ShaderChunk = {
             vec3 diffuse = outgoingLight * alpha;
             vec3 final_color = ambient + diffuse;
             
-            //pc_fragLight = vec4(transmitance * mask, sss);
-            pc_fragLight = vec4(pow(final_color, vec3(1.0/2.2)), sss);
-            pc_fragTransmitance = vec4(transmitance, 1.0);
+            pc_fragLight = vec4( final_color, sss );
+            pc_fragTransmitance = vec4( transmitance, 1.0 );
             pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);
         }`
     },
@@ -457,7 +484,7 @@ const SSS_ShaderChunk = {
             float depthNorm = linearDepthNormalized(depthValue, cameraNear, cameraFar);
             float mask = depthValue > 0.0 ? 1.0 : 0.0;
         
-            if(false && mask == 1.0 && depthNorm >= cameraNear && depthNorm <= cameraFar) {
+            if(mask == 1.0 && depthNorm >= cameraNear && depthNorm <= cameraFar) {
                 color *= 0.382;
                 
                 float s_x = sssLevel / (depthNorm + correction * min(abs(dFdx(depthNorm)), maxdd));
@@ -471,7 +498,7 @@ const SSS_ShaderChunk = {
                 }
             }
 
-            pc_fragDataH = vec4(1.0 - depthValue);
+            pc_fragDataH = vec4( color, 1.0 );
         }
         `;
     },
@@ -486,28 +513,30 @@ const SSS_ShaderChunk = {
             in vec2 vUv;
             #include <common>
             
-            uniform float u_width;
-            uniform float u_sssLevel;
-            uniform float u_correction;
-            uniform float u_maxdd;
-            uniform vec2 u_invPixelSize;
+            uniform float width;
+            uniform float sssLevel;
+            uniform float correction;
+            uniform float maxdd;
+            uniform vec2 invPixelSize;
 
-            uniform float camera_near;
-            uniform float camera_far;
+            uniform float cameraNear;
+            uniform float cameraFar;
     
-            uniform sampler2D irradiance_texture;
-            uniform sampler2D depth_aux_texture;
+            uniform sampler2D irradianceMap;
+            uniform sampler2D depthMap;
 
-            float linearDepthNormalized(float z, float near, float far){
+            float linearDepthNormalized(float z, float near, float far) {
                 float z_n = 2.0 * z - 1.0;
                 return 2.0 * near * far / (far + near - z_n * (far - near));
             }
 
             void main() {
+
                 float w[6];
                 w[0] = w[5] = 0.006;
                 w[1] = w[4] = 0.061;
                 w[2] = w[3] = 0.242;
+
                 float o[6];
                 o[0] = -1.0;
                 o[1] = -0.667;
@@ -516,31 +545,33 @@ const SSS_ShaderChunk = {
                 o[4] = 0.667;
                 o[5] = 1.0;
 
-                vec3 depth_aux_value = texture2D(depth_aux_texture, vUv).xyz;
-                float depth = linearDepthNormalized(depth_aux_value.x, camera_near, camera_far);
-                float mask = depth_aux_value.x > 0.0 ? 1.0 : 0.0;
-                vec3 color = texture2D(irradiance_texture, vUv).rgb;
+                float depthValue = texture2D(depthMap, vUv).x;
+                float depth = linearDepthNormalized(depthValue, cameraNear, cameraFar);
+                float mask = depthValue > 0.0 ? 1.0 : 0.0;
+                vec3 color = texture2D( irradianceMap, vUv ).rgb;
 
-                if(mask == 1.0 && depth >= camera_near && depth <= camera_far){
+                if(mask == 1.0 && depth >= cameraNear && depth <= cameraFar) {
+
                     color *= 0.382;
                     
-                    float s_y = u_sssLevel / (depth + u_correction * min(abs(dFdy(depth)), u_maxdd));
-                    vec2 finalWidth = s_y * u_width * u_invPixelSize * vec2(0.0, 1.0);
+                    float s_y = sssLevel / (depth + correction * min(abs(dFdy(depth)), maxdd));
+                    vec2 finalWidth = s_y * width * invPixelSize * vec2(0.0, 1.0);
                     vec2 offset;
 
-                    for(int i=0; i<6; i++){
-                        offset = vUv + finalWidth*o[i];
-                        vec3 tap = texture2D(irradiance_texture, offset).rgb;
-                        color.rgb += w[i] * (texture2D(depth_aux_texture, offset).x > 0.0 ? tap : color);
+                    for(int i = 0; i < 6; i++) {
+                        offset = vUv + finalWidth * o[ i ];
+                        vec3 tap = texture2D( irradianceMap, offset ).rgb;
+                        color.rgb += w[ i ] * (texture2D(depthMap, offset).x > 0.0 ? tap : color);
                     }
                 }
                 
-                pc_fragDataV = vec4(color, 1.0);
+                pc_fragDataV = vec4( color, 1.0 );
             }
         `;
     },
 
-    accumulativeFS(){
+    accumulativeFS() {
+
         return `	
         
         precision highp float;
@@ -550,35 +581,37 @@ const SSS_ShaderChunk = {
         #define texture2 texture
         varying vec2 vUv;
     
-        uniform vec3 u_weight;
-        uniform sampler2D u_color_texture;
-        uniform sampler2D u_depth_aux_tex;
-        
-    
+        uniform vec3 weight;
+        uniform sampler2D colorMap;
+        uniform sampler2D depthMap;
+        uniform sampler2D normalMap;
+       
         void main() {
-            vec4 color = texture2D( u_color_texture, vUv );
-            float sssIntensity = texture2D( u_depth_aux_tex, vUv ).y;
-            pc_finalColor = vec4(color.rgb,sssIntensity);//vec4(color.rgb * u_weight, sssIntensity);
+            vec4 color = texture2D( colorMap, vUv );
+            float sssIntensity = texture2D( depthMap, vUv ).x;
+
+            vec4 normalBuffer = texture( normalMap, vUv );
+            float mask = normalBuffer.a > 1.0 ? 1.0 : 0.0;
+
+            pc_finalColor = vec4( color.rgb, 1.0 ); //vec4(color.rgb * weight, sssIntensity);
         }
     `
     },
 
-    finalGammaFS() {
+    gammaCorrection() {
 
         return `	
         
         precision highp float;
         layout(location = 0) out highp vec4 pc_Color;
         
-        #define varying in
-        #define texture2 texture
-
         varying vec2 vUv;
 
-        uniform sampler2D u_texture;
+        uniform sampler2D colorMap;
         
         void main() {
-            pc_Color = vec4( pow(texture2D(u_texture, vUv).rgb, vec3(0.5)), 1.0 );
+            vec4 tex = texture2D( colorMap, vUv );
+			pc_Color = LinearTosRGB( tex );
         }
     `
     }
