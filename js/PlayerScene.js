@@ -333,7 +333,7 @@ class Player {
         
         this.renderer.autoClear = false;
 
-        let irradianceMap = this.renderTargetLights.texture[ 1 ];
+        let irradianceMap = this.renderTargetLights.texture[ 0 ];
 
         for(let i = 0, pv = 0; i < V.length; i++) {
             
@@ -352,7 +352,7 @@ class Player {
         }
 
         this.accumulateStep( this.renderTargetLights.texture[ 0 ], Vector3One, THREE.SrcAlphaFactor );
-        // this.accumulateStep( this.renderTargetLights.texture[ 1 ], Vector3One, THREE.OneFactor);
+        this.accumulateStep( this.renderTargetLights.texture[ 1 ], Vector3One, THREE.OneFactor);
 
         // Final FX
         this.renderer.autoClear = true;

@@ -593,7 +593,7 @@ const SSS_ShaderChunk = {
             vec4 normalBuffer = texture( normalMap, vUv );
             float mask = normalBuffer.a > 1.0 ? 1.0 : 0.0;
 
-            pc_finalColor = vec4( color.rgb, 1.0 ); //vec4(color.rgb * weight, sssIntensity);
+            pc_finalColor = vec4(color.rgb * weight, sssIntensity);
         }
     `
     },
