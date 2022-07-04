@@ -87,7 +87,7 @@
         return clamp(alpha_hash_threshold, 0.0, 1.0);
     }
 
-\transmitance
+\transmitance.block
 
     vec4 shadowCoord = directionalShadowCoord;
     vec2 shadowMapSize = directionalLightShadow.shadowMapSize;
@@ -585,10 +585,6 @@
                 #pragma unroll_loop_end
             #endif
         #endif
-        #if defined( RE_IndirectSpecular )
-            vec3 radiance = vec3( 0.0 );
-            vec3 clearcoatRadiance = vec3( 0.0 );
-        #endif
 
         vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
         vec3 ambient = albedo * ambientIntensity;
@@ -597,7 +593,7 @@
         
         pc_fragLight = vec4( final_color, sss );
         pc_fragTransmitance = vec4( transmitance, 1.0 );
-        pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);
+        pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, sss, 1.0, 1.0);
     }
 
 \horizontalBlur
@@ -640,7 +636,9 @@
         o[5] = 1.0;
 
         vec3 color = texture2D( irradianceMap, vUv ).rgb;
-        float depthValue = texture2D( depthMap, vUv ).r;
+        vec4 depthBuffer = texture2D( depthMap, vUv );
+        float depthValue = depthBuffer.r;
+        float sssMask = depthBuffer.g;
         float depthNorm = linearDepthNormalized(depthValue, cameraNear, cameraFar);
         float mask = depthValue > 0.0 ? 1.0 : 0.0;
 
@@ -651,14 +649,14 @@
             vec2 finalWidth = s_x * width * invPixelSize * vec2(1.0, 0.0);
             vec2 offset;
         
-            for(int i = 0; i < 6; i++){
+            for(int i = 0; i < 6; i++) {
                 offset = vUv + finalWidth*o[i];
                 vec3 tap = texture2D(irradianceMap, offset).rgb;
                 color.rgb += w[i] * (texture2D(depthMap, offset).x > 0.0 ? tap : color);
             }
         }
 
-        pc_fragDataH = vec4( color, 1.0 );
+        pc_fragDataH = vec4( color * sssMask, 1.0 );
     }
 
 \verticalBlur
@@ -699,7 +697,9 @@
         o[4] = 0.667;
         o[5] = 1.0;
 
-        float depthValue = texture2D(depthMap, vUv).x;
+        vec4 depthBuffer = texture2D( depthMap, vUv );
+        float depthValue = depthBuffer.r;
+        float sssMask = depthBuffer.g;
         float depth = linearDepthNormalized(depthValue, cameraNear, cameraFar);
         float mask = depthValue > 0.0 ? 1.0 : 0.0;
         vec3 color = texture2D( irradianceMap, vUv ).rgb;
@@ -719,7 +719,7 @@
             }
         }
         
-        pc_fragDataV = vec4( color, 1.0 );
+        pc_fragDataV = vec4( color * sssMask, 1.0 );
     }
 
 \accumulativeStep

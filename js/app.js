@@ -553,6 +553,14 @@ class Player {
             continue; 
             obj.material.fragmentShader = SM.get( 'gBufferFrag' );
         }
+
+        // Quad materials
+
+        this.deferredLightingMaterial.fragmentShader = SM.get( 'deferredFinal' );
+        this.hBlurMaterial.fragmentShader = SM.get( 'horizontalBlur' );
+        this.vBlurMaterial.fragmentShader = SM.get( 'verticalBlur' );
+        this.accMaterial.fragmentShader = SM.get( 'accumulativeStep' );
+        this.gammaMaterial.fragmentShader = SM.get( 'gammaCorrection' );
     }
 
     prepareRenderTargets() {
