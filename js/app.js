@@ -123,15 +123,16 @@ class Player {
         dirLight.castShadow = true;
         dirLight.shadow.radius = 3.5;
         dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 100;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.left = - 15;
-        dirLight.shadow.camera.top	= 15;
-        dirLight.shadow.camera.bottom = - 15;
+        dirLight.shadow.camera.far = 1000;
+        dirLight.shadow.camera.right = 100;
+        dirLight.shadow.camera.left = - 100;
+        dirLight.shadow.camera.top	= 100;
+        dirLight.shadow.camera.bottom = - 100;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
-        this.scene.add( dirLight );
+        dirLight.shadow.bias = -0.001;
         this.directionalLight = dirLight;
+        this.scene.add( dirLight );
 
         let pointLight = new THREE.PointLight( 0xee44dd, 0.8 );
         pointLight.name = 'Point';
@@ -143,7 +144,7 @@ class Player {
         pointLight.shadow.camera.far = 100;
         pointLight.shadow.radius = 3.5;
         this.pointLight = pointLight;
-        this.scene.add( this.pointLight );
+        // this.scene.add( this.pointLight );
 
         let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
         spotLight.name = 'Spot';
@@ -156,7 +157,7 @@ class Player {
         spotLight.shadow.camera.near = 1;
         spotLight.shadow.camera.far = 200;
         this.spotLight = spotLight;
-        this.scene.add( this.spotLight );
+        // this.scene.add( this.spotLight );
 
         // To render shadowmap helpers in screen
 
@@ -468,7 +469,7 @@ class Player {
                 specularIntensity: { type: 'number', value: 0.5 },
                 ambientIntensity: { type: 'number', value: 0.5 },
                 shadowShrinking: { type: 'number', value: 0.1 },
-                translucencyScale: { type: 'number', value: 1.4 },
+                translucencyScale: { type: 'number', value: 0.43 },
                 ambientLightColor:  {type: 'vec3', value: Vector3One },
                 cameraNear: { value : this.camera.near },
                 cameraFar: { value : this.camera.far },

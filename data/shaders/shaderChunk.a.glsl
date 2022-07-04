@@ -94,47 +94,14 @@
     float shadowBias = directionalLightShadow.shadowBias;
     float shadowRadius = directionalLightShadow.shadowRadius;
 
-    float shadow = 1.0;
+    float shadow = getShadow( directionalShadowMap[ i ], shadowMapSize, shadowBias, shadowRadius, shadowCoord );
     shadowCoord.xyz /= shadowCoord.w;
     shadowCoord.z += shadowBias;
-    bvec4 inFrustumVec = bvec4 ( shadowCoord.x >= 0.0, shadowCoord.x <= 1.0, shadowCoord.y >= 0.0, shadowCoord.y <= 1.0 );
-    bool inFrustum = all( inFrustumVec );
-    bvec2 frustumTestVec = bvec2( inFrustum, shadowCoord.z <= 1.0 );
-    bool frustumTest = all( frustumTestVec );
-    if ( frustumTest ) {
-        vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
-        float dx0 = - texelSize.x * shadowRadius;
-        float dy0 = - texelSize.y * shadowRadius;
-        float dx1 = + texelSize.x * shadowRadius;
-        float dy1 = + texelSize.y * shadowRadius;
-        float dx2 = dx0 / 2.0;
-        float dy2 = dy0 / 2.0;
-        float dx3 = dx1 / 2.0;
-        float dy3 = dy1 / 2.0;
-        shadow = (
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy2 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy2 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy2 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, 0.0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, 0.0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, 0.0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, 0.0 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy3 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy3 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy3 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy1 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy1 ) ).x +
-            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy1 ) ).x
-        ) * ( 1.0 / 17.0 );
-        shadow = abs( shadow -  shadowCoord.z );
-    }
+
+    float depthDiff = abs( shadow - shadowCoord.z );
     
     // Transmitance (we use vertex normal because it does not contain high frequency detail)
-    float s = translucencyScale * shadow;
+    float s = translucencyScale * depthDiff;
     float E = max(0.3 + dot(-normal, directLight.direction), 0.0) * mask;
     transmitance = T(s) * directionalLight.color * albedo * E;
 
