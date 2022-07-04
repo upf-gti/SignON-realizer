@@ -87,6 +87,232 @@
         return clamp(alpha_hash_threshold, 0.0, 1.0);
     }
 
+\transmitance
+
+    vec4 shadowCoord = directionalShadowCoord;
+    vec2 shadowMapSize = directionalLightShadow.shadowMapSize;
+    float shadowBias = directionalLightShadow.shadowBias;
+    float shadowRadius = directionalLightShadow.shadowRadius;
+
+    float shadow = 1.0;
+    shadowCoord.xyz /= shadowCoord.w;
+    shadowCoord.z += shadowBias;
+    bvec4 inFrustumVec = bvec4 ( shadowCoord.x >= 0.0, shadowCoord.x <= 1.0, shadowCoord.y >= 0.0, shadowCoord.y <= 1.0 );
+    bool inFrustum = all( inFrustumVec );
+    bvec2 frustumTestVec = bvec2( inFrustum, shadowCoord.z <= 1.0 );
+    bool frustumTest = all( frustumTestVec );
+    if ( frustumTest ) {
+        vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
+        float dx0 = - texelSize.x * shadowRadius;
+        float dy0 = - texelSize.y * shadowRadius;
+        float dx1 = + texelSize.x * shadowRadius;
+        float dy1 = + texelSize.y * shadowRadius;
+        float dx2 = dx0 / 2.0;
+        float dy2 = dy0 / 2.0;
+        float dx3 = dx1 / 2.0;
+        float dy3 = dy1 / 2.0;
+        shadow = (
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy2 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy2 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy2 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, 0.0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, 0.0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, 0.0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, 0.0 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx2, dy3 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy3 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx3, dy3 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx0, dy1 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( 0.0, dy1 ) ).x +
+            texture( directionalShadowMap[ i ], shadowCoord.xy + vec2( dx1, dy1 ) ).x
+        ) * ( 1.0 / 17.0 );
+        shadow = abs( shadow -  shadowCoord.z );
+    }
+    
+    // Transmitance (we use vertex normal because it does not contain high frequency detail)
+    float s = translucencyScale * shadow;
+    float E = max(0.3 + dot(-normal, directLight.direction), 0.0) * mask;
+    transmitance = T(s) * directionalLight.color * albedo * E;
+
+\quadVert
+
+    out vec2 vUv;
+    out vec3 vViewPosition;
+    out vec3 vNormal;
+
+    #ifdef USE_SHADOWMAP
+        #if NUM_DIR_LIGHT_SHADOWS > 0
+            varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
+        #endif
+        #if NUM_SPOT_LIGHT_SHADOWS > 0
+            varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
+        #endif
+        #if NUM_POINT_LIGHT_SHADOWS > 0
+            varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
+        #endif
+    #endif
+
+    void main() {
+        vNormal = vec3( normal );
+        vUv = uv;
+        vec4 mvPosition = vec4( position, 1.0 );
+        mvPosition = modelViewMatrix * mvPosition;
+        vViewPosition = - mvPosition.xyz;
+        gl_Position = projectionMatrix * mvPosition;
+    }
+
+\gBufferVert
+
+    precision mediump sampler2DArray;
+    #define attribute in
+    #define varying out
+    #define texture2D texture
+    precision highp float;
+    precision highp int;
+    #define HIGH_PRECISION
+    #define STANDARD 
+    #define VERTEX_TEXTURES
+    #define MAX_BONES 1024
+    #define USE_MAP
+    #define USE_COLOR_ALPHA
+    #define USE_NORMALMAP
+    #define TANGENTSPACE_NORMALMAP
+    #define USE_ROUGHNESSMAP
+    #define USE_METALNESSMAP
+    #define USE_UV
+    #define USE_SKINNING
+    #define BONE_TEXTURE
+    // #define USE_MORPHTARGETS
+    // #define USE_MORPHNORMALS
+    // #define MORPHTARGETS_TEXTURE
+    // #define MORPHTARGETS_COUNT 50
+    #define USE_SHADOWMAP
+    #define SHADOWMAP_TYPE_PCF
+    #ifdef USE_INSTANCING
+        attribute mat4 instanceMatrix;
+    #endif
+    #ifdef USE_INSTANCING_COLOR
+        attribute vec3 instanceColor;
+    #endif
+    #ifdef USE_TANGENT
+        attribute vec4 tangent;
+    #endif
+
+    #if ( defined( USE_MORPHTARGETS ) && ! defined( MORPHTARGETS_TEXTURE ) )
+        attribute vec3 morphTarget0;
+        attribute vec3 morphTarget1;
+        attribute vec3 morphTarget2;
+        attribute vec3 morphTarget3;
+        #ifdef USE_MORPHNORMALS
+            attribute vec3 morphNormal0;
+            attribute vec3 morphNormal1;
+            attribute vec3 morphNormal2;
+            attribute vec3 morphNormal3;
+        #else
+            attribute vec3 morphTarget4;
+            attribute vec3 morphTarget5;
+            attribute vec3 morphTarget6;
+            attribute vec3 morphTarget7;
+        #endif
+    #endif
+
+    varying vec3 vViewPosition;
+    varying vec3 vWorldPosition;
+    varying vec3 vWorldNormal;
+
+    #import THREE.common
+    #import THREE.uv_pars_vertex
+    #import THREE.color_pars_vertex
+    #import THREE.fog_pars_vertex
+    #import THREE.normal_pars_vertex
+    #import THREE.morphtarget_pars_vertex
+    #import THREE.skinning_pars_vertex
+
+    #ifdef USE_SHADOWMAP
+        #if NUM_DIR_LIGHT_SHADOWS > 0
+            uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+            varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHT_SHADOWS ];
+            struct DirectionalLightShadow {
+                float shadowBias;
+                float shadowNormalBias;
+                float shadowRadius;
+                vec2 shadowMapSize;
+            };
+            uniform DirectionalLightShadow directionalLightShadows[ NUM_DIR_LIGHT_SHADOWS ];
+        #endif
+        #if NUM_SPOT_LIGHT_SHADOWS > 0
+            uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
+            varying vec4 vSpotShadowCoord[ NUM_SPOT_LIGHT_SHADOWS ];
+            struct SpotLightShadow {
+                float shadowBias;
+                float shadowNormalBias;
+                float shadowRadius;
+                vec2 shadowMapSize;
+            };
+            uniform SpotLightShadow spotLightShadows[ NUM_SPOT_LIGHT_SHADOWS ];
+        #endif
+        #if NUM_POINT_LIGHT_SHADOWS > 0
+            uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
+            varying vec4 vPointShadowCoord[ NUM_POINT_LIGHT_SHADOWS ];
+            struct PointLightShadow {
+                float shadowBias;
+                float shadowNormalBias;
+                float shadowRadius;
+                vec2 shadowMapSize;
+                float shadowCameraNear;
+                float shadowCameraFar;
+            };
+            uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
+        #endif
+    #endif
+   
+    #import THREE.logdepthbuf_pars_vertex
+
+    void main() {
+        
+        #import THREE.uv_vertex
+        #import THREE.color_vertex
+        #import THREE.beginnormal_vertex
+        #import THREE.morphnormal_vertex
+        #import THREE.skinbase_vertex
+        #import THREE.skinnormal_vertex
+        #import THREE.defaultnormal_vertex
+        #import THREE.normal_vertex
+        #import THREE.begin_vertex
+        #import THREE.morphtarget_vertex
+        #import THREE.skinning_vertex
+        #import THREE.displacementmap_vertex
+        #import THREE.project_vertex
+        #import THREE.logdepthbuf_vertex
+        #import THREE.worldpos_vertex
+
+        vViewPosition =  - mvPosition.xyz;
+        vWorldNormal = inverseTransformDirection( transformedNormal, viewMatrix );
+
+        #ifdef USE_SHADOWMAP
+            #if NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SPOT_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0
+                vec3 shadowWorldNormal = vWorldNormal;
+                vec4 shadowWorldPosition;
+            #endif
+            #if NUM_DIR_LIGHT_SHADOWS > 0
+                
+            #endif
+            #if NUM_SPOT_LIGHT_SHADOWS > 0
+                shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * spotLightShadows[ 0 ].shadowNormalBias, 0 );
+                vSpotShadowCoord[ 0 ] = spotShadowMatrix[ 0 ] * shadowWorldPosition;
+            #endif
+            #if NUM_POINT_LIGHT_SHADOWS > 0
+                shadowWorldPosition = worldPosition + vec4( shadowWorldNormal * pointLightShadows[ 0 ].shadowNormalBias, 0 );
+                vPointShadowCoord[ 0 ] = pointShadowMatrix[ 0 ] * shadowWorldPosition;
+            #endif
+        #endif
+        vWorldPosition = worldPosition.xyz;
+    }
+
 \gBufferFrag
 
     precision mediump float;
@@ -161,4 +387,371 @@
             pc_fragColor2 = vec4(0.0);
             pc_fragColor3 = vec4(0.0);
         #endif
+    }
+
+\deferredFinal
+
+    #define RE_Direct RE_Direct_BlinnPhong
+    #define SHADOWMAP_TYPE_PCF
+    #define USE_SHADOWMAP
+
+    precision highp float;
+    precision highp int;
+
+    layout(location = 0) out highp vec4 pc_fragLight;
+    layout(location = 1) out highp vec4 pc_fragTransmitance;
+    layout(location = 2) out highp vec4 pc_fragDepth;
+
+    in vec2 vUv;
+    #include <common>
+    #include <packing>
+    #include <normal_pars_fragment>
+    #include <lights_pars_begin>
+    #include <bsdfs>
+    #include <lights_phong_pars_fragment>
+    #include <shadowmap_pars_fragment>
+
+    uniform sampler2D map;
+    uniform sampler2D normalMap;
+    uniform sampler2D positionMap;
+    uniform sampler2D depthMap;
+    uniform sampler2D detailedNormalMap;
+    uniform sampler2D transmitanceLut;
+    
+    uniform float ambientIntensity;
+    uniform float specularIntensity;
+    uniform float shadowShrinking;
+    uniform float translucencyScale;
+    
+    uniform float cameraNear;
+    uniform float cameraFar;
+    uniform vec3  cameraEye;
+
+    #if NUM_DIR_LIGHT_SHADOWS > 0
+        uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+    #endif
+    #if NUM_POINT_LIGHT_SHADOWS > 0
+        uniform mat4 pointShadowMatrix[ NUM_POINT_LIGHT_SHADOWS ];
+    #endif
+    #if NUM_SPOT_LIGHT_SHADOWS > 0
+        uniform mat4 spotShadowMatrix[ NUM_SPOT_LIGHT_SHADOWS ];
+    #endif
+    
+    float linearDepthNormalized(float z, float near, float far) {
+        float z_n = 2.0 * z - 1.0;
+        return 2.0 * near * far / (far + near - z_n * (far - near));
+    }
+
+    float meshDepth;
+
+    float pixelShadow( sampler2D shadowMap, vec2 uv ) {
+        float sampleDepth = texture( shadowMap, uv ).r;
+        sampleDepth = (sampleDepth == 1.0) ? 1.0e9 : sampleDepth; // on empty data send it to far away
+        if (sampleDepth > 0.0) 
+            return meshDepth > sampleDepth ? 0.0 : 1.0;
+        return 0.0;
+    }
+    
+    // Can be precomputed
+    vec3 T(float s) {
+        return texture2D(transmitanceLut, vec2(s, 0.0)).rgb;
+        // return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
+        // vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
+        // vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
+        // vec3(0.113, 0.007, 0.007) * exp(-s*s/0.567) +
+        // vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
+        // vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
+    }
+
+    float expFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
+
+    float ExpFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
+    vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
+    vec4 LinearToGamma( vec4 value ) { return vec4( pow(value.rgb, vec3(1.0/2.2)), value.a ); }    
+    void main() {
+        
+        vec4 colorBuffer = texture( map, vUv );
+        vec3 albedo = colorBuffer.rgb;
+        
+        vec4 positionBuffer = texture( positionMap, vUv );
+        vec3 position = positionBuffer.rgb;
+        float sss = positionBuffer.a;
+        
+        vec4 normalBuffer = texture( normalMap, vUv );
+        vec3 normal = normalize( normalBuffer.rgb * 2.0 - 1.0);
+        float mask = normalBuffer.a > 1.0 ? 1.0 : 0.0;
+        
+        vec4 dNormalsMap = texture( detailedNormalMap, vUv );
+        vec3 dNormals = normalize(dNormalsMap.xyz * 2.0 - 1.0);
+        float alpha = 1.0 - dNormalsMap.a;
+        
+        float depth = texture( depthMap, vUv ).r;
+        float linearDepth = linearDepthNormalized(depth, cameraNear, cameraFar);
+
+        vec3 transmitance = vec3(0.0);
+
+        BlinnPhongMaterial material;
+        material.diffuseColor = albedo;
+        material.specularColor = vec3( normalBuffer.a - 10.0 );
+        material.specularShininess = specularIntensity;
+        material.specularStrength = shadowShrinking;
+        
+        GeometricContext geometry;
+        geometry.position = position;
+        geometry.normal = dNormals;
+        geometry.viewDir = normalize( cameraPosition - position );
+
+        ReflectedLight reflectedLight;
+        IncidentLight directLight;
+
+        #if ( NUM_POINT_LIGHTS > 0 ) && defined( RE_Direct )
+            PointLight pointLight;
+            #if defined( USE_SHADOWMAP ) && NUM_POINT_LIGHT_SHADOWS > 0
+            PointLightShadow pointLightShadow;
+            #endif
+            #pragma unroll_loop_start
+            for ( int i = 0; i < NUM_POINT_LIGHTS; i ++ ) {
+                pointLight = pointLights[ i ];
+                getPointLightInfo( pointLight, geometry, directLight );
+                #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
+                    pointLightShadow = pointLightShadows[ i ];
+                    vec4 pointShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * pointLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                    vec4 pointShadowCoord = pointShadowMatrix[ 0 ] * pointShadowWorldPosition;
+                    directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, pointShadowCoord, pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
+                #endif
+                RE_Direct( directLight, geometry, material, reflectedLight );
+            }
+            #pragma unroll_loop_end
+        #endif
+        #if ( NUM_SPOT_LIGHTS > 0 ) && defined( RE_Direct )
+            SpotLight spotLight;
+            #if defined( USE_SHADOWMAP ) && NUM_SPOT_LIGHT_SHADOWS > 0
+            SpotLightShadow spotLightShadow;
+            #endif
+            #pragma unroll_loop_start
+            for ( int i = 0; i < NUM_SPOT_LIGHTS; i ++ ) {
+                spotLight = spotLights[ i ];
+                getSpotLightInfo( spotLight, geometry, directLight );
+                #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS )
+                    spotLightShadow = spotLightShadows[ i ];
+                    vec4 spotShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * spotLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                    vec4 spotShadowCoord = spotShadowMatrix[ 0 ] * spotShadowWorldPosition;
+                    directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, spotShadowCoord ) : 1.0;
+                #endif
+                RE_Direct( directLight, geometry, material, reflectedLight );
+            }
+            #pragma unroll_loop_end
+        #endif
+        #if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )
+            DirectionalLight directionalLight;
+            #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+            DirectionalLightShadow directionalLightShadow;
+            #endif
+            #pragma unroll_loop_start
+            for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+                directionalLight = directionalLights[ i ];
+                getDirectionalLightInfo( directionalLight, geometry, directLight );
+                #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
+                    directionalLightShadow = directionalLightShadows[ i ];
+                    vec4 directionalShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * directionalLightShadows[ 0 ].shadowNormalBias, 0.0 );
+                    vec4 directionalShadowCoord = directionalShadowMatrix[ 0 ] * directionalShadowWorldPosition;
+                    directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
+
+                    #import transmitance
+
+                #endif
+                RE_Direct( directLight, geometry, material, reflectedLight );
+            }
+            #pragma unroll_loop_end
+        #endif
+        #if ( NUM_RECT_AREA_LIGHTS > 0 ) && defined( RE_Direct_RectArea )
+            RectAreaLight rectAreaLight;
+            #pragma unroll_loop_start
+            for ( int i = 0; i < NUM_RECT_AREA_LIGHTS; i ++ ) {
+                rectAreaLight = rectAreaLights[ i ];
+                RE_Direct_RectArea( rectAreaLight, geometry, material, reflectedLight );
+            }
+            #pragma unroll_loop_end
+        #endif
+        #if defined( RE_IndirectDiffuse )
+            vec3 iblIrradiance = vec3( 0.0 );
+            vec3 irradiance = getAmbientLightIrradiance( ambientLightColor );
+            irradiance += getLightProbeIrradiance( lightProbe, geometry.normal );
+            #if ( NUM_HEMI_LIGHTS > 0 )
+                #pragma unroll_loop_start
+                for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+                    irradiance += getHemisphereLightIrradiance( hemisphereLights[ i ], geometry.normal );
+                }
+                #pragma unroll_loop_end
+            #endif
+        #endif
+        #if defined( RE_IndirectSpecular )
+            vec3 radiance = vec3( 0.0 );
+            vec3 clearcoatRadiance = vec3( 0.0 );
+        #endif
+
+        vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+        vec3 ambient = albedo * ambientIntensity;
+        vec3 diffuse = outgoingLight * alpha;
+        vec3 final_color = ambient + diffuse;
+        
+        pc_fragLight = vec4( final_color, sss );
+        pc_fragTransmitance = vec4( transmitance, 1.0 );
+        pc_fragDepth = vec4( mask == 1.0 ? depth : 0.0, 1.0, sss, 1.0);
+    }
+
+\horizontalBlur
+
+    precision highp float;
+    precision highp int;
+    layout(location = 0) out highp vec4 pc_fragDataH;
+    in vec2 vUv;
+
+    #include <common>
+
+    uniform float width;
+    uniform float sssLevel;
+    uniform float correction;
+    uniform float maxdd;
+    uniform vec2 invPixelSize;
+    uniform float cameraNear;
+    uniform float cameraFar;
+    uniform sampler2D irradianceMap;
+    uniform sampler2D depthMap;
+
+    float linearDepthNormalized(float z, float near, float far){
+        float z_n = 2.0 * z - 1.0;
+        return 2.0 * near * far / (far + near - z_n * (far - near));
+    }
+
+    void main() {
+
+        float w[6];
+        w[0] = w[5] = 0.006;
+        w[1] = w[4] = 0.061;
+        w[2] = w[3] = 0.242;
+
+        float o[6];
+        o[0] = -1.0;
+        o[1] = -0.667;
+        o[2] = -0.333;
+        o[3] = 0.333;
+        o[4] = 0.667;
+        o[5] = 1.0;
+
+        vec3 color = texture2D( irradianceMap, vUv ).rgb;
+        float depthValue = texture2D( depthMap, vUv ).r;
+        float depthNorm = linearDepthNormalized(depthValue, cameraNear, cameraFar);
+        float mask = depthValue > 0.0 ? 1.0 : 0.0;
+
+        if(mask == 1.0 && depthNorm >= cameraNear && depthNorm <= cameraFar) {
+            color *= 0.382;
+            
+            float s_x = sssLevel / (depthNorm + correction * min(abs(dFdx(depthNorm)), maxdd));
+            vec2 finalWidth = s_x * width * invPixelSize * vec2(1.0, 0.0);
+            vec2 offset;
+        
+            for(int i = 0; i < 6; i++){
+                offset = vUv + finalWidth*o[i];
+                vec3 tap = texture2D(irradianceMap, offset).rgb;
+                color.rgb += w[i] * (texture2D(depthMap, offset).x > 0.0 ? tap : color);
+            }
+        }
+
+        pc_fragDataH = vec4( color, 1.0 );
+    }
+
+\verticalBlur
+
+    precision highp float;
+    layout(location = 0) out highp vec4 pc_fragDataV;
+    in vec2 vUv;
+
+    #include <common>
+    
+    uniform float width;
+    uniform float sssLevel;
+    uniform float correction;
+    uniform float maxdd;
+    uniform vec2 invPixelSize;
+    uniform float cameraNear;
+    uniform float cameraFar;
+    uniform sampler2D irradianceMap;
+    uniform sampler2D depthMap;
+
+    float linearDepthNormalized(float z, float near, float far) {
+        float z_n = 2.0 * z - 1.0;
+        return 2.0 * near * far / (far + near - z_n * (far - near));
+    }
+
+    void main() {
+
+        float w[6];
+        w[0] = w[5] = 0.006;
+        w[1] = w[4] = 0.061;
+        w[2] = w[3] = 0.242;
+
+        float o[6];
+        o[0] = -1.0;
+        o[1] = -0.667;
+        o[2] = -0.333;
+        o[3] = 0.333;
+        o[4] = 0.667;
+        o[5] = 1.0;
+
+        float depthValue = texture2D(depthMap, vUv).x;
+        float depth = linearDepthNormalized(depthValue, cameraNear, cameraFar);
+        float mask = depthValue > 0.0 ? 1.0 : 0.0;
+        vec3 color = texture2D( irradianceMap, vUv ).rgb;
+
+        if(mask == 1.0 && depth >= cameraNear && depth <= cameraFar) {
+
+            color *= 0.382;
+            
+            float s_y = sssLevel / (depth + correction * min(abs(dFdy(depth)), maxdd));
+            vec2 finalWidth = s_y * width * invPixelSize * vec2(0.0, 1.0);
+            vec2 offset;
+
+            for(int i = 0; i < 6; i++) {
+                offset = vUv + finalWidth * o[ i ];
+                vec3 tap = texture2D( irradianceMap, offset ).rgb;
+                color.rgb += w[ i ] * (texture2D(depthMap, offset).x > 0.0 ? tap : color);
+            }
+        }
+        
+        pc_fragDataV = vec4( color, 1.0 );
+    }
+
+\accumulativeStep
+
+    precision highp float;
+    layout(location = 0) out highp vec4 pc_finalColor;
+    #define varying in
+    #define texture2 texture
+    varying vec2 vUv;
+
+    uniform vec3 weight;
+    uniform sampler2D colorMap;
+    uniform sampler2D depthMap;
+    uniform sampler2D normalMap;
+    
+    void main() {
+        vec4 color = texture2D( colorMap, vUv );
+        float sssIntensity = texture2D( depthMap, vUv ).x;
+        vec4 normalBuffer = texture( normalMap, vUv );
+        float mask = normalBuffer.a > 1.0 ? 1.0 : 0.0;
+
+        pc_finalColor = vec4(color.rgb * weight, sssIntensity);
+    }
+
+\gammaCorrection
+
+    precision highp float;
+    layout(location = 0) out highp vec4 pc_Color;
+    varying vec2 vUv;
+    uniform sampler2D colorMap;
+    
+    void main() {
+        vec4 tex = texture2D( colorMap, vUv );
+        pc_Color = LinearTosRGB( tex );
     }

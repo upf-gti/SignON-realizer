@@ -7,8 +7,6 @@ import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/js
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { DisplayUI } from './ui.js'
 import { ShaderManager } from './shaderManager.js'
-import { ShaderChunk } from './shaders.js'
-import { SSS_ShaderChunk } from './sss_shaders.js'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -418,7 +416,7 @@ class Player {
         const gBufferConfig = {
             name: "gBuffer",
             uniforms: uniforms,
-            vertexShader: ShaderChunk.getVertexShader(),
+            vertexShader: SM.get( 'gBufferVert' ),
             fragmentShader: SM.get('gBufferFrag'),
             lights: true,
             colorWrite: true,
@@ -456,8 +454,8 @@ class Player {
 
         this.deferredLightingMaterial = new THREE.ShaderMaterial( {
             name: 'deferredLighting',
-            vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
+            vertexShader: SM.get( 'quadVert' ),
+            fragmentShader: SM.get( 'deferredFinal' ),
             uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map: { type: 't', value: this.renderTargetDef.texture[ 0 ] },
                 positionMap: { value: this.renderTargetDef.texture[ 1 ] },
@@ -482,8 +480,8 @@ class Player {
         });
 
         this.hBlurMaterial = new THREE.ShaderMaterial( {
-            vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.horizontalBlurFS(),
+            vertexShader: SM.get( 'quadVert' ),
+            fragmentShader: SM.get( 'horizontalBlur' ),
             uniforms: {
                 irradianceMap: { value: this.renderTargetLights.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
@@ -501,8 +499,8 @@ class Player {
         });
 
         this.vBlurMaterial = new THREE.ShaderMaterial( {
-            vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.verticalBlurFS(),
+            vertexShader: SM.get( 'quadVert' ),
+            fragmentShader: SM.get( 'verticalBlur' ),
             uniforms: {
                 irradianceMap: { value: this.renderTargetHblur.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
@@ -520,8 +518,8 @@ class Player {
         });
 
         this.accMaterial = new THREE.ShaderMaterial( {
-            vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.accumulativeFS(),
+            vertexShader: SM.get( 'quadVert' ),
+            fragmentShader: SM.get( 'accumulativeStep' ),
             uniforms: {
                 colorMap: { value: this.renderTargetLights.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
@@ -535,8 +533,8 @@ class Player {
         });
 
         this.gammaMaterial = new THREE.ShaderMaterial( {
-            vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.gammaCorrection(),
+            vertexShader: SM.get( 'quadVert' ),
+            fragmentShader: SM.get( 'gammaCorrection' ),
             uniforms: { colorMap: { value: this.renderTargetAcc.texture[ 0 ] } },
             depthTest: false,
             blending: THREE.NoBlending,
@@ -667,8 +665,8 @@ class Player {
                 specularMap: { type: 't', value: mat.metalnessMap },
                 uvTransform: { type: "matrix4", value: mat.map.matrix }
             } ),
-            vertexShader: ShaderChunk.getVertexShader(),
-            fragmentShader: SSS_ShaderChunk.deferredFS(),
+            vertexShader: SM.get( 'gBufferVert' ),
+            fragmentShader: SM.get( 'gBufferFrag' ),
             lights: true,
             colorWrite: true,
             glslVersion: THREE.GLSL3,
