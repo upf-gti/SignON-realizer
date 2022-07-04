@@ -6,6 +6,7 @@ const DisplayUI = {
     'decay' : { min: 0, max: 10, step: 0.1 },
     'penumbra' : { min: 0, max: 10, step: 0.1 },
     'translucencyScale' : { min: 0, max: 10, step: 0.1 },
+    'shadowShrinking' : { min: 0, max: 10, step: 0.1 },
 
     // Shadows
     'bias' : { min: -0.01, max: 0.01, step: 0.0001 },

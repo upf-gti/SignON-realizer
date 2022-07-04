@@ -6,6 +6,7 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/utils/ShadowMapViewer.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { DisplayUI } from './ui.js'
+import { ShaderManager } from './shaderManager.js'
 import { ShaderChunk } from './shaders.js'
 import { SSS_ShaderChunk } from './sss_shaders.js'
 
@@ -32,23 +33,31 @@ const RGB = [
         new THREE.Vector3( 0.46, 0.0, 0.0402 )
 ];
 
+let SM = null;
+
 class Player {
 
     constructor() {
         
         this.gui                = new GUI();
         this.loaderGLB          = new GLTFLoader();
+        this.shaderManager      = new ShaderManager("data/shaders/");
         this.clock              = new THREE.Clock(false);
         this.textureLoader      = new THREE.TextureLoader();
 
         this.debugShadowmaps    = false;
+
+        // Shorter access
+        SM = this.shaderManager;
     }
     
-    init() {
+    async init() {
 
         this.initScene();
         this.initLights();
         this.initMisc();
+
+        await SM.loadFromFile( "shaderChunk.a.glsl" );
 
         // Load the model
 
@@ -182,6 +191,15 @@ class Player {
         this.disableShadowmaps = () => { this.renderer.shadowMap.enabled = false; }
 
         document.body.appendChild( this.renderer.domElement );
+
+        this.renderer.domElement.tabIndex = '1';
+        this.renderer.domElement.onkeydown = (e) => {
+
+            if( e.key === 'r' ) {
+                e.preventDefault();
+                this.updateMaterials();
+            }
+        }
 
         // Load some assets
 
@@ -401,7 +419,7 @@ class Player {
             name: "gBuffer",
             uniforms: uniforms,
             vertexShader: ShaderChunk.getVertexShader(),
-            fragmentShader: SSS_ShaderChunk.deferredFS(),
+            fragmentShader: SM.get('gBufferFrag'),
             lights: true,
             colorWrite: true,
             glslVersion: THREE.GLSL3,
@@ -439,7 +457,7 @@ class Player {
         this.deferredLightingMaterial = new THREE.ShaderMaterial( {
             name: 'deferredLighting',
             vertexShader: ShaderChunk.vertexShaderQuad(),
-            fragmentShader: SSS_ShaderChunk.deferredFinalFS(true),
+            fragmentShader: SSS_ShaderChunk.deferredFinalFS(),
             uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map: { type: 't', value: this.renderTargetDef.texture[ 0 ] },
                 positionMap: { value: this.renderTargetDef.texture[ 1 ] },
@@ -524,6 +542,19 @@ class Player {
             blending: THREE.NoBlending,
             glslVersion: THREE.GLSL3
         });
+    }
+
+    async updateMaterials() {
+
+        await this.shaderManager.reload();
+
+        // GBuffer materials
+
+        for( const obj of this.scene.getObjectByName('Armature').children ) {
+            if(!obj.material)
+            continue; 
+            obj.material.fragmentShader = SM.get( 'gBufferFrag' );
+        }
     }
 
     prepareRenderTargets() {
