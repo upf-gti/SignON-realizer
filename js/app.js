@@ -7,6 +7,7 @@ import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/js
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { DisplayUI } from './ui.js'
 import { ShaderManager } from './shaderManager.js'
+import { FXAAShader } from '../data/shaders/FXAAshader.js'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -351,21 +352,26 @@ class Player {
         this.renderer.autoClear = false;
 
         let irradianceMap = this.renderTargetLights.texture[ 0 ];
+        let l = 0;
+        while(l<4)
+        {
 
-        for(let i = 0, pv = 0; i < V.length; i++) {
-            
-            var width = Math.sqrt( V[i] - pv );
-            pv = V[ i ];
-
-            this.blurStep( 'h', width, irradianceMap );
-
-            irradianceMap = this.renderTargetHblur.texture[ 0 ];
-
-            this.blurStep( 'v', width, irradianceMap );
-
-            irradianceMap = this.renderTargetVblur.texture[ 0 ];
-
-            this.accumulateStep( irradianceMap, RGB[ i ], THREE.OneMinusSrcAlphaFactor );
+            for(let i = 0, pv = 0; i < V.length; i++) {
+                
+                var width = Math.sqrt( V[i] - pv );
+                pv = V[ i ];
+                
+                this.blurStep( 'h', width, irradianceMap );
+                
+                irradianceMap = this.renderTargetHblur.texture[ 0 ];
+                
+                this.blurStep( 'v', width, irradianceMap );
+                
+                irradianceMap = this.renderTargetVblur.texture[ 0 ];
+                
+                this.accumulateStep( irradianceMap, RGB[ i ], THREE.OneMinusSrcAlphaFactor );
+            }
+        l++;
         }
 
         this.accumulateStep( this.renderTargetLights.texture[ 0 ], Vector3One, THREE.SrcAlphaFactor );
@@ -374,6 +380,11 @@ class Player {
         // Final FX
         this.renderer.autoClear = true;
         this.useQuadMaterial( this.gammaMaterial );
+        this.setRenderTarget( this.renderTargetGamma );
+        this.renderer.render( this.scene, this.postCamera );
+        
+        //Apply antialiasing
+        this.useQuadMaterial( this.fxaaPass );
         this.toScreen()
         this.renderer.render( this.scene, this.postCamera );
     }
@@ -541,6 +552,14 @@ class Player {
             blending: THREE.NoBlending,
             glslVersion: THREE.GLSL3
         });
+
+        FXAAShader.uniforms[ 'resolution' ].value.x = 1 / ( window.innerWidth * this.renderer.getPixelRatio());
+		FXAAShader.uniforms[ 'resolution' ].value.y = 1 / ( window.innerHeight* this.renderer.getPixelRatio() );
+        FXAAShader.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[0];
+        FXAAShader.depthTest = false;
+        FXAAShader.blending = THREE.NoBlending;
+        this.fxaaPass = new THREE.ShaderMaterial( FXAAShader );
+        
     }
 
     async updateMaterials() {
@@ -660,6 +679,23 @@ class Player {
         }
 
         this.renderTargetAcc.texture[ 0 ].name = 'pc_finalColor';
+
+         // SSS: Gamma passes
+
+         this.renderTargetGamma = new THREE.WebGLMultipleRenderTargets(
+            window.innerWidth * window.devicePixelRatio,
+            window.innerHeight * window.devicePixelRatio,
+            1
+        );
+
+        for ( let i = 0, il = this.renderTargetGamma.texture.length; i < il; i ++ ) {
+
+            this.renderTargetGamma.texture[ i ].minFilter = THREE.NearestFilter;
+            this.renderTargetGamma.texture[ i ].magFilter = THREE.NearestFilter;
+            this.renderTargetGamma.texture[ i ].type = THREE.FloatType;
+        }
+
+        this.renderTargetGamma.texture[ 0 ].name = 'pc_Color';
     }
 
     createGBufferMaterialFromSrc( mat ) {
@@ -734,7 +770,7 @@ class Player {
 
     onWindowResize() {
 
-        const width = window.innerWidth;
+        const width  = window.innerWidth;
         const height = window.innerHeight;
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
