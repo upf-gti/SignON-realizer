@@ -34,6 +34,7 @@ class ShaderManager {
     
             var request = new XMLHttpRequest();
             request.addEventListener("load", e => {
+                console.log( '"' + filename + '" loaded!' );
                 this.onread( e.currentTarget.response, isAtlas );
                 resolve();
             });
@@ -94,7 +95,7 @@ class ShaderManager {
     }
 
     addBlockSufix( string ) { return string + '.block'; }
-    getTHREEBlock( string ) { return string.replace( 'THREE.', '' ); }
+    // getTHREEBlock( string ) { return string.replace( 'THREE.', '' ); }
 
     expandImports( code, shaderData ) {
         
@@ -108,9 +109,9 @@ class ShaderManager {
                 return '// ShaderError: Already imported: ' + id + '\n';
             cache[ id ] = true;
 
-            if( id.includes( 'THREE' ) ) {
-                return THREE.ShaderChunk[ this.getTHREEBlock( id ) ] + '\n';
-            } 
+            // if( id.includes( 'THREE' ) ) {
+            //     return THREE.ShaderChunk[ this.getTHREEBlock( id ) ] + '\n';
+            // } 
 
             // Local blocks
             const block = shaderData[ this.addBlockSufix( id ) ];

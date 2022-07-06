@@ -7,7 +7,7 @@ import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/js
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { DisplayUI } from './ui.js'
 import { ShaderManager } from './shaderManager.js'
-import { FXAAShader } from '../data/shaders/FXAAshader.js'
+import { FXAAShader } from './libs/FXAAShader.js'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -100,7 +100,7 @@ class Player {
         // Scene to render
 
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 100);
 
         // To render textures to screen        
 
@@ -125,10 +125,10 @@ class Player {
         dirLight.shadow.radius = 3.5;
         dirLight.shadow.camera.near = 1;
         dirLight.shadow.camera.far = 1000;
-        dirLight.shadow.camera.right = 100;
-        dirLight.shadow.camera.left = - 100;
-        dirLight.shadow.camera.top	= 100;
-        dirLight.shadow.camera.bottom = - 100;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.left = - 15;
+        dirLight.shadow.camera.top	= 15;
+        dirLight.shadow.camera.bottom = - 15;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.bias = -0.001;
@@ -164,8 +164,8 @@ class Player {
 
         this.shadowMapViewers = [
             new ShadowMapViewer( this.directionalLight ),
-            new ShadowMapViewer( this.pointLight ),
-            new ShadowMapViewer( this.spotLight ),
+            // new ShadowMapViewer( this.pointLight ),
+            // new ShadowMapViewer( this.spotLight ),
         ];
         this.resizeShadowMapViewers();
     }
@@ -195,6 +195,7 @@ class Player {
         this.renderer.domElement.tabIndex = '1';
         this.renderer.domElement.onkeydown = (e) => {
 
+            
             if( e.key === 'r' ) {
                 e.preventDefault();
                 this.updateMaterials();
@@ -284,6 +285,8 @@ class Player {
             return folder;
         }
 
+        CreateObjectUI( gui.addFolder( 'Camera' ), this.camera ).close();
+
         const directionalLight = gui.addFolder( 'DirectionalLight' )
         CreateObjectUI( directionalLight, this.directionalLight ).close();
         CreateObjectUI( directionalLight.addFolder( 'Shadow' ), this.directionalLight.shadow );
@@ -300,7 +303,22 @@ class Player {
         CreateObjectUI( pointLight.addFolder( 'Camera' ), this.pointLight.shadow.camera );
 
         CreateObjectUI( gui.addFolder( 'Deferred Material' ), this.deferredLightingMaterial ).close();
+        CreateObjectUI( gui.addFolder( 'HBlur Material' ), this.hBlurMaterial ).close();
+        CreateObjectUI( gui.addFolder( 'VBlur Material' ), this.vBlurMaterial ).close();
         CreateObjectUI( gui.addFolder( 'Acc Material' ), this.accMaterial ).close();
+        
+        let tOutput = {
+            'FXAA Input': 'gamma',
+        }
+
+        gui.add( tOutput, 'FXAA Input', [ 'lights', 'Hblur', 'Vblur', 'gamma' ] ).onChange( v => {
+            switch(v) {
+                case 'lights': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetLights.texture[ 0 ]; break;
+                case 'Hblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetHblur.texture[ 0 ]; break;
+                case 'Vblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetVblur.texture[ 0 ]; break;
+                case 'gamma': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[ 0 ]; break;
+            }
+        } );
 
         console.error = errorFunc;
     }
@@ -316,8 +334,10 @@ class Player {
 
     render() {
 
+        
         // Render model
         
+        this.updateUniforms();
         this.enableShadowmaps();
         this.applyLayer( this.quad, 0 );
         this.applyLayer( this.model, 1 );
@@ -353,7 +373,7 @@ class Player {
 
         let irradianceMap = this.renderTargetLights.texture[ 0 ];
         let l = 0;
-        while(l<4)
+        while( l < 1 )
         {
 
             for(let i = 0, pv = 0; i < V.length; i++) {
@@ -364,42 +384,52 @@ class Player {
                 this.blurStep( 'h', width, irradianceMap );
                 
                 irradianceMap = this.renderTargetHblur.texture[ 0 ];
-                
+
                 this.blurStep( 'v', width, irradianceMap );
-                
+
                 irradianceMap = this.renderTargetVblur.texture[ 0 ];
-                
+
                 this.accumulateStep( irradianceMap, RGB[ i ], THREE.OneMinusSrcAlphaFactor );
+
+                irradianceMap = this.renderTargetAcc.texture[ 0 ];
             }
-        l++;
+
+            l++;
         }
 
         this.accumulateStep( this.renderTargetLights.texture[ 0 ], Vector3One, THREE.SrcAlphaFactor );
         this.accumulateStep( this.renderTargetLights.texture[ 1 ], Vector3One, THREE.OneFactor);
 
         // Final FX
+
         this.renderer.autoClear = true;
         this.useQuadMaterial( this.gammaMaterial );
         this.setRenderTarget( this.renderTargetGamma );
         this.renderer.render( this.scene, this.postCamera );
         
-        //Apply antialiasing
-        this.useQuadMaterial( this.fxaaPass );
-        this.toScreen()
+        // Apply antialiasing
+
+        this.useQuadMaterial( this.fxaaMaterial );
+        this.toScreen();
         this.renderer.render( this.scene, this.postCamera );
     }
 
     blurStep( type, width, map ) {
-        this.useQuadMaterial( type === 'h' ? this.hBlurMaterial : this.vBlurMaterial );
-        this.quad.material.uniforms.width.value = width;
-        if( map ) this.quad.material.uniforms.irradianceMap.value = map;
+        let material = type === 'h' ? this.hBlurMaterial : this.vBlurMaterial;
+        this.useQuadMaterial( material );
+        material.uniforms.width.value = width;
+        if( map ) material.uniforms.irradianceMap.value = map;
         this.setRenderTarget( type === 'h' ? this.renderTargetHblur : this.renderTargetVblur );
         this.renderer.render( this.scene, this.postCamera );
     }
 
     accumulateStep( colorMap, weight, blendDst ) {
 
-        this.accMaterial.blendDst = blendDst;
+        if( blendDst ) 
+            this.accMaterial.blendDst = blendDst;
+        else
+            this.accMaterial.blending = THREE.NoBlending;
+
         this.useQuadMaterial( this.accMaterial );
         this.quad.material.uniforms.colorMap.value = colorMap;
         this.quad.material.uniforms.weight.value = weight;
@@ -477,8 +507,8 @@ class Player {
                 transmitanceLut: { value: this.loadTexture( './data/textures/transmitance_lut.png' , {
                     wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping
                 })},
-                specularIntensity: { type: 'number', value: 0.5 },
-                ambientIntensity: { type: 'number', value: 0.5 },
+                specularIntensity: { type: 'number', value: 15 },
+                ambientIntensity: { type: 'number', value: 0.15 },
                 shadowShrinking: { type: 'number', value: 0.1 },
                 translucencyScale: { type: 'number', value: 0.43 },
                 ambientLightColor:  {type: 'vec3', value: Vector3One },
@@ -497,7 +527,7 @@ class Player {
             uniforms: {
                 irradianceMap: { value: this.renderTargetLights.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
-                sssLevel: { value: 200 },
+                sssLevel: { value: 1 },
                 correction: { value: 800 },
                 maxdd: { value: 0.001 },
                 invPixelSize: { value: [1 / this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
@@ -516,7 +546,7 @@ class Player {
             uniforms: {
                 irradianceMap: { value: this.renderTargetHblur.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
-                sssLevel: { value: 200 },
+                sssLevel: { value: 1 },
                 correction: { value: 800 },
                 maxdd: { value: 0.001 },
                 invPixelSize: { value: [1 / this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
@@ -535,7 +565,6 @@ class Player {
             uniforms: {
                 colorMap: { value: this.renderTargetLights.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
-                normalMap: { value: this.renderTargetDef.texture[ 2 ] },
                 weight: { value: Vector3One },
             },
             depthTest: false,
@@ -553,13 +582,23 @@ class Player {
             glslVersion: THREE.GLSL3
         });
 
-        FXAAShader.uniforms[ 'resolution' ].value.x = 1 / ( window.innerWidth * this.renderer.getPixelRatio());
-		FXAAShader.uniforms[ 'resolution' ].value.y = 1 / ( window.innerHeight* this.renderer.getPixelRatio() );
-        FXAAShader.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[0];
+        FXAAShader.uniforms[ 'resolution' ].value = new THREE.Vector2(
+            1 / ( window.innerWidth * this.renderer.getPixelRatio() ),
+            1 / ( window.innerHeight* this.renderer.getPixelRatio() )
+        );
+        FXAAShader.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[ 0 ];
         FXAAShader.depthTest = false;
         FXAAShader.blending = THREE.NoBlending;
-        this.fxaaPass = new THREE.ShaderMaterial( FXAAShader );
+        this.fxaaMaterial = new THREE.ShaderMaterial( FXAAShader );
         
+    }
+
+    updateUniforms() {
+
+        // Deferred
+
+        this.deferredLightingMaterial.uniforms['cameraNear'].value = this.camera.near;
+        this.deferredLightingMaterial.uniforms['cameraFar'].value = this.camera.far;
     }
 
     async updateMaterials() {
