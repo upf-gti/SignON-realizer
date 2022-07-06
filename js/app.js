@@ -33,6 +33,7 @@ const RGB = [
 ];
 
 let SM = null;
+let defaultSSSLevel = 0.8;
 
 class Player {
 
@@ -67,6 +68,8 @@ class Player {
             this.model.position.set(0, -8, 0);
             this.model.scale.set(8, 8, 8);
             this.model.castShadow = true;
+            
+            this.directionalLight.target = this.model;
             this.spotLight.target = this.model;
             
             this.model.traverse( object => {
@@ -120,32 +123,20 @@ class Player {
 
         let dirLight = new THREE.DirectionalLight( 0xffffff, 1.2 );
         dirLight.name = 'Directional';
-        dirLight.position.set( -8, 6, 3);
+        dirLight.position.set( -10, 6, -5);
         dirLight.castShadow = true;
         dirLight.shadow.radius = 3.5;
         dirLight.shadow.camera.near = 1;
         dirLight.shadow.camera.far = 1000;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.left = - 15;
-        dirLight.shadow.camera.top	= 15;
-        dirLight.shadow.camera.bottom = - 15;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.left = - 20;
+        dirLight.shadow.camera.top	= 20;
+        dirLight.shadow.camera.bottom = - 20;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.bias = -0.001;
         this.directionalLight = dirLight;
         this.scene.add( dirLight );
-
-        let pointLight = new THREE.PointLight( 0xee44dd, 0.8 );
-        pointLight.name = 'Point';
-        pointLight.position.set( 8, 2.5, 8);
-        pointLight.castShadow = true;
-        pointLight.shadow.mapSize.width = 2048;
-        pointLight.shadow.mapSize.height = 2048;
-        pointLight.shadow.camera.near = 1;
-        pointLight.shadow.camera.far = 100;
-        pointLight.shadow.radius = 3.5;
-        this.pointLight = pointLight;
-        // this.scene.add( this.pointLight );
 
         let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
         spotLight.name = 'Spot';
@@ -158,13 +149,12 @@ class Player {
         spotLight.shadow.camera.near = 1;
         spotLight.shadow.camera.far = 200;
         this.spotLight = spotLight;
-        // this.scene.add( this.spotLight );
+        this.scene.add( this.spotLight );
 
         // To render shadowmap helpers in screen
 
         this.shadowMapViewers = [
             new ShadowMapViewer( this.directionalLight ),
-            // new ShadowMapViewer( this.pointLight ),
             // new ShadowMapViewer( this.spotLight ),
         ];
         this.resizeShadowMapViewers();
@@ -228,6 +218,25 @@ class Player {
         console.error = () => {};
 
         gui.add( this, 'debugShadowmaps' );
+
+        let tOutput = {
+            'FXAA Input': 'gamma',
+            'sssLevel': defaultSSSLevel
+        };
+
+        gui.add( tOutput, 'FXAA Input', [ 'lights', 'Hblur', 'Vblur', 'gamma' ] ).onChange( v => {
+            switch(v) {
+                case 'lights': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetLights.texture[ 0 ]; break;
+                case 'Hblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetHblur.texture[ 0 ]; break;
+                case 'Vblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetVblur.texture[ 0 ]; break;
+                case 'gamma': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[ 0 ]; break;
+            }
+        } );
+
+        gui.add( tOutput, 'sssLevel', 0, 5, 0.01).name( 'SSS Level' ).onChange( v => {
+            this.hBlurMaterial.uniforms[ 'sssLevel' ].value = v;
+            this.vBlurMaterial.uniforms[ 'sssLevel' ].value = v;
+        } );
 
         function CreateObjectUI( folder, object, isUniform ) {
             for( const p in object ) {
@@ -297,28 +306,10 @@ class Player {
         CreateObjectUI( spotLight.addFolder( 'Shadow' ), this.spotLight.shadow );
         CreateObjectUI( spotLight.addFolder( 'Camera' ), this.spotLight.shadow.camera );
 
-        const pointLight = gui.addFolder( 'PointLight' )
-        CreateObjectUI( pointLight, this.pointLight ).close();
-        CreateObjectUI( pointLight.addFolder( 'Shadow' ), this.pointLight.shadow );
-        CreateObjectUI( pointLight.addFolder( 'Camera' ), this.pointLight.shadow.camera );
-
         CreateObjectUI( gui.addFolder( 'Deferred Material' ), this.deferredLightingMaterial ).close();
         CreateObjectUI( gui.addFolder( 'HBlur Material' ), this.hBlurMaterial ).close();
         CreateObjectUI( gui.addFolder( 'VBlur Material' ), this.vBlurMaterial ).close();
         CreateObjectUI( gui.addFolder( 'Acc Material' ), this.accMaterial ).close();
-        
-        let tOutput = {
-            'FXAA Input': 'gamma',
-        }
-
-        gui.add( tOutput, 'FXAA Input', [ 'lights', 'Hblur', 'Vblur', 'gamma' ] ).onChange( v => {
-            switch(v) {
-                case 'lights': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetLights.texture[ 0 ]; break;
-                case 'Hblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetHblur.texture[ 0 ]; break;
-                case 'Vblur': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetVblur.texture[ 0 ]; break;
-                case 'gamma': this.fxaaMaterial.uniforms[ 'tDiffuse' ].value = this.renderTargetGamma.texture[ 0 ]; break;
-            }
-        } );
 
         console.error = errorFunc;
     }
@@ -372,32 +363,21 @@ class Player {
         this.renderer.autoClear = false;
 
         let irradianceMap = this.renderTargetLights.texture[ 0 ];
-        let l = 0;
-        while( l < 1 )
-        {
-
-            for(let i = 0, pv = 0; i < V.length; i++) {
+        
+        for(let i = 0, pv = 0; i < V.length; i++) {
                 
-                var width = Math.sqrt( V[i] - pv );
-                pv = V[ i ];
-                
-                this.blurStep( 'h', width, irradianceMap );
-                
-                irradianceMap = this.renderTargetHblur.texture[ 0 ];
+            var width = Math.sqrt( V[i] - pv );
+            pv = V[ i ];
 
-                this.blurStep( 'v', width, irradianceMap );
+            this.blurStep( 'h', width, irradianceMap );
+            
+            this.blurStep( 'v', width, this.renderTargetHblur.texture[ 0 ] );
 
-                irradianceMap = this.renderTargetVblur.texture[ 0 ];
+            this.accumulateStep( this.renderTargetVblur.texture[ 0 ], RGB[ i ], THREE.OneMinusDstAlphaFactor, (i == 0) );
 
-                this.accumulateStep( irradianceMap, RGB[ i ], THREE.OneMinusSrcAlphaFactor );
-
-                irradianceMap = this.renderTargetAcc.texture[ 0 ];
-            }
-
-            l++;
+            irradianceMap = this.renderTargetVblur.texture[ 0 ];
         }
 
-        this.accumulateStep( this.renderTargetLights.texture[ 0 ], Vector3One, THREE.SrcAlphaFactor );
         this.accumulateStep( this.renderTargetLights.texture[ 1 ], Vector3One, THREE.OneFactor);
 
         // Final FX
@@ -423,9 +403,9 @@ class Player {
         this.renderer.render( this.scene, this.postCamera );
     }
 
-    accumulateStep( colorMap, weight, blendDst ) {
+    accumulateStep( colorMap, weight, blendDst, clear ) {
 
-        if( blendDst ) 
+        if( blendDst !== undefined ) 
             this.accMaterial.blendDst = blendDst;
         else
             this.accMaterial.blending = THREE.NoBlending;
@@ -434,6 +414,7 @@ class Player {
         this.quad.material.uniforms.colorMap.value = colorMap;
         this.quad.material.uniforms.weight.value = weight;
         this.setRenderTarget( this.renderTargetAcc );
+        if(clear) this.renderer.clearColor();
         this.renderer.render( this.scene, this.postCamera );
     }
 
@@ -507,8 +488,8 @@ class Player {
                 transmitanceLut: { value: this.loadTexture( './data/textures/transmitance_lut.png' , {
                     wrapS: THREE.ClampToEdgeWrapping, wrapT: THREE.ClampToEdgeWrapping
                 })},
-                specularIntensity: { type: 'number', value: 15 },
-                ambientIntensity: { type: 'number', value: 0.15 },
+                specularIntensity: { type: 'number', value: 5 },
+                ambientIntensity: { type: 'number', value: 0.1 },
                 shadowShrinking: { type: 'number', value: 0.1 },
                 translucencyScale: { type: 'number', value: 0.43 },
                 ambientLightColor:  {type: 'vec3', value: Vector3One },
@@ -527,8 +508,8 @@ class Player {
             uniforms: {
                 irradianceMap: { value: this.renderTargetLights.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
-                sssLevel: { value: 1 },
-                correction: { value: 800 },
+                sssLevel: { value: defaultSSSLevel },
+                correction: { value: 1000 },
                 maxdd: { value: 0.001 },
                 invPixelSize: { value: [1 / this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
                 width: { value: 0.0 },
@@ -546,7 +527,7 @@ class Player {
             uniforms: {
                 irradianceMap: { value: this.renderTargetHblur.texture[ 0 ] },
                 depthMap: { value: this.renderTargetLights.texture[ 2 ] },
-                sssLevel: { value: 1 },
+                sssLevel: { value: defaultSSSLevel },
                 correction: { value: 800 },
                 maxdd: { value: 0.001 },
                 invPixelSize: { value: [1 / this.renderTargetLights.texture[ 0 ].image.width, 1 / this.renderTargetLights.texture[ 0 ].image.height] },
@@ -569,7 +550,7 @@ class Player {
             },
             depthTest: false,
             blending: THREE.CustomBlending,
-            blendSrc: THREE.OneFactor,
+            blendSrc: THREE.OneMinusSrcAlphaFactor,
             glslVersion: THREE.GLSL3
         });
 

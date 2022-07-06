@@ -23,7 +23,7 @@ const DisplayUI = {
 
     // SSS
     'shadowShrinking' : { min: 0, max: 10, step: 0.1 },
-    'sssLevel' : { min: 0, max: 50, step: 0.1 },
+    'sssLevel' : { min: 0, max: 5, step: 0.01 },
     'correction' : { min: 0, max: 1200, step: 50 },
     'maxdd' : { min: 0, max: 0.01, step: 0.001 },
 
@@ -40,6 +40,7 @@ const DisplayUI = {
         },
 
         'blendSrc': { 
+            ZeroFactor: 200,
             OneFactor: 201,
             SrcColorFactor: 202,
             OneMinusSrcColorFactor: 203,
@@ -53,6 +54,7 @@ const DisplayUI = {
         },
 
         'blendDst': { 
+            ZeroFactor: 200,
             OneFactor: 201,
             SrcColorFactor: 202,
             OneMinusSrcColorFactor: 203,

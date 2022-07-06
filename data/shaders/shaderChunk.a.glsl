@@ -515,9 +515,6 @@
                     vec4 directionalShadowWorldPosition = vec4(position, 1.0) + vec4( shadowShrinking * dNormals * directionalLightShadows[ 0 ].shadowNormalBias, 0.0 );
                     vec4 directionalShadowCoord = directionalShadowMatrix[ 0 ] * directionalShadowWorldPosition;
                     directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
-
-                    #import transmitance
-
                 #endif
                 RE_Direct( directLight, geometry, material, reflectedLight );
             }
@@ -536,11 +533,6 @@
                 #pragma unroll_loop_end
             #endif
         #endif
-
-        // vec3 directDiffuse;
-        // vec3 directSpecular;
-        // vec3 indirectDiffuse;
-        // vec3 indirectSpecular;
 
         vec3 diffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
         vec3 specular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
@@ -569,15 +561,6 @@
     uniform sampler2D irradianceMap;
     uniform sampler2D depthMap;
 
-    uniform float cameraNear;
-    uniform float cameraFar;
-    
-    float readDepth( sampler2D depthSampler, vec2 coord ) {
-        float fragCoordZ = texture2D( depthSampler, coord ).x;
-        float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
-        return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
-    }
-
     void main() {
 
         // Gaussian weights for the six samples around the current pixel
@@ -586,22 +569,23 @@
         w[0] = w[6] = 0.006; w[1] = w[5] = 0.061; w[2] = w[4] = 0.242;
         w[3] = 0.382;
 
-        float wW[6];
-        wW[0] = wW[5] = 0.006; wW[1] = wW[4] = 0.061; wW[2] = wW[3] = 0.242;
-
-        // Fetch color and linear depth
+        vec4 irradiance = texture2D( irradianceMap, vUv );
+        float mask = irradiance.a;
         vec4 colorM = vec4(0.0);
-        float depthM = readDepth( depthMap, vUv );
+
+        vec4 depthBuffer = texture2D( depthMap, vUv );
+        float depthM = depthBuffer.r;
+        float sss = depthBuffer.g * sssLevel;
         
-        if(depthM >= 0.0 && depthM <= 1.0) {
+        if(mask == 1.0 && depthM >= 0.0 && depthM <= 1.0) {
 
             float iSx = depthM + correction * min(abs(dFdx(depthM)), maxdd);
-            float sX = sssLevel / iSx;
+            float sX = sss / iSx;
             vec2 finalWidth = sX * width * invPixelSize * vec2(1.0, 0.0);
             vec2 offset = vUv - finalWidth;
 
             // Accumulate samples
-            for(int i = 0; i < 6; i++) {
+            for(int i = 0; i < 7; i++) {
                 vec3 tap = texture2D( irradianceMap, offset ).rgb;
                 colorM.rgb += w[ i ] * tap;
                 offset += finalWidth / 3.0;
@@ -609,7 +593,7 @@
 
         }
 
-        pc_fragDataH = colorM;
+        pc_fragDataH = vec4( mask == 1.0 ? colorM.rgb : irradiance.rgb, mask );
     }
 
 \verticalBlur
@@ -629,15 +613,6 @@
     uniform sampler2D irradianceMap;
     uniform sampler2D depthMap;
 
-    uniform float cameraNear;
-    uniform float cameraFar;
-    
-    float readDepth( sampler2D depthSampler, vec2 coord ) {
-        float fragCoordZ = texture2D( depthSampler, coord ).x;
-        float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
-        return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
-    }
-
     void main() {
 
         // Gaussian weights for the six samples around the current pixel
@@ -646,27 +621,30 @@
         w[0] = w[6] = 0.006; w[1] = w[5] = 0.061; w[2] = w[4] = 0.242;
         w[3] = 0.382;
 
-        // Fetch color and linear depth
-        vec4 color = vec4(0.0);
-        float depthValue = readDepth( depthMap, vUv );
+        vec4 irradiance = texture2D( irradianceMap, vUv );
+        float mask = irradiance.a;
+        vec4 colorM = vec4(0.0);
 
-        if(depthValue >= 0.0 && depthValue <= 1.0) {
+        vec4 depthBuffer = texture2D( depthMap, vUv );
+        float depthM = depthBuffer.r;
+        float sss = depthBuffer.g * sssLevel;
+
+        if(mask == 1.0 && depthM >= 0.0 && depthM <= 1.0) {
             
-            float iSy = depthValue + correction * min(abs(dFdy(depthValue)), maxdd);
-            float sY = sssLevel / iSy;
+            float iSy = depthM + correction * min(abs(dFdy(depthM)), maxdd);
+            float sY = sss / iSy;
             vec2 finalWidth = sY * width * invPixelSize * vec2(0.0, 1.0);
             vec2 offset = vUv - finalWidth;
             
             // Accumulate samples
             for(int i = 0; i < 7; i++) {
                 vec3 tap = texture2D( irradianceMap, offset ).rgb;
-                color.rgb += w[ i ] * tap;
+                colorM.rgb += w[ i ] * tap;
                 offset += finalWidth / 3.0;
             }
-
         }
 
-        pc_fragDataV = vec4( color.rgb, 1.0 );
+        pc_fragDataV = vec4( mask == 1.0 ? colorM.rgb : irradiance.rgb, mask );
     }
 
 \accumulativeStep
@@ -685,7 +663,7 @@
         vec4 color = texture2D( colorMap, vUv );
         float depth = texture2D( depthMap, vUv ).x;
         float mask = depth >= 1.0 ? 1.0 : 0.0;
-        pc_finalColor = vec4( color.rgb * weight, mask );
+        pc_finalColor = vec4( color.rgb * weight, 0.0 );
     }
 
 \gammaCorrection
@@ -697,5 +675,5 @@
     
     void main() {
         vec4 tex = texture2D( colorMap, vUv );
-        pc_Color = LinearTosRGB( tex );
+        pc_Color = vec4( LinearTosRGB( tex ).rgb, 0.0);
     }
