@@ -9,8 +9,8 @@ const DisplayUI = {
     'specularIntensity' : { min: 1, max: 100, step: 1 },
     
     // Shadows
-    'bias' : { min: -0.01, max: 0.01, step: 0.0001 },
-    'normalBias' : { min: -0.01, max: 0.01, step: 0.0001 },
+    'bias' : { min: -0.001, max: 0.001, step: 0.00001 },
+    'normalBias' : { min: -0.01, max: 0.1, step: 0.001 },
     'radius' : { min: 0, max: 15, step: 0.1 },
     
     // Cameras
@@ -20,6 +20,12 @@ const DisplayUI = {
     'far' : { min: 10, max: 1000, step: 1 },
     'cameraNear' : { min: 0.1, max: 10, step: 0.1 },
     'cameraFar' : { min: 10, max: 1000, step: 1 },
+
+    // Orthografic:
+    'left' : { min: -100, max: 100, step: 1 },
+    'right' : { min: -100, max: 100, step: 1 },
+    'top' : { min: -100, max: 100, step: 1 },
+    'bottom' : { min: -100, max: 100, step: 1 },
 
     // SSS
     'shadowShrinking' : { min: 0, max: 10, step: 0.1 },
@@ -83,7 +89,8 @@ const DisplayUI = {
         'defaultAttributeValues',
         'blurSamples',
         'uuid',
-        'fog'
+        'fog',
+        'up'
     ],
 
     Off( v ) {

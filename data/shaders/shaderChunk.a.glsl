@@ -309,6 +309,7 @@
     uniform sampler2D map;
     uniform sampler2D specularMap;
     uniform sampler2D normalMap;
+    uniform sampler2D aoMap;
     uniform sampler2D alphaMap;
     uniform sampler2D sssMap;
     
@@ -324,6 +325,7 @@
         float alpha = diffuse.a;
 
         float specularValue = texture2D( specularMap, vUv ).r;
+        float aoValue = 1.0;
 
         vec3 normalMapColor = texture2D( normalMap, vUv ).rgb;
         vec3 N = normalize( vWorldNormal );
@@ -338,14 +340,19 @@
             }
         #endif
 
-        pc_fragColor0 = vec4(diffuse.rgb, alpha);
-        pc_fragColor1 = vec4(vWorldPosition, sss);
-
         float maskValue = 0.0;
 
         #ifdef IS_BODY
             maskValue = 10.0; // It has to be greater than 1..
+            aoValue = texture2D( aoMap, vUv ).r;
         #endif
+
+        #ifdef USE_AO
+            aoValue = texture2D( aoMap, vUv ).r;
+        #endif
+
+        pc_fragColor0 = vec4(diffuse.rgb * aoValue, alpha);
+        pc_fragColor1 = vec4(vWorldPosition, sss);
 
         #ifndef SKIP_NORMALS
             pc_fragColor2 = vec4(N * 0.5 + vec3(0.5), maskValue + specularValue);
@@ -394,6 +401,8 @@
     uniform float cameraFar;
     uniform vec3  cameraEye;
 
+    uniform mat4 viewProjectionInverse;
+
     #if NUM_DIR_LIGHT_SHADOWS > 0
         uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
     #endif
@@ -410,15 +419,8 @@
         return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
     }
 
-    // Can be precomputed
-    vec3 T(float s) {
+    vec3 T( float s ) {
         return texture2D(transmitanceLut, vec2(s, 0.0)).rgb;
-        // return vec3(0.233, 0.455, 0.649) * exp(-s*s/0.0064) +
-        // vec3(0.1, 0.336, 0.344) * exp(-s*s/0.0484) +
-        // vec3(0.118, 0.198, 0.0) * exp(-s*s/0.187) +
-        // vec3(0.113, 0.007, 0.007) * exp(-s*s/0.567) +
-        // vec3(0.358, 0.004, 0.0) * exp(-s*s/1.99) +
-        // vec3(0.078, 0.0, 0.0) * exp(-s*s/7.41);
     }
 
     float expFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
@@ -426,13 +428,107 @@
     float ExpFunc(float f) { return f*f*f*(f*(f*6.0-15.0)+10.0); }
     vec4 GammaToLinear( vec4 value ) { return vec4( pow(value.rgb, vec3(2.2)), value.a ); }    
     vec4 LinearToGamma( vec4 value ) { return vec4( pow(value.rgb, vec3(1.0/2.2)), value.a ); }    
+
+	// Convert screen coordinates to normalized device coordinates (NDC)
+    vec3 computeWorldPosition( float depth ) {
+		float normalizedDepth = depth * 2.0 - 1.0;
+		vec2 pos2D = vUv * 2.0 - vec2( 1.0 );
+		vec4 pos = vec4( pos2D, normalizedDepth, 1.0 );
+		pos = viewProjectionInverse * pos;
+		return pos.xyz / pos.w;
+    }
+
+    float _getShadow( sampler2D shadowMap, vec2 shadowMapSize, float shadowBias, float shadowRadius, vec4 shadowCoord ) {
+		float shadow = 1.0;
+		shadowCoord.xyz /= shadowCoord.w;
+		shadowCoord.z += shadowBias;
+		// if ( something && something ) breaks ATI OpenGL shader compiler
+		// if ( all( something, something ) ) using this instead
+		bvec4 inFrustumVec = bvec4 ( shadowCoord.x >= 0.0, shadowCoord.x <= 1.0, shadowCoord.y >= 0.0, shadowCoord.y <= 1.0 );
+		bool inFrustum = all( inFrustumVec );
+		bvec2 frustumTestVec = bvec2( inFrustum, shadowCoord.z <= 1.0 );
+		bool frustumTest = all( frustumTestVec );
+		if ( frustumTest ) {
+		#if defined( SHADOWMAP_TYPE_PCF )
+			vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
+			float dx0 = - texelSize.x * shadowRadius;
+			float dy0 = - texelSize.y * shadowRadius;
+			float dx1 = + texelSize.x * shadowRadius;
+			float dy1 = + texelSize.y * shadowRadius;
+			float dx2 = dx0 / 2.0;
+			float dy2 = dy0 / 2.0;
+			float dx3 = dx1 / 2.0;
+			float dy3 = dy1 / 2.0;
+			shadow = (
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx0, dy0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( 0.0, dy0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx1, dy0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx2, dy2 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( 0.0, dy2 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx3, dy2 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx0, 0.0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx2, 0.0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy, shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx3, 0.0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx1, 0.0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx2, dy3 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( 0.0, dy3 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx3, dy3 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx0, dy1 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( 0.0, dy1 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, shadowCoord.xy + vec2( dx1, dy1 ), shadowCoord.z )
+			) * ( 1.0 / 17.0 );
+		#elif defined( SHADOWMAP_TYPE_PCF_SOFT )
+			vec2 texelSize = vec2( 1.0 ) / shadowMapSize;
+			float dx = texelSize.x;
+			float dy = texelSize.y;
+			vec2 uv = shadowCoord.xy;
+			vec2 f = fract( uv * shadowMapSize + 0.5 );
+			uv -= f * texelSize;
+			shadow = (
+				texture2DCompare( shadowMap, uv, shadowCoord.z ) +
+				texture2DCompare( shadowMap, uv + vec2( dx, 0.0 ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, uv + vec2( 0.0, dy ), shadowCoord.z ) +
+				texture2DCompare( shadowMap, uv + texelSize, shadowCoord.z ) +
+				mix( texture2DCompare( shadowMap, uv + vec2( -dx, 0.0 ), shadowCoord.z ), 
+					 texture2DCompare( shadowMap, uv + vec2( 2.0 * dx, 0.0 ), shadowCoord.z ),
+					 f.x ) +
+				mix( texture2DCompare( shadowMap, uv + vec2( -dx, dy ), shadowCoord.z ), 
+					 texture2DCompare( shadowMap, uv + vec2( 2.0 * dx, dy ), shadowCoord.z ),
+					 f.x ) +
+				mix( texture2DCompare( shadowMap, uv + vec2( 0.0, -dy ), shadowCoord.z ), 
+					 texture2DCompare( shadowMap, uv + vec2( 0.0, 2.0 * dy ), shadowCoord.z ),
+					 f.y ) +
+				mix( texture2DCompare( shadowMap, uv + vec2( dx, -dy ), shadowCoord.z ), 
+					 texture2DCompare( shadowMap, uv + vec2( dx, 2.0 * dy ), shadowCoord.z ),
+					 f.y ) +
+				mix( mix( texture2DCompare( shadowMap, uv + vec2( -dx, -dy ), shadowCoord.z ), 
+						  texture2DCompare( shadowMap, uv + vec2( 2.0 * dx, -dy ), shadowCoord.z ),
+						  f.x ),
+					 mix( texture2DCompare( shadowMap, uv + vec2( -dx, 2.0 * dy ), shadowCoord.z ), 
+						  texture2DCompare( shadowMap, uv + vec2( 2.0 * dx, 2.0 * dy ), shadowCoord.z ),
+						  f.x ),
+					 f.y )
+			) * ( 1.0 / 9.0 );
+		#elif defined( SHADOWMAP_TYPE_VSM )
+			shadow = VSMShadow( shadowMap, shadowCoord.xy, shadowCoord.z );
+		#else // no percentage-closer filtering:
+			shadow = texture2DCompare( shadowMap, shadowCoord.xy, shadowCoord.z );
+		#endif
+		}
+		return shadow;
+	}
+
     void main() {
         
+        float depth = unpackRGBAToDepth(  texture2D( depthMap, vUv) );
+        float linearDepth = readDepth( depthMap, vUv );
+
         vec4 colorBuffer = texture( map, vUv );
         vec3 albedo = colorBuffer.rgb;
         
         vec4 positionBuffer = texture( positionMap, vUv );
-        vec3 position = positionBuffer.rgb;
+        vec3 position = positionBuffer.xyz;
         float sss = positionBuffer.a;
         
         vec4 normalBuffer = texture( normalMap, vUv );
@@ -443,9 +539,6 @@
         vec4 dNormalsMap = texture( detailedNormalMap, vUv );
         vec3 dNormals = normalize(dNormalsMap.xyz * 2.0 - 1.0);
         float alpha = 1.0 - dNormalsMap.a;
-        
-        float depth = texture( depthMap, vUv ).r;
-        float linearDepth = readDepth( depthMap, vUv );
 
         vec3 transmitance = vec3(0.0);
 
@@ -474,8 +567,8 @@
                 getPointLightInfo( pointLight, geometry, directLight );
                 #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_POINT_LIGHT_SHADOWS )
                     pointLightShadow = pointLightShadows[ i ];
-                    vec4 pointShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * pointLightShadows[ 0 ].shadowNormalBias, 0.0 );
-                    vec4 pointShadowCoord = pointShadowMatrix[ 0 ] * pointShadowWorldPosition;
+                    vec4 pointShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * pointLightShadows[ i ].shadowNormalBias, 0.0 );
+                    vec4 pointShadowCoord = pointShadowMatrix[ i ] * pointShadowWorldPosition;
                     directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getPointShadow( pointShadowMap[ i ], pointLightShadow.shadowMapSize, pointLightShadow.shadowBias, pointLightShadow.shadowRadius, pointShadowCoord, pointLightShadow.shadowCameraNear, pointLightShadow.shadowCameraFar ) : 1.0;
                 #endif
                 RE_Direct( directLight, geometry, material, reflectedLight );
@@ -493,8 +586,8 @@
                 getSpotLightInfo( spotLight, geometry, directLight );
                 #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_SPOT_LIGHT_SHADOWS )
                     spotLightShadow = spotLightShadows[ i ];
-                    vec4 spotShadowWorldPosition = vec4(position, 1.0) + vec4( dNormals * spotLightShadows[ 0 ].shadowNormalBias, 0.0 );
-                    vec4 spotShadowCoord = spotShadowMatrix[ 0 ] * spotShadowWorldPosition;
+                    vec4 spotShadowWorldPosition = vec4( position, 1.0 ) + vec4( dNormals * spotLightShadows[ i ].shadowNormalBias, 0.0 );
+                    vec4 spotShadowCoord = spotShadowMatrix[ i ] * spotShadowWorldPosition;
                     directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( spotShadowMap[ i ], spotLightShadow.shadowMapSize, spotLightShadow.shadowBias, spotLightShadow.shadowRadius, spotShadowCoord ) : 1.0;
                 #endif
                 RE_Direct( directLight, geometry, material, reflectedLight );
@@ -505,6 +598,8 @@
             DirectionalLight directionalLight;
             #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
             DirectionalLightShadow directionalLightShadow;
+            vec4 directionalShadowWorldPosition;
+            vec4 directionalShadowCoord;
             #endif
             #pragma unroll_loop_start
             for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
@@ -512,8 +607,8 @@
                 getDirectionalLightInfo( directionalLight, geometry, directLight );
                 #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
                     directionalLightShadow = directionalLightShadows[ i ];
-                    vec4 directionalShadowWorldPosition = vec4(position, 1.0) + vec4( shadowShrinking * dNormals * directionalLightShadows[ 0 ].shadowNormalBias, 0.0 );
-                    vec4 directionalShadowCoord = directionalShadowMatrix[ 0 ] * directionalShadowWorldPosition;
+                    directionalShadowWorldPosition = vec4( position, 1.0 ) + vec4( normal * directionalLightShadows[ i ].shadowNormalBias, 0.0 );
+                    directionalShadowCoord = directionalShadowMatrix[ i ] * directionalShadowWorldPosition;
                     directLight.color *= all( bvec2( directLight.visible, receiveShadow ) ) ? getShadow( directionalShadowMap[ i ], directionalLightShadow.shadowMapSize, directionalLightShadow.shadowBias, directionalLightShadow.shadowRadius, directionalShadowCoord ) : 1.0;
                 #endif
                 RE_Direct( directLight, geometry, material, reflectedLight );
@@ -538,7 +633,7 @@
         vec3 specular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
         diffuse += albedo * ambientIntensity;
 
-        pc_fragLight = vec4( diffuse, mask );
+        pc_fragLight = vec4( diffuse.rgb, mask );
         pc_fragTransmitance = vec4( specular, 1.0 );
         pc_fragDepth = vec4( linearDepth, sss, 1.0, 1.0 );
     }
@@ -586,7 +681,7 @@
 
             // Accumulate samples
             for(int i = 0; i < 7; i++) {
-                vec3 tap = texture2D( irradianceMap, offset ).rgb;
+                vec3 tap = textureLod( irradianceMap, offset, 0.0 ).rgb;
                 colorM.rgb += w[ i ] * tap;
                 offset += finalWidth / 3.0;
             }
@@ -638,7 +733,7 @@
             
             // Accumulate samples
             for(int i = 0; i < 7; i++) {
-                vec3 tap = texture2D( irradianceMap, offset ).rgb;
+                vec3 tap = textureLod( irradianceMap, offset, 0.0 ).rgb;
                 colorM.rgb += w[ i ] * tap;
                 offset += finalWidth / 3.0;
             }
@@ -676,4 +771,24 @@
     void main() {
         vec4 tex = texture2D( colorMap, vUv );
         pc_Color = vec4( LinearTosRGB( tex ).rgb, 0.0);
+    }
+
+\gBufferCubeFrag
+
+    #include <envmap_common_pars_fragment>
+
+    layout(location = 1) out highp vec4 pc_fragColor1;
+    layout(location = 2) out highp vec4 pc_fragColor2;
+    layout(location = 3) out highp vec4 pc_fragColor3;
+
+    uniform float opacity;
+    varying vec3 vWorldDirection;
+    #include <cube_uv_reflection_fragment>
+    void main() {
+        vec3 vReflect = vWorldDirection;
+        #include <envmap_fragment>
+        pc_fragColor = envColor;
+        pc_fragColor.a *= opacity;
+        #include <tonemapping_fragment>
+        pc_fragColor = linearToOutputTexel( pc_fragColor );
     }

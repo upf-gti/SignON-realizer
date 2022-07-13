@@ -5,6 +5,7 @@ import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.16/+esm';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { ShadowMapViewer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/utils/ShadowMapViewer.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { DisplayUI } from './ui.js'
 import { ShaderManager } from './shaderManager.js'
 import { FXAAShader } from './libs/FXAAShader.js'
@@ -17,10 +18,15 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 const TextureChunk = {
     
     get( matWType ) {
-        return "data/textures/" + this[ matWType ];
+        return this[ matWType ] ? "data/textures/" + this[ matWType ] : null;
     },
 
-    'Hairmat.004@opacity': 'Woman_Hair_Opacity.png'
+    'Hairmat.004@opacity': 'Woman_Hair_Opacity.png',
+    'Hairmat.004@ao': 'Woman_Hair_AmbientOcclusion.png',
+    'Bodymat.002@ao': 'Woman_Body_AmbientOcclusion.png',
+    'Topmat@ao': 'Woman_Top_AmbientOcclusion.png',
+    'Bottommat@ao': 'Woman_Bottom_AmbientOcclusion.png',
+    'Shoesmat@ao': 'Woman_Shoes_AmbientOcclusion.png',
 }
 
 const Vector3One = new THREE.Vector3( 1.0, 1.0, 1.0 );
@@ -33,7 +39,7 @@ const RGB = [
 ];
 
 let SM = null;
-let defaultSSSLevel = 0.8;
+let defaultSSSLevel = 0.4;
 
 class Player {
 
@@ -53,11 +59,11 @@ class Player {
     
     async init() {
 
+        await SM.loadFromFile( "shaderChunk.a.glsl" );
+
         this.initScene();
         this.initLights();
         this.initMisc();
-
-        await SM.loadFromFile( "shaderChunk.a.glsl" );
 
         // Load the model
 
@@ -67,9 +73,9 @@ class Player {
             this.model.rotateOnAxis( new THREE.Vector3(1, 0, 0), -Math.PI / 2 );
             this.model.position.set(0, -8, 0);
             this.model.scale.set(8, 8, 8);
-            this.model.castShadow = true;
             
             this.directionalLight.target = this.model;
+            this.directionalLight2.target = this.model;
             this.spotLight.target = this.model;
             
             this.model.traverse( object => {
@@ -121,22 +127,41 @@ class Player {
 
         // Scene lights
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 1.2 );
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.9 );
         dirLight.name = 'Directional';
-        dirLight.position.set( -10, 6, -5);
+        dirLight.position.set( -23, 18, 30);
         dirLight.castShadow = true;
-        dirLight.shadow.radius = 3.5;
+        dirLight.shadow.radius = 0.85;
         dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 1000;
+        dirLight.shadow.camera.far = 500;
         dirLight.shadow.camera.right = 20;
         dirLight.shadow.camera.left = - 20;
         dirLight.shadow.camera.top	= 20;
         dirLight.shadow.camera.bottom = - 20;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.bias = -0.001;
+        dirLight.shadow.mapSize.width = 4096;
+        dirLight.shadow.mapSize.height = 4096;
+        dirLight.shadow.bias = 0.00001;
+        dirLight.shadow.normalBias = 0.01;
         this.directionalLight = dirLight;
         this.scene.add( dirLight );
+
+        let dirLight2 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+        dirLight2.name = 'Directional 2';
+        dirLight2.position.set( 5.5, 5, 16);
+        dirLight2.castShadow = true;
+        dirLight2.shadow.radius = 0.85;
+        dirLight2.shadow.camera.near = 1;
+        dirLight2.shadow.camera.far = 500;
+        dirLight2.shadow.camera.right = 20;
+        dirLight2.shadow.camera.left = - 20;
+        dirLight2.shadow.camera.top	= 20;
+        dirLight2.shadow.camera.bottom = - 20;
+        dirLight2.shadow.mapSize.width = 4096;
+        dirLight2.shadow.mapSize.height = 4096;
+        dirLight2.shadow.bias = 0.00001;
+        dirLight2.shadow.normalBias = 0.01;
+        this.directionalLight2 = dirLight2;
+        this.scene.add( dirLight2 );
 
         let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
         spotLight.name = 'Spot';
@@ -149,12 +174,13 @@ class Player {
         spotLight.shadow.camera.near = 1;
         spotLight.shadow.camera.far = 200;
         this.spotLight = spotLight;
-        this.scene.add( this.spotLight );
+        // this.scene.add( this.spotLight );
 
         // To render shadowmap helpers in screen
 
         this.shadowMapViewers = [
             new ShadowMapViewer( this.directionalLight ),
+            new ShadowMapViewer( this.directionalLight2 ),
             // new ShadowMapViewer( this.spotLight ),
         ];
         this.resizeShadowMapViewers();
@@ -174,8 +200,11 @@ class Player {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
         this.renderer.setClearColor( new THREE.Color( 0x222222 ) ) ;
         this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMap.type = THREE.PCFShadowMap;
+		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+        this.pmremGenerator = new THREE.PMREMGenerator( this.renderer );
+		this.pmremGenerator.compileEquirectangularShader();
 
         this.enableShadowmaps = () => { this.renderer.shadowMap.enabled = true; }
         this.disableShadowmaps = () => { this.renderer.shadowMap.enabled = false; }
@@ -203,6 +232,52 @@ class Player {
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 50;
         this.controls.target.set(0.0, 2.6, 0);
+
+        // Environment
+
+        // new RGBELoader().setPath( 'data/hdrs/' ).load( 'cafe.hdr', t => {
+
+        //     this.cubeRenderTarget = this.pmremGenerator.fromEquirectangular( t );
+        //     this.scene.background = this.cubeRenderTarget.texture;
+
+        //     t.dispose();
+
+        //     this.boxMesh = new THREE.Mesh(
+        //         new THREE.BoxGeometry( 5, 5, 5 ),
+        //         new THREE.ShaderMaterial( {
+        //             name: 'GbufferBackgroundCubeMaterial',
+        //             uniforms: THREE.UniformsUtils.merge( [
+        //                 THREE.UniformsUtils.clone( THREE.ShaderLib.cube.uniforms ),
+        //                 {
+        //                     envMap: { value: this.cubeRenderTarget.texture },
+        //                 }
+        //             ] ),
+        //             vertexShader: THREE.ShaderLib.cube.vertexShader,
+        //             fragmentShader: SM.get( 'gBufferCubeFrag' ),
+        //             side: THREE.BackSide,
+        //             depthTest: false,
+        //             depthWrite: false,
+        //             fog: false
+        //         } )
+        //     );
+
+        //     Object.defineProperty( this.boxMesh.material, 'envMap', {
+
+        //         get: function () {
+        //             return this.uniforms.envMap.value;
+        //         }
+
+        //     } );
+    
+        //     this.boxMesh.geometry.deleteAttribute( 'normal' );
+        //     this.boxMesh.geometry.deleteAttribute( 'uv' );
+    
+        //     this.boxMesh.onBeforeRender = function ( renderer, scene, camera ) {
+        //         this.matrixWorld.copyPosition( camera.matrixWorld );
+        //     };
+    
+        //     this.scene.add( this.boxMesh );
+        // } );
 
         // Deferred targets
 
@@ -251,6 +326,7 @@ class Player {
                     || value.constructor === THREE.Vector4 ) continue;
 
                 let dataObject = isUniform ? object[ p ] : object;
+                if( !dataObject._ui_tmp ) dataObject._ui_tmp = {}; 
 
                 const r = DisplayUI[ p ];
                 if( r ) {
@@ -282,9 +358,23 @@ class Player {
                         continue;
                     case THREE.Euler:
                     case THREE.Vector3:
-                        // folder.add( dataObject, p+"x").name('X').onChange( v => { dataObject[ p ].set( v, dataObject[ p ].y, dataObject[ p ].z ); } );
-                        // folder.add( dataObject, p+"y").name('Y').onChange( v => { dataObject[ p ].set( dataObject[ p ].x, v, dataObject[ p ].z ); } );
-                        // folder.add( dataObject, p+"z").name('Z').onChange( v => { dataObject[ p ].set( dataObject[ p ].x, dataObject[ p ].z, v ); } );
+
+                        if( isUniform ) continue;
+
+                        if( !dataObject._ui_tmp[ p ] ) {
+                            dataObject._ui_tmp[ p ] = {
+                                x:  dataObject[ p ].x,
+                                y:  dataObject[ p ].y,
+                                z:  dataObject[ p ].z,
+                                f: folder.addFolder( p )
+                            };
+                        }
+                        
+                        const dataFolder = dataObject._ui_tmp[ p ].f;
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'x' ).onChange( v => { dataObject[ p ].set( v, dataObject[ p ].y, dataObject[ p ].z ); } );
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'y' ).onChange( v => { dataObject[ p ].set( dataObject[ p ].x, v, dataObject[ p ].z ); } );
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'z' ).onChange( v => { dataObject[ p ].set( dataObject[ p ].x, dataObject[ p ].z, v ); } );
+                        dataFolder.close();
                         continue;
                 }
 
@@ -301,10 +391,12 @@ class Player {
         CreateObjectUI( directionalLight.addFolder( 'Shadow' ), this.directionalLight.shadow );
         CreateObjectUI( directionalLight.addFolder( 'Camera' ), this.directionalLight.shadow.camera );
 
-        const spotLight = gui.addFolder( 'SpotLight' )
-        CreateObjectUI( spotLight, this.spotLight ).close();
-        CreateObjectUI( spotLight.addFolder( 'Shadow' ), this.spotLight.shadow );
-        CreateObjectUI( spotLight.addFolder( 'Camera' ), this.spotLight.shadow.camera );
+        CreateObjectUI( gui.addFolder( 'DirectionalLight2' ), this.directionalLight2 ).close();
+
+        // const spotLight = gui.addFolder( 'SpotLight' )
+        // CreateObjectUI( spotLight, this.spotLight ).close();
+        // CreateObjectUI( spotLight.addFolder( 'Shadow' ), this.spotLight.shadow );
+        // CreateObjectUI( spotLight.addFolder( 'Camera' ), this.spotLight.shadow.camera );
 
         CreateObjectUI( gui.addFolder( 'Deferred Material' ), this.deferredLightingMaterial ).close();
         CreateObjectUI( gui.addFolder( 'HBlur Material' ), this.hBlurMaterial ).close();
@@ -331,17 +423,19 @@ class Player {
         this.updateUniforms();
         this.enableShadowmaps();
         this.applyLayer( this.quad, 0 );
+        // this.applyLayer( this.boxMesh, 1 );
         this.applyLayer( this.model, 1 );
-
+        
         this.renderer.setRenderTarget( this.renderTargetDef );
         this.renderer.render( this.scene, this.camera );
-        
+
         // Render screen quad
 
         this.disableShadowmaps();
         this.applyLayer( this.quad, 1 );
         this.applyLayer( this.model, 0 );
-
+        // this.applyLayer( this.boxMesh, 0 );
+        
         // Apply lighting
 
         this.useQuadMaterial( this.deferredLightingMaterial );
@@ -432,7 +526,8 @@ class Player {
             map:  { type: 't', value: bodyMaterial.map },
             normalMap:  { type: "t", value: bodyMaterial.normalMap },
             specularMap:  { type: "t", value: this.loadTexture( './data/textures/Woman_Body_Specular.png' ) },
-            sssMap:  { value: this.loadTexture( './data/textures/woman_body_sss.png' ) },
+            aoMap:  { type: "t", value: this.loadTexture( './data/textures/Woman_Body_AmbientOcclusion.png' ) },
+            sssMap:  { value: this.loadTexture( './data/textures/Woman_Body_SSS.png' ) },
             uvTransform: { type: "matrix4", value: bodyMaterial.map.matrix }
         } );
 
@@ -475,6 +570,8 @@ class Player {
             }
         }
 
+        let inverseViewProjection = new THREE.Matrix4();
+
         this.deferredLightingMaterial = new THREE.ShaderMaterial( {
             name: 'deferredLighting',
             vertexShader: SM.get( 'quadVert' ),
@@ -490,12 +587,13 @@ class Player {
                 })},
                 specularIntensity: { type: 'number', value: 5 },
                 ambientIntensity: { type: 'number', value: 0.1 },
-                shadowShrinking: { type: 'number', value: 0.1 },
+                shadowShrinking: { type: 'number', value: 0.0 },
                 translucencyScale: { type: 'number', value: 0.43 },
                 ambientLightColor:  {type: 'vec3', value: Vector3One },
                 cameraNear: { value : this.camera.near },
                 cameraFar: { value : this.camera.far },
-                cameraEye: { value : this.camera.position }
+                cameraEye: { value : this.camera.position },
+                viewProjectionInverse: { value: inverseViewProjection.multiplyMatrices( this.camera.matrixWorldInverse, this.camera.projectionMatrix ).invert() }
             } ),
             depthTest: false,
             lights: true,
@@ -722,7 +820,10 @@ class Player {
 
         // Create THREE Shader Material from original GLB material
 
+        console.log( mat.name );
+
         const materialConfig = {
+            name: mat.name,
             uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
                 map:  { type: 't', value: mat.map },
                 normalMap:  { type: "t", value: mat.normalMap },
@@ -744,6 +845,13 @@ class Player {
             // const textureName = TextureChunk.get( mat.name + "@opacity" );
             // materialConfig.uniforms[ "alphaMap" ] = { type: 't', value: this.loadTexture( textureName ) };
             // materialConfig.defines[ 'ALPHA_TEST' ] = 1;
+        }
+
+        // Add ao map
+        const textureName = TextureChunk.get( mat.name + "@ao" );
+        if( textureName ) {
+            materialConfig.uniforms[ "aoMap" ] = { type: 't', value: this.loadTexture( textureName ) };
+            materialConfig.defines[ 'USE_AO' ] = 1;
         }
 
         return new THREE.ShaderMaterial( materialConfig );
