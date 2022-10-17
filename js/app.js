@@ -3,7 +3,7 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
-import { GUI } from '../libs/lil-gui.module.min.js'
+import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 
 let firstframe = true;
 
@@ -26,10 +26,6 @@ class App {
         this.controls = null;
         this.spotLight = null;
 
-        this.capturer = null;
-        this.recorded = true; // set to true if you don't want to create a video (webm)
-        this.recording = false;
-
         this.mixer = null;
         this.skeletonHelper = null;
         this.boneContainer = null;
@@ -50,83 +46,29 @@ class App {
         this.eyelashes = null;
     }
     createPanel() {
-        let gui = new GUI();
-        let button = {add: () =>{ 
-            // send the facial actions to do
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "faceLexeme",
-                        start: 0.1,
-                        attackPeak: 0.6,
-                        relax: 1.5,
-                        end: 1.8,
-                        amount: 0.7,
-                        lexeme: "RAISE_BROWS"
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 1.9,
-                        ready: 2.1,
-                        relax: 3.1,
-                        end: 3.4,
-                        amount: 0.5,
-                        lexeme: 'LOWER_BROWS'
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 1,
-                        attackPeak: 1.4,
-                        relax: 2.1,
-                        end: 2.5,
-                        amount: 0.5,
-                        lexeme: "LIP_STRECHER"
-                    },
-                    {
-                        type: "speech",
-                        start: 5,
-                        end: 6,
-                        text: "thanks",
-                        textToLipInfo : { text: "thanks", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    },
-                    {
-                        type: "gaze",
-                        start: 0.5,
-                        end: 5,
-                        influence: "HEAD",
-                        target: "DOWN",
-                        offsetDirection: "CAMERA",
-                        offsetAngle: 0.5,
-                        shift: false
-                    },
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-         }};
-        gui.add(button, 'add');
+        let that = this;
 
-        let blink = {blink: () =>{ 
-            // send the facial actions to do
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "blink",
-                        start: 0,
-                        ready: 0.5,
-                        relax: 0.8,
-                        end: 1
-                    }
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-         }};
-        gui.add(blink, 'blink');
+        let gui = new GUI();
+
+		let folder = gui.addFolder( 'Animations' );
+        let folderAnims = {
+			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
+			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
+			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); }
+		};
+        folder.add(folderAnims, 'ngtThanks').name('NGT Thanks')
+        folder.add(folderAnims, 'vgtThanks').name('VGT Thanks')
+        folder.add(folderAnims, 'islThanks').name('ISL Thanks')
+    
+        folder = gui.addFolder( 'NMFs' );
+        let folderNMFs = {
+            blink: false,
+        }
+        folder.add(folderNMFs, 'blink').name('Blink')
     }
 
     init() {
-        //this.createPanel();
+        this.createPanel();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
@@ -167,9 +109,7 @@ class App {
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        let W = 540, H = 960;
-        let AR = this.recorded ? window.innerWidth/window.innerHeight : W/H;
-        this.camera = new THREE.PerspectiveCamera(60, AR, 0.01, 1000);
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set(0.0, 3.4, 8);
         this.controls.minDistance = 0.1;
@@ -196,11 +136,11 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, -8.0, 0);
+            this.model.position.set(0, 0.75, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
             
@@ -228,7 +168,7 @@ class App {
             this.model.headTarget = this.headTarget;
             this.model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'BodyMesh' );
+            this.body = this.model.getObjectByName( 'Body' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
             
             this.ECAcontroller = new CharacterController({character: this.model});
@@ -237,14 +177,9 @@ class App {
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
 
-            glb.animations.forEach(( clip ) => {
-                if (clip.name == "BSL - Communicate via App") {
-                    this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
-                }
-            });
-
-            this.loadBVH('./data/anim/VGT Thanks.bvh');
+            this.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh');
             
+            this.animate();
             $('#loading').fadeOut(); //hide();
         } );
         
@@ -259,24 +194,20 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        // if (firstframe) {
-        //     this.clock.start();
-        //     firstframe = false;
-        //     requestAnimationFrame( this.animate.bind(this) );
-        //     return;
-        // }
-
-        if (delta > 0.1) {
-            this.clock.stop();
-            this.clock.start();
-            return;
-        } else if (firstframe) {
-            this.clock.stop();
+        if (firstframe) {
             this.clock.start();
             firstframe = false;
         }
 
-        //console.log("a: " + delta + ", b: " + et);
+        if (delta > 0.02) {
+            this.clock.stop();
+            this.clock.start();
+            return;
+        }
+
+        if (et == 0) {
+            et = 0.001;
+        }
 
         if (this.mixer) {
             this.mixer.update(delta);
@@ -306,87 +237,16 @@ class App {
 
         this.loaderBVH.load( filename , (result) => {
             
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "faceLexeme",
-                        start: 0.1,
-                        attackPeak: 0.3,
-                        relax: 4.1,
-                        end: 4.4,
-                        amount: 0.6,
-                        lexeme: 'RAISE_BROWS'
-                    },
-                    {
-                        type: "speech",
-                        start: 0.1,
-                        end: 0.4 ,
-                        text: "mit",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 0.5,
-                        end: 1.0,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 0.5,
-                        end: 1.0,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                    {
-                        type: "speech",
-                        start: 1.0,
-                        end: 2.0,
-                        text: "aaaa",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 2.0,
-                        end: 2.6,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 2.0,
-                        end: 2.6,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 2.6,
-                        end: 3.0,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 3.0,
-                        end: 3.4,
-                        text: "aaaa",
-                        speed: 5
-                    },
-                    {
-                        type: "speech",
-                        start: 3.4,
-                        end: 4.4,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
+            for (let i = 0; i < result.clip.tracks.length; i++) {
+                result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+            }
 
-            this.animate();
-            
+            this.mixer.stopAllAction();
+            this.mixer._actions.length = 0;
+
+            let anim = this.mixer.clipAction( result.clip );
+            anim.setEffectiveWeight( 1.0 ).play();
+            this.mixer.update(0);
         } );
     }
 }

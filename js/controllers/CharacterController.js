@@ -1,5 +1,4 @@
 //@ECA controller
-import { Lipsync } from '../bml/BehaviourRealizer.js';
 import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
