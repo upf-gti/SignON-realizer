@@ -56,15 +56,6 @@ class App {
             let msg = {
                 type: "behaviours",
                 data: [
-                    // {
-                    //     type: "gaze",
-                    //     start: 0,
-                    //     ready: 0.2,
-                    //     relax: 3.3,
-                    //     end: 3.5,
-                    //     influence: "EYES",
-                    //     target: "CAMERA"
-                    // },
                     {
                         type: "faceLexeme",
                         start: 0.1,
@@ -134,126 +125,6 @@ class App {
         gui.add(blink, 'blink');
     }
 
-    drawBlocks( BehaviorManager , time) {
-
-        // Stacks (should concide with BMLManager.BMLStacks order)
-        var stacks = ["blink", "gaze", "face", "head", "headDir",
-                    "speech", "lg"]; //gesture, poiting
-
-        // Colors
-        var colors = ["(0,255,0,", "(255,132,0,", "(0,0,255,",
-                    "(255,255,0, 0.5)", "(255,0,0,0.5)", "(0,255,255,",
-                    "(0,133,0,", "(255,0,255,","(255,63,0,",
-                    "(255, 255, 127"];
-
-        // Time scale
-        var timescale = 20;
-
-        let canvas = document.getElementById("blocks");
-        // Viewport
-        let gl = canvas.getContext("2d");
-
-        canvas.width = canvas.parentElement.clientWidth;//canvas.width;
-        var w = canvas.width 
-        var h = canvas.height =  250;// canvas.height;
-        
-    	// ---------------- BML REALIZER----------------------------------
-        // Blocks
-        var blockStack = null;
-        var bmlStacks = null;
-        if (BehaviorManager){
-            blockStack = BehaviorManager.stack;
-            bmlStacks = BehaviorManager.BMLStacks;
-        }
-        
-        
-        // Base rectangle
-        var psize = 0.3;
-        var r={x:0,y:0,w:w,h:h};
-        gl.fillStyle = "rgba(255,255,255,0.5)";
-        gl.clearRect(r.x,r.y,r.w,r.h);
-        gl.fillRect(r.x,r.y,r.w,r.h);
-        
-        // Row lines
-        var maxTextWidth = 0;
-        var numRows = stacks.length +1;
-        gl.font= 14 * Math.max(h/600, 0.5) + "px Arial"; // Compensated
-        for (var i = 0; i < numRows; i++){
-            // Lines
-            gl.strokeStyle = "rgba(0,0,0,0.3)";
-            var height = i/numRows * (h - r.y) + r.y;
-            gl.beginPath(); gl.moveTo(0, height); gl.lineTo(w, height); gl.stroke();
-            height = (i+1.8)/numRows * (h - r.y) + r.y;
-            gl.fillStyle = "rgba(0,0,0,1)";
-            gl.fillText(stacks[i], 10, height);
-            // Adaptive line
-            var text = toString(stacks[i]);
-            maxTextWidth = Math.max(gl.measureText(text).width, maxTextWidth);
-        }
-        
-        // BMLPLANNER STATE
-        /*if (BehaviorPlanner){
-            gl.font= 10 * Math.max(h/600, 0.5) + "px Arial";
-            gl.fillStyle = "rgba(0,0,0,0.5)";
-            height = (-1+1.8)/numRows * (h - r.y) + r.y;
-            gl.fillText(BehaviorPlanner.state, 40, height);
-        }*/
-        
-        
-        // Column line
-        var firstColW = maxTextWidth * 0.5;
-        gl.beginPath(); gl.moveTo(firstColW, r.y); gl.lineTo(firstColW, h); gl.stroke();
-        
-        // Blocks
-        if (!blockStack)
-            return;
-        if (blockStack.length == 0)
-            return;
-        // Get global timestamp
-
-        // Block rectangle
-        var rr = {x: 0, y:0, w: 0, h: 0};
-        for (var i = 0; i<blockStack.length; i++){
-            var block = blockStack[i];
-            var xB = firstColW + timescale * 10 * (block.startGlobalTime - time);
-            var wB = timescale * 10 * Math.min((block.endGlobalTime - time), block.end);
-            rr.x = Math.max(firstColW,xB);
-            rr.y = r.y;
-            rr.w = wB;
-            rr.h = r.h;
-            gl.strokeStyle = "rgba(0,0,0,0.6)";
-            gl.lineWidth = 4;
-            gl.strokeRect(rr.x,rr.y, rr.w, rr.h);
-            // Add block id on top
-            gl.font= 12 * Math.max(h/600, 0.5) + "px Arial"; // Compensated
-            gl.fillStyle = "rgba(0,0,0,0.5)";
-            gl.fillText(block.id, rr.x, 0.8/numRows * (h - r.y) + r.y);
-        }
-        // BML instruction rectangles
-        for (var i = 0; i < stacks.length; i++){ // bmlStacks.length
-            var bmlStack = bmlStacks[i];
-            // Select color
-            gl.fillStyle = "rgba" + colors[i] + "0.3)";
-            for (var j = 0; j < bmlStack.length; j++){
-            var bmlIns = bmlStack[j];
-            if (bmlIns === undefined){
-                console.log("Error in: ", stacks[i], bmlStack);
-                return;
-            }
-            // Paint rectangle
-            xB = firstColW + timescale * 10 * (bmlIns.startGlobalTime - time);
-            wB = timescale * 10 * Math.min((bmlIns.endGlobalTime - time), bmlIns.end);
-            rr.x = Math.max(firstColW,xB);
-            rr.y = (i+1)/numRows * (h - r.y) + r.y;
-            rr.w = Math.max(wB,0);
-            rr.h = 1/numRows * (h - r.y);
-            gl.fillRect(rr.x, rr.y, rr.w, rr.h);
-            gl.lineWidth = 2;
-            gl.strokeRect(rr.x, rr.y, rr.w, rr.h);
-            }
-        }
-        
-    }
     init() {
         //this.createPanel();
         this.scene = new THREE.Scene();
@@ -305,22 +176,6 @@ class App {
         this.controls.maxDistance = 50;
         this.controls.target.set(0.0, 2.6, 0);
         this.controls.update();
-
-        // creates GIF encoder
-        this.rendererVideo = new THREE.WebGLRenderer( { antialias: true } ); // aux renderer for desired W,H
-        this.rendererVideo.setPixelRatio( window.devicePixelRatio );
-        this.rendererVideo.setSize( W, H );
-        this.rendererVideo.toneMapping = THREE.ACESFilmicToneMapping;
-        this.rendererVideo.toneMappingExposure = 0.7;
-        this.rendererVideo.outputEncoding = THREE.sRGBEncoding;
-        this.rendererVideo.shadowMap.enabled = true;
-        this.capturer = new CCapture( {
-            name: 'signAnimation',
-            format: 'webm',
-            workersPath: './',
-            framerate: 30,
-            quality: 100,
-        } );
 
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
@@ -375,20 +230,9 @@ class App {
 
             this.body = this.model.getObjectByName( 'BodyMesh' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
-
-            let additiveActions = {};
-            const expressions = Object.keys( this.body.morphTargetDictionary );
-            for ( let i = 0; i < expressions.length; i ++ ) {
-                additiveActions[expressions[i]] = {weight: this.body.morphTargetInfluences[i]}
-
-            }
             
             this.ECAcontroller = new CharacterController({character: this.model});
-            var morphTargets = { 
-                'Body': {dictionary: this.body.morphTargetDictionary, weights: this.body.morphTargetInfluences, map: additiveActions},
-                'Eyelashes': {dictionary: this.eyelashes.morphTargetDictionary, weights: this.eyelashes.morphTargetInfluences, map: additiveActions}
-            }
-            this.ECAcontroller.onStart(morphTargets);
+            this.ECAcontroller.start();
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
@@ -427,8 +271,6 @@ class App {
             this.clock.start();
             return;
         } else if (firstframe) {
-            this.capturer.start();
-            this.recording = true;
             this.clock.stop();
             this.clock.start();
             firstframe = false;
@@ -440,10 +282,8 @@ class App {
             this.mixer.update(delta);
         }
 
-        this.ECAcontroller.time = et;
         // Update the animation mixer, the stats panel, and render this frame
-        this.ECAcontroller.facialController.onUpdate(delta, et, this.ECAcontroller.onUpdate.bind(this.ECAcontroller) );
-        //this.ECAcontroller.onUpdate(dt, et);
+        this.ECAcontroller.update(delta, et);
         let BSw = this.ECAcontroller.facialController._morphDeformers;
         this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
         this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
@@ -452,31 +292,6 @@ class App {
         this.spotLight.position.set( x + 10, y + 10, z + 10);
             
         this.renderer.render( this.scene, this.camera );
-
-        // generate video
-        this.rendererVideo.render( this.scene, this.camera ); 
-        if (this.mixer && this.recorded == false) {
-            if (this.mixer._actions.length > 0) {
-                if (this.recording == false) {
-                    
-                    
-                }
-                if (this.recording) {
-                    this.capturer.capture( this.rendererVideo.domElement );
-                } 
-                if (this.mixer._actions[0]._clip.duration - this.mixer._actions[0].time < 0.05) {
-                    this.capturer.stop();
-                    this.capturer.save( function(blob) {
-                        window.open(URL.createObjectURL(blob));
-                        download(blob, 'animationVideo');
-                    } );
-                    console.log('Video recorded succesfully');
-                    this.recorded = true;
-                    this.recording = false;
-                }
-            }
-        }
-        //this.drawBlocks(this.ECAcontroller.BehaviourManager, et)
     }
     
     onWindowResize() {
@@ -490,10 +305,6 @@ class App {
     loadBVH( filename ) {
 
         this.loaderBVH.load( filename , (result) => {
-            // for (let i = 0; i < result.clip.tracks.length; i++) {
-            //     result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
-            // }
-            // this.mixer.clipAction( result.clip ).setEffectiveWeight( 1.0 ).play();
             
             let msg = {
                 type: "behaviours",
@@ -511,7 +322,8 @@ class App {
                         type: "speech",
                         start: 0.1,
                         end: 0.4 ,
-                        textToLipInfo: { text: "mit", speed: 5 }
+                        text: "mit",
+                        speed: 5
                     },
                     {
                         type: "faceLexeme",
@@ -524,13 +336,15 @@ class App {
                         type: "speech",
                         start: 0.5,
                         end: 1.0,
-                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                        text: "mmmmmm",
+                        speed: 5
                     },
                     {
                         type: "speech",
                         start: 1.0,
                         end: 2.0,
-                        textToLipInfo: { text: "aaaa", speed: 5 }
+                        text: "aaaa",
+                        speed: 5
                     },
                     {
                         type: "faceLexeme",
@@ -543,7 +357,8 @@ class App {
                         type: "speech",
                         start: 2.0,
                         end: 2.6,
-                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                        text: "mmmmmm",
+                        speed: 5
                     },
                     {
                         type: "faceLexeme",
@@ -556,113 +371,22 @@ class App {
                         type: "speech",
                         start: 3.0,
                         end: 3.4,
-                        textToLipInfo: { text: "aaaa", speed: 5 }
+                        text: "aaaa",
+                        speed: 5
                     },
                     {
                         type: "speech",
                         start: 3.4,
                         end: 4.4,
-                        textToLipInfo: { text: "mmmmmm", speed: 5 }
+                        text: "mmmmmm",
+                        speed: 5
                     },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 2.6,
-                    //     end: 3.5,
-                    //     amount: 0.4,
-                    //     lexeme: 'RAISE_BROWS'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1.9,
-                    //     end: 2.6,
-                    //     amount: 0.3,
-                    //     lexeme: 'LIP_CORNER_DEPRESSOR'
-                    // },
-                    // {
-                    //     type: "speech",
-                    //     start: 3.0,
-                    //     end: 4.0,
-                    //     textToLipInfo: { text: "comocat", speed: 5 }
-                    // },
-                    // {
-                    //     type: "speech",
-                    //     start: 4.0,
-                    //     end: 5.2,
-                    //     textToLipInfo: { text: "mmmmmm", speed: 5 }
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.7,
-                    //     attackPeak: 1,
-                    //     relax: 1.3,
-                    //     end: 1.5,
-                    //     amount: 0.5,
-                    //     lexeme: 'INNER_BROW_RAISER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1.5,
-                    //     attackPeak: 1.5,
-                    //     relax: 3.9,
-                    //     end: 4.3,
-                    //     amount: 0.3,
-                    //     lexeme: 'BROW_LOWERER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.8,
-                    //     attackPeak: 1,
-                    //     relax: 2.8,
-                    //     end: 3,
-                    //     amount: 0.6,
-                    //     lexeme: 'LIP_CORNER_PULLER'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 0.7,
-                    //     attackPeak: 0.8,
-                    //     relax: 2.8,
-                    //     end: 3,
-                    //     amount: 0.2,
-                    //     lexeme: 'MOUTH_STRETCH'
-                    // },
-                    // {
-                    //     type: "speech",
-                    //     start: 3.1,
-                    //     end: 4.5,
-                    //     textToLipInfo: { text: "combo", speed: 5 }
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 7,
-                    //     attackPeak: 8,
-                    //     relax: 9,
-                    //     end: 10,
-                    //     amount: 2,
-                    //     lexeme: 'LIP_PRESSOR'
-                    // },
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     end: 3,
-                    //     amount: 0.2,
-                    //     lexeme: 'EYES_CLOSED'
-                    // }
-                    // {
-                    //     type: "faceLexeme",
-                    //     start: 1,
-                    //     end: 3,
-                    //     amount: 0.5,
-                    //     lexeme: 'LID_TIGHTENER'
-                    // },
                 ]
             };
             this.ECAcontroller.processMsg(JSON.stringify(msg));
 
             this.animate();
-            // send the facial actions to do
             
-            //this.mixer.update(0);
         } );
     }
 }

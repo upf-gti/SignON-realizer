@@ -37,32 +37,21 @@ function BehaviourManager() {
 BehaviourManager.prototype.update = function (actionCallback, time) {
 
 	// Time now
-	//var d = new Date();
-	this.time = time;// || d.getSeconds() + 0.001*d.getMilliseconds();
+	this.time = time;
 
 	// Several blocks can be active (MERGE composition)
-	for (var i = 0; i < this.stack.length; i++) {
+	for (let i = 0; i < this.stack.length; i++) {
 		// If it is not active
-		if (this.stack[i].isActive === undefined) {
+		if (!this.stack[i].isActive) {
 			// Block starts
 			if (this.stack[i].startGlobalTime <= this.time) {
 				this.stack[i].isActive = true;
-				// Feedback
-				this.progressFeedback(this.stack[i].id, "start", this.time);
 			}
 		}
 		// Check if has ended
-		else if (this.stack[i].isActive) {
+		if ( this.stack[i].isActive ) {
 			if (this.stack[i].endGlobalTime <= this.time) {
 				this.stack[i].isActive = false;
-				// Feedback
-				this.progressFeedback(this.stack[i].id, "end", this.time);
-				// CALLBACK
-				//LS.Globals.ws.send(cmdId + ": true");
-				if (this.stack[i].fromWS) {
-					//LS.Globals.ws.send(this.stack[i].id + ": true"); // HARDCODED
-					console.log("Sending POST response with id:", this.stack[i].id);
-				}
 				// Remove
 				this.removeFromStacks(this.stack[i]);
 				this.stack.splice(i, 1);
@@ -70,15 +59,17 @@ BehaviourManager.prototype.update = function (actionCallback, time) {
 			}
 		}
 	}
+	
 
 	// Check active BML and blocks (from BMLStacks)
-	for (var i = 0; i < this.BMLStacks.length; i++) {
+	for (let i = 0; i < this.BMLStacks.length; i++) {
 		// Select bml instructions stack
-		var stack = this.BMLStacks[i];
-		for (var j = 0; j < stack.length; j++) {
-			var bml = stack[j];
+		let stack = this.BMLStacks[i];
+		for (let j = 0; j < stack.length; j++) {
+			let bml = stack[j];
+
 			// BML is not active
-			if (bml.isActive === undefined) {
+			if ( !bml.isActive ) {
 				// Set BML to active
 				if (bml.startGlobalTime <= this.time) {
 					bml.isActive = true;
@@ -105,42 +96,31 @@ BehaviourManager.prototype.newBlock = function (block, time) {
 	}
 
 	// Time now
-	//var d = new Date();
 	if (time == 0) {
 		time = 0.001;
 	}
 	this.time = time;
 
 	// TODO: require
-
 	// Fix and Sychronize (set missing timings) (should substitute "start:gaze1:end + 1.1" by a number)
 	this.fixBlock(block);
-	// TODO: constraint (synchronize, after, before) and wait
 
 	// Remove blocks with no content
 	if (block.end == 0) {
 		console.error("Refused block.\n", JSON.stringify(block));
-		// Send POST response if the block si coming from websocket
-		if (block.fromWS) {
-			//LS.Globals.ws.send(block.id + ": true"); // HARDCODED
-			console.log("Sending POST response with id:", block.id);
-		}
 		return;
 	}
 
 	// Add to stack
 	this.addToStack(block);
-	// Check timing errors
-	this.check();
-	//console.log("FIXED BLOCK.", JSON.stringify(block), block);
-	//console.log(this.BMLStacks);
+
 }
 
 BehaviourManager.prototype.fixBlock = function (block) {
 	// Define block start (in BML this is not specified, only in bml instructions, not in blocks)
-	block.start = block.start || 0.0;
+	//block.start = block.start || 0.0;
 	// Check if it is a number
-	block.start = this.checkSync(block.start, block);
+	block.start = isNaN(block.start) ? 0 : block.start;
 
 	// Define timings and find sync attributes (defaults in percentage unless start and end)
 	// Blink
@@ -237,344 +217,142 @@ BehaviourManager.prototype.fixBML = function (bml, key, block, sync) {
 	bml.key = key;
 
 	// Define timings
-	var keys = Object.keys(sync);
-
 	// START
-	// Check sync
-	bml.start = this.checkSync(bml.start, block);
-	// Define start
-	bml.start = bml.start || 0.0;
+	bml.start = isNaN(bml.start) ? 0.0 : bml.start;
 	if (bml.start < 0) {
-		console.warn("Negative starts are not permitted. Found in", key);
 		bml.start = 0;
 	}
 	// END
-	// Check sync
-	bml.end = this.checkSync(bml.end, block);
-
-	// If no "end", apply default end attribute
-	if (bml.end === undefined)
-		bml.end = sync.end + bml.start;
-
-	// OTHER SYNC
-	// If start and end are defined, fill other sync points.
-	for (var i = 0; i < keys.length; i++) {
-		// Avoid start and end
-		if (keys[i] == "start" || keys[i] == "end") continue;
-
-		// Check sync (returns the number if it is already defined)
-		if (bml[keys[i]] !== undefined)
-			bml[keys[i]] = this.checkSync(bml[keys[i]], block);
-		// If undefined fill default sync points (represented in portions between 0-1)
-		if (bml[keys[i]] === undefined)
-			bml[keys[i]] = (bml.end - bml.start) * sync[keys[i]] + bml.start;
-	}
-	// TODO Check consistency?
+	bml.end = isNaN(bml.end) ? (bml.start + sync.end) : bml.end;
 
 	return bml;
 }
 
-BehaviourManager.prototype.checkSync = function (syncAttr, block, it) {
-
-	// Check if undefined
-	if (syncAttr === undefined || syncAttr !== syncAttr || syncAttr === null) {
-		console.warn("Sync attr undefined or NaN.", syncAttr, it);
-		return undefined;
-	}
-
-	// Limit recursive iterations
-	if (it === undefined)
-		it = 0;
-	else if (it > 5) {
-		console.error("Six iterations without finding syncAttr.", syncAttr, block, it);
-		return undefined;
-	}
-
-	// Parse number
-	var tNumber = parseFloat(syncAttr);
-
-	// Needs sync
-	if (isNaN(tNumber)) {
-		tNumber = null;
-		// Find sync value
-		var str = syncAttr.replace(/\s+/g, '');
-		str = str.split("+");
-		var ids = str[0].split(":");
-		// Two ids -> look inside block (gaze1:end)
-		if (ids.length == 2)
-			tNumber = this.findTime(ids[0], ids[1], block, it);
-		// Three ids -> look inside block stack (bml1:gaze1:end) and compensate global times
-		else if (ids.length == 3) {
-			for (var i = 0; i < this.stack.length; i++) {
-				if (this.stack[i].id == ids[0]) { // Find block
-					tNumber = this.findTime(ids[1], ids[2], this.stack[i], it);
-					// The number is a reference to another block
-					// This number is not usable until the current block is placed according
-					// to composition. To mark it, the global time stamp is found and set to
-					// negative, in order to fix it later, once the current block is placed.
-					if (!isNaN(tNumber)) {
-						tNumber += parseFloat(this.stack[i].startGlobalTime); // Global timestamp
-						tNumber *= -1; // Negative flag
-					}
-					break;
-				}
-			}
-		}
-
-		// If sync attr not found
-		if (tNumber === null) {
-			console.error("Sync attr not found.", syncAttr, block, it);
-			return tNumber;
-		}
-		// Add offset
-		if (str.length == 2)
-			tNumber += parseFloat(str[1]) || 1 * Math.sign(parseFloat(tNumber)); // This last part is to compensate
-		// the negative flag (ref to other blocks)
-	}
-
-	return tNumber;
-}
-
-BehaviourManager.prototype.findTime = function (id, syncName, block, it) {
-
-	var result = null;
-	// Check all keys
-	var keys = Object.keys(block);
-
-	// Clean spaces
-	id = id.replace(/\s/g, "");
-	syncName = syncName.replace(/\s/g, "");
-
-	for (var i = 0; i < keys.length; i++) {
-		// Array of bmls
-		if (block[keys[i]].constructor === Array) {
-			var arr = block[keys[i]];
-			for (var j = 0; j < arr.length; j++) {
-				if (arr[j].id == id) {
-					result = arr[j][syncName];
-				}
-			}
-		}
-		// bml
-		if (block[keys[i]].id == id) {
-			result = block[keys[i]][syncName];
-			break;
-		}
-	}
-
-	// Check that result is valid
-	if (result == null)
-		console.error("Sync attr " + id + ":" + syncName + " not found. Setting default values.", block);
-	// Sync attr is another sync reference
-	else if (isNaN(result)) {
-		console.log("Synchronization: looking for: ", result);
-		it++;
-		return this.checkSync(result, block, it)
-	}
-	// Sync attr found
-	else
-		return result;
-}
 
 BehaviourManager.prototype.findEndOfBlock = function (block) {
 
-	var keys = Object.keys(block);
-	var latestEnd = 0;
+	let keys = Object.keys(block);
+	let latestEnd = 0;
 
-	for (var i = 0; i < keys.length; i++) {
-		var bml = block[keys[i]];
-		if (bml === null) { }
-		//console.error("Empty bml instruction.", keys[i], block);
-		else if (bml.end !== undefined)
+	for (let i = 0; i < keys.length; i++) {
+		let bml = block[keys[i]];
+		if (bml === null || bml === undefined) { continue; }
+		else if ( !isNaN( bml.end ) ) // bml is just an instruction
 			latestEnd = Math.max(bml.end, latestEnd);
 
-		if (bml.constructor === Array) // several instructions inside class
-			for (var j = 0; j < bml.length; j++) {
-				if (!bml[j]) { }
-				//console.error("Empty bml instruction.", keys[i], block)
-				else if (bml[j].end !== undefined)
+		else if (bml.constructor === Array){ // several instructions inside class
+			for (let j = 0; j < bml.length; j++) {
+				if (bml[j] && !isNaN( bml[j].end ) )
 					latestEnd = Math.max(bml[j].end, latestEnd);
 			}
+		}
 	}
 
 	return latestEnd;
 }
 
 BehaviourManager.prototype.addToStack = function (block) {
+	// block composition defined in bml standard [MERGE, REPLACE, APPEND]. OVERWRITE is not included
 
 	if (Object.prototype.toString.call(block.composition) === '[object String]')
 		block.composition = block.composition.toUpperCase();
 
+	
+	if (this.stack.length == 0) {
+		block.startGlobalTime = this.time + block.start;
+		block.endGlobalTime = this.time + block.end;
+		this.stack.push( block );
+	}
+
 	// OVERWRITE
-	if (block.composition == "OVERWRITE") { // Doens't make sense, only for individual stacks, not whole
+	else if (block.composition == "OVERWRITE") { // Doens't make sense, only for individual stacks, not whole
 		// Substitute in stack
 
 		block.startGlobalTime = this.time + block.start;
 		block.endGlobalTime = this.time + block.end;
 
-		// Add block to stack
-		if (this.stack.length == 0) {
+		let last = this.stack[this.stack.length - 1];
+		if (block.endGlobalTime < last.endGlobalTime) {
+			this.stack[this.stack.length - 1] = block;
+			this.stack.push(last);
+		}
+		else
 			this.stack.push(block);
-		}
-		else {
-			var last = this.stack[this.stack.length - 1];
-			if (block.endGlobalTime < last.endGlobalTime) {
-				this.stack[this.stack.length - 1] = block;
-				this.stack.push(last);
-			}
-			else
-				this.stack.push(block);
-		}
+		
 		// Add to bml stack (called at the end of function)
 	}
 
 	// APPEND
 	else if (block.composition == "APPEND") {
-		// No actions in the stack
-		if (this.stack.length == 0) {
-			block.startGlobalTime = this.time + block.start;
-			block.endGlobalTime = this.time + block.end;
-			this.stack[0] = block;
-		}
-		// Last action in the stack (if start != 0 waiting time?)
-		else {
-			block.startGlobalTime = this.stack[this.stack.length - 1].endGlobalTime + block.start;
-			block.endGlobalTime = block.end + this.stack[this.stack.length - 1].endGlobalTime;
-			this.stack.push(block);
-		}
+		//The start time of the new block will be as soon as possible after the end time of all prior blocks.
+		block.startGlobalTime = this.stack[this.stack.length - 1].endGlobalTime + block.start;
+		block.endGlobalTime = this.stack[this.stack.length - 1].endGlobalTime + block.end;
+		this.stack.push(block);
 	}
 
 	// REPLACE
 	else if (block.composition == "REPLACE") {
-		// No actions in the stack
-		if (this.stack.length == 0) {
-			block.startGlobalTime = this.time + block.start;
-			block.endGlobalTime = this.time + block.end;
-			this.stack[0] = block;
-		}
+		//The start time of the new block will be as soon as possible. The new block will completely replace all prior bml blocks. All behavior specified in earlier blocks will be ended and the ECA will revert to a neutral state before the new block starts.
+
 		// Second action in the stack (if start != 0 waiting time?)
-		else {
-			block.startGlobalTime = this.stack[0].endGlobalTime;
-			block.endGlobalTime = block.startGlobalTime + block.end;
+		block.startGlobalTime = (this.stack[0].isActive) ? this.stack[0].endGlobalTime : this.time;
+		block.endGlobalTime = block.startGlobalTime + block.end;
 
-			// Remove following blocks
-			for (var i = 1; i < this.stack.length; i++)
-				this.removeFromStacks(this.stack[i]);
+		// Remove following blocks
+		for (let i = (this.stack[0].isActive) ? 1: 0; i < this.stack.length; i++)
+			this.removeFromStacks(this.stack[i]);
 
-			this.stack[1] = block;
-		}
+		this.stack.push( block );
 	}
 
 	// MERGE (default)
 	else {
-		// No actions in the stack
-		if (this.stack.length == 0) {
-			block.startGlobalTime = this.time + block.start;
-			block.endGlobalTime = this.time + block.end;
-			this.stack[0] = block;
-		}
-		// Merge and add to BML stacks
-		else { // Try to merge, if not, add "del" variable to bml
-			if (block.blink)		
-				this.processIntoBMLStack(block.blink, this.blinkStack, this.time + block.start, block.composition);
+		// Add to block stack
+		block.startGlobalTime = this.time + block.start;
+		block.endGlobalTime = this.time + block.end;
 
-			if (block.gaze)
-				this.processIntoBMLStack(block.gaze, this.gazeStack, this.time + block.start, block.composition); // This could be managed differently (gazeManager in BMLRealizer.js)
+		this.stack.push(block);
 
-			if (block.gazeShift)
-				this.processIntoBMLStack(block.gazeShift, this.gazeStack, this.time + block.start, block.composition);
-
-			if (block.face)
-				this.processIntoBMLStack(block.face, this.faceStack, this.time + block.start, block.composition);
-
-			if (block.faceLexeme)
-				this.processIntoBMLStack(block.faceLexeme, this.faceStack, this.time + block.start, block.composition);
-
-			if (block.faceFACS)
-				this.processIntoBMLStack(block.faceFACS, this.faceStack, this.time + block.start, block.composition);
-			if (block.faceVA)
-				this.processIntoBMLStack(block.faceVA, this.faceStack, this.time + block.start, block.composition);
-
-			if (block.faceShift)
-				this.processIntoBMLStack(block.faceShift, this.faceStack, this.time + block.start, block.composition);
-
-			if (block.head)
-				this.processIntoBMLStack(block.head, this.headStack, this.time + block.start, block.composition);
-
-			if (block.headDirectionShift)
-				this.processIntoBMLStack(block.headDirectionShift, this.headDirStack, this.time + block.start, block.composition);
-
-			if (block.speech)
-				this.processIntoBMLStack(block.speech, this.speechStack, this.time + block.start, block.composition);
-
-			if (block.posture)
-				this.processIntoBMLStack(block.posture, this.postureStack, this.time + block.start, block.composition);
-
-			if (block.gesture)
-				this.processIntoBMLStack(block.gesture, this.gestureStack, this.time + block.start, block.composition);
-
-			if (block.pointing)
-				this.processIntoBMLStack(block.head, this.pointingStack, this.time + block.start, block.composition);
-
-			if (block.lg)
-				this.processIntoBMLStack(block.lg, this.lgStack, this.time + block.start, block.composition);
-
-			if (block.animation)
-				this.processIntoBMLStack(block.animation, this.animationStack, this.time + block.start, block.composition);
-			//TODO - Send warning feedback
-
-			// Clean block
-			this.cleanBlock(block);
-
-			// Add to block stack
-			block.startGlobalTime = this.time + block.start;
-			block.endGlobalTime = this.time + block.end;
-			/*for (var i = 0; i < this.stack.length; i++){
-				if (this.stack[i].startGlobalTime < block.startGlobalTime){
-					var tmp = this.stack.splice(i+1,this.stack.length-1);
-					this.stack.push(block);
-					this.stack.concat(tmp);
-		  			return;
-				}		
-			}*/
-
-			// Add at the end (the last one should be always the latest)
-			var last = this.stack[this.stack.length - 1];
-			if (block.endGlobalTime < last.endGlobalTime) {
-				this.stack[this.stack.length - 1] = block;
-				this.stack.push(last);
-				return;
+		// bubble sort. Lowest endGlobalTimes should be first, Biggest endGlobalTime should be the last
+		if ( this.stack.length > 1 ){
+			for ( let i = this.stack.length-2; i >= 0; --i ){
+				let prev = this.stack[i];
+				if ( prev.endGlobalTime > block.endGlobalTime ){
+					this.stack[i] = block;
+					this.stack[i+1] = prev;
+				}
+				else{ break; }
 			}
-			this.stack.push(block);
-			return;
-		}
+		}		
 	}
 
 	// Add to stacks
-	this.addToBMLStack(block);
+	this.addToBMLStacks(block);
 }
 
 // Removes all bml instructions from stacks
 BehaviourManager.prototype.removeFromStacks = function (block) {
 
-	var keys = Object.keys(block);
 	// Add delete variable in block to bml instructions
-	for (var i = 0; i < keys.length; i++) { // Through bml instructions
-		var bml = block[keys[i]];
+	let keys = Object.keys(block);
+	for (let i = 0; i < keys.length; i++) { // Through bml instructions
+		let bml = block[keys[i]];
 		if (bml !== null || bml !== undefined) {
-			// Is an array of bml instructions
-			if (bml.constructor === Array)
-				for (var j = 0; j < bml.length; j++)
-					bml[j].del = true;
-
-			if (typeof bml === "object")
+			if (typeof bml === "object"){ // bml is an instruction
 				bml.del = true;
+			}
+			else if (bml.constructor === Array){ // bml is an array of bml instructions
+				for (let j = 0; j < bml.length; j++){
+					bml[j].del = true;
+				}
+			}
+
 		}
 	}
 
-	// Remove from stacks bml with del
-	for (var i = 0; i < this.BMLStacks.length; i++) { // Through list of stacks
-		for (var j = 0; j < this.BMLStacks[i].length; j++) {// Through stack
+	// Remove from each stack all bml with del
+	for (let i = 0; i < this.BMLStacks.length; i++) { // Through list of stacks
+		for (let j = 0; j < this.BMLStacks[i].length; j++) {// Through stack
 			if (this.BMLStacks[i][j].del) { // Find del variable in stack
 				this.BMLStacks[i][j].isActive = undefined; // If reusing object
 				this.BMLStacks[i].splice(j, 1); // Remove from stack
@@ -584,28 +362,10 @@ BehaviourManager.prototype.removeFromStacks = function (block) {
 	}
 }
 
-BehaviourManager.prototype.cleanBlock = function (block) {
-
-	var keys = Object.keys(block);
-	for (var i = 0; i < keys.length; i++) {
-		var bml = block[keys[i]];
-		if (bml !== null || bml !== undefined) {
-			// Is an array of bml instructions
-			if (bml.constructor === Array)
-				for (var j = 0; j < bml.length; j++)
-					if (bml[j].del)
-						delete block[keys[i]];
-
-			if (bml.del)
-				delete block[keys[i]];
-		}
-	}
-}
-
 // Add bml actions to stacks with global timings
-BehaviourManager.prototype.addToBMLStack = function (block) {
+BehaviourManager.prototype.addToBMLStacks = function (block) {
 
-	var globalStart = block.startGlobalTime;
+	let globalStart = block.startGlobalTime;
 
 	// Blink
 	if (block.blink)
@@ -664,32 +424,32 @@ BehaviourManager.prototype.addToBMLStack = function (block) {
 // Add bml action to stack
 BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalStart, composition) {
 
-	// Overwrite
-	var overwrite = composition == "OVERWRITE";
+
 
 	// Several instructions
 	if (bml.constructor === Array) {
-		for (var i = 0; i < bml.length; i++)
+		for (let i = 0; i < bml.length; i++)
 			this.processIntoBMLStack(bml[i], stack, globalStart, composition);
 		return;
 	}
 
-	// Could be called directly? Should always return true
-	let merge = composition=="MERGE" ? true : false;
-	var merged = this.mergeBML(bml,stack,globalStart, overwrite, merge);
+
+	let merged = this.mergeBML(bml,stack,globalStart,  composition);
  	bml.del = !merged;
 
 	// First, we check if the block fits between other blocks, thus all bml instructions
 	// should fit in the stack.
 	if (!merged)
 		console.warn("Could not add to " + bml.key + " stack. \n");// + "BML: ", 
-	//JSON.stringify(bml), "\nSTACK: ", 
-	//JSON.stringify(stack));
+
 }
 
 
-BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrite, merge = false){
-	var merged = false;
+BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, composition){
+	// Overwrite
+
+
+	let merged = false;
 	
 	// Refs to another block (negative global timestamp)
 	if (bml.start < 0)
@@ -705,55 +465,73 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 	if (bml.start < 0) console.error("BML start is negative", bml.start, bml.key, globalStart);
 	if (bml.end < 0) console.error("BML end is negative", bml.end, bml.key, globalStart);
 
+	// Now change all attributes from timestamps to offsets with respect to startGlobalTime
+	
 	// Modify all sync attributes to remove non-zero starts (offsets)
 	// Also fix refs to another block (negative global timestamp)
 	bml.end -= bml.start;
 
-	var tmpStart = bml.start;
-	if (bml.attackPeak)
+	if ( !isNaN(bml.attackPeak) ) 
 		bml.attackPeak = this.mergeBMLSyncFix(bml.attackPeak, bml.start, globalStart);
-	if (bml.ready)
+	if ( !isNaN(bml.ready) )
 		bml.ready = this.mergeBMLSyncFix(bml.ready, bml.start, globalStart);
-	if (bml.strokeStart)
+	if ( !isNaN(bml.strokeStart) )
 		bml.strokeStart = this.mergeBMLSyncFix(bml.strokeStart, bml.start, globalStart);
-	if (bml.stroke)
+	if ( !isNaN(bml.stroke) )
 		bml.stroke = this.mergeBMLSyncFix(bml.stroke, bml.start, globalStart);
-	if (bml.strokeEnd)
+	if ( !isNaN(bml.strokeEnd) )
 		bml.strokeEnd = this.mergeBMLSyncFix(bml.strokeEnd, bml.start, globalStart);
-	if (bml.relax)
+	if ( !isNaN(bml.relax))
 		bml.relax = this.mergeBMLSyncFix(bml.relax, bml.start, globalStart);
 
 	bml.start = 0;
 
+	bml.composition = composition;
+
+
+	let overwrite = composition === "OVERWRITE";
+	let merge = composition === "MERGE";
+
+	if ( !overwrite ) {
+		stack.push( bml );
+		// bubble sort the stack by endGlobalTime. First the lowest 
+		for( let i = stack.length-2; i > 0; --i){
+			if ( stack[i].endGlobalTime > bml.endGlobalTime ){
+				stack[i+1] = stack[i];
+				stack[i] = bml;
+			}
+			else { break; }
+		}
+		return true;
+	}
+
+
+	// OLD CODE
+	// add to bml stack
 	// Empty
 	if (stack.length == 0) {
-		stack[0] = bml;
-		merged = true;
+		stack.push( bml );
+		return true;
 	}
 	else {
 		// Fits between
 		if (stack.length > 1) {
 
 			//append at the end
-			if (bml.startGlobalTime >= stack[stack.length - 1].endGlobalTime)
+			if (bml.startGlobalTime >= stack[stack.length - 1].endGlobalTime){
 				stack.push(bml);
+				merged = true;
+			}
 			// fit on the stack?
-			else
-				for (var i = 0; i<stack.length-1; i++)
-				{
+			else{
+				for (let i = 0; i < stack.length-1; i++){
 					if(merged) break;
 					// Does it fit?
 					if (bml.startGlobalTime >= stack[i].endGlobalTime && bml.endGlobalTime <= stack[i + 1].startGlobalTime || i == 0 && bml.endGlobalTime < stack[i].startGlobalTime) {
-						if (!merged){
-                            tmp = stack.splice(i, stack.length);
-                            stack.push(bml);
-                            for(var j = 0; j < tmp.length; j++)
-                            {
-                                stack.push(tmp[j]);
-                            }
-                            //stack = stack.concat(tmp);
-                            merged = true;
-                        }
+						let tmp = stack.splice(i, stack.length);
+						stack.push(bml);
+						stack = stack.concat(tmp);
+						merged = true;
 					}
 					// If it doesn't fit remove if overwrite
 					else if (overwrite) {
@@ -766,6 +544,7 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 						merged = true;
 					}
 				}
+			}
 		}
 		// End of stack (stack.length == 1)
 		if (!merged || overwrite) {
@@ -795,6 +574,10 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, overwrit
 
 // Fix ref to another block (negative global timestamp) and remove start offset
 BehaviourManager.prototype.mergeBMLSyncFix = function (syncAttr, start, globalStart) {
+	return ( syncAttr > start ) ? ( syncAttr - start ) : 0;
+
+	// ORIGINAL FUNCTION BELOW
+
 	// Ref to another block
 	if (syncAttr < 0) syncAttr = (-syncAttr) - globalStart;
 	// Remove offset
@@ -825,29 +608,12 @@ BehaviourManager.prototype.check = function () {
 
 BehaviourManager.prototype.errorCheck = function (stack) {
 	// Check timings
-	for (var i = 0; i < stack.length - 1; i++) {
+	for (let i = 0; i < stack.length - 1; i++) {
 		if (stack[i].endGlobalTime > stack[i + 1].startGlobalTime) {
 			console.error("Timing error in stack: ", stack);
 			return true;
 		}
 	}
-}
-
-// Provide feedback
-BehaviourManager.prototype.progressFeedback = function (id, sync, time) {
-
-	return;
-
-	// Create the object only once
-	if (!this.pFeedback)
-		this.pFeedback = { blockProgress: {} };
-
-	var fbk = this.pFeedback;
-	fbk.blockProgress.id = id + ":" + sync;
-	fbk.blockProgress.globalTime = time;
-	//fbk.blockProgress.characterId = characterId;
-
-	console.log(JSON.stringify(fbk));
 }
 
 export { BehaviourManager }
