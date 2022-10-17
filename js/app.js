@@ -27,7 +27,7 @@ class App {
         this.spotLight = null;
 
         this.capturer = null;
-        this.recorded = false; // set to true if you don't want to create a video (webm)
+        this.recorded = true; // set to true if you don't want to create a video (webm)
         this.recording = false;
 
         this.mixer = null;
