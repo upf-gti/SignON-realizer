@@ -5,8 +5,6 @@ import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loa
 import { CharacterController } from './controllers/CharacterController.js'
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 
-let firstframe = true;
-
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
@@ -16,7 +14,7 @@ class App {
 
     constructor() {
         
-        this.clock = new THREE.Clock(false);
+        this.clock = new THREE.Clock();
         this.loaderBVH = new BVHLoader();
         this.loaderGLB = new GLTFLoader();
         
@@ -24,7 +22,6 @@ class App {
         this.renderer = null;
         this.camera = null;
         this.controls = null;
-        this.spotLight = null;
 
         this.mixer = null;
         this.skeletonHelper = null;
@@ -37,6 +34,7 @@ class App {
         this.srcBindPose = null;
         this.tgtBindPose = null;
 
+        this.msg = {};
         this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
@@ -49,16 +47,79 @@ class App {
         let that = this;
 
         let gui = new GUI();
+        
+        let params = {
+            colorChroma: 0x141455,
+            colorClothes: 0xFFFFFF,
+        } 
+
+        gui.addColor(params, 'colorChroma').onChange( (e) => {
+            that.scene.getObjectByName("Chroma").material.color.set(e);
+        });
+        gui.addColor(params, 'colorClothes').onChange( (e) => {
+            that.model.getObjectByName("Tops").material.color.set(e);
+        });
 
 		let folder = gui.addFolder( 'Animations' );
+        
         let folderAnims = {
-			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
+            bslThanks() { 
+                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Thank You', () => {
+                    that.msg = {
+                        type: "behaviours",
+                        data: [
+                            {
+                                type: "faceLexeme",
+                                start: 0.5,
+                                end: 4.5,
+                                amount: 0.8,
+                                lexeme: 'LOWER_BROWS'
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 0.3,
+                                attackPeak: 0.8,
+                                relax: 1.5,
+                                end: 2.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_CORNER_PULLER'
+                            },
+                            {
+                                type: "speech",
+                                start: 2.0,
+                                end: 2.6,
+                                text: "zenk iu",
+                                speed: 7/0.6
+                            },
+                            {
+                                type: "speech",
+                                start: 3.0,
+                                end: 4.2,
+                                text: "dhats greit",
+                                speed: 11/1.2
+                            },
+                        ]
+                    };
+                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+                });
+            },
+            bslApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Communicate via App'); },
 			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
-			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); }
+            vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App'); },
+			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); },
+            islApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'ISL - Communicate via App'); },
+			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
+			sleThanks() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'SLE - Thank You'); },
 		};
-        folder.add(folderAnims, 'ngtThanks').name('NGT Thanks')
-        folder.add(folderAnims, 'vgtThanks').name('VGT Thanks')
-        folder.add(folderAnims, 'islThanks').name('ISL Thanks')
+
+        folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
+        folder.add(folderAnims, 'bslApp').name('BSL App')
+        folder.add(folderAnims, 'vgtThanks').name('VGT Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'vgtApp').name('VGT App (w/o NMFs)')
+        folder.add(folderAnims, 'islThanks').name('ISL Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
+        folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
     
         folder = gui.addFolder( 'NMFs' );
         let folderNMFs = {
@@ -68,16 +129,22 @@ class App {
     }
 
     init() {
+        
         this.createPanel();
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
         
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x141414, depthWrite: true } ) );
         ground.position.y = -7; // it is moved because of the mesh scale
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
+
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 50, 50 ), new THREE.MeshPhongMaterial( {color: 0x141455, side: THREE.DoubleSide} ) );
+        backPlane.name = 'Chroma';
+        backPlane.position.z = -7;
+        backPlane.receiveShadow = true;
+        this.scene.add( backPlane );
         
         // lights
         let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
@@ -91,7 +158,6 @@ class App {
         spotLight.shadow.mapSize.width = 1024 * 8;
         spotLight.shadow.mapSize.height = 1024 * 8;
         this.scene.add( spotLight );
-        this.spotLight = spotLight;
 
         let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
         dirLight.position.set( 3, 10, 50 );
@@ -136,7 +202,7 @@ class App {
         this.scene.add(this.neckTarget);
 
         // Load the model
-        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
 
             this.model = glb.scene;
             this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -152,14 +218,19 @@ class App {
                     object.receiveShadow = true;
                     if (object.name == "Eyelashes")
                         object.castShadow = false;
-                    if(object.material.map) object.material.map.anisotropy = 16; 
-                    
+                    if(object.material.map) 
+                        object.material.map.anisotropy = 16;
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
 
-            this.skeletonHelper = new THREE.SkeletonHelper(this.model);
+            // correct "errors" regarding the avatar
+            this.model.getObjectByName("Tops").material.color;
+            this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
+            this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
+
+            this.skeletonHelper = new THREE.SkeletonHelper( this.model );
             this.skeletonHelper.visible = false;
             this.scene.add(this.skeletonHelper);
             this.scene.add(this.model);
@@ -171,14 +242,13 @@ class App {
             this.body = this.model.getObjectByName( 'Body' );
             this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
             
-            this.ECAcontroller = new CharacterController({character: this.model});
+            this.ECAcontroller = new CharacterController( {character: this.model} );
             this.ECAcontroller.start();
 
             // load the actual animation to play
             this.mixer = new THREE.AnimationMixer( this.model );
+            this.mixer.addEventListener('loop', () => this.ECAcontroller.processMsg(JSON.stringify(this.msg)));
 
-            this.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh');
-            
             this.animate();
             $('#loading').fadeOut(); //hide();
         } );
@@ -194,33 +264,14 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        if (firstframe) {
-            this.clock.start();
-            firstframe = false;
-        }
-
-        if (delta > 0.02) {
-            this.clock.stop();
-            this.clock.start();
-            return;
-        }
-
-        if (et == 0) {
-            et = 0.001;
-        }
-
         if (this.mixer) {
             this.mixer.update(delta);
         }
 
-        // Update the animation mixer, the stats panel, and render this frame
         this.ECAcontroller.update(delta, et);
-        let BSw = this.ECAcontroller.facialController._morphDeformers;
-        this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
-        this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
-        
-        let [x, y, z] = [... this.camera.position];
-        this.spotLight.position.set( x + 10, y + 10, z + 10);
+        // let BSw = this.ECAcontroller.facialController._morphDeformers;
+        // this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
+        // this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
             
         this.renderer.render( this.scene, this.camera );
     }
@@ -233,7 +284,7 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    loadBVH( filename ) {
+    loadBVH( filename, callback=null ) {
 
         this.loaderBVH.load( filename , (result) => {
             
@@ -247,6 +298,36 @@ class App {
             let anim = this.mixer.clipAction( result.clip );
             anim.setEffectiveWeight( 1.0 ).play();
             this.mixer.update(0);
+
+            if (callback) {
+                callback();
+            }
+        } );
+    }
+
+    loadGLB( filename, anim, callback=null ) {
+
+        this.loaderGLB.load( filename , (result) => {
+            
+            result.animations.forEach(( clip ) => {
+                if (clip.name == anim) {
+
+                    for (let i = 0; i < clip.tracks.length; i++) {
+                        clip.tracks[i].name = clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+                    }
+
+                    this.mixer.stopAllAction();
+                    this.mixer._actions.length = 0;
+
+                    let anim = this.mixer.clipAction( clip );
+                    anim.setEffectiveWeight( 1.0 ).play();
+                    this.mixer.update(0);
+
+                    if (callback) {
+                        callback();
+                    }
+                }
+            });
         } );
     }
 }
