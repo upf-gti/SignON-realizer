@@ -103,7 +103,88 @@ class App {
                     that.ECAcontroller.processMsg(JSON.stringify(that.msg));
                 });
             },
-            bslApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Communicate via App'); },
+            bslApp() { 
+                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Communicate via App', () => {
+                    that.msg = {
+                        type: "behaviours",
+                        data: [
+                            {
+                                type: "faceLexeme",
+                                start: 0.1,
+                                attackPeak: 0.3,
+                                relax: 4.1,
+                                end: 4.4,
+                                amount: 0.6,
+                                lexeme: 'RAISE_BROWS'
+                            },
+                            {
+                                type: "speech",
+                                start: 0.1,
+                                end: 0.4 ,
+                                text: "mit",
+                                speed: 3/0.3,
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 0.5,
+                                end: 1.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 0.5,
+                                end: 1.0,
+                                text: "mmmmmm",
+                                speed: 6/0.5
+                            },
+                            {
+                                type: "speech",
+                                start: 1.0,
+                                end: 2.0,
+                                text: "aaaa",
+                                speed: 4/1.0
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 2.0,
+                                end: 2.6,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 2.0,
+                                end: 2.6,
+                                text: "mmmmmm",
+                                speed: 6/0.6
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 2.6,
+                                end: 3.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 3.0,
+                                end: 3.4,
+                                text: "aaaa",
+                                speed: 4/0.4
+                            },
+                            {
+                                type: "speech",
+                                start: 3.4,
+                                end: 4.4,
+                                text: "mmmmmm",
+                                speed: 6/1.0
+                            },
+                        ]
+                    };
+                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+                }); 
+            },
 			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
             vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App'); },
 			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); },
