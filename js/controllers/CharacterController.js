@@ -1,4 +1,5 @@
 //@ECA controller
+import { Lipsync } from '../bml/BehaviourRealizer.js';
 import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
@@ -59,6 +60,28 @@ CharacterController.prototype.start = function (o) {
   this.facialController.start(o);
 }
 
+CharacterController.prototype.reset = function () {
+  this.pendingResources.length = 0;
+
+  if ( this.facialController ){ 
+    this.facialController.reset(); }
+
+  if (this.BehaviourPlanner){ 
+    this.BehaviourPlanner.reset(); }
+
+  if (this.BehaviourManager){ 
+    this.BehaviourManager.reset(); }
+
+  if (this.gestureManager){ 
+    this.gestureManager.reset(); }
+
+  if (this.animationManager){ 
+    this.animationManager.reset(); }
+
+  this.endSpeakingTime = -1;
+  this.speaking = false;
+
+}
 
 CharacterController.prototype.update = function (dt, et) {
   let newBlock = null;

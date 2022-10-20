@@ -33,6 +33,23 @@ function BehaviourManager() {
 	this.stack = [];
 }
 
+BehaviourManager.prototype.reset = function (){
+	// reset stacks
+	this.blinkStack.length = 0
+	this.gazeStack.length = 0;
+	this.faceStack.length = 0;
+	this.headStack.length = 0;
+	this.headDirStack.length = 0;
+	this.speechStack.length = 0;
+	this.gestureStack.length = 0;
+	this.pointingStack.length = 0;
+	this.postureStack.length = 0;
+	this.lgStack.length = 0;
+	this.animationStack.length = 0;
+
+	this.stack.length = 0;
+}
+
 // TODO: PROVIDE FEEDBACK AND WARNINGS
 BehaviourManager.prototype.update = function (actionCallback, time) {
 

@@ -167,7 +167,36 @@ FacialController.prototype.start = function(morphTargets)
   
 
 }
+
+
+FacialController.prototype.reset = function () {
+
+  this.resetFace(); // blendshapes to 0
+
+  if( this.textToLip ){ this.textToLip.cleanQueueSentences(); }
+  if( this.lipsyncModule ){ this.lipsyncModule.stop(); }
+
+  this._FacialLexemes.length = 0;
+  this.FA.reset();
+
+  
+  if ( this._Blink ){   this._Blink.transition = false; }
+  this._blinking = false;
+  
+  this.gazeManager.reset();
+  this.headBML.length = 0;
+}
  
+FacialController.prototype.resetFace = function(){
+  for(let part in this._facialBS){
+    for(let i = 0; i<this._facialBS[part].length; i++){
+      this._facialBS[part][i] = 0;
+      this._facialBSAcc[part][i] = 0;
+      this._facialBSFinal[part][i] = 0;
+      this._morphDeformers[part].morphTargetInfluences[i] = 0;
+    }
+  }
+}
 //example of one method called for ever update event
 FacialController.prototype.update = function(dt)
 {
@@ -175,7 +204,7 @@ FacialController.prototype.update = function(dt)
   // Update facial expression
   this.faceUpdate(dt);
 
-  
+  /*
   // Gaze
   if (this.gazeManager){
     let weights = this.gazeManager.update(dt);
@@ -194,28 +223,28 @@ FacialController.prototype.update = function(dt)
     }
   }
 
-  // let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
-  // let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-  // let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-  // this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
-  // this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
+  let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
+  let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
+  let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
+  this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
+  this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
 
-  // this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
-  // this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
+  this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+  this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
 
-  // // HEAD (nod, shake, tilt)
-  // let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
-  // for( let i = 0; i< this.headBML.length; ++i){
-  //   let head = this.headBML[i];
-  //   if( !head.transition ){
-  //     this.headBML.splice(i,1);
-  //     --i;
-  //     continue;
-  //   }
-  //   head.update(dt);
-  //   headQuat.multiply( head.currentStrokeQuat );
-  // }
-
+  // HEAD (nod, shake, tilt)
+  let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
+  for( let i = 0; i< this.headBML.length; ++i){
+    let head = this.headBML[i];
+    if( !head.transition ){
+      this.headBML.splice(i,1);
+      --i;
+      continue;
+    }
+    head.update(dt);
+    headQuat.multiply( head.currentStrokeQuat );
+  }
+*/
 }
 
 // Update facial expressions
@@ -363,17 +392,6 @@ FacialController.prototype.faceUpdate = function(dt){
     let source = this._facialBS[part];
     for( let i = 0; i < target.length; ++i){
       target[i] = source[i];
-    }
-  }
-}
-
-FacialController.prototype.resetFace = function(){
-  for(let part in this._facialBS){
-    for(let i = 0; i<this._facialBS[part].length; i++){
-      this._facialBS[part][i] = 0;
-      this._facialBSAcc[part][i] = 0;
-      this._facialBSFinal[part][i] = 0;
-      this._morphDeformers[part].morphTargetInfluences[i] = 0;
     }
   }
 }

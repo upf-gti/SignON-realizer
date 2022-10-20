@@ -395,8 +395,14 @@ function FacialEmotion( sceneBSW ){
   this.currentVABSW.fill(0);
   this.initialVABSW = this.currentVABSW.slice();
   this.targetVABSW = this.currentVABSW.slice();
+}
 
-
+FacialEmotion.prototype.reset = function () {
+  this.currentVABSW.fill( 0 );
+  this.initialVABSW.fill( 0 );
+  this.targetVABSW.fill( 0 );
+  this.transition = false;
+  this.time = 0; 
 }
 
 FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
@@ -662,6 +668,20 @@ function GazeManager(lookAtNeck, lookAtHead, lookAtEyes, gazePositions = null) {
   this.gazeActions[0] = new Gaze( this.lookAtEyes, this.gazePositions, true);
   this.gazeActions[1] = new Gaze( this.lookAtHead, this.gazePositions, false);
   this.gazeActions[2] = new Gaze( this.lookAtNeck, this.gazePositions, false);
+}
+
+GazeManager.prototype.reset = function ( ){
+  
+  this.lookAtNeck.position.set(0, 2.5, 100);
+  this.lookAtHead.position.set(0, 2.5, 100);
+  this.lookAtEyes.position.set(0, 2.5, 100);
+
+  this.gazeActions[0].transition = false;
+  this.gazeActions[1].transition = false;
+  this.gazeActions[2].transition = false;
+
+  this.gazeActions[0].eyelidsW = 0;
+  this.gazeActions[0].squintW = 0;
 }
 
 // gazeData with influence, sync attr, target, offsets...

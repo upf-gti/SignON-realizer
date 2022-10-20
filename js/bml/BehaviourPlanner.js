@@ -8,7 +8,10 @@ BehaviourPlanner.SPEAKING = 2;
 BehaviourPlanner.LISTENING = 3;
 
 function BehaviourPlanner() {
+  this.reset();
+}
 
+BehaviourPlanner.prototype.reset = function () {
   this.conversation = "--- New dialogue---\n\n";
   this.state = BehaviourPlanner.WAITING;
   

@@ -23,25 +23,18 @@ class App {
         this.camera = null;
         this.controls = null;
 
-        this.mixer = null;
-        this.skeletonHelper = null;
-        this.boneContainer = null;
-
-        this.skeleton = null;
-        this.model = null;
-        this.srcModel = null;
-        this.animSkeleton = null;
-        this.srcBindPose = null;
-        this.tgtBindPose = null;
-
+        
         this.msg = {};
         this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
-
-        this.body = null;
-        this.eyelashes = null;
+        
+        // current model selected
+        this.model = null;
+        this.ECAcontroller = null;
+        this.mixer = null;
+        this.skeletonHelper = null;
     }
     createPanel() {
         let that = this;
@@ -57,7 +50,8 @@ class App {
             that.scene.getObjectByName("Chroma").material.color.set(e);
         });
         gui.addColor(params, 'colorClothes').onChange( (e) => {
-            that.model.getObjectByName("Tops").material.color.set(e);
+            that.model1.getObjectByName("Tops").material.color.set(e);
+            that.model2.getObjectByName("Tops").material.color.set(e);
         });
 
 		let folder = gui.addFolder( 'Animations' );
@@ -100,6 +94,7 @@ class App {
                             },
                         ]
                     };
+                    that.ECAcontroller.reset();
                     that.ECAcontroller.processMsg(JSON.stringify(that.msg));
                 });
             },
@@ -182,15 +177,17 @@ class App {
                             },
                         ]
                     };
+                    that.ECAcontroller.reset();
                     that.ECAcontroller.processMsg(JSON.stringify(that.msg));
                 }); 
             },
 			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
-            vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App'); },
+            vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App', ()=>{ that.mixer.timeScale = 0.7;}); },
 			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); },
-            islApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'ISL - Communicate via App'); },
+            islApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'ISL - Communicate via App', ()=>{ that.mixer.timeScale = 0.5;}); },
 			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
 			sleThanks() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'SLE - Thank You'); },
+
 		};
 
         folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
@@ -201,12 +198,7 @@ class App {
         folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
         folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
         folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
-    
-        folder = gui.addFolder( 'NMFs' );
-        let folderNMFs = {
-            blink: false,
-        }
-        folder.add(folderNMFs, 'blink').name('Blink')
+
     }
 
     init() {
@@ -216,7 +208,6 @@ class App {
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         
         let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x141414, depthWrite: true } ) );
-        ground.position.y = -7; // it is moved because of the mesh scale
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
@@ -258,10 +249,10 @@ class App {
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 3.4, 8);
+        this.controls.object.position.set(0.0, 11.8, 8);
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 50;
-        this.controls.target.set(0.0, 2.6, 0);
+        this.controls.target.set(0.0, 9.4, -10);
         this.controls.update();
 
         // so the screen is not black while loading
@@ -282,16 +273,15 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        // Load the model
-        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
+        function loadModel ( nameString, callback, glb  ){
+            let model = this["model"+nameString] = glb.scene;
 
-            this.model = glb.scene;
-            this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, 0.75, 0);
-            this.model.scale.set(8.0, 8.0, 8.0);
-            this.model.castShadow = true;
+            model = glb.scene;
+            model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+            model.scale.set(8.0, 8.0, 8.0);
+            model.castShadow = true;
             
-            this.model.traverse( (object) => {
+            model.traverse( (object) => {
                 if ( object.isMesh || object.isSkinnedMesh ) {
                     object.material.side = THREE.FrontSide;
                     object.frustumCulled = false;
@@ -306,37 +296,77 @@ class App {
                 }
             } );
 
-            // correct "errors" regarding the avatar
-            this.model.getObjectByName("Tops").material.color;
-            this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
-            this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
 
-            this.skeletonHelper = new THREE.SkeletonHelper( this.model );
-            this.skeletonHelper.visible = false;
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(this.model);
 
-            this.model.eyesTarget = this.eyesTarget;
-            this.model.headTarget = this.headTarget;
-            this.model.neckTarget = this.neckTarget;
+            let skeletonHelper = this[ "skeletonHelper"+nameString ] = new THREE.SkeletonHelper( model );
+            skeletonHelper.visible = false;
+            this.scene.add(skeletonHelper);
+            this.scene.add(model);
 
-            this.body = this.model.getObjectByName( 'Body' );
-            this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
-            
-            this.ECAcontroller = new CharacterController( {character: this.model} );
-            this.ECAcontroller.start();
+            model.eyesTarget = this.eyesTarget;
+            model.headTarget = this.headTarget;
+            model.neckTarget = this.neckTarget;
+
+            let ECAcontroller = this[ "ECAcontroller"+nameString ] = new CharacterController( {character: model} );
+            ECAcontroller.start();
 
             // load the actual animation to play
-            this.mixer = new THREE.AnimationMixer( this.model );
-            this.mixer.addEventListener('loop', () => this.ECAcontroller.processMsg(JSON.stringify(this.msg)));
+            let mixer = this[ "mixer"+nameString ] = new THREE.AnimationMixer( model );
+            mixer.addEventListener('loop', () => ECAcontroller.processMsg(JSON.stringify(this.msg)));
+
+            if ( callback ){ callback (); }
+
+        }
+
+        function loadfinished() {
+            this.model1.position.set(0.45, 7.75, 0 );
+            let q = new THREE.Quaternion();
+            q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
+            this.model1.quaternion.premultiply(q); 
+            q.setFromAxisAngle( new THREE.Vector3(0,0,1), 2 * Math.PI /180 ); // slightly tilted on z axis
+            this.model1.quaternion.premultiply(q); 
+
+            this.model2.position.set(0, 0., 0);
+
+            this.switchModel( this.model2 );
 
             this.animate();
             $('#loading').fadeOut(); //hide();
-        } );
+        }
+        // Load both models "synchronous". model1 = eva_Y    model2 = Signs
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', 
+                    loadModel.bind( this, "1",  
+                                ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+                                ) 
+                    );
+        
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
 
+    switchModel ( visibleModel ) {
+        // could be done with arrays but it is just a demo...
+        if ( visibleModel === this.model1 ){
+            this.model = this.model1;
+            this.ECAcontroller = this.ECAcontroller1;
+            this.mixer = this.mixer1;
+            this.skeletonHelper = this.skeletonHelper1;
+    
+            this.model1.visible = true;
+            this.model2.visible = false;
+        }
+        else {
+            this.model = this.model2;
+            this.ECAcontroller = this.ECAcontroller2;
+            this.mixer = this.mixer2;
+            this.skeletonHelper = this.skeletonHelper2;
+    
+            this.model1.visible = false;
+            this.model2.visible = true;
+
+        }
+
+    }
 
     animate() {
 
@@ -345,14 +375,13 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        if (this.mixer) {
-            this.mixer.update(delta);
-        }
+        if ( this.mixer ) { this.mixer.update(delta); }
+        if ( this.ECAcontroller ){  this.ECAcontroller.update(delta, et); }
 
-        this.ECAcontroller.update(delta, et);
-        // let BSw = this.ECAcontroller.facialController._morphDeformers;
-        // this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
-        // this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
+        // correct "errors" regarding the avatar
+        this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
+        this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
+
             
         this.renderer.render( this.scene, this.camera );
     }
@@ -372,10 +401,15 @@ class App {
             for (let i = 0; i < result.clip.tracks.length; i++) {
                 result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
             }
+            
+            this.switchModel( this.model1 ); // use signs model
+            this.ECAcontroller.reset();
+            this.msg = {};
 
             this.mixer.stopAllAction();
             this.mixer._actions.length = 0;
-
+            this.mixer.timeScale = 1;
+            
             let anim = this.mixer.clipAction( result.clip );
             anim.setEffectiveWeight( 1.0 ).play();
             this.mixer.update(0);
@@ -383,22 +417,29 @@ class App {
             if (callback) {
                 callback();
             }
+
+            return;
         } );
     }
 
     loadGLB( filename, anim, callback=null ) {
 
         this.loaderGLB.load( filename , (result) => {
-            
             result.animations.forEach(( clip ) => {
+
                 if (clip.name == anim) {
 
                     for (let i = 0; i < clip.tracks.length; i++) {
                         clip.tracks[i].name = clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
                     }
 
+                    this.switchModel( this.model2 ); // use signs model
+                    this.ECAcontroller.reset();
+                    this.msg = {};
+
                     this.mixer.stopAllAction();
                     this.mixer._actions.length = 0;
+                    this.mixer.timeScale = 1;
 
                     let anim = this.mixer.clipAction( clip );
                     anim.setEffectiveWeight( 1.0 ).play();
@@ -407,6 +448,8 @@ class App {
                     if (callback) {
                         callback();
                     }
+
+                    return;
                 }
             });
         } );
