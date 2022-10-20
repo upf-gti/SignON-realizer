@@ -23,9 +23,6 @@ class App {
         this.camera = null;
         this.controls = null;
 
-        
-        this.msg = {};
-        this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
@@ -35,8 +32,12 @@ class App {
         this.ECAcontroller = null;
         this.mixer = null;
         this.skeletonHelper = null;
+
+        this.msg = {};
     }
+
     createPanel() {
+
         let that = this;
 
         let gui = new GUI();
@@ -202,46 +203,73 @@ class App {
     }
 
     init() {
+
         
         this.createPanel();
+        
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
+        //const gridHelper = new THREE.GridHelper( 10, 10 );
+        //gridHelper.position.set(0,0.001,0);
+        //this.scene.add( gridHelper );
         
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x141414, depthWrite: true } ) );
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
 
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 50, 50 ), new THREE.MeshPhongMaterial( {color: 0x141455, side: THREE.DoubleSide} ) );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 5, 5 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
         backPlane.name = 'Chroma';
-        backPlane.position.z = -7;
+        backPlane.position.z = -1;
         backPlane.receiveShadow = true;
         this.scene.add( backPlane );
         
         // lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-        hemiLight.position.set( 0, 20, 0 );
+        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.2 );
         this.scene.add( hemiLight );
 
-        let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        spotLight.position.set( -50, 50, 50);
-        spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.00001;
-        spotLight.shadow.mapSize.width = 1024 * 8;
-        spotLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( spotLight );
+        let keySpotlight = new THREE.SpotLight( 0xffffff, 0.4, 0, 45 * (Math.PI/180), 0.5, 1 );
+        keySpotlight.position.set( 0.5, 2, 2 );
+        keySpotlight.target.position.set( 0, 1, 0 );
+        keySpotlight.castShadow = true;
+        keySpotlight.shadow.mapSize.width = 1024;
+        keySpotlight.shadow.mapSize.height = 1024;
+        keySpotlight.shadow.bias = 0.00001;
+        this.scene.add( keySpotlight.target );
+        //this.spotLightHelper = new THREE.SpotLightHelper( keySpotlight );
+        //this.scene.add( this.spotLightHelper );
+        this.scene.add( keySpotlight );
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 10, 50 );
-        dirLight.castShadow = false;
+        let fillSpotlight = new THREE.SpotLight( 0xffffff, 0.2, 0, 45 * (Math.PI/180), 0.5, 1 );
+        fillSpotlight.position.set( -0.5, 2, 1.5 );
+        fillSpotlight.target.position.set( 0, 1, 0 );
+        fillSpotlight.castShadow = true;
+        this.scene.add( fillSpotlight.target );
+        //this.fillspotLightHelper = new THREE.SpotLightHelper( fillSpotlight );
+        //this.scene.add( this.fillspotLightHelper );
+        this.scene.add( fillSpotlight );
+
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
+        dirLight.position.set( 1.5, 5, 2 );
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.left= -1;
+        dirLight.shadow.camera.right= 1;
+        dirLight.shadow.camera.bottom= -1;
+        dirLight.shadow.camera.top= 1;
+        dirLight.shadow.bias = 0.00001;
+        dirLight.castShadow = true;
         this.scene.add( dirLight );
+
+
+        //this.scene.add( new THREE.DirectionalLightHelper( dirLight, 1 ) );
         
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.7;
+        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        //this.renderer.toneMappingExposure = 0.7;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.shadowMap.enabled = true;
         document.body.appendChild( this.renderer.domElement );
@@ -249,10 +277,10 @@ class App {
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 11.8, 8);
+        this.controls.object.position.set(0.0, 1.5, 1);
         this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 50;
-        this.controls.target.set(0.0, 9.4, -10);
+        this.controls.maxDistance = 7;
+        this.controls.target.set(0.0, 1.3, 0);
         this.controls.update();
 
         // so the screen is not black while loading
@@ -278,7 +306,6 @@ class App {
 
             model = glb.scene;
             model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            model.scale.set(8.0, 8.0, 8.0);
             model.castShadow = true;
             
             model.traverse( (object) => {
@@ -312,14 +339,14 @@ class App {
 
             // load the actual animation to play
             let mixer = this[ "mixer"+nameString ] = new THREE.AnimationMixer( model );
-            mixer.addEventListener('loop', () => ECAcontroller.processMsg(JSON.stringify(this.msg)));
+            mixer.addEventListener('loop', () => { ECAcontroller.reset(); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
 
             if ( callback ){ callback (); }
 
         }
 
         function loadfinished() {
-            this.model1.position.set(0.45, 7.75, 0 );
+            this.model1.position.set(0.05, 0.96, 0 );
             let q = new THREE.Quaternion();
             q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
             this.model1.quaternion.premultiply(q); 
@@ -340,7 +367,8 @@ class App {
                                 ) 
                     );
         
-        
+        //this.spotLightHelper.update();            
+        //this.fillspotLightHelper.update(); 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
 
@@ -363,7 +391,6 @@ class App {
     
             this.model1.visible = false;
             this.model2.visible = true;
-
         }
 
     }
@@ -376,13 +403,12 @@ class App {
         let et = this.clock.getElapsedTime();
 
         if ( this.mixer ) { this.mixer.update(delta); }
-        if ( this.ECAcontroller ){  this.ECAcontroller.update(delta, et); }
+        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 
-        // correct "errors" regarding the avatar
+        // correct hand's size
         this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
         this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
 
-            
         this.renderer.render( this.scene, this.camera );
     }
     
@@ -403,9 +429,9 @@ class App {
             }
             
             this.switchModel( this.model1 ); // use signs model
-            this.ECAcontroller.reset();
+            this.ECAcontroller.reset(); // reset face status
             this.msg = {};
-
+            
             this.mixer.stopAllAction();
             this.mixer._actions.length = 0;
             this.mixer.timeScale = 1;
@@ -413,12 +439,17 @@ class App {
             let anim = this.mixer.clipAction( result.clip );
             anim.setEffectiveWeight( 1.0 ).play();
             this.mixer.update(0);
+            
+            // reset clock to avoid counting loading time as dt in update
+            this.clock.stop();
+            this.clock.start();
+            this.ECAcontroller.time = 0;
+
 
             if (callback) {
                 callback();
             }
 
-            return;
         } );
     }
 
@@ -434,29 +465,33 @@ class App {
                     }
 
                     this.switchModel( this.model2 ); // use signs model
-                    this.ECAcontroller.reset();
+                    this.ECAcontroller.reset(); // reset face status
                     this.msg = {};
-
+                    
                     this.mixer.stopAllAction();
                     this.mixer._actions.length = 0;
                     this.mixer.timeScale = 1;
-
+                    
                     let anim = this.mixer.clipAction( clip );
                     anim.setEffectiveWeight( 1.0 ).play();
                     this.mixer.update(0);
+                    
+                    // reset clock to avoid counting loading time as dt in update
+                    this.clock.stop();
+                    this.clock.start();
+                    this.ECAcontroller.time = 0;
 
                     if (callback) {
                         callback();
                     }
 
-                    return;
                 }
             });
-        } );
+        });
     }
 }
 
 let app = new App();
 app.init();
-
+window.global = {app:app};
 export { app };
