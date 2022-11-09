@@ -12,6 +12,7 @@ in vec3 vWorldPosition;
 #include <normal_pars_fragment>
 #include <logdepthbuf_pars_fragment>
 #include <alphamap_pars_fragment>
+#include <shadowmap_pars_fragment>
 #include <lights_pars_begin>
 #include <bsdfs>
 

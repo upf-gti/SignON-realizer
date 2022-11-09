@@ -117,14 +117,15 @@ class App {
         // this.scene.add(this.neckTarget);
 
         // ---------- Scene lights ----------
-        const light1 = new THREE.PointLight( 0xffffff, 1.0, 100 );
-        light1.position.set( 0, 10, -18 );
-        // this.scene.add( light1 );
+        this.initLights()
+        // const light1 = new THREE.PointLight( 0xffffff, 1.0, 100 );
+        // light1.position.set( 0, 10, -18 );
+        // // this.scene.add( light1 );
 
-        const light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
-        light2.position.set( -10, 10, 20 );
-        light2.lookAt(new THREE.Vector3(0,10,0));
-        this.scene.add( light2 );
+        // const light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
+        // light2.position.set( -10, 10, 20 );
+        // light2.lookAt(new THREE.Vector3(0,10,0));
+        // this.scene.add( light2 );
 
         // ---------- Load shaders ----------
         this.shaderManager = new ShaderManager("data/shaders/");
@@ -159,17 +160,17 @@ class App {
         });
 
         // Load the model
-        this.loaderGLB.load( 'data/newEva.glb', (glb) => {
+        this.loaderGLB.load( 'data/EvaHair.glb', (glb) => {
 
             this.model = glb.scene;
             //this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
             //this.model.position.set(0, 0.75, 0);
             this.model.scale.set(8.0, 8.0, 8.0);
             this.model.castShadow = true;
-            
+           
             this.model.traverse( (object) => {
                 if ( object.isMesh || object.isSkinnedMesh ) {
-                    // object.material.side = THREE.FrontSide;
+                    object.material.side = THREE.FrontSide;
                     object.frustumCulled = false;
                     object.castShadow = true;
                     object.receiveShadow = true;
@@ -180,7 +181,12 @@ class App {
                         object.geometry.computeTangents();
                         object.material = this.hairMaterial;
                     }
+                    if(object.name.includes("Eye"))
+                    {
+                        console.log(object.material)
+                    }
                     // if(object.material.map) object.material.map.anisotropy = 16;
+                    // object.material.metalness = 0;
                     
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
@@ -225,6 +231,32 @@ class App {
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
         document.addEventListener( 'keydown', this.onKeyDown.bind(this) );
+    }
+    initLights(){
+      
+        // Scene lights 
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+        hemiLight.position.set( 0, 20, 0 );
+        this.scene.add( hemiLight );
+  
+        const spotLight = new THREE.SpotLight(0xffa95c,0.2);
+        spotLight.position.set(-50,50,50);
+        spotLight.castShadow = true;
+        spotLight.shadow.bias = -0.0001;
+        spotLight.shadow.mapSize.width = 1024*4;
+        spotLight.shadow.mapSize.height = 1024*4;
+        this.scene.add( spotLight );
+  
+        const dirLight = new THREE.DirectionalLight( 0xffffff ,0.1);
+        dirLight.position.set( 3, 10, 50 );
+        dirLight.castShadow = false;
+        dirLight.shadow.camera.top = 2;
+        dirLight.shadow.camera.bottom = - 2;
+        dirLight.shadow.camera.left = - 2;
+        dirLight.shadow.camera.right = 2;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 200;
+        this.scene.add( dirLight );
     }
 
     animate() {

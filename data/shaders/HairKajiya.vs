@@ -14,7 +14,7 @@ out vec3 vViewPosition;
 #include <normal_pars_vertex>
 
 #include <logdepthbuf_pars_vertex>
-
+#include <shadowmap_pars_vertex>
 #include <lights_pars_begin>
 
 void main() {
