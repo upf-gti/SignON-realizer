@@ -86,14 +86,33 @@ class App {
         
         var that = this
 
-        new RGBELoader()
+        let hairUniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), 
+            {
+                alphaMap: { value: this.loadTexture('./data/textures/Base_baseTexBaked.bmp') },
+                normalMap: { value: this.loadTexture('./data/textures/Texture_normals.bmp') },
+                envMapIntensity: { type: 'number', value: 0.5 },
+                //envMap: { value: this.scene.environment },
+                u_hairColorMap: { value: this.loadTexture('./data/textures/Color.png') },
+                u_diffuseColor: { type: 'vec3', value: new THREE.Vector3(0.19,0.14,0.04) }, // this can help refine the hair color
+                u_constantDiffuseFactor: { type: 'number', value: 0.03 }, // simulates multiple scattering in hair
+                u_specularExp1: { type: 'number', value: 100.0 },
+                u_specularExp2: { type: 'number', value: 100.0 },
+                u_primaryShift: { type: 'number', value: 0.2},
+                u_secondaryShift: { type: 'number', value: -0.2 },
+                u_specularStrength: { type: 'number', value: 0.035 }
+            });
+
+        let envPromise = new RGBELoader()
             .setPath( 'data/hdrs/' )
-            .load( 'cafe.hdr', function ( texture ) {
+            .load( 'ballroom.hdr', function ( texture ) {
 
                 texture.mapping = THREE.EquirectangularReflectionMapping;
 
-                // that.scene.background = texture;
-                // that.scene.environment = texture;
+                that.scene.background = texture;
+                that.scene.environment = texture;
+
+                // if environment gets removed, set this to value: null !!!
+                hairUniforms["envMap"] = { value: texture };
 
                 that.renderer.render( that.scene, that.camera );
         } );
@@ -120,12 +139,13 @@ class App {
         this.initLights()
         // const light1 = new THREE.PointLight( 0xffffff, 1.0, 100 );
         // light1.position.set( 0, 10, -18 );
-        // // this.scene.add( light1 );
+        // this.scene.add( light1 );
 
-        // const light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
-        // light2.position.set( -10, 10, 20 );
-        // light2.lookAt(new THREE.Vector3(0,10,0));
-        // this.scene.add( light2 );
+        const light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
+        light2.position.set( -10, 0, 20 );
+        light2.lookAt(new THREE.Vector3(0,10,0));
+        light2.castShadow = true;
+        //this.scene.add( light2 );
 
         // ---------- Load shaders ----------
         this.shaderManager = new ShaderManager("data/shaders/");
@@ -140,23 +160,12 @@ class App {
             name: 'HairKajiya',
             vertexShader: SM.get( 'HairKajiya.vs' ),
             fragmentShader: SM.get( 'HairKajiya.fs' ),
-            uniforms: Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), {
-                alphaMap: { value: this.loadTexture('./data/textures/Base_baseTexBaked.bmp') },
-                normalMap: { value: this.loadTexture('./data/textures/Texture_normals.bmp') },
-                u_hairColorMap: { value: this.loadTexture('./data/textures/Color.png') },
-                u_diffuseColor: { type: 'vec3', value: new THREE.Vector3(0.25,0.15,0.04) }, // this can help refine the hair color
-                u_constantDiffuseFactor: { type: 'number', value: 0.15 }, // simulates multiple scattering in hair
-                u_specularExp1: { type: 'number', value: 80.0 },
-                u_specularExp2: { type: 'number', value: 80.0 },
-                u_primaryShift: { type: 'number', value: 0.2},
-                u_secondaryShift: { type: 'number', value: -0.2 },
-                u_specularStrength: { type: 'number', value: 0.035 }
-            } ),
+            uniforms: hairUniforms,
             lights: true,
             side: THREE.DoubleSide,
             blending: THREE.NoBlending,
             alphaToCoverage: true,
-            glslVersion: THREE.GLSL3
+            glslVersion: THREE.GLSL3,
         });
 
         // Load the model
@@ -179,6 +188,7 @@ class App {
                     if (object.name.includes("Object"))
                     {
                         object.geometry.computeTangents();
+                        object.castShadow = false;
                         object.material = this.hairMaterial;
                     }
                     if(object.name.includes("Eye"))
@@ -237,7 +247,7 @@ class App {
         // Scene lights 
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
-        this.scene.add( hemiLight );
+        //this.scene.add( hemiLight );
   
         const spotLight = new THREE.SpotLight(0xffa95c,0.2);
         spotLight.position.set(-50,50,50);
@@ -247,7 +257,7 @@ class App {
         spotLight.shadow.mapSize.height = 1024*4;
         this.scene.add( spotLight );
   
-        const dirLight = new THREE.DirectionalLight( 0xffffff ,0.1);
+        const dirLight = new THREE.DirectionalLight( 0xffffff ,0.5);
         dirLight.position.set( 3, 10, 50 );
         dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
