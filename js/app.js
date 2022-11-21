@@ -102,6 +102,23 @@ class App {
                 u_specularStrength: { type: 'number', value: 0.035 }
             });
 
+            let eyeUniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), 
+            {
+                u_irisAlbedo: { value: this.loadTexture('./data/textures/Eye/Iris_Albedo_Extended.png') },
+                u_irisColor: { type: 'vec3', value: new THREE.Vector3(1.0, 1.0, 1.0)},
+                u_irisNormal: { value: this.loadTexture('./data/textures/Base_baseTexBaked.bmp') },
+                u_irisRoughness: { type: 'number', value: 0.05 },
+                u_scleraAlbedo: { value: this.loadTexture('./data/textures/Eye/Esclera_Albedo.png') },
+                u_scleraNormal: { value: this.loadTexture('./data/textures/Eye/sclera-normal.jpg') },
+                u_scleraRoughness: { type: 'number', value: 0.09 },
+                u_limbusSize: { type: 'number', value: 0.035 },
+                u_limbusDarkening: { type: 'number', value: 0.5 },
+                u_specularF90: { type: 'number', value: 0.0 },
+                u_corneaIOR: { type: 'number', value: 1.0 },
+                normalMap: { value: this.loadTexture('./data/textures/Texture_normals.bmp') },
+                envMapIntensity: { type: 'number', value: 0.5 },
+            });
+
         let envPromise = new RGBELoader()
             .setPath( 'data/hdrs/' )
             .load( 'ballroom.hdr', function ( texture ) {
@@ -113,6 +130,7 @@ class App {
 
                 // if environment gets removed, set this to value: null !!!
                 hairUniforms["envMap"] = { value: texture };
+                eyeUniforms["envMap"] = { value: texture };
 
                 that.renderer.render( that.scene, that.camera );
         } );
@@ -154,6 +172,10 @@ class App {
         promise = await promise;
         promise = SM.loadFromFile("HairKajiya.fs");
         promise = await promise;
+        promise = SM.loadFromFile("Eye.vs");
+        promise = await promise;
+        promise = SM.loadFromFile("Eye.fs");
+        promise = await promise;
 
         // ---------- Create Hair Material ----------         
         this.hairMaterial = new THREE.ShaderMaterial( {
@@ -168,8 +190,19 @@ class App {
             glslVersion: THREE.GLSL3,
         });
 
+        this.eye = new THREE.ShaderMaterial( {
+            name: 'Eye',
+            vertexShader: SM.get( 'Eye.vs' ),
+            fragmentShader: SM.get( 'Eye.fs' ),
+            uniforms: eyeUniforms,
+            lights: true,
+            side: THREE.FrontSide,
+            blending: THREE.NoBlending,
+            glslVersion: THREE.GLSL3,
+        });
+
         // Load the model
-        this.loaderGLB.load( 'data/EvaHair.glb', (glb) => {
+        this.loaderGLB.load( 'data/EvaCorrectedEyes.glb', (glb) => {
 
             this.model = glb.scene;
             //this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -193,7 +226,8 @@ class App {
                     }
                     if(object.name.includes("Eye"))
                     {
-                        console.log(object.material)
+                        object.castShadow = false;
+                        object.material = this.eye;
                     }
                     // if(object.material.map) object.material.map.anisotropy = 16;
                     // object.material.metalness = 0;
