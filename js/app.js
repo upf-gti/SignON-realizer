@@ -102,21 +102,20 @@ class App {
                 u_specularStrength: { type: 'number', value: 0.035 }
             });
 
-            let eyeUniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), 
+        let eyeUniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), 
             {
                 u_irisAlbedo: { value: this.loadTexture('./data/textures/Eye/Iris_Albedo_Extended.png') },
                 u_irisColor: { type: 'vec3', value: new THREE.Vector3(1.0, 1.0, 1.0)},
-                u_irisNormal: { value: this.loadTexture('./data/textures/Base_baseTexBaked.bmp') },
                 u_irisRoughness: { type: 'number', value: 0.05 },
                 u_scleraAlbedo: { value: this.loadTexture('./data/textures/Eye/Esclera_Albedo.png') },
                 u_scleraNormal: { value: this.loadTexture('./data/textures/Eye/sclera-normal.jpg') },
-                u_scleraRoughness: { type: 'number', value: 0.09 },
+                u_scleraNormalScale: { type: 'number', value: 0.05 },
+                u_scleraRoughness: { type: 'number', value: 0.08 },
                 u_limbusSize: { type: 'number', value: 0.035 },
                 u_limbusDarkening: { type: 'number', value: 0.5 },
-                u_specularF90: { type: 'number', value: 0.0 },
-                u_corneaIOR: { type: 'number', value: 1.0 },
-                normalMap: { value: this.loadTexture('./data/textures/Texture_normals.bmp') },
-                envMapIntensity: { type: 'number', value: 0.5 },
+                u_specularF90: { type: 'number', value: 0.5 },
+                u_corneaIOR: { type: 'number', value: 1.3 },
+                envMapIntensity: { type: 'number', value: 0.4 },
             });
 
         let envPromise = new RGBELoader()

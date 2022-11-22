@@ -29,6 +29,7 @@ void main() {
 	vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
     
     vWorldPosition = worldPosition.xyz;
+    const float eyeballDiameter = 0.242;
     vLocalPosition = position;
     vViewPosition = -mvPosition.xyz;
 }
