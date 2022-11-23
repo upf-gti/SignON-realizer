@@ -205,7 +205,7 @@ PhysicalMaterial GetIrisProperties(vec2 uv)
     // ------------ Analogous block to <lights_physical_fragment.glsl> ------------
     // Fill material properties
     PhysicalMaterial material;
-    material.diffuseColor = 1.5 * texture2D(u_irisAlbedo, uv).rgb * u_irisColor;
+    material.diffuseColor = texture2D(u_irisAlbedo, uv).rgb * u_irisColor;
     material.specularColor = vec3(1.0, 1.0, 1.0);
     material.roughness = u_irisRoughness;
     material.specularF90 = u_specularF90;
@@ -219,7 +219,7 @@ PhysicalMaterial GetScleraProperties(vec2 uv)
     // ------------ Analogous block to <lights_physical_fragment.glsl> ------------
     // Fill material properties
     PhysicalMaterial material;
-    material.diffuseColor = 1.5 * texture2D(u_scleraAlbedo, uv).rgb;
+    material.diffuseColor = texture2D(u_scleraAlbedo, uv).rgb;
     material.specularColor = vec3(1.0, 1.0, 1.0);
     material.roughness = u_scleraRoughness;
     material.specularF90 = u_specularF90;
@@ -237,12 +237,11 @@ vec2 GetRefractedUVs(vec2 inUV, vec3 normal)
     refractedDir = normalize((inverse(modelViewMatrix) * vec4(refractedDir, 0.0)).xyz);
     // Get UV offset due to refraction (based on http://www.iryoku.com/stare-into-the-future)
 
-    // Gaze direction corresponds to the front vector (in WS) 
-    vec3 gazeDirWS = normalize(vec4(0.0, 0.0, 1.0, 0.0).xyz);
-    vec3 gazeDirVS = normalize(viewMatrix * vec4(gazeDirWS, 0.0)).xyz;
+    // Gaze direction corresponds to the front vector (in local space LS) 
+    vec3 gazeDirLS = normalize(vec4(0.0, 0.0, 1.0, 0.0).xyz);
 
-    // Position direction corresponds to the vector from the object's center to the point in WS (in order to support refraction in all orientations)
-    vec3 positionDirWS = vLocalPosition; //(modelMatrix * vec4(vLocalPosition, 0.0)).xyz;
+    // Position direction corresponds to the vector from the object's center to the point in LS (in order to support refraction in all orientations)
+    vec3 positionDirLS = vLocalPosition;
 
     // Object scale of the front vector (Z) 
     float scaleZ = length(vec3(modelMatrix[0][2], modelMatrix[1][2], modelMatrix[2][2]));
@@ -253,12 +252,12 @@ vec2 GetRefractedUVs(vec2 inUV, vec3 normal)
     // By multiplying this parameter by the scale we avoid having to re-tune it everytime we change the object's scale.
     float irisDepth = 0.55;
     // Multiply by 0.5 because local position is in range [-0.5, 0.5]
-    float height = max(dot(gazeDirWS * 0.5, positionDirWS) - irisDepth, 0.0); 
+    float height = max(dot(gazeDirLS * 0.5, positionDirLS) - irisDepth, 0.0); 
 
     // Height encodes the length of the refracted ray projected in (local) Y, but we are interested in the (local) XY coordinates 
     // of the ray since these will be directly related to the offset to apply in texture space. Hence, we apply basic trigonometry 
     // to get the actual length of the ray
-    float cosAlpha = dot(gazeDirWS, -refractedDir);
+    float cosAlpha = dot(gazeDirLS, -refractedDir);
     float refractedRayLength = height / cosAlpha * 0.45; // Compensate for non-equivalent uv mapping to local front projection with constant factor 0.45
     vec3 refractedRay = refractedRayLength * refractedDir;
 
