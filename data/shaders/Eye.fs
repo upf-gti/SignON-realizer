@@ -142,6 +142,7 @@ in vec3 vWorldPosition;
 // Uniforms to fill material data afterwards
 uniform sampler2D u_irisAlbedo;
 uniform vec3 u_irisColor;
+uniform float u_diffuseFactor;
 uniform float u_irisRoughness;
 uniform sampler2D u_scleraAlbedo;
 uniform sampler2D u_scleraNormal;
@@ -189,7 +190,6 @@ vec3 GetFinalRadiance(PhysicalMaterial material, vec3 normal)
 
 #define STANDARD
     #include <lights_fragment_maps>
-    irradiance += iblIrradiance;
 
     // Calls BRDF to apply for indirect lighting (rendering equation <lights_physical_pars_fragment>)
 	#include <lights_fragment_end>
@@ -205,7 +205,7 @@ PhysicalMaterial GetIrisProperties(vec2 uv)
     // ------------ Analogous block to <lights_physical_fragment.glsl> ------------
     // Fill material properties
     PhysicalMaterial material;
-    material.diffuseColor = texture2D(u_irisAlbedo, uv).rgb * u_irisColor;
+    material.diffuseColor = u_diffuseFactor * texture2D(u_irisAlbedo, uv).rgb * u_irisColor;
     material.specularColor = vec3(1.0, 1.0, 1.0);
     material.roughness = u_irisRoughness;
     material.specularF90 = u_specularF90;
@@ -219,7 +219,7 @@ PhysicalMaterial GetScleraProperties(vec2 uv)
     // ------------ Analogous block to <lights_physical_fragment.glsl> ------------
     // Fill material properties
     PhysicalMaterial material;
-    material.diffuseColor = texture2D(u_scleraAlbedo, uv).rgb;
+    material.diffuseColor = u_diffuseFactor * texture2D(u_scleraAlbedo, uv).rgb;
     material.specularColor = vec3(1.0, 1.0, 1.0);
     material.roughness = u_scleraRoughness;
     material.specularF90 = u_specularF90;

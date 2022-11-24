@@ -106,6 +106,7 @@ class App {
             {
                 u_irisAlbedo: { value: this.loadTexture('./data/textures/Eye/Iris_Albedo_Extended.png') },
                 u_irisColor: { type: 'vec3', value: new THREE.Vector3(1.0, 1.0, 1.0)},
+                u_diffuseFactor: { type: 'number', value: 1.2 },
                 u_irisRoughness: { type: 'number', value: 0.05 },
                 u_scleraAlbedo: { value: this.loadTexture('./data/textures/Eye/Esclera_Albedo.png') },
                 u_scleraNormal: { value: this.loadTexture('./data/textures/Eye/sclera-normal.jpg') },
