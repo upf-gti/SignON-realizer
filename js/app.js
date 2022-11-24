@@ -41,18 +41,35 @@ class App {
         let that = this;
 
         let gui = new GUI();
+
         
         let params = {
             colorChroma: 0x141455,
             colorClothes: 0xFFFFFF,
         } 
+                
+        // get init color and set them to sGRB (css works in sRGB) 
+        let color = new THREE.Color();
+        color.copyLinearToSRGB(that.scene.getObjectByName("Chroma").material.color);
+        params.colorChroma = color.getHex();
+
+        color.copyLinearToSRGB(that.model1.getObjectByName("Tops").material.color);
+        params.colorClothes = color.getHex();
+
 
         gui.addColor(params, 'colorChroma').onChange( (e) => {
-            that.scene.getObjectByName("Chroma").material.color.set(e);
+            let color = that.scene.getObjectByName("Chroma").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
         gui.addColor(params, 'colorClothes').onChange( (e) => {
-            that.model1.getObjectByName("Tops").material.color.set(e);
-            that.model2.getObjectByName("Tops").material.color.set(e);
+            let color = that.model1.getObjectByName("Tops").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+
+            color = that.model2.getObjectByName("Tops").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
 
 		let folder = gui.addFolder( 'Animations' );
@@ -203,26 +220,33 @@ class App {
     }
 
     init() {
-
-        
-        this.createPanel();
-        
+       
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         //const gridHelper = new THREE.GridHelper( 10, 10 );
         //gridHelper.position.set(0,0.001,0);
         //this.scene.add( gridHelper );
-        
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        this.scene.add( ground );
+                
+        // renderer
+        this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+        this.renderer.setPixelRatio( window.devicePixelRatio );
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 0.7;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
+        this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
+        this.renderer.shadowMap.enabled = true;
+        document.body.appendChild( this.renderer.domElement );
 
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 5, 5 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
-        backPlane.name = 'Chroma';
-        backPlane.position.z = -1;
-        backPlane.receiveShadow = true;
-        this.scene.add( backPlane );
+        // camera
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
+        this.controls = new OrbitControls( this.camera, this.renderer.domElement );
+        this.controls.object.position.set(0.0, 1.5, 1);
+        this.controls.minDistance = 0.1;
+        this.controls.maxDistance = 7;
+        this.controls.target.set(0.0, 1.3, 0);
+        this.controls.update();
         
         // lights
         let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.2 );
@@ -236,8 +260,6 @@ class App {
         keySpotlight.shadow.mapSize.height = 1024;
         keySpotlight.shadow.bias = 0.00001;
         this.scene.add( keySpotlight.target );
-        //this.spotLightHelper = new THREE.SpotLightHelper( keySpotlight );
-        //this.scene.add( this.spotLightHelper );
         this.scene.add( keySpotlight );
 
         let fillSpotlight = new THREE.SpotLight( 0xffffff, 0.2, 0, 45 * (Math.PI/180), 0.5, 1 );
@@ -245,8 +267,6 @@ class App {
         fillSpotlight.target.position.set( 0, 1, 0 );
         fillSpotlight.castShadow = true;
         this.scene.add( fillSpotlight.target );
-        //this.fillspotLightHelper = new THREE.SpotLightHelper( fillSpotlight );
-        //this.scene.add( this.fillspotLightHelper );
         this.scene.add( fillSpotlight );
 
         let dirLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
@@ -261,28 +281,19 @@ class App {
         dirLight.castShadow = true;
         this.scene.add( dirLight );
 
-
-        //this.scene.add( new THREE.DirectionalLightHelper( dirLight, 1 ) );
         
-        // renderer
-        this.renderer = new THREE.WebGLRenderer( { antialias: true } );
-        this.renderer.setPixelRatio( window.devicePixelRatio );
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
-        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        //this.renderer.toneMappingExposure = 0.7;
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.shadowMap.enabled = true;
-        document.body.appendChild( this.renderer.domElement );
-
-        // camera
-        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
-        this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 1.5, 1);
-        this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 7;
-        this.controls.target.set(0.0, 1.3, 0);
-        this.controls.update();
-
+        // add entities
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add( ground );
+        
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 5, 5 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        backPlane.name = 'Chroma';
+        backPlane.position.z = -1;
+        backPlane.receiveShadow = true;
+        this.scene.add( backPlane );
+        
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
@@ -301,6 +312,7 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
+        // loads a model
         function loadModel ( nameString, callback, glb  ){
             let model = this["model"+nameString] = glb.scene;
 
@@ -322,8 +334,6 @@ class App {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
-
-
 
             let skeletonHelper = this[ "skeletonHelper"+nameString ] = new THREE.SkeletonHelper( model );
             skeletonHelper.visible = false;
@@ -357,18 +367,18 @@ class App {
 
             this.switchModel( this.model2 );
 
+            this.createPanel();
             this.animate();
             $('#loading').fadeOut(); //hide();
         }
+
         // Load both models "synchronous". model1 = eva_Y    model2 = Signs
         this.loaderGLB.load( './data/anim/Eva_Y.glb', 
-                    loadModel.bind( this, "1",  
-                                ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
-                                ) 
-                    );
-        
-        //this.spotLightHelper.update();            
-        //this.fillspotLightHelper.update(); 
+                loadModel.bind( this, "1",  
+                        ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+                ) 
+        );
+
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
 
