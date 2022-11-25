@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 
@@ -231,8 +232,8 @@ class App {
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.7;
+        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        //this.renderer.toneMappingExposure = 0.7;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
@@ -248,7 +249,21 @@ class App {
         this.controls.target.set(0.0, 1.3, 0);
         this.controls.update();
         
-        // lights
+        // var that = this;
+
+        // new RGBELoader()
+        //     .setPath( 'data/hdrs/' )
+        //     .load( 'cafe.hdr', function ( texture ) {
+
+        //         texture.mapping = THREE.EquirectangularReflectionMapping;
+
+        //         // that.scene.background = texture;
+        //         that.scene.environment = texture;
+
+        //         that.renderer.render( that.scene, that.camera );
+        // } );
+
+        // include lights
         let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.2 );
         this.scene.add( hemiLight );
 
@@ -288,7 +303,7 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 5, 5 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 6 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
