@@ -187,7 +187,6 @@ vec3 GetFinalRadiance(PhysicalMaterial material, vec3 normal)
     
     // This iterates over all discrete light sources and calls the hair BSDF (rendering equation in <lights_physical_pars_fragment>)
     #include <lights_fragment_begin>
-
 #define STANDARD
     #include <lights_fragment_maps>
 
@@ -196,7 +195,7 @@ vec3 GetFinalRadiance(PhysicalMaterial material, vec3 normal)
 
     // Get final color output
     vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-    vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
+    vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular * 0.5;
     return totalDiffuse + totalSpecular;
 }
 
