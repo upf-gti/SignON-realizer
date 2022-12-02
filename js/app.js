@@ -222,13 +222,13 @@ class App {
                     object.receiveShadow = true;
                     if (object.name == "Eyelashes")
                         object.castShadow = false;
-                    if (object.name.includes("Object"))
+                    else if (object.name.includes("Object"))
                     {
                         object.geometry.computeTangents();
                         object.castShadow = false;
                         object.material = this.hairMaterial;
                     }
-                    if(object.name.includes("Eye"))
+                    else if(object.name.includes("Eye"))
                     {
                         object.castShadow = false;
                         object.material = this.eye;

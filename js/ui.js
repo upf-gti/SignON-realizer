@@ -33,6 +33,9 @@ const DisplayUI = {
     'correction' : { min: 0, max: 1200, step: 50 },
     'maxdd' : { min: 0, max: 0.01, step: 0.001 },
 
+    'u_diffuseFactor' : {min: 0, max: 5, step: 0.01},
+    'u_corneaIOR' : {min: 0, max: 5, step: 0.01},
+
     // Combos
     combos: {
 
