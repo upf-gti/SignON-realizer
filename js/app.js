@@ -8,8 +8,10 @@ import { ShaderManager } from './shaderManager.js'
 import { EffectComposer } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/postprocessing/EffectComposer.js';
 import { SSAOPass } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/postprocessing/SSAOPass.js';
 import { BufferGeometry } from 'three';
+import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.16/+esm';
+import { DisplayUI } from './ui.js'
 
-let firstframe = true;
+let firstframe;
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -50,6 +52,8 @@ class App {
 
         this.body = null;
         this.eyelashes = null;
+
+        this.gui = new GUI();
     }
     
     async init() {
@@ -267,6 +271,7 @@ class App {
             // // load the actual animation to play
             // this.mixer = new THREE.AnimationMixer( this.model );
             // this.loadBVH('data/anim/NGT Thanks.bvh');
+            this.initUI();
             this.animate();
 
             $('#loading').fadeOut();
@@ -301,6 +306,100 @@ class App {
         dirLight.shadow.camera.near = 1;
         dirLight.shadow.camera.far = 200;
         this.scene.add( dirLight );
+    }
+
+    initUI() {
+
+        const gui = this.gui;
+        gui.title("Scene")
+
+        const errorFunc = console.error;
+        console.error = () => {};
+
+
+        function CreateObjectUI( folder, object, isUniform ) {
+            for( const p in object ) {
+                const value = isUniform ? object[ p ].value : object[ p ];
+                if( value === undefined 
+                    || value === null
+                    || value.constructor === Function 
+                    || value.constructor === Array 
+                    || value.constructor === THREE.Matrix3 
+                    || value.constructor === THREE.Matrix4
+                    || value.constructor === THREE.Quaternion 
+                    || value.constructor === THREE.Vector4 ) continue;
+
+                let dataObject = isUniform ? object[ p ] : object;
+                if( !dataObject._ui_tmp ) dataObject._ui_tmp = {}; 
+
+                const r = DisplayUI[ p ];
+                if( r ) {
+                    if( isUniform )
+                        folder.add( dataObject, 'value', r.min, r.max, r.step ).name( p );       
+                    else
+                        folder.add( dataObject, p, r.min, r.max, r.step );
+                    continue;
+                } else if( DisplayUI.Off( p ) ) continue;
+                else if ( DisplayUI.IsCombo( p ) ) {
+                    folder.add( object, p, DisplayUI.combos[ p ] ).onChange( v => { object[ p ] = v; });
+                    continue;
+                }
+
+                switch( value.constructor ) {
+
+                    case Object:
+                        if( Object.keys( value ).length )
+                            CreateObjectUI( folder.addFolder( p ), value, p === 'uniforms' )
+                        continue;
+                    case Number: // default number, add it to display ui if necessary
+                        if( isUniform )
+                            folder.add( dataObject, 'value', 0, 1, 0.01 ).name( p );        
+                        else
+                            folder.add( dataObject, p, 0, 1, 0.01 );        
+                        continue;
+                    case THREE.Color: // default number, add it to display ui if necessary
+                        folder.addColor( dataObject, p );        
+                        continue;
+                    case THREE.Euler:
+                    case THREE.Vector3:
+
+                        if( isUniform ) continue;
+
+                        if( !dataObject._ui_tmp[ p ] ) {
+                            dataObject._ui_tmp[ p ] = {
+                                x:  dataObject[ p ].x,
+                                y:  dataObject[ p ].y,
+                                z:  dataObject[ p ].z,
+                                f: folder.addFolder( p )
+                            };
+                        }
+                        
+                        const dataFolder = dataObject._ui_tmp[ p ].f;
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'x' ).onChange( v => { dataObject[ p ].set( v, dataObject[ p ].y, dataObject[ p ].z ); } );
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'y' ).onChange( v => { dataObject[ p ].set( dataObject[ p ].x, v, dataObject[ p ].z ); } );
+                        dataFolder.add( dataObject._ui_tmp[ p ], 'z' ).onChange( v => { dataObject[ p ].set( dataObject[ p ].x, dataObject[ p ].z, v ); } );
+                        dataFolder.close();
+                        continue;
+                }
+
+                folder.add( dataObject, p );
+            }
+
+            return folder;
+        }
+
+        CreateObjectUI( gui.addFolder( 'Camera' ), this.camera ).close();
+
+        // const spotLight = gui.addFolder( 'SpotLight' )
+        // CreateObjectUI( spotLight, this.spotLight ).close();
+        // CreateObjectUI( spotLight.addFolder( 'Shadow' ), this.spotLight.shadow );
+        // CreateObjectUI( spotLight.addFolder( 'Camera' ), this.spotLight.shadow.camera );
+
+        CreateObjectUI( gui.addFolder( 'Hair Material' ), this.hairMaterial.uniforms, true ).close();
+        CreateObjectUI( gui.addFolder( 'Eyes Material' ), this.eye.uniforms, true ).close();
+
+
+        console.error = errorFunc;
     }
 
     animate() {
