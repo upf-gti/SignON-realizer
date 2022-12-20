@@ -100,26 +100,26 @@ class App {
                 u_diffuseColor: { type: 'vec3', value: new THREE.Vector3(0.19,0.14,0.04) }, // this can help refine the hair color
                 u_constantDiffuseFactor: { type: 'number', value: 0.03 }, // simulates multiple scattering in hair
                 u_specularExp1: { type: 'number', value: 100.0 },
-                u_specularExp2: { type: 'number', value: 100.0 },
-                u_primaryShift: { type: 'number', value: 0.2},
-                u_secondaryShift: { type: 'number', value: -0.2 },
+                u_specularExp2: { type: 'number', value: 60.0 },
+                u_primaryShift: { type: 'number', value: 0.1},
+                u_secondaryShift: { type: 'number', value: -0.1 },
                 u_specularStrength: { type: 'number', value: 0.035 }
             });
 
         let eyeUniforms = Object.assign( THREE.UniformsUtils.clone( THREE.UniformsLib.lights ), 
             {
-                u_irisAlbedo: { value: this.loadTexture('./data/textures/Eye/Iris_Albedo_Extended.png') },
+                u_irisAlbedo: { value: this.loadTexture('./data/textures/Eye/IrisAlbedo.png') },
                 u_irisColor: { type: 'vec3', value: new THREE.Vector3(1.0, 1.0, 1.0)},
                 u_diffuseFactor: { type: 'number', value: 2.0 },
                 u_irisRoughness: { type: 'number', value: 0.05 },
-                u_scleraAlbedo: { value: this.loadTexture('./data/textures/Eye/Esclera_Albedo.png') },
+                u_scleraAlbedo: { value: this.loadTexture('./data/textures/Eye/ScleraAlbedo.png') },
                 u_scleraNormal: { value: this.loadTexture('./data/textures/Eye/sclera-normal.jpg') },
-                u_scleraNormalScale: { type: 'number', value: 0.15 },
+                u_scleraNormalScale: { type: 'number', value: 0.15, min: 0.0, max: 2.0 },
                 u_scleraRoughness: { type: 'number', value: 0.07 },
-                u_limbusSize: { type: 'number', value: 0.035 },
-                u_limbusDarkening: { type: 'number', value: 0.5 },
+                u_limbusSize: { type: 'number', value: 0.04 },
+                u_limbusDarkening: { type: 'number', value: 0.55 },
                 u_specularF90: { type: 'number', value: 0.2 },
-                u_corneaIOR: { type: 'number', value: 1.3 },
+                u_corneaIOR: { type: 'number', value: 1.336 },
                 envMapIntensity: { type: 'number', value: 0.4 },
             });
 
@@ -222,13 +222,13 @@ class App {
                     object.receiveShadow = true;
                     if (object.name == "Eyelashes")
                         object.castShadow = false;
-                    else if (object.name.includes("Object"))
+                    else if (object.name.includes("Hair"))
                     {
                         object.geometry.computeTangents();
                         object.castShadow = false;
                         object.material = this.hairMaterial;
                     }
-                    else if(object.name.includes("Eye"))
+                    else if(object.name.includes("Cornea"))
                     {
                         object.castShadow = false;
                         object.material = this.eye;

@@ -249,7 +249,7 @@ vec2 GetRefractedUVs(vec2 inUV, vec3 normal)
     // Compute distance from current point to the iris plane 
     // irisDepth corresponds to the distance from the object origin to the local plane (XY) where the iris lays.
     // By multiplying this parameter by the scale we avoid having to re-tune it everytime we change the object's scale.
-    float irisDepth = 0.55;
+    float irisDepth = 0.53;
     // Multiply by 0.5 because local position is in range [-0.5, 0.5]
     float height = max(dot(gazeDirLS * 0.5, positionDirLS) - irisDepth, 0.0); 
 
@@ -257,7 +257,7 @@ vec2 GetRefractedUVs(vec2 inUV, vec3 normal)
     // of the ray since these will be directly related to the offset to apply in texture space. Hence, we apply basic trigonometry 
     // to get the actual length of the ray
     float cosAlpha = dot(gazeDirLS, -refractedDir);
-    float refractedRayLength = height / cosAlpha * 0.45; // Compensate for non-equivalent uv mapping to local front projection with constant factor 0.45
+    float refractedRayLength = height / cosAlpha * 0.4; // Compensate for non-equivalent uv mapping to local front projection with constant factor 0.45
     vec3 refractedRay = refractedRayLength * refractedDir;
 
     // Convert ray to object local space and fetch XZ coordinates (which map to -XY in texture space)
@@ -273,7 +273,7 @@ void main() {
     #include <normal_fragment_begin>
 
     // Use a sigmoid to determine the sclera/iris contribution for each point
-    const float irisRadius = 0.2;
+    const float irisRadius = 0.26;
     float eyeballDiameter = 0.0242 / 0.01; // Measure / scale in original glb 
     float distFromCenter = length(vLocalPosition.xy) / eyeballDiameter;
     float mask = 1.0/(1.0 + exp(-(distFromCenter - irisRadius) / (u_limbusSize)));

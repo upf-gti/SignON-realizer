@@ -211,8 +211,8 @@ vec3 GetHairSpecular(const in GeometricContext geometry, const in HairKajiyaMate
     vec3 specular = specularColor1 * StrandSpecular(t1, geometry.viewDir, lightDir, material.specularExp1);
 
     // add 2nd specular term
-    vec3 specularColor2 = mix(specularColor1, material.diffuseColor, 0.2);    // bleed a bit of the diffuse into the specularity to smooth and simule TRT lobe
-    specular += specularColor2 * material.noiseShift * StrandSpecular(t2, geometry.viewDir, lightDir, material.specularExp2);
+    vec3 specularColor2 = mix(specularColor1, material.diffuseColor, 0.6);    // bleed a bit of the diffuse into the specularity to smooth and simule TRT lobe
+    specular += specularColor2 * StrandSpecular(t2, geometry.viewDir, lightDir, material.specularExp2);
 
     return specular;
 }

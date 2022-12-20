@@ -33,8 +33,17 @@ const DisplayUI = {
     'correction' : { min: 0, max: 1200, step: 50 },
     'maxdd' : { min: 0, max: 0.01, step: 0.001 },
 
-    'u_diffuseFactor' : {min: 0, max: 5, step: 0.01},
-    'u_corneaIOR' : {min: 0, max: 5, step: 0.01},
+    'u_diffuseFactor' : {min: 0, max: 3, step: 0.01},
+    'u_irisRoughness' : {min: 0, max: 0.3, step: 0.001},
+    'u_scleraRoughness' : {min: 0, max: 0.3, step: 0.001},
+    'u_scleraNormalScale': {min: 0.0, max: 2.0, step: 0.01 },
+    'u_limbusSize': {min: 0.0, max: 0.1, step: 0.001 },
+    'u_specularExp1': {min: 10, max: 200, step: 0.1 },
+    'u_primaryShift': {min: -1, max: 1, step: 0.01 },
+    'u_secondaryShift': {min: -1, max: 1, step: 0.01 },
+    'u_specularExp2': {min: 10, max: 200, step: 0.1 },
+    'u_specularStrength': {min: 0, max: 0.3, step: 0.001 },
+    'u_corneaIOR' : {min: 1, max: 3, step: 0.01},
 
     // Combos
     combos: {
