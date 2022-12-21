@@ -159,15 +159,6 @@ class App {
 
         // ---------- Scene lights ----------
         this.initLights()
-        // const light1 = new THREE.PointLight( 0xffffff, 1.0, 100 );
-        // light1.position.set( 0, 10, -18 );
-        // this.scene.add( light1 );
-
-        const light2 = new THREE.DirectionalLight( 0xffffff, 1.0 );
-        light2.position.set( -10, 0, 20 );
-        light2.lookAt(new THREE.Vector3(0,10,0));
-        light2.castShadow = true;
-        //this.scene.add( light2 );
 
         // ---------- Load shaders ----------
         this.shaderManager = new ShaderManager("data/shaders/");
@@ -220,9 +211,8 @@ class App {
                     object.frustumCulled = false;
                     object.castShadow = true;
                     object.receiveShadow = true;
-                    if (object.name == "Eyelashes")
-                        object.castShadow = false;
-                    else if (object.name.includes("Hair"))
+                    
+                    if (object.name.includes("Hair") || object.name.includes("Eyelash"))
                     {
                         object.geometry.computeTangents();
                         object.castShadow = false;
@@ -234,7 +224,7 @@ class App {
                         object.material = this.eye;
                     }
                     // if(object.material.map) object.material.map.anisotropy = 16;
-                    // object.material.metalness = 0;
+                    object.material.metalness = 0;
                     
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
