@@ -172,9 +172,6 @@ BehaviourPlanner.prototype.createBlock = function(){
           type:"head"
         }
       }
-      // Random blink
-      if (Math.random() < 0.8)
-        block.blink = {start: 0.3, end: 0.5+Math.random()*0.5};
 
       // Esporadic raising eyebrows
       if (Math.random() < 0.5)
@@ -310,12 +307,6 @@ BehaviourPlanner.prototype.createBlock = function(){
           offsetAngle: 10 + 5*Math.random(),
           type:"gazeShift"
         }
-        // blink
-        block.blink = {
-          start: 0, 
-          end: 0.2 + block.gazeShift.end*Math.random(),
-          type:"blink"
-        };
       }
 
       // head nods
@@ -381,9 +372,6 @@ BehaviourPlanner.prototype.createBlock = function(){
         offsetAngle: 5 + 5*Math.random(),
         type:"gazeShift"
       }
-      // Blink
-      if(Math.random() < 0.8)
-        block.blink = {start: 0, end: 0.2 + Math.random()*0.5, type:"blink"};
 
       // Set to neutral face (VALENCE-AROUSAL)
       //block.faceShift = {start: 0, end: 2, valaro: [0,0], type:"faceShift"};
@@ -401,27 +389,7 @@ BehaviourPlanner.prototype.newBlock = function(block){
   if ( block.control ){
     this.transition(block);
   }
-    /*
-	// User input
-  if (block.userText)
-    this.conversation = "USER: " + block.userText + "\n";
 
-	// If langauge-generation
-	if (block.lg){
-    block.blink = [];
-    block.face = [];
-    
-		// List of bml instructions
-		if (block.lg.constructor === Array)
-         for (var i = 0; i <block.lg.length; i++){
-           this.processSpeechBlock(block.lg[i], block, (i == block.lg.length-1));
-           this.addUtterancePause(block.lg[i]);
-         }
-    	// No array
-    	else
-    		this.processSpeechBlock(block.lg, block, true);
-	}
-*/
 	// If non-verbal -> inside mode-selection.nonverbal
 	if (block.nonVerbal){
 		// Add gesture (check arousal of message)
@@ -447,24 +415,7 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function(dt){
   // 1.4 - 14 blinks per min during reading
   
   var block = null;
-  
-  // Blink
-  this.blinkCountdown += dt;
-  if (this.blinkCountdown > this.blinkIdle){
-    block = {
-      blink: 
-      {
-        start :0,
-        end: this.blinkDur
-      }
-    };
-    
-    this.blinkCountdown = this.blinkDur;
-    this.blinkIdle = this.blinkDur + 0.5 + Math.random()*10;
-    this.blinkDur = Math.random()*0.5 + 0.15;
-    block.composition = "MERGE"
-  }
-  
+   
   // Saccade
   this.saccCountdown += dt;
   if (this.saccCountdown > this.saccIdle){
@@ -519,14 +470,6 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
     type:"gazeShift"
 	}
   
-	// blink
-	var startBlink = -Math.random()*0.2;
-	var blink = {
-    start: startBlink,
-		end: end,
-    type:"blink"
-	}
-
 	// headDirectionShift
 	var offsetDirections = ["CAMERA","DOWN", "DOWNLEFT", "DOWNRIGHT"]; // Submissive? Listening?
   var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
@@ -558,7 +501,7 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
   } 
   else
   {
-    this.addToBlock(blink, block, "blink");
+    //this.addToBlock(blink, block, "blink");
     //this.addToBlock(faceVA, block, "faceVA");
     this.addToBlock(gazeShift, block, "gazeShift");
     this.addToBlock(headDir, block, "headDirectionShift");

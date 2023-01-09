@@ -18,8 +18,6 @@ function FacialController( config = null ) {
     "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
     "CAMERA": new THREE.Vector3(0, 2, 100)
     };
-  this._Blink = null;
-  this._blinking = false;
   
   this.squintBSName = "Squint";
   this.eyelidsBSName = "Blink";
@@ -162,9 +160,9 @@ FacialController.prototype.start = function(morphTargets)
   // Gaze manager
   this.gazeManager = new GazeManager(lookAtNeckNode, lookAtHeadNode, lookAtEyesNode, this._gazePositions);
 
-
   this.headBML = [];//null;
-  
+
+  this.autoBlink = new Blink();
 
 }
 
@@ -178,11 +176,7 @@ FacialController.prototype.reset = function () {
 
   this._FacialLexemes.length = 0;
   this.FA.reset();
-
-  
-  if ( this._Blink ){   this._Blink.transition = false; }
-  this._blinking = false;
-  
+ 
   this.gazeManager.reset();
   this.headBML.length = 0;
 }
@@ -244,7 +238,7 @@ FacialController.prototype.update = function(dt)
     head.update(dt);
     headQuat.multiply( head.currentStrokeQuat );
   }
-*/
+  */
 }
 
 // Update facial expressions
@@ -349,7 +343,9 @@ FacialController.prototype.faceUpdate = function(dt){
     }
   }
 
+  
   //Second pass, compute mean (division)
+  // result = ( val1 * |val1|/|sumVals| ) + ( val2 * |val2|/|sumVals| ) + ...
   // copy blendshape arrays back to real arrays and compute biased average  
   let target = this._facialBS["Body"];
   let numerator = this._facialBSFinal["Body"];
@@ -358,23 +354,17 @@ FacialController.prototype.faceUpdate = function(dt){
     if (acc[i] < 0.0001){ target[i] = 0; }
     else { target[i] = numerator[i] / acc[i]; }
   }
-
+  
   // --- UPDATE POST BIASED AVERAGE --- 
   // this._facialBS has all the valid values
-
-  // Eye blink
-  if (this._blinking && this._eyeLidsBS.length > 1){
-    let blinkW_0 = this._facialBS["Body"][this._eyeLidsBS[0][0]]; // current state of eyelids without any blinking
-    let blinkW_1 = this._facialBS["Body"][this._eyeLidsBS[0][1]]; // current state of eyelids without any blinking
-    
-    let weights = this._Blink.update(dt, blinkW_0, blinkW_1);
-    this._facialBS[ "Body" ][this._eyeLidsBS[0][0]] = weights[0];
-    this._facialBS[ "Body" ][this._eyeLidsBS[0][1]] = weights[1];
-      
-    if (!this._Blink.transition)
-      this._blinking = false;
-  }    
   
+  // Eye blink
+  if ( !this.autoBlink.between ){
+    this.autoBlink.update( dt, this._facialBS[ "Body" ][this._eyeLidsBS[0][0]], this._facialBS[ "Body" ][this._eyeLidsBS[0][1]] ); 
+    this._facialBS[ "Body" ][this._eyeLidsBS[0][0]] = this.autoBlink.weights[0];
+    this._facialBS[ "Body" ][this._eyeLidsBS[0][1]] = this.autoBlink.weights[1];
+  }
+
 
   // fix eyelashes after all facial is done
   for(let i = 0; i< this._eyeLidsBS[0].length; i++){        
@@ -396,16 +386,6 @@ FacialController.prototype.faceUpdate = function(dt){
   }
 }
 
-// --------------------- BLINK ---------------------
-// Create blink object
-FacialController.prototype.newBlink = function(blinkData){
-  //blinkData.end = blinkData.end || blinkData.attackPeak * 2 || 0.5;
-  let keys = Object.keys(this._morphDeformers);
-  this._Blink = new Blink(blinkData);
-  
-  this._blinking = true;
-
-}
 
 // ----------------------- TEXT TO LIP --------------------
 // Create a Text to Lip mouthing

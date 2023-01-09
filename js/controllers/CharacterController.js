@@ -265,9 +265,6 @@ CharacterController.prototype.processBML = function (key, bml) {
   let thatFacial = this.facialController;
 
   switch (key) {
-    case "blink":
-      thatFacial.newBlink(bml);
-      break;
     case "gaze":
       thatFacial.newGaze(bml, !!bml.shift); // !!shift make it bool (just in case)
       break;
