@@ -28,27 +28,6 @@ Example of objects inside the  "data" array
     lexeme: "NMF_ARCH"
 }
 ```
----
-
-## Blink
-
-:warning: Soon to be deprecated ! 
-
-Blinking will be automatically managed. To synthesise some kind of eyelid movement, use the lexeme instructions instead.
-
-``` javascript
-type: "blink" 
-
-{
-    type: "blink",
-    start: 0.5,
-    attackPeak: 0.6, // reaches target/amount
-    relax: 0.7,  // starts undoing blink
-    end: 0.8, 
-    amount: 1
-}
-
-```
 
 ---
 

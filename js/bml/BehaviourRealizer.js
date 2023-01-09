@@ -6,73 +6,94 @@ let RAD2DEG = 180 / Math.PI;
 // --------------------- BLINK ---------------------
 // BML
 // <blink start attackPeak relax end amount>
-
-function Blink(blinkData) {
-  // Sync attributes
-  this.start = blinkData.start || 0;
-  this.end = blinkData.end || 0.5;
-  this.attackPeak = blinkData.attackPeak || (this.end - this.start) * 0.4 + this.start;
-  this.relax = blinkData.relax || this.attackPeak;
-
-  this.targetWeight = blinkData.amount || 0.75;
-  this.currentWeights = [0,0]; // for both eyelids
-
-  // Transition
-  this.transition = true;
-  this.time = 0;
+function Blink(){
+  this.start = 0;
+  this.end = 0;
+  this.initWs = [0,0];
+  this.weights = [0,0];
+  this.blinking = false;
+  this.between = false;
+  this.elapsedTime = 0;
 }
 
-// w = current state of eyelids without considering the blink. Both eyelids might have different states (i.e. wink)
-Blink.prototype.update = function (dt, w0 = 0, w1 = 0) {
-  this.time += dt;
+Blink.prototype.getEnd = function(){ 
+  return 0.5;//1000;//Math.random()*1000;
+}
 
-  // Waiting to reach start
-  if (this.time < this.start){
-    this.currentWeights[0] = w0;
-    this.currentWeights[1] = w1;
-    return this.currentWeights;
+Blink.prototype.initBlinking = function( cw0, cw1 ){
+  this.initWs[0] = cw0;   this.initWs[1] = cw1;
+  this.weights[0] = cw0;    this.weights[1] = cw1;
+  this.elapsedTime = 0;
+  this.start = 0;
+  let lowestWeight = Math.min( cw0, cw1 );
+  lowestWeight = Math.min( 1, Math.max( 0, lowestWeight ) );
+  this.end = this.getEnd()*(1-lowestWeight);
+  this.end = Math.max( this.end, this.start ); // just in case
+}
+
+Blink.prototype.blink = function(){
+  this.start = -1;
+  this.elapsedTime = -1;
+  this.blinking = true;
+  this.between = false;
+}
+
+Blink.prototype.update = function(dt, currentWeight0, currentWeight1){
+
+  if(this.blinking && dt>0){
+      if(this.start < 0){
+          this.initBlinking( currentWeight0, currentWeight1 );  
+      }
+
+      this.elapsedTime += dt;
+      this.initWs[0] = currentWeight0;
+      this.initWs[1] = currentWeight1;
+      
+      this.computeWeight(this.elapsedTime);
+
+      if(this.elapsedTime > this.end) {
+          this.blinking = false;
+          return
+      }
   }
-
-  let inter = 0;
-  // Transition 1 (closing eyes)
-  if ( this.time < this.attackPeak ) {
-    inter = (this.time - this.start) / (this.attackPeak - this.start);
-    // Cosine interpolation
-    inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
-    // Return value
-    this.currentWeights[0] = w0 * (1 - inter) + this.targetWeight * inter;
-    this.currentWeights[1] = w1 * (1 - inter) + this.targetWeight * inter;
-    return this.currentWeights;
-  }
-
-  // Stay still from attackPeak to relax
-  if ( this.time < this.relax ) {
-    this.currentWeights[0] = this.targetWeight;
-    this.currentWeights[1] = this.targetWeight;
-    return this.currentWeights;
-  }
-
-
-  // Transition 2 (opening back)
-  if (this.time < this.end) {
-    inter = (this.time - this.relax) / (this.end - this.relax);
-    // Cosine interpolation
-    inter = Math.cos(Math.PI * inter) * 0.5 + 0.5;
-    // Interpolate with scene eyeLidsBSW
-    this.currentWeights[0] = w0 * (1 - inter) + this.targetWeight * inter;
-    this.currentWeights[1] = w1 * (1 - inter) + this.targetWeight * inter;
-    return this.currentWeights;
-  }
-
-  // End 
-  if (this.time >= this.end) {
-    this.transition = false;
-    this.currentWeights[0] = w0;
-    this.currentWeights[1] = w1;
-    return this.currentWeights;
+  else if(!this.between) {
+      this.between = true;
+      setTimeout(this.blink.bind(this), Math.random()*3000 + 1500);
   }
 
 }
+
+
+//Paper --> Eye Movement Synthesis with 1/ f Pink Noise -- Andrew Duchowski∗, Sophie Jörg, Aubrey Lawson, Takumi Bolte, Lech Swirski  ́
+
+// W(t) = -> a - (t/mu)^2 if t<=mu
+//        -> b - e^(-w*log(t-mu+1)) otherwise
+// where t = [0,100] normalized percent blink duration 
+// mu = 37 when the lid should reach full closure
+// a = 0.98 percent lid closure at the start of the blink
+// b = 1.18 
+// w = mu/100 parameters used to shape the asymptotic lid opening dunction
+
+Blink.prototype.computeWeight = function(dt){
+  let t = (dt - this.start)/(this.end - this.start)*100;
+  t = Math.min( 100, Math.max(0, t));
+  let mu = 37;
+  let a = 1;
+  let b = 1.18;
+  let c = mu/100;
+  let w = 0; 
+  if(t<=mu){
+      w = a - Math.pow(t/mu,2);
+  }
+  else{
+      w = b - Math.pow(Math.E,(-c*Math.log2(t-mu+1)))
+  }
+  w = Math.min( 1, Math.max( 0, w ) );
+  this.weights[0] = 1-w*(1-this.initWs[0] );
+  this.weights[1] = 1-w*(1-this.initWs[1] );
+}
+
+
 
 
 // --------------------- FACIAL EXPRESSIONS ---------------------
@@ -395,8 +416,14 @@ function FacialEmotion( sceneBSW ){
   this.currentVABSW.fill(0);
   this.initialVABSW = this.currentVABSW.slice();
   this.targetVABSW = this.currentVABSW.slice();
+}
 
-
+FacialEmotion.prototype.reset = function () {
+  this.currentVABSW.fill( 0 );
+  this.initialVABSW.fill( 0 );
+  this.targetVABSW.fill( 0 );
+  this.transition = false;
+  this.time = 0; 
 }
 
 FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
@@ -662,6 +689,20 @@ function GazeManager(lookAtNeck, lookAtHead, lookAtEyes, gazePositions = null) {
   this.gazeActions[0] = new Gaze( this.lookAtEyes, this.gazePositions, true);
   this.gazeActions[1] = new Gaze( this.lookAtHead, this.gazePositions, false);
   this.gazeActions[2] = new Gaze( this.lookAtNeck, this.gazePositions, false);
+}
+
+GazeManager.prototype.reset = function ( ){
+  
+  this.lookAtNeck.position.set(0, 2.5, 100);
+  this.lookAtHead.position.set(0, 2.5, 100);
+  this.lookAtEyes.position.set(0, 2.5, 100);
+
+  this.gazeActions[0].transition = false;
+  this.gazeActions[1].transition = false;
+  this.gazeActions[2].transition = false;
+
+  this.gazeActions[0].eyelidsW = 0;
+  this.gazeActions[0].squintW = 0;
 }
 
 // gazeData with influence, sync attr, target, offsets...

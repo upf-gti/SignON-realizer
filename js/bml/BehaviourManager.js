@@ -10,10 +10,9 @@
 function BehaviourManager() {
 
 	// BML instruction keys
-	this.bmlKeys = ["blink", "gaze", "gazeShift", "face", "faceShift", "head", "headDirectonShift", "lg", "gesture", "posture", "animation"];
+	this.bmlKeys = [ "gaze", "gazeShift", "face", "faceShift", "head", "headDirectonShift", "lg", "gesture", "posture", "animation"];
 
 	// BML stack
-	this.blinkStack = [];
 	this.gazeStack = [];
 	this.faceStack = [];
 	this.headStack = [];
@@ -26,11 +25,27 @@ function BehaviourManager() {
 	this.lgStack = [];
 	this.animationStack = [];
 
-	this.BMLStacks = [this.blinkStack, this.gazeStack, this.faceStack, this.headStack, this.headDirStack, this.speechStack, this.lgStack,
+	this.BMLStacks = [this.gazeStack, this.faceStack, this.headStack, this.headDirStack, this.speechStack, this.lgStack,
 	this.gestureStack, this.pointingStack, this.postureStack, this.animationStack];
 
 	// Block stack
 	this.stack = [];
+}
+
+BehaviourManager.prototype.reset = function (){
+	// reset stacks
+	this.gazeStack.length = 0;
+	this.faceStack.length = 0;
+	this.headStack.length = 0;
+	this.headDirStack.length = 0;
+	this.speechStack.length = 0;
+	this.gestureStack.length = 0;
+	this.pointingStack.length = 0;
+	this.postureStack.length = 0;
+	this.lgStack.length = 0;
+	this.animationStack.length = 0;
+
+	this.stack.length = 0;
 }
 
 // TODO: PROVIDE FEEDBACK AND WARNINGS
@@ -107,7 +122,7 @@ BehaviourManager.prototype.newBlock = function (block, time) {
 
 	// Remove blocks with no content
 	if (block.end == 0) {
-		console.error("Refused block.\n", JSON.stringify(block));
+		//console.error("Refused block.\n", JSON.stringify(block));
 		return;
 	}
 
@@ -123,10 +138,6 @@ BehaviourManager.prototype.fixBlock = function (block) {
 	block.start = isNaN(block.start) ? 0 : block.start;
 
 	// Define timings and find sync attributes (defaults in percentage unless start and end)
-	// Blink
-	if (block.blink)
-		block.blink = this.fixBML(block.blink, "blink", block, { start: 0, attackPeak: 0.25, relax: 0.25, end: 0.5 });
-
 	// Gaze
 	if (block.gaze)
 		block.gaze = this.fixBML(block.gaze, "gaze", block, { start: 0, ready: 0.33, relax: 0.66, end: 2.0 });
@@ -367,10 +378,6 @@ BehaviourManager.prototype.addToBMLStacks = function (block) {
 
 	let globalStart = block.startGlobalTime;
 
-	// Blink
-	if (block.blink)
-		this.processIntoBMLStack(block.blink, this.blinkStack, globalStart, block.composition);
-
 	// Gaze
 	if (block.gaze)
 		this.processIntoBMLStack(block.gaze, this.gazeStack, globalStart, block.composition);
@@ -424,8 +431,6 @@ BehaviourManager.prototype.addToBMLStacks = function (block) {
 // Add bml action to stack
 BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalStart, composition) {
 
-
-
 	// Several instructions
 	if (bml.constructor === Array) {
 		for (let i = 0; i < bml.length; i++)
@@ -446,9 +451,6 @@ BehaviourManager.prototype.processIntoBMLStack = function (bml, stack, globalSta
 
 
 BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, composition){
-	// Overwrite
-
-
 	let merged = false;
 	
 	// Refs to another block (negative global timestamp)
@@ -593,7 +595,6 @@ BehaviourManager.prototype.mergeBMLSyncFix = function (syncAttr, start, globalSt
 // Checks that all stacks are ordered according to the timeline (they should be as they are insterted in order)
 BehaviourManager.prototype.check = function () {
 
-	if (this.errorCheck(this.blinkStack)) console.error("Previous error is in blink stack");
 	if (this.errorCheck(this.gazeStack)) console.error("Previous error is in gaze stack");
 	if (this.errorCheck(this.faceStack)) console.error("Previous error is in face stack");
 	if (this.errorCheck(this.headStack)) console.error("Previous error is in head stack");
