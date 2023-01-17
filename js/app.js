@@ -76,6 +76,70 @@ class App {
 		let folder = gui.addFolder( 'Animations' );
         
         let folderAnims = {
+            happyISLday() {
+                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Happy ISL Day.glb', 'ISL - Happy ISL Day', () => {
+                    that.msg = {
+                        type: "behaviours",
+                        data: [
+                            {
+                                type: "faceLexeme",
+                                start: 0.3,
+                                attackPeak: 0.7,
+                                relax: 3.5,
+                                end: 4.5,
+                                amount: 0.5,
+                                lexeme: 'RAISE_BROWS'
+                            },
+                            {
+                                type: "faceEmotion",
+                                start: 0.3,
+                                attackPeak: 0.7,
+                                relax: 3.9,
+                                end: 5.1,
+                                amount: 0.3,
+                                emotion: "HAPPINESS",
+                            },
+                            {
+                                type: "speech",
+                                start: 0.3,
+                                end: 1.3,
+                                text: "aaaaa pii",
+                                speed: 9/1.3,
+                            },
+                            {
+                                type: "speech",
+                                start: 1.6,
+                                end: 2.2,
+                                text: "aaaaii",
+                                speed: 6/0.7
+                            },
+                            {
+                                type: "speech",
+                                start: 2.2,
+                                end: 2.6,
+                                text: "ssss",
+                                speed: 4/0.4
+                            },
+                            {
+                                type: "speech",
+                                start: 2.6,
+                                end: 3.0,
+                                text: "llll",
+                                speed: 4/0.4
+                            },
+                            {
+                                type: "speech",
+                                start: 3.1,
+                                end: 3.6,
+                                text: "de",
+                                speed: 2/0.5
+                            },
+                        ]
+                    }; 
+                    that.ECAcontroller.reset();
+                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+                });
+            },
             bslThanks() { 
                 that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Thank You', () => {
                     that.msg = {
@@ -209,6 +273,7 @@ class App {
 
 		};
 
+        folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
         folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
         folder.add(folderAnims, 'bslApp').name('BSL App')
         folder.add(folderAnims, 'vgtThanks').name('VGT Thanks (w/o NMFs)')
@@ -217,7 +282,6 @@ class App {
         folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
         folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
         folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
-
     }
 
     init() {
@@ -249,6 +313,7 @@ class App {
         this.controls.target.set(0.0, 1.3, 0);
         this.controls.update();
         
+        // IBL Light
         // var that = this;
 
         // new RGBELoader()
