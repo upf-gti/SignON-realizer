@@ -50,11 +50,11 @@ The files in this block: _BehaviourManager_, _BehavhourPlanner_ and _BehaviourRe
 - _BehaviourRealizer_: a set of diverse functionalities to execute some particular instruction
 
 ## Collaborators
-Víctor Ubieto @victorubieto
-Eva Valls @evallsg
-Jaume Pozo @japopra
-Pablo García @PZerua
-Alex Rodríguez @jxarco
+- Víctor Ubieto [@victorubieto](https://github.com/victorubieto)
+- Eva Valls [@evallsg](https://github.com/evallsg)
+- Jaume Pozo [@japopra](https://github.com/japopra)  
+- Pablo García [@PZerua](https://github.com/PZerua)
+- Alex Rodríguez [@jxarco](https://github.com/jxarco)
 
 ## License
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
