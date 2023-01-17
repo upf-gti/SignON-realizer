@@ -125,11 +125,11 @@ class App {
 
         let envPromise = new RGBELoader()
             .setPath( 'data/hdrs/' )
-            .load( 'ballroom.hdr', function ( texture ) {
+            .load( 'cafe.hdr', function ( texture ) {
 
                 texture.mapping = THREE.EquirectangularReflectionMapping;
 
-                that.scene.background = texture;
+                //that.scene.background = texture;
                 that.scene.environment = texture;
 
                 // if environment gets removed, set this to value: null !!!
@@ -158,7 +158,7 @@ class App {
         // this.scene.add(this.neckTarget);
 
         // ---------- Scene lights ----------
-        this.initLights()
+        this.initLights(); // necessary for the eyes renders (burns the skin) (TODO: correct at some point, ask Santi)
 
         // ---------- Load shaders ----------
         this.shaderManager = new ShaderManager("data/shaders/");
