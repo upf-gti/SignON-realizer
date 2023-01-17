@@ -156,16 +156,13 @@ FacialController.prototype.start = function(morphTargets)
   else if( !this._gazePositions["NECKTARGET"] )
     this._gazePositions["NECKTARGET"] = lookAtNeckNode.getWorldPosition(new THREE.Vector3());
 
-
   // Gaze manager
   this.gazeManager = new GazeManager(lookAtNeckNode, lookAtHeadNode, lookAtEyesNode, this._gazePositions);
 
   this.headBML = [];//null;
 
   this.autoBlink = new Blink();
-
 }
-
 
 FacialController.prototype.reset = function () {
 
@@ -180,10 +177,10 @@ FacialController.prototype.reset = function () {
   this.gazeManager.reset();
   this.headBML.length = 0;
 }
- 
-FacialController.prototype.resetFace = function(){
-  for(let part in this._facialBS){
-    for(let i = 0; i<this._facialBS[part].length; i++){
+
+FacialController.prototype.resetFace = function() {
+  for(let part in this._facialBS) {
+    for(let i = 0; i<this._facialBS[part].length; i++) {
       this._facialBS[part][i] = 0;
       this._facialBSAcc[part][i] = 0;
       this._facialBSFinal[part][i] = 0;
@@ -191,14 +188,14 @@ FacialController.prototype.resetFace = function(){
     }
   }
 }
+
 //example of one method called for ever update event
-FacialController.prototype.update = function(dt)
-{
+FacialController.prototype.update = function(dt) {
   
   // Update facial expression
   this.faceUpdate(dt);
 
-  
+  /*
   // Gaze
   if (this.gazeManager){
     let weights = this.gazeManager.update(dt);
@@ -217,41 +214,41 @@ FacialController.prototype.update = function(dt)
     }
   }
 
-  // let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
-  // let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-  // let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-  // this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
-  // this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
+  let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
+  let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
+  let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
+  this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
+  this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
 
-  // this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
-  // this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
+  this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+  this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
 
-  // // HEAD (nod, shake, tilt)
-  // let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
-  // for( let i = 0; i< this.headBML.length; ++i){
-  //   let head = this.headBML[i];
-  //   if( !head.transition ){
-  //     this.headBML.splice(i,1);
-  //     --i;
-  //     continue;
-  //   }
-  //   head.update(dt);
-  //   headQuat.multiply( head.currentStrokeQuat );
-  // }
-
+  // HEAD (nod, shake, tilt)
+  let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
+  for( let i = 0; i< this.headBML.length; ++i){
+    let head = this.headBML[i];
+    if( !head.transition ){
+      this.headBML.splice(i,1);
+      --i;
+      continue;
+    }
+    head.update(dt);
+    headQuat.multiply( head.currentStrokeQuat );
+  }
+  */
 }
 
 // Update facial expressions
-FacialController.prototype.faceUpdate = function(dt){
+FacialController.prototype.faceUpdate = function(dt) {
   let keys = Object.keys(this._facialBSAcc); 
   // for each part (body, eyelashes), reset accumulators for biased average
-  for(let i = 0; i < keys.length; ++i ){
+  for(let i = 0; i < keys.length; ++i ) {
     this._facialBSAcc[keys[i]].fill(0);
     this._facialBSFinal[keys[i]].fill(0);
   }
 
   // Text to lip
-  if(this.textToLip && this.textToLip.getCompactState() == 0 ){ // when getCompactState==0 lipsync is working, not paused and has sentences to process
+  if(this.textToLip && this.textToLip.getCompactState() == 0 ) { // when getCompactState==0 lipsync is working, not paused and has sentences to process
     this.textToLip.update(dt);
     let t2lBSW = this.textToLip.getBSW(); // reference, not a copy
     for(let i = 0; i < this.textToLipBSMapping.length; i++){
@@ -263,7 +260,6 @@ FacialController.prototype.faceUpdate = function(dt){
       this._facialBSFinal["Body"][index] += value * Math.abs( value ); // numerator of biased average
     }
   }
-
 
   // lipsync
   if(this.lipsyncModule && this.lipsyncModule.working) // audio to lip
@@ -307,13 +303,12 @@ FacialController.prototype.faceUpdate = function(dt){
     }
   }
   
-  
   //FacialEmotion ValAro/Emotions
-  if (this.FA.transition){
+  if (this.FA.transition) {
     // Update FA with Val Aro
     this.FA.updateVABSW( dt );
 
-    for (let j = 0; j < this.FA.currentVABSW.length; j++){
+    for (let j = 0; j < this.FA.currentVABSW.length; j++) {
       let value = this.FA.currentVABSW[j];
       this._facialBSAcc["Body"][j] += Math.abs(value); // denominator of biased average
       this._facialBSFinal["Body"][j] += value * Math.abs( value ); // numerator of biased average
@@ -321,13 +316,13 @@ FacialController.prototype.faceUpdate = function(dt){
   }
     
   // FacialExpr lexemes
-  for (let k = 0; k < this._FacialLexemes.length; k++){
+  for (let k = 0; k < this._FacialLexemes.length; k++) {
     let lexeme = this._FacialLexemes[k]; 
-    if (lexeme.transition){
+    if (lexeme.transition) {
       lexeme.updateLexemesBSW(dt);
       // accumulate blendshape values
-      for (let i = 0; i < lexeme.indicesLex.length; i++){
-        for (let j = 0; j < lexeme.indicesLex[i].length; j++){
+      for (let i = 0; i < lexeme.indicesLex.length; i++) {
+        for (let j = 0; j < lexeme.indicesLex[i].length; j++) {
           let value = lexeme.currentLexBSW[i][j];
           let index = lexeme.indicesLex[i][j];
           this._facialBSAcc["Body"][index] += Math.abs(value); // denominator of biased average
@@ -337,21 +332,20 @@ FacialController.prototype.faceUpdate = function(dt){
     }
 
     // remove lexeme if finished
-    if (!lexeme.transition){
+    if (!lexeme.transition) {
         this._FacialLexemes.splice(k, 1);
         --k;
     }
   }
 
-  
   //Second pass, compute mean (division)
   // result = ( val1 * |val1|/|sumVals| ) + ( val2 * |val2|/|sumVals| ) + ...
   // copy blendshape arrays back to real arrays and compute biased average  
   let target = this._facialBS["Body"];
   let numerator = this._facialBSFinal["Body"];
   let acc = this._facialBSAcc["Body"];
-  for( let i = 0; i < target.length; ++i){
-    if (acc[i] < 0.0001){ target[i] = 0; }
+  for(let i = 0; i < target.length; ++i) {
+    if (acc[i] < 0.0001) { target[i] = 0; }
     else { target[i] = numerator[i] / acc[i]; }
   }
   
@@ -359,28 +353,26 @@ FacialController.prototype.faceUpdate = function(dt){
   // this._facialBS has all the valid values
   
   // Eye blink
-  if ( !this.autoBlink.between ){
+  if ( !this.autoBlink.between ) {
     this.autoBlink.update( dt, this._facialBS[ "Body" ][this._eyeLidsBS[0][0]], this._facialBS[ "Body" ][this._eyeLidsBS[0][1]] ); 
     this._facialBS[ "Body" ][this._eyeLidsBS[0][0]] = this.autoBlink.weights[0];
     this._facialBS[ "Body" ][this._eyeLidsBS[0][1]] = this.autoBlink.weights[1];
   }
 
-
   // fix eyelashes after all facial is done
-  for(let i = 0; i< this._eyeLidsBS[0].length; i++){        
+  for(let i = 0; i< this._eyeLidsBS[0].length; i++) {        
       this._facialBS[ "Eyelashes" ][this._eyeLidsBS[1][i]] = this._facialBS[ "Body" ][this._eyeLidsBS[0][i]];
   }  
-  for(let i = 0; i< this._squintBS[0].length; i++){        
+  for(let i = 0; i< this._squintBS[0].length; i++) {        
     this._facialBS[ "Eyelashes" ][this._squintBS[1][i]] = this._facialBS[ "Body" ][this._squintBS[0][i]];
   }  
 
-
   // "Render" final facial (body && eyelashes) blendshapes
   // copy blendshape arrays back to real arrays 
-  for(let part in this._morphDeformers){
+  for(let part in this._morphDeformers) {
     let target = this._morphDeformers[part].morphTargetInfluences;
     let source = this._facialBS[part];
-    for( let i = 0; i < target.length; ++i){
+    for( let i = 0; i < target.length; ++i) {
       target[i] = source[i];
     }
   }
@@ -389,9 +381,8 @@ FacialController.prototype.faceUpdate = function(dt){
 
 // ----------------------- TEXT TO LIP --------------------
 // Create a Text to Lip mouthing
-FacialController.prototype.newTextToLip = function (info)
-{
-  if(!this.textToLip){ // setup
+FacialController.prototype.newTextToLip = function (info) {
+  if(!this.textToLip) { // setup
 
     this.textToLip = new Text2LipInterface();
     this.textToLip.start(); // keep started but idle
@@ -401,8 +392,7 @@ FacialController.prototype.newTextToLip = function (info)
     let t2lBSWMap = T2LTABLES.BlendshapeMapping;
 
     // determine which blendshapes exist and map them to text2lip output
-    for(let i = 0; i<BS.length; i++)
-    {
+    for(let i = 0; i<BS.length; i++) {
       if(BS[i].includes("Midmouth_Left"))      this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
       if(BS[i].includes("Midmouth_Right"))     this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
       if(BS[i].includes("MouthNarrow_Left"))   this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
@@ -432,16 +422,15 @@ FacialController.prototype.newTextToLip = function (info)
 
 // --------------------- lipsync --------------------------------
 // Create a Text to Lip mouthing
-FacialController.prototype.newLipsync = function (bml){
-  if (!this.lipsyncModule){ return; }
+FacialController.prototype.newLipsync = function (bml) {
+  if (!this.lipsyncModule) 
+    return;
 
   if (bml.audio)
     this.lipsyncModule.loadBlob(bml.audio);
   else if (bml.url)
     this.lipsyncModule.loadSample(bml.url);
 }
-
-
 
 
 // --------------------- FACIAL EXPRESSIONS ---------------------
@@ -462,11 +451,8 @@ FacialController.prototype.newLipsync = function (bml){
 // face/faceShift can contain several sons of type faceLexeme without sync attr
 // valaro Range [-1, 1]
 
-
-
-
 // Declare new facial expression
-FacialController.prototype.newFA = function(faceData, shift){
+FacialController.prototype.newFA = function(faceData, shift) {
   // Use BSW of the agent
   
   for(let morph in this._facialBS){
@@ -493,7 +479,7 @@ FacialController.prototype.newFA = function(faceData, shift){
 
 // "HEAD" position is added on Start
 
-FacialController.prototype.newGaze = function(gazeData, shift, gazePositions, headOnly){
+FacialController.prototype.newGaze = function(gazeData, shift, gazePositions, headOnly) {
 
   // TODO: recicle gaze in gazeManager
   let keys = Object.keys(this._facialBS);
@@ -511,7 +497,7 @@ FacialController.prototype.newGaze = function(gazeData, shift, gazePositions, he
 // BML
 // <headDirectionShift start end target>
 // Uses gazeBML
-FacialController.prototype.headDirectionShift = function(headData, cmdId){
+FacialController.prototype.headDirectionShift = function(headData, cmdId) {
   headData.end = headData.end || 2.0;
   
   headData.influence = "HEAD";
@@ -526,13 +512,12 @@ FacialController.prototype.headDirectionShift = function(headData, cmdId){
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 // New head behavior
-FacialController.prototype.newHeadBML = function(headData){
+FacialController.prototype.newHeadBML = function(headData) {
   let lookAt = this.character.getObjectByName(this.headNode);
   if (lookAt){
     this.headBML.push( new HeadBML(headData, lookAt, lookAt.quaternion.clone()) );
   }
 }
-
 
 
 export { FacialController }

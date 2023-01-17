@@ -2,10 +2,9 @@ import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { CharacterController } from './controllers/CharacterController.js'
-import { GUI } from '../libs/lil-gui.module.min.js'
-
-let firstframe = true;
+import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -16,7 +15,7 @@ class App {
 
     constructor() {
         
-        this.clock = new THREE.Clock(false);
+        this.clock = new THREE.Clock();
         this.loaderBVH = new BVHLoader();
         this.loaderGLB = new GLTFLoader();
         
@@ -24,159 +23,292 @@ class App {
         this.renderer = null;
         this.camera = null;
         this.controls = null;
-        this.spotLight = null;
 
-        this.capturer = null;
-        this.recorded = true; // set to true if you don't want to create a video (webm)
-        this.recording = false;
-
-        this.mixer = null;
-        this.skeletonHelper = null;
-        this.boneContainer = null;
-
-        this.skeleton = null;
-        this.model = null;
-        this.srcModel = null;
-        this.animSkeleton = null;
-        this.srcBindPose = null;
-        this.tgtBindPose = null;
-
-        this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
+        
+        // current model selected
+        this.model = null;
+        this.ECAcontroller = null;
+        this.mixer = null;
+        this.skeletonHelper = null;
 
-        this.body = null;
-        this.eyelashes = null;
+        this.msg = {};
     }
-    createPanel() {
-        let gui = new GUI();
-        let button = {add: () =>{ 
-            // send the facial actions to do
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "faceLexeme",
-                        start: 0.1,
-                        attackPeak: 0.6,
-                        relax: 1.5,
-                        end: 1.8,
-                        amount: 0.7,
-                        lexeme: "RAISE_BROWS"
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 1.9,
-                        ready: 2.1,
-                        relax: 3.1,
-                        end: 3.4,
-                        amount: 0.5,
-                        lexeme: 'LOWER_BROWS'
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 1,
-                        attackPeak: 1.4,
-                        relax: 2.1,
-                        end: 2.5,
-                        amount: 0.5,
-                        lexeme: "LIP_STRECHER"
-                    },
-                    {
-                        type: "speech",
-                        start: 5,
-                        end: 6,
-                        text: "thanks",
-                        textToLipInfo : { text: "thanks", phT: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
-                    },
-                    {
-                        type: "gaze",
-                        start: 0.5,
-                        end: 5,
-                        influence: "HEAD",
-                        target: "DOWN",
-                        offsetDirection: "CAMERA",
-                        offsetAngle: 0.5,
-                        shift: false
-                    },
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-         }};
-        gui.add(button, 'add');
 
-        let blink = {blink: () =>{ 
-            // send the facial actions to do
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "blink",
-                        start: 0,
-                        ready: 0.5,
-                        relax: 0.8,
-                        end: 1
-                    }
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-         }};
-        gui.add(blink, 'blink');
+    createPanel() {
+
+        let that = this;
+
+        let gui = new GUI();
+
+        
+        let params = {
+            colorChroma: 0x141455,
+            colorClothes: 0xFFFFFF,
+        } 
+                
+        // get init color and set them to sGRB (css works in sRGB) 
+        let color = new THREE.Color();
+        color.copyLinearToSRGB(that.scene.getObjectByName("Chroma").material.color);
+        params.colorChroma = color.getHex();
+
+        color.copyLinearToSRGB(that.model1.getObjectByName("Tops").material.color);
+        params.colorClothes = color.getHex();
+
+
+        gui.addColor(params, 'colorChroma').onChange( (e) => {
+            let color = that.scene.getObjectByName("Chroma").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+        });
+        gui.addColor(params, 'colorClothes').onChange( (e) => {
+            let color = that.model1.getObjectByName("Tops").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+
+            color = that.model2.getObjectByName("Tops").material.color; // css works in sRGB
+            color.setHex(e);
+            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+        });
+
+		let folder = gui.addFolder( 'Animations' );
+        
+        let folderAnims = {
+            bslThanks() { 
+                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Thank You', () => {
+                    that.msg = {
+                        type: "behaviours",
+                        data: [
+                            {
+                                type: "faceLexeme",
+                                start: 0.5,
+                                end: 4.5,
+                                amount: 0.8,
+                                lexeme: 'LOWER_BROWS'
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 0.3,
+                                attackPeak: 0.8,
+                                relax: 1.5,
+                                end: 2.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_CORNER_PULLER'
+                            },
+                            {
+                                type: "speech",
+                                start: 2.0,
+                                end: 2.6,
+                                text: "zenk iu",
+                                speed: 7/0.6
+                            },
+                            {
+                                type: "speech",
+                                start: 3.0,
+                                end: 4.2,
+                                text: "dhats greit",
+                                speed: 11/1.2
+                            },
+                        ]
+                    };
+                    that.ECAcontroller.reset();
+                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+                });
+            },
+            bslApp() { 
+                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Communicate via App', () => {
+                    that.msg = {
+                        type: "behaviours",
+                        data: [
+                            {
+                                type: "faceLexeme",
+                                start: 0.1,
+                                attackPeak: 0.3,
+                                relax: 4.1,
+                                end: 4.4,
+                                amount: 0.6,
+                                lexeme: 'RAISE_BROWS'
+                            },
+                            {
+                                type: "speech",
+                                start: 0.1,
+                                end: 0.4 ,
+                                text: "mit",
+                                speed: 3/0.3,
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 0.5,
+                                end: 1.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 0.5,
+                                end: 1.0,
+                                text: "mmmmmm",
+                                speed: 6/0.5
+                            },
+                            {
+                                type: "speech",
+                                start: 1.0,
+                                end: 2.0,
+                                text: "aaaa",
+                                speed: 4/1.0
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 2.0,
+                                end: 2.6,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 2.0,
+                                end: 2.6,
+                                text: "mmmmmm",
+                                speed: 6/0.6
+                            },
+                            {
+                                type: "faceLexeme",
+                                start: 2.6,
+                                end: 3.0,
+                                amount: 0.4,
+                                lexeme: 'LIP_PUCKERER'
+                            },
+                            {
+                                type: "speech",
+                                start: 3.0,
+                                end: 3.4,
+                                text: "aaaa",
+                                speed: 4/0.4
+                            },
+                            {
+                                type: "speech",
+                                start: 3.4,
+                                end: 4.4,
+                                text: "mmmmmm",
+                                speed: 6/1.0
+                            },
+                        ]
+                    };
+                    that.ECAcontroller.reset();
+                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+                }); 
+            },
+			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
+            vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App', ()=>{ that.mixer.timeScale = 0.7;}); },
+			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); },
+            islApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'ISL - Communicate via App', ()=>{ that.mixer.timeScale = 0.5;}); },
+			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
+			sleThanks() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'SLE - Thank You'); },
+
+		};
+
+        folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
+        folder.add(folderAnims, 'bslApp').name('BSL App')
+        folder.add(folderAnims, 'vgtThanks').name('VGT Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'vgtApp').name('VGT App (w/o NMFs)')
+        folder.add(folderAnims, 'islThanks').name('ISL Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
+        folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
+        folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
+
     }
 
     init() {
-        //this.createPanel();
+       
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
-        this.scene.fog = new THREE.Fog( 0xa0a0a0, 100, 150 );
-        
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
-        ground.position.y = -7; // it is moved because of the mesh scale
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        this.scene.add( ground );
-        
-        // lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-        hemiLight.position.set( 0, 20, 0 );
-        this.scene.add( hemiLight );
-
-        let spotLight = new THREE.SpotLight( 0xffa95c, 1 );
-        spotLight.position.set( -50, 50, 50);
-        spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.00001;
-        spotLight.shadow.mapSize.width = 1024 * 8;
-        spotLight.shadow.mapSize.height = 1024 * 8;
-        this.scene.add( spotLight );
-        this.spotLight = spotLight;
-
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 10, 50 );
-        dirLight.castShadow = false;
-        this.scene.add( dirLight );
-        
+        //const gridHelper = new THREE.GridHelper( 10, 10 );
+        //gridHelper.position.set(0,0.001,0);
+        //this.scene.add( gridHelper );
+                
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.7;
+        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        //this.renderer.toneMappingExposure = 0.7;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
+        this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
         this.renderer.shadowMap.enabled = true;
         document.body.appendChild( this.renderer.domElement );
 
         // camera
-        let W = 540, H = 960;
-        let AR = this.recorded ? window.innerWidth/window.innerHeight : W/H;
-        this.camera = new THREE.PerspectiveCamera(60, AR, 0.01, 1000);
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 3.4, 8);
+        this.controls.object.position.set(0.0, 1.5, 1);
         this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 50;
-        this.controls.target.set(0.0, 2.6, 0);
+        this.controls.maxDistance = 7;
+        this.controls.target.set(0.0, 1.3, 0);
         this.controls.update();
+        
+        // var that = this;
 
+        // new RGBELoader()
+        //     .setPath( 'data/hdrs/' )
+        //     .load( 'cafe.hdr', function ( texture ) {
+
+        //         texture.mapping = THREE.EquirectangularReflectionMapping;
+
+        //         // that.scene.background = texture;
+        //         that.scene.environment = texture;
+
+        //         that.renderer.render( that.scene, that.camera );
+        // } );
+
+        // include lights
+        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.2 );
+        this.scene.add( hemiLight );
+
+        let keySpotlight = new THREE.SpotLight( 0xffffff, 0.4, 0, 45 * (Math.PI/180), 0.5, 1 );
+        keySpotlight.position.set( 0.5, 2, 2 );
+        keySpotlight.target.position.set( 0, 1, 0 );
+        keySpotlight.castShadow = true;
+        keySpotlight.shadow.mapSize.width = 1024;
+        keySpotlight.shadow.mapSize.height = 1024;
+        keySpotlight.shadow.bias = 0.00001;
+        this.scene.add( keySpotlight.target );
+        this.scene.add( keySpotlight );
+
+        let fillSpotlight = new THREE.SpotLight( 0xffffff, 0.2, 0, 45 * (Math.PI/180), 0.5, 1 );
+        fillSpotlight.position.set( -0.5, 2, 1.5 );
+        fillSpotlight.target.position.set( 0, 1, 0 );
+        fillSpotlight.castShadow = true;
+        this.scene.add( fillSpotlight.target );
+        this.scene.add( fillSpotlight );
+
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
+        dirLight.position.set( 1.5, 5, 2 );
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.left= -1;
+        dirLight.shadow.camera.right= 1;
+        dirLight.shadow.camera.bottom= -1;
+        dirLight.shadow.camera.top= 1;
+        dirLight.shadow.bias = 0.00001;
+        dirLight.castShadow = true;
+        this.scene.add( dirLight );
+
+        
+        // add entities
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add( ground );
+        
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 6 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        backPlane.name = 'Chroma';
+        backPlane.position.z = -1;
+        backPlane.receiveShadow = true;
+        this.scene.add( backPlane );
+        
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
@@ -195,16 +327,15 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        // Load the model
-        this.loaderGLB.load( './data/anim/Signs.glb', (glb) => {
+        // loads a model
+        function loadModel ( nameString, callback, glb  ){
+            let model = this["model"+nameString] = glb.scene;
 
-            this.model = glb.scene;
-            this.model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.model.position.set(0, -8.0, 0);
-            this.model.scale.set(8.0, 8.0, 8.0);
-            this.model.castShadow = true;
+            model = glb.scene;
+            model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+            model.castShadow = true;
             
-            this.model.traverse( (object) => {
+            model.traverse( (object) => {
                 if ( object.isMesh || object.isSkinnedMesh ) {
                     object.material.side = THREE.FrontSide;
                     object.frustumCulled = false;
@@ -212,45 +343,82 @@ class App {
                     object.receiveShadow = true;
                     if (object.name == "Eyelashes")
                         object.castShadow = false;
-                    if(object.material.map) object.material.map.anisotropy = 16; 
-                    
+                    if(object.material.map) 
+                        object.material.map.anisotropy = 16;
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
 
-            this.skeletonHelper = new THREE.SkeletonHelper(this.model);
-            this.skeletonHelper.visible = false;
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(this.model);
+            let skeletonHelper = this[ "skeletonHelper"+nameString ] = new THREE.SkeletonHelper( model );
+            skeletonHelper.visible = false;
+            this.scene.add(skeletonHelper);
+            this.scene.add(model);
 
-            this.model.eyesTarget = this.eyesTarget;
-            this.model.headTarget = this.headTarget;
-            this.model.neckTarget = this.neckTarget;
+            model.eyesTarget = this.eyesTarget;
+            model.headTarget = this.headTarget;
+            model.neckTarget = this.neckTarget;
 
-            this.body = this.model.getObjectByName( 'BodyMesh' );
-            this.eyelashes = this.model.getObjectByName( 'Eyelashes' );
-            
-            this.ECAcontroller = new CharacterController({character: this.model});
-            this.ECAcontroller.start();
+            let ECAcontroller = this[ "ECAcontroller"+nameString ] = new CharacterController( {character: model} );
+            ECAcontroller.start();
 
             // load the actual animation to play
-            this.mixer = new THREE.AnimationMixer( this.model );
+            let mixer = this[ "mixer"+nameString ] = new THREE.AnimationMixer( model );
+            mixer.addEventListener('loop', () => { ECAcontroller.reset(); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
 
-            glb.animations.forEach(( clip ) => {
-                if (clip.name == "BSL - Communicate via App") {
-                    this.mixer.clipAction(clip).setEffectiveWeight( 1.0 ).play();
-                }
-            });
+            if ( callback ){ callback (); }
 
-            this.loadBVH('./data/anim/VGT Thanks.bvh');
-            
+        }
+
+        function loadfinished() {
+            this.model1.position.set(0.05, 0.96, 0 );
+            let q = new THREE.Quaternion();
+            q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
+            this.model1.quaternion.premultiply(q); 
+            q.setFromAxisAngle( new THREE.Vector3(0,0,1), 2 * Math.PI /180 ); // slightly tilted on z axis
+            this.model1.quaternion.premultiply(q); 
+
+            this.model2.position.set(0, 0., 0);
+
+            this.switchModel( this.model2 );
+
+            this.createPanel();
+            this.animate();
             $('#loading').fadeOut(); //hide();
-        } );
-        
+        }
+
+        // Load both models "synchronous". model1 = eva_Y    model2 = Signs
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', 
+                loadModel.bind( this, "1",  
+                        ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+                ) 
+        );
+
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
 
+    switchModel ( visibleModel ) {
+        // could be done with arrays but it is just a demo...
+        if ( visibleModel === this.model1 ){
+            this.model = this.model1;
+            this.ECAcontroller = this.ECAcontroller1;
+            this.mixer = this.mixer1;
+            this.skeletonHelper = this.skeletonHelper1;
+    
+            this.model1.visible = true;
+            this.model2.visible = false;
+        }
+        else {
+            this.model = this.model2;
+            this.ECAcontroller = this.ECAcontroller2;
+            this.mixer = this.mixer2;
+            this.skeletonHelper = this.skeletonHelper2;
+    
+            this.model1.visible = false;
+            this.model2.visible = true;
+        }
+
+    }
 
     animate() {
 
@@ -259,38 +427,13 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        // if (firstframe) {
-        //     this.clock.start();
-        //     firstframe = false;
-        //     requestAnimationFrame( this.animate.bind(this) );
-        //     return;
-        // }
+        if ( this.mixer ) { this.mixer.update(delta); }
+        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 
-        if (delta > 0.1) {
-            this.clock.stop();
-            this.clock.start();
-            return;
-        } else if (firstframe) {
-            this.clock.stop();
-            this.clock.start();
-            firstframe = false;
-        }
+        // correct hand's size
+        this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
+        this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
 
-        //console.log("a: " + delta + ", b: " + et);
-
-        if (this.mixer) {
-            this.mixer.update(delta);
-        }
-
-        // Update the animation mixer, the stats panel, and render this frame
-        this.ECAcontroller.update(delta, et);
-        let BSw = this.ECAcontroller.facialController._morphDeformers;
-        this.body.morphTargetInfluences = BSw["Body"].morphTargetInfluences;
-        this.eyelashes.morphTargetInfluences = BSw["Eyelashes"].morphTargetInfluences;
-        
-        let [x, y, z] = [... this.camera.position];
-        this.spotLight.position.set( x + 10, y + 10, z + 10);
-            
         this.renderer.render( this.scene, this.camera );
     }
     
@@ -302,96 +445,78 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    loadBVH( filename ) {
+    loadBVH( filename, callback=null ) {
 
         this.loaderBVH.load( filename , (result) => {
             
-            let msg = {
-                type: "behaviours",
-                data: [
-                    {
-                        type: "faceLexeme",
-                        start: 0.1,
-                        attackPeak: 0.3,
-                        relax: 4.1,
-                        end: 4.4,
-                        amount: 0.6,
-                        lexeme: 'RAISE_BROWS'
-                    },
-                    {
-                        type: "speech",
-                        start: 0.1,
-                        end: 0.4 ,
-                        text: "mit",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 0.5,
-                        end: 1.0,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 0.5,
-                        end: 1.0,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                    {
-                        type: "speech",
-                        start: 1.0,
-                        end: 2.0,
-                        text: "aaaa",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 2.0,
-                        end: 2.6,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 2.0,
-                        end: 2.6,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                    {
-                        type: "faceLexeme",
-                        start: 2.6,
-                        end: 3.0,
-                        amount: 0.4,
-                        lexeme: 'LIP_PUCKERER'
-                    },
-                    {
-                        type: "speech",
-                        start: 3.0,
-                        end: 3.4,
-                        text: "aaaa",
-                        speed: 5
-                    },
-                    {
-                        type: "speech",
-                        start: 3.4,
-                        end: 4.4,
-                        text: "mmmmmm",
-                        speed: 5
-                    },
-                ]
-            };
-            this.ECAcontroller.processMsg(JSON.stringify(msg));
-
-            this.animate();
+            for (let i = 0; i < result.clip.tracks.length; i++) {
+                result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+            }
             
+            this.switchModel( this.model1 ); // use signs model
+            this.ECAcontroller.reset(); // reset face status
+            this.msg = {};
+            
+            this.mixer.stopAllAction();
+            this.mixer._actions.length = 0;
+            this.mixer.timeScale = 1;
+            
+            let anim = this.mixer.clipAction( result.clip );
+            anim.setEffectiveWeight( 1.0 ).play();
+            this.mixer.update(0);
+            
+            // reset clock to avoid counting loading time as dt in update
+            this.clock.stop();
+            this.clock.start();
+            this.ECAcontroller.time = 0;
+
+
+            if (callback) {
+                callback();
+            }
+
         } );
+    }
+
+    loadGLB( filename, anim, callback=null ) {
+
+        this.loaderGLB.load( filename , (result) => {
+            result.animations.forEach(( clip ) => {
+
+                if (clip.name == anim) {
+
+                    for (let i = 0; i < clip.tracks.length; i++) {
+                        clip.tracks[i].name = clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+                    }
+
+                    this.switchModel( this.model2 ); // use signs model
+                    this.ECAcontroller.reset(); // reset face status
+                    this.msg = {};
+                    
+                    this.mixer.stopAllAction();
+                    this.mixer._actions.length = 0;
+                    this.mixer.timeScale = 1;
+                    
+                    let anim = this.mixer.clipAction( clip );
+                    anim.setEffectiveWeight( 1.0 ).play();
+                    this.mixer.update(0);
+                    
+                    // reset clock to avoid counting loading time as dt in update
+                    this.clock.stop();
+                    this.clock.start();
+                    this.ECAcontroller.time = 0;
+
+                    if (callback) {
+                        callback();
+                    }
+
+                }
+            });
+        });
     }
 }
 
 let app = new App();
 app.init();
-
+window.global = {app:app};
 export { app };

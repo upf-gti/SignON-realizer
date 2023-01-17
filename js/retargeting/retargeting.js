@@ -1,5 +1,4 @@
-import * as THREE from "../../libs/three.module.js";
-import * as MATH_UTILS from "./math.js";
+import * as THREE from 'three';
 
 var base_size = 1;
 let rskeleton = [];
