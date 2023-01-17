@@ -49,3 +49,15 @@ The files in this block: _BehaviourManager_, _BehavhourPlanner_ and _BehaviourRe
 - _BehaviourManager_: deals with all instruction blocks. Is in charge of triggering instructions when their time comes.
 - _BehaviourRealizer_: a set of diverse functionalities to execute some particular instruction
 
+## Collaborators
+Víctor Ubieto @victorubieto
+Eva Valls @evallsg
+Jaume Pozo @japopra
+Pablo García @PZerua
+Alex Rodríguez @jxarco
+
+## License
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Acknowledgments
+We would like to thank the [Three.js](https://threejs.org/) library for providing the 3D animation capabilities in this tool.
