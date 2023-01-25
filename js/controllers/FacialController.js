@@ -396,7 +396,7 @@ FacialController.prototype.newTextToLip = function (info) {
       if(BS[i].includes("Midmouth_Left"))      this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
       if(BS[i].includes("Midmouth_Right"))     this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 0.4 ]);
       if(BS[i].includes("MouthNarrow_Left"))   this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
-      if(BS[i].includes("MouthNarrow_Left"))   this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
+      if(BS[i].includes("MouthNarrow_Right"))   this.textToLipBSMapping.push( [ i, t2lBSWMap.kiss, 1.0 ]);
 
       if(BS[i].includes("MouthDown"))          this.textToLipBSMapping.push( [ i, t2lBSWMap.upperLipClosed, 0.4 ]);
       if(BS[i].includes("UpperLipOut"))        this.textToLipBSMapping.push( [ i, t2lBSWMap.upperLipClosed, -1.5 ]);

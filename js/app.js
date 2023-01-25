@@ -271,9 +271,190 @@ class App {
 			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
 			sleThanks() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'SLE - Thank You'); },
 
+
+            ngt1(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("hallo") + ".",
+                            speed: 9.0,
+                            sentInt: 0.6
+                        },
+                        {   type: "speech",
+                            start: 1.35,
+                            text: that.wordsToArpa("leuk") + ".",
+                            speed: 10.0,
+                            sentInt: 0.2,
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt2(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("alles goed") + ".",
+                            speed: 10.0,
+                            sentInt: 0.4
+                        }
+                ]};
+
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt3(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("sorry") + ".",
+                            speed: 8.0,
+                            sentInt: 0.8
+                        },
+                        {   type: "speech",
+                            start: 1.4,
+                            text: that.wordsToArpa("gebaren kan niet") + ".",
+                            speed: 12.0,
+                            sentInt: 0.0
+                        }
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt4(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            end: 4.4,
+                            text: that.wordsToArpa("app") + ".",
+                            speed: 6.0,
+                            sentInt: 1.0
+                        },
+                        {   type: "speech",
+                            start: 2.4,
+                            end: 4.4,
+                            text: that.wordsToArpa("proberen communiceren")+".",
+                            speed: 12.0,
+                            sentInt: 0.2,
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt5(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("hoe helpen") + ".",
+                            speed: 8.0,
+                            sentInt: 0.6
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt6(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("vergadering waar") + ".",
+                            speed: 8.0,
+                            sentInt: 0.8
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt7(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("vergadering wanneer") + ".",
+                            speed: 8.0,
+                            sentInt: 0.8
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt8(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("sorry") + ".",
+                            speed: 8.0,
+                            sentInt: 0.4
+                        },
+                        {   type: "speech",
+                            start: 1.6,
+                            text: that.wordsToArpa("meer duidelijk") + ".",
+                            speed: 9.0,
+                            sentInt: 0.1
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt9(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: "T" + that.wordsToArpa("dank je wel ooee") + ".",
+                            speed: 10.0,
+                            sentInt: 1.0
+                        },
+                        {   type: "speech",
+                            start: 1.5,
+                            text: that.wordsToArpa("ooee ooee") + ".",
+                            speed: 3.0,
+                            sentInt: 1.0
+                        },
+                        {   type: "speech",
+                            start: 2.6,
+                            text: that.wordsToArpa("interessant") + ".",
+                            speed: 8.0,
+                            sentInt: 0.1
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            ngt10(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "speech",
+                            start: 0.4,
+                            text: that.wordsToArpa("asdfasdfsdf fijne dat") + ".",
+                            speed: 8.0,
+                            sentInt: 0.5
+                        },
+                ]};
+                that.ECAcontroller.reset();
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+
 		};
 
-        folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
+/*        folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
         folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
         folder.add(folderAnims, 'bslApp').name('BSL App')
         folder.add(folderAnims, 'vgtThanks').name('VGT Thanks (w/o NMFs)')
@@ -282,10 +463,101 @@ class App {
         folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
         folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
         folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
+*/
+        folder.add(folderAnims, 'ngt1').name("1 hallo, leuk…");
+        folder.add(folderAnims, 'ngt2').name("2 alles goed");
+        folder.add(folderAnims, 'ngt3').name("3 sorry gebaren kan niet");
+        folder.add(folderAnims, 'ngt4').name("4 app proberen communiceren");
+        folder.add(folderAnims, 'ngt5').name("5 hoe helpen");
+        folder.add(folderAnims, 'ngt6').name("6 vergadering waar");
+        folder.add(folderAnims, 'ngt7').name("7 vergadering wanneer");
+        folder.add(folderAnims, 'ngt8').name("8 sorry meer duidelijk");
+        folder.add(folderAnims, 'ngt9').name("9 dank je wel ooee interessant");
+        folder.add(folderAnims, 'ngt10').name("10 fijne dat");
+    }
+
+    // loads dictionary for mouthing purposes. Not synchronous.
+    loadMouthingDictinoary(){
+        let that = this;
+               
+        fetch("data/phonetics/nl_ipa.txt").then(x => x.text()).then(function(text){ 
+
+            let texts = text.split("\n");
+            let IPADict = {}; // keys: plain text word,   value: ipa transcription
+            let ARPADict = {}; // keys: plain text word,   value: arpabet transcription
+            
+            //https://www.researchgate.net/figure/1-Phonetic-Alphabet-for-IPA-and-ARPAbet-symbols_tbl1_2865098                
+            let ipaToArpa =  {
+                // symbols
+                "'": "", // primary stress
+                '.': " ", // syllable break
+                
+                // vowels
+                'a': "a",   'ɑ': "a",   'ɒ': "a", 
+                'œ': "@",   'ɛ': "E",   'ɔ': "c",
+                'e': "e",   'ø': "e",   'ə': "x",   'o': "o",  
+                'ɪ': "I",   'i': "i",   'y': "i",   'u': "u",   'ʉ': "u",
+
+                // consonants
+                'x': "k",   'j': "y",   't': "t",   'p': "p",   'l': "l",   'ŋ': "G", 
+                'k': "k",   'b': "b",   's': "s",   'ʒ': "Z",   'm': "m",   'n': "n", 
+                'v': "v",   'r': "r",   'ɣ': "g",   'f': "f",   'ʋ': "v",   'z': "z", 
+                'h': "h",   'd': "d",   'ɡ': "g",   'ʃ': "S",   'ʤ': "J"
+            };
+            let errorPhonemes = {};
+
+
+            for(let i = 0; i < texts.length; ++i){
+                let a = texts[i].replace("\t", "").split("\/");
+                if (a.length < 2 || a[0].length == 0 || a[1].length == 0 ){ continue; }
+
+                IPADict[ a[0] ] = a[1];
+
+                let ipa = a[1];
+                let arpa = "";
+
+                // convert each IPA character into correpsonding ARPABet
+                for( let j = 0; j < ipa.length; ++j ){
+                    if ( ipa[j] == 'ː' || ipa[j] == ":" ) { arpa += arpa[arpa.length-1]; continue; }
+                    let s = ipaToArpa[ ipa[j] ];
+                    if ( s != undefined ){ arpa += s; continue; }
+                    errorPhonemes[ s ];
+                }
+
+                ARPADict[ a[0] ] = arpa; 
+
+            }
+
+            if ( Object.keys(errorPhonemes).length > 0 ){ console.error( "MOUTHING: loading phonetics: unmapped IPA phonemes to ARPABET: \n", errorPhonemes ); }
+
+            that.PHONETICS = {};
+            that.PHONETICS.word2IPA = IPADict;
+            that.PHONETICS.word2ARPA = ARPADict;
+
+        });
+    }
+
+    // convert plain text into phoneme encoding ARPABet-1-letter. Uses dictionaries previously loaded 
+    wordsToArpa ( phrase ){
+        
+        let words = phrase.replace(",", "").replace(".", "").split(" ");
+
+        let result = "";
+        let unmappedWords = [];
+        for ( let i = 0; i < words.length; ++i ){
+            let r = this.PHONETICS.word2ARPA[ words[i] ] ;
+            if ( r ){ result += " " + r; }
+            else{ unmappedWords.push( words[i]); }
+        }
+        if ( unmappedWords.length > 0 ){ console.error("MOUTHING: phrase: ", phrase, "\nUnknown words: ",JSON.stringify(unmappedWords)); }
+        return result;
+    
     }
 
     init() {
-       
+
+        this.loadMouthingDictinoary();
+
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         //const gridHelper = new THREE.GridHelper( 10, 10 );
@@ -482,7 +754,6 @@ class App {
             this.model1.visible = false;
             this.model2.visible = true;
         }
-
     }
 
     animate() {
