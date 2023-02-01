@@ -299,11 +299,10 @@ class App {
                         {   type: "speech",
                             start: 0.4,
                             text: that.wordsToArpa("alles goed") + ".",
-                            speed: 10.0,
+                            speed: 18.0,
                             sentInt: 0.4
                         }
                 ]};
-
                 that.ECAcontroller.reset();
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -320,7 +319,7 @@ class App {
                         {   type: "speech",
                             start: 1.4,
                             text: that.wordsToArpa("gebaren kan niet") + ".",
-                            speed: 12.0,
+                            speed: 15.0,
                             sentInt: 0.0
                         }
                 ]};
@@ -335,16 +334,21 @@ class App {
                             start: 0.4,
                             end: 4.4,
                             text: that.wordsToArpa("app") + ".",
-                            speed: 6.0,
+                            speed: 10.0,
                             sentInt: 1.0
                         },
                         {   type: "speech",
-                            start: 2.4,
-                            end: 4.4,
-                            text: that.wordsToArpa("proberen communiceren")+".",
+                            start: 1.5,
+                            text: that.wordsToArpa("proberen")+".",
                             speed: 12.0,
-                            sentInt: 0.2,
+                            sentInt: 0.0,
                         },
+                        {   type: "speech",
+                        start: 2.1,
+                        text: that.wordsToArpa("communiceren")+".",
+                        speed: 15.0,
+                        sentInt: 0.0,
+                    },
                 ]};
                 that.ECAcontroller.reset();
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -355,7 +359,7 @@ class App {
                     data: [
                         {   type: "speech",
                             start: 0.4,
-                            text: that.wordsToArpa("hoe helpen") + ".",
+                            text: that.wordsToArpa("hoe help") + ".",
                             speed: 8.0,
                             sentInt: 0.6
                         },
@@ -369,8 +373,14 @@ class App {
                     data: [
                         {   type: "speech",
                             start: 0.4,
-                            text: that.wordsToArpa("vergadering waar") + ".",
-                            speed: 8.0,
+                            text: that.wordsToArpa("vergadering") ,
+                            speed: 12.0,
+                            sentInt: 0.8
+                        },
+                        {   type: "speech",
+                            start: 1.5,
+                            text: that.wordsToArpa("waar") ,
+                            speed: 12,
                             sentInt: 0.8
                         },
                 ]};
@@ -383,8 +393,14 @@ class App {
                     data: [
                         {   type: "speech",
                             start: 0.4,
-                            text: that.wordsToArpa("vergadering wanneer") + ".",
-                            speed: 8.0,
+                            text: that.wordsToArpa("vergadering"),
+                            speed: 12,
+                            sentInt: 0.8
+                        },
+                        {   type: "speech",
+                            start: 1.7,
+                            text: that.wordsToArpa("wanneer") + ".",
+                            speed: 12,
                             sentInt: 0.8
                         },
                 ]};
@@ -396,16 +412,16 @@ class App {
                     type: "behaviours",
                     data: [
                         {   type: "speech",
-                            start: 0.4,
+                            start: 0.0,
                             text: that.wordsToArpa("sorry") + ".",
-                            speed: 8.0,
-                            sentInt: 0.4
+                            speed: 12,
+                            sentInt: 0.2
                         },
                         {   type: "speech",
-                            start: 1.6,
+                            start: 0.8,
                             text: that.wordsToArpa("meer duidelijk") + ".",
-                            speed: 9.0,
-                            sentInt: 0.1
+                            speed: 12,
+                            sentInt: 0.0
                         },
                 ]};
                 that.ECAcontroller.reset();
@@ -415,22 +431,29 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
+
                         {   type: "speech",
-                            start: 0.4,
-                            text: "T" + that.wordsToArpa("dank je wel ooee") + ".",
-                            speed: 10.0,
+                            start: 0,
+                            text: that.wordsToArpa("dank"),
+                            speed: 10,
                             sentInt: 1.0
                         },
                         {   type: "speech",
-                            start: 1.5,
-                            text: that.wordsToArpa("ooee ooee") + ".",
-                            speed: 3.0,
-                            sentInt: 1.0
+                            start: 0.5,
+                            text: that.wordsToArpa("je wel ooee"),
+                            speed: 12,
+                            sentInt: 0.4
                         },
                         {   type: "speech",
-                            start: 2.6,
-                            text: that.wordsToArpa("interessant") + ".",
-                            speed: 8.0,
+                            start: 1.1,
+                            text: "uuu." ,
+                            speed: 5,
+                            sentInt: 1
+                        },
+                        {   type: "speech",
+                            start: 2.2,
+                            text: that.wordsToArpa("interessant"),
+                            speed: 12,
                             sentInt: 0.1
                         },
                 ]};
@@ -443,7 +466,7 @@ class App {
                     data: [
                         {   type: "speech",
                             start: 0.4,
-                            text: that.wordsToArpa("asdfasdfsdf fijne dat") + ".",
+                            text: that.wordsToArpa("fijne dat") + ".",
                             speed: 8.0,
                             sentInt: 0.5
                         },
