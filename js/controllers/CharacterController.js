@@ -3,6 +3,9 @@ import { Lipsync } from '../bml/BehaviourRealizer.js';
 import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
+
+
+import { HandGestureManager } from '../bml/HandGestureManager.js';
 //States
 CharacterController.prototype.WAITING = 0;
 CharacterController.prototype.PROCESSING = 1;
@@ -15,6 +18,10 @@ function CharacterController(o) {
 
   this.time = 0;
   this.character = o.character;
+
+  if ( typeof(HandGestureManager) !== 'undefined'){
+    this.HandGestureManager = new HandGestureManager(this.character);
+  }
 
   if (typeof BehaviourManager !== 'undefined')
     this.BehaviourManager = new BehaviourManager();
@@ -124,6 +131,8 @@ CharacterController.prototype.update = function (dt, et) {
     this.endSpeakingTime = -1;
     this.speaking = false;
   }
+
+    this.HandGestureManager.update(dt);
 }
 
 

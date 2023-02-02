@@ -475,6 +475,54 @@ class App {
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
 
+
+
+            fist(){
+                that.ECAcontroller.HandGestureManager.newGesture("fist", 1, "across" );
+            },
+            finger2(){
+                that.ECAcontroller.HandGestureManager.newGesture("finger2", 1, "out" );
+            },
+            finger23(){
+                that.ECAcontroller.HandGestureManager.newGesture("finger23", 1 );
+            },
+            finger23spread(){
+                that.ECAcontroller.HandGestureManager.newGesture("finger23spread", 1 );
+            },
+            finger2345(){
+                that.ECAcontroller.HandGestureManager.newGesture("finger2345", 1 );
+            },
+            flat(){
+                that.ECAcontroller.HandGestureManager.newGesture("flat", 1 );
+            },
+            flat_(){
+                that.ECAcontroller.HandGestureManager.newGesture("flat_", 1 );
+            },
+            flattouch(){
+                that.ECAcontroller.HandGestureManager.newGesture("flat", 1 , "touch");
+            },
+
+            pinch12() {
+                that.ECAcontroller.HandGestureManager.newGesture("pinch12", 1, "touch" );
+            },
+            pinch12open() {
+                that.ECAcontroller.HandGestureManager.newGesture("pinch12open", 1 );
+            },
+            pinchall() {
+                that.ECAcontroller.HandGestureManager.newGesture("pinchall", 1 );
+            },
+            ceeall() {
+                that.ECAcontroller.HandGestureManager.newGesture("ceeall", 1 );
+            },
+            cee12() { 
+                that.ECAcontroller.HandGestureManager.newGesture("cee12", 1 );
+            },
+            cee12open() {
+                that.ECAcontroller.HandGestureManager.newGesture("cee12open", 1 );
+            }
+
+
+
 		};
 
 /*        folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
@@ -486,7 +534,7 @@ class App {
         folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
         folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
         folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
-*/
+*//*
         folder.add(folderAnims, 'ngt1').name("1 hallo, leuk…");
         folder.add(folderAnims, 'ngt2').name("2 alles goed");
         folder.add(folderAnims, 'ngt3').name("3 sorry gebaren kan niet");
@@ -496,7 +544,25 @@ class App {
         folder.add(folderAnims, 'ngt7').name("7 vergadering wanneer");
         folder.add(folderAnims, 'ngt8').name("8 sorry meer duidelijk");
         folder.add(folderAnims, 'ngt9').name("9 dank je wel ooee interessant");
-        folder.add(folderAnims, 'ngt10').name("10 fijne dat");
+        folder.add(folderAnims, 'ngt10').name("10 fijne dat");*/
+
+
+        folder.add(folderAnims, "fist").name("fist");
+        folder.add(folderAnims, "finger2").name("finger2");
+        folder.add(folderAnims, "finger23").name("finger23");
+        folder.add(folderAnims, "finger23spread").name("finger23spread");
+        folder.add(folderAnims, "finger2345").name("finger2345");
+        folder.add(folderAnims, "flat").name("flat");
+        folder.add(folderAnims, "flat_").name("flat_");
+        folder.add(folderAnims, "flattouch").name("flat touch");
+
+        folder.add(folderAnims, "pinch12").name("pinch12");
+        folder.add(folderAnims, "pinch12open").name("pinch12open");
+        folder.add(folderAnims, "pinchall").name("pinchall");
+        folder.add(folderAnims, "ceeall").name("ceeall");
+        folder.add(folderAnims, "cee12").name("cee12");
+        folder.add(folderAnims, "cee12open").name("cee12open");
+        
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -740,7 +806,7 @@ class App {
 
             this.model2.position.set(0, 0., 0);
 
-            this.switchModel( this.model2 );
+            this.switchModel( this.model1 );
 
             this.createPanel();
             this.animate();
