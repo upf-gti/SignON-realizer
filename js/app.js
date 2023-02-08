@@ -74,9 +74,10 @@ class App {
         });
 
 		let folder = gui.addFolder( 'Animations' );
-        
+  
+
         let folderAnims = {
-            happyISLday() {
+/*            happyISLday() {
                 that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Happy ISL Day.glb', 'ISL - Happy ISL Day', () => {
                     that.msg = {
                         type: "behaviours",
@@ -140,253 +141,6 @@ class App {
                     that.ECAcontroller.processMsg(JSON.stringify(that.msg));
                 });
             },
-            bslThanks() { 
-                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Thank You', () => {
-                    that.msg = {
-                        type: "behaviours",
-                        data: [
-                            {
-                                type: "faceLexeme",
-                                start: 0.5,
-                                end: 4.5,
-                                amount: 0.8,
-                                lexeme: 'LOWER_BROWS'
-                            },
-                            {
-                                type: "faceLexeme",
-                                start: 0.3,
-                                attackPeak: 0.8,
-                                relax: 1.5,
-                                end: 2.0,
-                                amount: 0.4,
-                                lexeme: 'LIP_CORNER_PULLER'
-                            },
-                            {
-                                type: "speech",
-                                start: 2.0,
-                                end: 2.6,
-                                text: "zenk iu",
-                                speed: 7/0.6
-                            },
-                            {
-                                type: "speech",
-                                start: 3.0,
-                                end: 4.2,
-                                text: "dhats greit",
-                                speed: 11/1.2
-                            },
-                        ]
-                    };
-                    that.ECAcontroller.reset();
-                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-                });
-            },
-            bslApp() { 
-                that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'BSL - Communicate via App', () => {
-                    that.msg = {
-                        type: "behaviours",
-                        data: [
-                            {
-                                type: "faceLexeme",
-                                start: 0.1,
-                                attackPeak: 0.3,
-                                relax: 4.1,
-                                end: 4.4,
-                                amount: 0.6,
-                                lexeme: 'RAISE_BROWS'
-                            },
-                            {
-                                type: "speech",
-                                start: 0.1,
-                                end: 0.4 ,
-                                text: "mit",
-                                speed: 3/0.3,
-                            },
-                            {
-                                type: "faceLexeme",
-                                start: 0.5,
-                                end: 1.0,
-                                amount: 0.4,
-                                lexeme: 'LIP_PUCKERER'
-                            },
-                            {
-                                type: "speech",
-                                start: 0.5,
-                                end: 1.0,
-                                text: "mmmmmm",
-                                speed: 6/0.5
-                            },
-                            {
-                                type: "speech",
-                                start: 1.0,
-                                end: 2.0,
-                                text: "aaaa",
-                                speed: 4/1.0
-                            },
-                            {
-                                type: "faceLexeme",
-                                start: 2.0,
-                                end: 2.6,
-                                amount: 0.4,
-                                lexeme: 'LIP_PUCKERER'
-                            },
-                            {
-                                type: "speech",
-                                start: 2.0,
-                                end: 2.6,
-                                text: "mmmmmm",
-                                speed: 6/0.6
-                            },
-                            {
-                                type: "faceLexeme",
-                                start: 2.6,
-                                end: 3.0,
-                                amount: 0.4,
-                                lexeme: 'LIP_PUCKERER'
-                            },
-                            {
-                                type: "speech",
-                                start: 3.0,
-                                end: 3.4,
-                                text: "aaaa",
-                                speed: 4/0.4
-                            },
-                            {
-                                type: "speech",
-                                start: 3.4,
-                                end: 4.4,
-                                text: "mmmmmm",
-                                speed: 6/1.0
-                            },
-                        ]
-                    };
-                    that.ECAcontroller.reset();
-                    that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-                }); 
-            },
-			vgtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/VGT Thanks.bvh'); },
-            vgtApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'VGT - Communicate via App', ()=>{ that.mixer.timeScale = 0.7;}); },
-			islThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/ISL Thanks.bvh'); },
-            islApp() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'ISL - Communicate via App', ()=>{ that.mixer.timeScale = 0.5;}); },
-			ngtThanks() { that.loadBVH('https://webglstudio.org/projects/signon/repository/files/signon/animations/NGT Thanks.bvh'); },
-			sleThanks() { that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Signs.glb', 'SLE - Thank You'); },
-
-
-            ngt1(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("hallo") + ".",
-                            speed: 9.0,
-                            sentInt: 0.6
-                        },
-                        {   type: "speech",
-                            start: 1.35,
-                            text: that.wordsToArpa("leuk") + ".",
-                            speed: 10.0,
-                            sentInt: 0.2,
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt2(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("alles goed") + ".",
-                            speed: 18.0,
-                            sentInt: 0.4
-                        }
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt3(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("sorry") + ".",
-                            speed: 8.0,
-                            sentInt: 0.8
-                        },
-                        {   type: "speech",
-                            start: 1.4,
-                            text: that.wordsToArpa("gebaren kan niet") + ".",
-                            speed: 15.0,
-                            sentInt: 0.0
-                        }
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt4(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            end: 4.4,
-                            text: that.wordsToArpa("app") + ".",
-                            speed: 10.0,
-                            sentInt: 1.0
-                        },
-                        {   type: "speech",
-                            start: 1.5,
-                            text: that.wordsToArpa("proberen")+".",
-                            speed: 12.0,
-                            sentInt: 0.0,
-                        },
-                        {   type: "speech",
-                        start: 2.1,
-                        text: that.wordsToArpa("communiceren")+".",
-                        speed: 15.0,
-                        sentInt: 0.0,
-                    },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt5(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("hoe help") + ".",
-                            speed: 8.0,
-                            sentInt: 0.6
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt6(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("vergadering") ,
-                            speed: 12.0,
-                            sentInt: 0.8
-                        },
-                        {   type: "speech",
-                            start: 1.5,
-                            text: that.wordsToArpa("waar") ,
-                            speed: 12,
-                            sentInt: 0.8
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
             ngt7(){ 
                 that.msg = {
                     type: "behaviours",
@@ -407,144 +161,114 @@ class App {
                 that.ECAcontroller.reset();
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
-            ngt8(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.0,
-                            text: that.wordsToArpa("sorry") + ".",
-                            speed: 12,
-                            sentInt: 0.2
-                        },
-                        {   type: "speech",
-                            start: 0.8,
-                            text: that.wordsToArpa("meer duidelijk") + ".",
-                            speed: 12,
-                            sentInt: 0.0
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt9(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-
-                        {   type: "speech",
-                            start: 0,
-                            text: that.wordsToArpa("dank"),
-                            speed: 10,
-                            sentInt: 1.0
-                        },
-                        {   type: "speech",
-                            start: 0.5,
-                            text: that.wordsToArpa("je wel ooee"),
-                            speed: 12,
-                            sentInt: 0.4
-                        },
-                        {   type: "speech",
-                            start: 1.1,
-                            text: "uuu." ,
-                            speed: 5,
-                            sentInt: 1
-                        },
-                        {   type: "speech",
-                            start: 2.2,
-                            text: that.wordsToArpa("interessant"),
-                            speed: 12,
-                            sentInt: 0.1
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ngt10(){ 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "speech",
-                            start: 0.4,
-                            text: that.wordsToArpa("fijne dat") + ".",
-                            speed: 8.0,
-                            sentInt: 0.5
-                        },
-                ]};
-                that.ECAcontroller.reset();
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-
+*/
 
 
             fist(){
-                that.ECAcontroller.HandGestureManager.newGesture("fist", 1, "across" );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "fist", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             finger2(){
-                that.ECAcontroller.HandGestureManager.newGesture("finger2", 1, "out" );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger2", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             finger23(){
-                that.ECAcontroller.HandGestureManager.newGesture("finger23", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger23", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             finger23spread(){
-                that.ECAcontroller.HandGestureManager.newGesture("finger23spread", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger23spread", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             finger2345(){
-                that.ECAcontroller.HandGestureManager.newGesture("finger2345", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger2345", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             flat(){
-                that.ECAcontroller.HandGestureManager.newGesture("flat", 1 );
-            },
-            flat_(){
-                that.ECAcontroller.HandGestureManager.newGesture("flat_", 1 );
-            },
-            flattouch(){
-                that.ECAcontroller.HandGestureManager.newGesture("flat", 1 , "touch");
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "flat", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
 
             pinch12() {
-                that.ECAcontroller.HandGestureManager.newGesture("pinch12", 1, "touch" );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinch12", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             pinch12open() {
-                that.ECAcontroller.HandGestureManager.newGesture("pinch12open", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinch12open", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             pinchall() {
-                that.ECAcontroller.HandGestureManager.newGesture("pinchall", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinchall", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             ceeall() {
-                that.ECAcontroller.HandGestureManager.newGesture("ceeall", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "ceeall", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             cee12() { 
-                that.ECAcontroller.HandGestureManager.newGesture("cee12", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "cee12", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
             cee12open() {
-                that.ECAcontroller.HandGestureManager.newGesture("cee12open", 1 );
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "cee12open", hand: 1 },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             }
-
 
 
 		};
 
-/*        folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
-        folder.add(folderAnims, 'bslThanks').name('BSL Thanks')
-        folder.add(folderAnims, 'bslApp').name('BSL App')
-        folder.add(folderAnims, 'vgtThanks').name('VGT Thanks (w/o NMFs)')
-        folder.add(folderAnims, 'vgtApp').name('VGT App (w/o NMFs)')
-        folder.add(folderAnims, 'islThanks').name('ISL Thanks (w/o NMFs)')
-        folder.add(folderAnims, 'islApp').name('ISL App (w/o NMFs)')
-        folder.add(folderAnims, 'ngtThanks').name('NGT Thanks (w/o NMFs)')
-        folder.add(folderAnims, 'sleThanks').name('SLE Thanks (w/o NMFs)')
-*//*
-        folder.add(folderAnims, 'ngt1').name("1 hallo, leuk…");
-        folder.add(folderAnims, 'ngt2').name("2 alles goed");
-        folder.add(folderAnims, 'ngt3').name("3 sorry gebaren kan niet");
-        folder.add(folderAnims, 'ngt4').name("4 app proberen communiceren");
-        folder.add(folderAnims, 'ngt5').name("5 hoe helpen");
-        folder.add(folderAnims, 'ngt6').name("6 vergadering waar");
+ /*       folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
+
         folder.add(folderAnims, 'ngt7').name("7 vergadering wanneer");
-        folder.add(folderAnims, 'ngt8').name("8 sorry meer duidelijk");
-        folder.add(folderAnims, 'ngt9').name("9 dank je wel ooee interessant");
-        folder.add(folderAnims, 'ngt10').name("10 fijne dat");*/
+*/
 
 
         folder.add(folderAnims, "fist").name("fist");
@@ -553,8 +277,6 @@ class App {
         folder.add(folderAnims, "finger23spread").name("finger23spread");
         folder.add(folderAnims, "finger2345").name("finger2345");
         folder.add(folderAnims, "flat").name("flat");
-        folder.add(folderAnims, "flat_").name("flat_");
-        folder.add(folderAnims, "flattouch").name("flat touch");
 
         folder.add(folderAnims, "pinch12").name("pinch12");
         folder.add(folderAnims, "pinch12open").name("pinch12open");

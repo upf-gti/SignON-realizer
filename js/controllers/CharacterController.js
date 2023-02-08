@@ -5,7 +5,8 @@ import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
 
 
-import { HandGestureManager } from '../bml/HandGestureManager.js';
+import { GestureManager } from '../sigml/GestureManager.js';
+
 //States
 CharacterController.prototype.WAITING = 0;
 CharacterController.prototype.PROCESSING = 1;
@@ -18,10 +19,6 @@ function CharacterController(o) {
 
   this.time = 0;
   this.character = o.character;
-
-  if ( typeof(HandGestureManager) !== 'undefined'){
-    this.HandGestureManager = new HandGestureManager(this.character);
-  }
 
   if (typeof BehaviourManager !== 'undefined')
     this.BehaviourManager = new BehaviourManager();
@@ -45,21 +42,15 @@ function CharacterController(o) {
   else
     console.error("SpeechController module not found")
 
-  if (typeof Poser !== 'undefined')
-    this.poser = new Poser();
-  else
-    console.error("Poser module not found")
-
-  if (typeof GestureManager !== 'undefined')
-    this.gestureManager = new GestureManager(this.poser)
-  else
-    console.error("GestureManager module not found")
-
   /*let playAnimation = new PlayAnimation();
   if(!playAnimation )
     console.error("PlayAnimation module not found") 
    else
     this.animationManager = new AnimationManager(playAnimation) ;*/
+
+  if ( typeof(GestureManager) !== 'undefined'){ 
+    this.gestureManager = new GestureManager( this.character );
+  } 
 }
 
 CharacterController.prototype.start = function (o) {
@@ -132,7 +123,8 @@ CharacterController.prototype.update = function (dt, et) {
     this.speaking = false;
   }
 
-    this.HandGestureManager.update(dt);
+
+
 }
 
 
@@ -310,7 +302,7 @@ CharacterController.prototype.processBML = function (key, bml) {
       thatFacial.newTextToLip(bml);
       break;
     case "gesture":
-      this.gestureManager.newGesture(bml)
+      this.gestureManager.newGesture( bml );
       break;
     case "posture":
       //this.posture(bml);
