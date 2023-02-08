@@ -3,8 +3,8 @@ import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
-import { CharacterController } from './controllers/CharacterController.js'
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
+import { CharacterController } from './controllers/CharacterController.js'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -265,7 +265,7 @@ class App {
 
 		};
 
- /*       folder.add(folderAnims, 'happyISLday').name('Happy ISL Day')
+ /*       folder.add(folderAnims, 'happyISLday').name('Happy ISL Day');
 
         folder.add(folderAnims, 'ngt7').name("7 vergadering wanneer");
 */
@@ -379,8 +379,6 @@ class App {
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        //this.renderer.toneMappingExposure = 0.7;
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
@@ -444,7 +442,6 @@ class App {
         dirLight.castShadow = true;
         this.scene.add( dirLight );
 
-        
         // add entities
         let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
         ground.rotation.x = -Math.PI / 2;
@@ -476,11 +473,11 @@ class App {
         this.scene.add(this.neckTarget);
 
         // loads a model
-        function loadModel ( nameString, callback, glb  ){
+        function loadModel ( nameString, callback, glb ) {
             let model = this["model"+nameString] = glb.scene;
 
             model = glb.scene;
-            model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+            model.rotateOnAxis( new THREE.Vector3(1,0,0), -Math.PI/2 );
             model.castShadow = true;
             
             model.traverse( (object) => {
@@ -498,7 +495,7 @@ class App {
                 }
             } );
 
-            let skeletonHelper = this[ "skeletonHelper"+nameString ] = new THREE.SkeletonHelper( model );
+            let skeletonHelper = this[ "skeletonHelper" + nameString ] = new THREE.SkeletonHelper( model );
             skeletonHelper.visible = false;
             this.scene.add(skeletonHelper);
             this.scene.add(model);
@@ -507,11 +504,11 @@ class App {
             model.headTarget = this.headTarget;
             model.neckTarget = this.neckTarget;
 
-            let ECAcontroller = this[ "ECAcontroller"+nameString ] = new CharacterController( {character: model} );
+            let ECAcontroller = this[ "ECAcontroller" + nameString ] = new CharacterController( {character: model} );
             ECAcontroller.start();
 
             // load the actual animation to play
-            let mixer = this[ "mixer"+nameString ] = new THREE.AnimationMixer( model );
+            let mixer = this[ "mixer" + nameString ] = new THREE.AnimationMixer( model );
             mixer.addEventListener('loop', () => { ECAcontroller.reset(); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
 
             if ( callback ){ callback (); }
@@ -537,9 +534,9 @@ class App {
 
         // Load both models "synchronous". model1 = eva_Y    model2 = Signs
         this.loaderGLB.load( './data/anim/Eva_Y.glb', 
-                loadModel.bind( this, "1",  
-                        ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
-                ) 
+            loadModel.bind( this, "1",  
+                    ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+            ) 
         );
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
@@ -565,6 +562,7 @@ class App {
             this.model1.visible = false;
             this.model2.visible = true;
         }
+
     }
 
     animate() {
