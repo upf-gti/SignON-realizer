@@ -1,8 +1,109 @@
-import { CCDIKSolver } from "./IKSolver.js";
+import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
 import * as THREE from 'three';
-import { Quaternion } from "three";
 
 let DEG2RAD = Math.PI / 180;
+
+let E_HANDEDNESS = { RIGHT: 1, LEFT: 2, BOTH: 3 };
+
+// relative to bones. Comments = sigml specification
+let testPoints = { 
+    headtop : [0,3,0.2],
+
+    // head : null,
+    // forehead : null,
+    forehead : null,
+
+    // eyebrows : null,
+    // eyes : null,
+    // uppereyelid : null,
+    // lowereyelid : null,
+    eyesL : null,
+    eyesR : null,
+
+    nose : [0,2.5,0.2],
+    
+    // nostrils : null,
+    // upperlip : null,
+    upperlip : null,
+
+    // lips : null,
+    // lowerlip : null,
+    // tongue : null,
+    // teeth : null,
+    // upperteeth : null,
+    // lowerteeth : null,
+    mouth: null,
+
+    // chin : null,
+    // underchin : null,
+    chin : null,
+   
+    // ear : null,
+    // earlobe : null,
+    earL : null,
+    earR : null,
+    
+    // cheek
+    cheekL : null,
+    cheekR : null,
+    
+    neck : null,
+    
+    // shoulders : null,
+    // shouldertop : null,
+    shouldersL : [-10,2.2,0.2],
+    shouldersR : null,
+
+    chest : null,
+    
+    stomach : null,
+    
+    belowstomach : null,
+    
+}
+
+let nearPoints = {
+    headtop:        [ 5, "mixamorig_Head", [-0.603,18.172,6.527 ] ],
+    forehead:       [ 5, "mixamorig_Head", [-0.603,9.672,13.027 ] ],
+    eyesL:          [ 5, "mixamorig_Head", [2.897,-6.328,14.027 ] ],
+    eyesR:          [ 5, "mixamorig_Head", [-3.103,-6.328,14.027 ] ],
+    nose:           [ 5, "mixamorig_Head", [-0.103,-8.328,16.527 ] ],
+    upperlip:       [ 5, "mixamorig_Head", [-0.103,-9.828,15.527 ] ],
+    mouth:          [ 5, "mixamorig_Head", [-0.103,-11.328,15.527 ] ],
+    chin:           [ 5, "mixamorig_Head", [-0.103,-13.328,15.527 ] ],
+    cheekL:         [ 5, "mixamorig_Head", [6.397,-9.328,13.527 ] ],
+    cheekR:         [ 5, "mixamorig_Head", [-6.603,-9.328,13.527 ] ],
+    earL:           [ 5, "mixamorig_Head", [11.397,-1.828,1.027 ] ],
+    earR:           [ 5, "mixamorig_Head", [-11.603,-1.828,1.027 ] ],
+    neck:           [ 4, "mixamorig_Neck", [-0.122,-3.260,12.487 ] ],
+    chest:          [ 3, "mixamorig_Spine2", [0.594,5.342,16.195 ] ],
+    stomach:        [ 2, "mixamorig_Spine1", [0.570,1.924,15.650 ] ],
+    belowstomach:   [ 0, "mixamorig_Hips", [0.515,-4.977,21.683 ] ],
+    shouldersL:     [ 9, "mixamorig_LeftShoulder", [-8.709,1.984,2.406 ] ],
+    shouldersR:     [ 33, "mixamorig_RightShoulder", [6.693,0.155,6.431 ] ],
+}
+
+// relative to the entire model. Not binded to a specific bone
+let farPoints = {
+    headtop:        [ 5, "mixamorig_Head", [0.397,47.172,1.027 ] ],
+    forehead:       [ 5, "mixamorig_Head", [0.397,9.672,61.527 ] ],
+    eyesL:          [ 5, "mixamorig_Head", [2.397,4.672,62.027 ] ],
+    eyesR:          [ 5, "mixamorig_Head", [-0.603,4.672,62.027 ] ],
+    nose:           [ 5, "mixamorig_Head", [-0.603,-2.328,62.027 ] ],
+    upperlip:       [ 5, "mixamorig_Head", [-0.603,-4.328,62.027 ] ],
+    mouth:          [ 5, "mixamorig_Head", [-0.603,-5.828,62.027 ] ],
+    chin:           [ 5, "mixamorig_Head", [-0.603,-9.328,62.027 ] ],
+    cheekR:         [ 5, "mixamorig_Head", [-6.603,-2.828,69.527 ] ],
+    cheekL:         [ 5, "mixamorig_Head", [10.397,-2.828,69.527 ] ],
+    earL:           [ 5, "mixamorig_Head", [17.397,-1.328,69.527 ] ],
+    earR:           [ 5, "mixamorig_Head", [-4.603,-1.328,69.527 ] ],
+    neck:           [ 4, "mixamorig_Neck", [5.378,-0.760,69.987 ] ],
+    chest:          [ 3, "mixamorig_Spine2", [5.086,3.842,68.196 ] ],
+    stomach:        [ 2, "mixamorig_Spine1", [5.064,-10.076,53.151 ] ],
+    belowstomach:   [ 0, "mixamorig_Hips", [4.996,-9.994,40.183 ] ],
+    shouldersL:     [ 9, "mixamorig_LeftShoulder", [-62.191,-2.957,21.126 ] ],
+    shouldersR:     [ 33, "mixamorig_RightShoulder", [-2.307,-5.265,65.332 ] ],
+}
 
 class LocationArm {
     constructor( character ) {
@@ -13,63 +114,172 @@ class LocationArm {
             }
         } );
         this.ikSolver = new CCDIKSolver( this.skeleton );
-        this.ikTarget = { position: new THREE.Vector3(0,0,2) };
-
+        this.ikTarget = { position: new THREE.Vector3(0,0,2) }; // worldposition
         this._ikCreateChains( "LeftHand", "LeftShoulder" );
         this._ikCreateChains( "RightHand", "RightShoulder" );
-
+        this.ikSolver.constraintsEnabler = false;
         this.ikSolver.setChainEnablerAll(false);
 
-
-        this.rightBoneIdxs = 0;
-        this.leftBoneIdxs = 0;
-        
-        this.boneIdxs = this.rightBoneIdxs;
-
-        let bones = this.skeleton.bones;
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes("RightShoulder") ){ this.rightBoneIdxs = i; }
-            else if ( bones[i].name.includes("LeftShoulder") ){ this.leftBoneIdxs = i; }
+        this.right = {  
+            t: 0, // current time of transition
+            d: 0, // duration of gesture transition
+            g: [null, null], // [0] source gesture, [1] target gesture
+            chain: this.ikSolver.getChain("mixamorig_RightHand") // chain reference. Used to quickly enable/disable for prediction and to copy/set quaternions
         }
-        this.boneIdxs = this.rightBoneIdxs;
+        this.left = {   
+            t: 0, // current time of transition
+            d: 0, // duration of gesture transition
+            g: [null, null], // [0] source gesture, [1] target gesture
+            chain: this.ikSolver.getChain("mixamorig_LeftHand") // chain reference. Used to quickly enable/disable for prediction and to copy/set quaternions
+        }
 
-        this.hgests = []; // 0 current (init) gesture 
-        this.times  = []; // timestamps
-        
-        this.currentTime = 0;
+       
+        /*if( !window.balls ){ 
+            window.balls = [ new THREE.Mesh( new THREE.SphereGeometry(0.01, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) ) ];
+            character.add(window.balls[0]);
+            window.skeleton = this.skeleton;
+            window.boneName = "mixamorig_Head";
+            window.name = "headtop";
 
-        this.changeChain("mixamorig_RightHand");
-        this.newGesture([-10,0,0], 0.001);
+            window.addEventListener("keypress", e =>{
+                let ball = window.balls[0];
+                let moved = false
+                let v = new THREE.Vector3();
+                switch( e.key ){
+                    case "l": moved = true; ball.position.x += 0.005; break;
+                    case "j": moved = true; ball.position.x -= 0.005; break;
+                    case "i": moved = true; ball.position.y += 0.005; break;
+                    case "k": moved = true; ball.position.y -= 0.005; break;
+                    case "z": moved = true; ball.position.z += 0.005; break;
+                    case "x": moved = true; ball.position.z -= 0.005; break;
+                    case "p": console.log( window.balls );
+                    case " ": 
+                        for( let i = 0; i < this.skeleton.bones.length; ++i ){
+                            if ( !this.skeleton.bones[i].name.includes(window.boneName) ){ continue; }
+                            this.skeleton.bones[i].worldToLocal( ball.getWorldPosition(v) );
 
-        if( !window.la ){ window.la = []; }
-        window.la.push(this);
+                            let str = window.name + ": [ " + i.toString() + ", " + window.boneName + ", [" + v.x.toFixed(3) + "," +  v.y.toFixed(3) + "," +  v.z.toFixed(3) + " ] ]";
+                            window.balls.push(str);
+                            console.log("gud", str);
+                            break;
+                        }
+                        break;
+                }
+
+                if ( moved ){
+                    // compute target pose
+                    this.right.chain.enabler = true;
+                    ball.getWorldPosition(this.ikTarget.position);
+                    this.ikSolver.setIterations(10);
+                    this.ikSolver.update();
+                    this.right.chain.enabler = false;
+                }
+                
+                
+
+            } ) ;
+        }*/
+
+
 
     }
 
+    reset(){}
 
-    newGesture(position, t = 1){
-        let a = [];
-        let temp = [];
-        temp[0] = this.skeleton.bones[this.boneIdxs].quaternion.clone();
-        temp[1] = this.skeleton.bones[this.boneIdxs+1].quaternion.clone();
-        temp[2] = this.skeleton.bones[this.boneIdxs+2].quaternion.clone();
+    newGestureBML( bml ) {
 
-        this.ikTarget.position.set(position[0],position[1],position[2]);
+        // distance: touch vs far
+        let distance = bml.distance;
+        if ( isNaN(distance) ){ distance = 0; }
+
+        let near = nearPoints[ bml.locationArm ];
+        let far = farPoints[ bml.locationArm ];
+        if ( !near || !far ){
+            console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationArm + "\"" );
+            return;
+        }
+
+        this.ikTarget.position.x = near[2][0] * (1.0 - distance) + far[2][0] * distance; 
+        this.ikTarget.position.y = near[2][1] * (1.0 - distance) + far[2][1] * distance; 
+        this.ikTarget.position.z = near[2][2] * (1.0 - distance) + far[2][2] * distance; 
+        let wpos = this.skeleton.bones[ near[0] ].localToWorld( this.ikTarget.position );
+
+        // compute duration of transitoin
+        let duration = bml.end - bml.start;
+        if ( !duration || duration < 0 ){
+            console.warn( "Gesture: Location Arm negative duration value. The end time must be bigger than the start time" );
+            return;
+        }
+
+        // arm tomove
+        let handedness = E_HANDEDNESS.RIGHT; // default hand
+        if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
+        else if ( bml.hand == "both" ){ handedness = E_HANDEDNESS.BOTH; }
+
+        // actual gesture 
+        if ( handedness & E_HANDEDNESS.RIGHT ){ this.newGesture( wpos, duration, this.right ); }
+        if ( handedness & E_HANDEDNESS.LEFT ){ this.newGesture( wpos, duration, this.left ); }
+    }
+
+    newGesture( wpos, duration = 1, arm = null ) {
+        if ( arm != this.left ){ arm = this.right; } // default right arm
+
+        let chain = arm.chain.chain;
+        let bones = this.skeleton.bones;
+        let tgPose = [];
+        let srcPose = [];
+
+        // copy current pose as source pose. First entry in change is end effector, no relevant for rotation state
+        for( let i = 1; i < chain.length; ++i ){
+            srcPose.push( bones[chain[i]].quaternion.clone() );
+        }
+
+        // compute target pose
+        arm.chain.enabler = true;
+        if ( wpos.x ){ this.ikTarget.position.copy(wpos); }
+        else{ this.ikTarget.position.set(wpos[0],wpos[1],wpos[2]); }
         this.ikSolver.setIterations(10);
         this.ikSolver.update();
+        arm.chain.enabler = false;
 
-        a[0] = this.skeleton.bones[this.boneIdxs].quaternion.clone();
-        a[1] = this.skeleton.bones[this.boneIdxs+1].quaternion.clone();
-        a[2] = this.skeleton.bones[this.boneIdxs+2].quaternion.clone();
 
-        this.skeleton.bones[this.boneIdxs].quaternion.copy( temp[0] );
-        this.skeleton.bones[this.boneIdxs+1].quaternion.copy( temp[1] );
-        this.skeleton.bones[this.boneIdxs+2].quaternion.copy( temp[2] );
+        // clone resulting target pose and copy back the original pose
+        for( let i = 1; i < chain.length; ++i ){
+            tgPose.push( bones[chain[i]].quaternion.clone() );
+            bones[chain[i]].quaternion.copy( srcPose[i-1] );
+        }
 
-        if ( this.hgests.length < 2 ){ this.currentTime = 0;}
-        this.hgests.push(a);
-        this.times.push(t);
+        arm.g[0] = srcPose;
+        arm.g[1] = tgPose;
+        arm.t = 0;
+        arm.d = duration;
+// TODO: take into account (somehow) the velocity of the previous movement, so the change will not be so sudden. Maybe use splines with quaternions??? 
+
     }
+
+    update( dt ){
+        this.updateArm( dt, this.right );
+        this.updateArm( dt, this.left );
+    }
+    
+    updateArm( dt, arm ){
+        if ( !arm.g[1] ){ return; }
+        
+        arm.t += dt;
+        let t = arm.t / arm.d;
+        if ( t > 1){ t = 1; }
+        t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+
+        
+        let chain = arm.chain.chain;
+        let bones = this.skeleton.bones;   
+        for( let i = 1; i < chain.length; ++i ){
+            bones[chain[i]].quaternion.slerpQuaternions( arm.g[0][i-1], arm.g[1][i-1], t );
+        }     
+        
+        if ( arm.t >= arm.d ){ arm.g[0] = arm.g[1]; arm.g[1] = null; }
+    }
+
 
     _ikCreateChains( effectorName, rootName ) {
         let bones = this.skeleton.bones;
@@ -174,33 +384,7 @@ class LocationArm {
         }
     }
 
-    changeChain( name ){
-        this.ikSolver.setChainEnablerAll( false );
-        this.ikSolver.setChainEnabler( name, true );
-    }
-
-    reset(){}
     
-    update( dt ){
-        this.currentTime += dt;
-        if ( this.hgests.length < 2 ){ return; }
-
-
-        let end = false;
-        let t = (this.currentTime) /  this.times[1];
-        if ( t > 1){ t = 1; end = true; }
-        t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-
-        let bones = this.skeleton.bones;        
-        bones[ this.boneIdxs ].quaternion.slerpQuaternions( this.hgests[0][0], this.hgests[1][0], t );
-        bones[ this.boneIdxs + 1 ].quaternion.slerpQuaternions( this.hgests[0][1], this.hgests[1][1], t );
-        bones[ this.boneIdxs + 2 ].quaternion.slerpQuaternions( this.hgests[0][2], this.hgests[1][2], t );
-
-        
-        if ( end ){ this.currentTime -= this.times[1]; this.hgests.splice(0, 1); this.times.splice(0,1); }
-
-        //this.ikSolver.update();
-    }
 }
 
 export { LocationArm };

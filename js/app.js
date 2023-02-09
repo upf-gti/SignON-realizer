@@ -132,7 +132,7 @@ class App {
                                 type: "speech",
                                 start: 3.1,
                                 end: 3.6,
-                                text: "de",
+                                text: "de.",
                                 speed: 2/0.5
                             },
                         ]
@@ -168,7 +168,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "fist", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "fist", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -176,7 +176,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger2", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger2", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -184,7 +184,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger23", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger23", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -192,7 +192,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger23spread", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger23spread", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -200,7 +200,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "finger2345", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger2345", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -208,7 +208,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "flat", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "flat", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -217,7 +217,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinch12", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinch12", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -225,7 +225,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinch12open", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinch12open", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -233,7 +233,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "pinchall", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinchall", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -241,7 +241,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "ceeall", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "ceeall", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -249,7 +249,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "cee12", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "cee12", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -257,11 +257,77 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        {   type: "gesture", start: 0.0, end: 0.5, handshape: "cee12open", hand: 1 },
+                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "cee12open", hand: "both" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            }
+            },
 
+            count(){
+                let duration = 0.8;
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: 0.0, end: duration, handshape: "finger2", hand: "both" },
+                        { type: "gesture", start: duration, end: duration * 2, handshape: "finger23spread", thumbshape: "across",  hand: "both" },
+                        { type: "gesture", start: duration * 2, end: duration * 3, handshape: "finger23spread", thumbshape:"out",  hand: "both" },
+                        { type: "gesture", start: duration * 3, end: duration * 4, handshape: "finger2345", thumbshape: "across",  hand: "both" },
+                        { type: "gesture", start: duration * 4, end: duration * 5, handshape: "finger2345", thumbshape: "out",  hand: "both" },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+
+            rightArm(){
+                 let duration = 0.8;
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "right" },
+                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "right" },
+                        { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "right" },
+                        { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "right" },
+                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "right" },
+                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "right" },
+                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "right" },
+                        { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "right" },
+                        { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "right" },
+                        { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "right" },
+                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "right" },
+                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "right" },
+                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "right" },
+                        { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "right" },
+                        { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "right" },
+                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
+                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
+                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            leftArm(){
+                 let duration = 0.8;
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "left" },
+                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "left" },
+                        { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "left" },
+                        { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "left" },
+                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "left" },
+                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "left" },
+                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "left" },
+                        { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "left" },
+                        { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "left" },
+                        { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "left" },
+                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "left" },
+                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "left" },
+                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "left" },
+                        { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "left" },
+                        { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "left" },
+                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "left" },
+                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "left" },
+                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "left" },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
 
 		};
 
@@ -284,7 +350,11 @@ class App {
         folder.add(folderAnims, "ceeall").name("ceeall");
         folder.add(folderAnims, "cee12").name("cee12");
         folder.add(folderAnims, "cee12open").name("cee12open");
+        folder.add(folderAnims, "count").name("count");
         
+        folder.add(folderAnims, "rightArm").name("rightArm");
+        folder.add(folderAnims, "leftArm").name("leftArm");
+
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.

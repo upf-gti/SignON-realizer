@@ -24,6 +24,9 @@ class GestureManager{
         if ( bml.handshape ){
             this.handShapeRealizer.newGestureBML( bml );
         }
+        if ( bml.locationArm ){
+            this.locationArm.newGestureBML( bml );
+        }
     }
 }
 
