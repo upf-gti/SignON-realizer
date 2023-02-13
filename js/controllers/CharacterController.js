@@ -20,19 +20,22 @@ function CharacterController(o) {
 
     if (typeof BehaviourManager !== 'undefined') {
         this.BehaviourManager = new BehaviourManager();
-    } else
+    }else {
         console.error("Manager not included");
+    }
 
     if (typeof BehaviourPlanner !== 'undefined') {
         this.BehaviourPlanner = new BehaviourPlanner();
         this.BehaviourPlanner.BehaviourManager = this.BehaviourManager;
-    } else
+    } else {
         console.error("Planner not included");
+    }
 
     if (typeof FacialController !== 'undefined') {
         this.facialController = new FacialController(o);
-    } else
+    } else {
         console.error("FacialController module not found");
+    }
 
     /*let playAnimation = new PlayAnimation();
     if(!playAnimation )
@@ -50,11 +53,11 @@ CharacterController.prototype.start = function (o) {
     this.facialController.start(o);
 }
 
-CharacterController.prototype.reset = function () {
+CharacterController.prototype.reset = function ( keepEmotion = false ) {
     this.pendingResources.length = 0;
 
     if ( this.facialController ){ 
-        this.facialController.reset(); }
+        this.facialController.reset( keepEmotion ); }
 
     if (this.BehaviourPlanner){ 
         this.BehaviourPlanner.reset(); }

@@ -410,6 +410,7 @@ function FacialEmotion(sceneBSW) {
     this.currentVABSW.fill(0);
     this.initialVABSW = this.currentVABSW.slice();
     this.targetVABSW = this.currentVABSW.slice();
+    this.defaultVABSW = this.currentVABSW.slice();
 }
 
 FacialEmotion.prototype.reset = function () {
@@ -417,6 +418,7 @@ FacialEmotion.prototype.reset = function () {
     this.currentVABSW.fill(0);
     this.initialVABSW.fill(0);
     this.targetVABSW.fill(0);
+    this.defaultVABSW.fill(0);
     this.transition = false;
     this.time = 0;
 }
@@ -504,7 +506,7 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
 
     // Normalize
     let magn = vec2.length(this.valaro);
-    if (magn > 1) {
+    if ( magn > 1 ) {
         this.valaro[0] /= magn;
         this.valaro[1] /= magn;
     }
@@ -513,25 +515,24 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
     this.start = faceData.start || 0.0;
     this.end = faceData.end;
     this.amount = faceData.amount || 1.0;
-    if (!shift) {
+    if ( shift ) {
+        this.attackPeak = faceData.attackPeak || this.end;
+        this.relax = this.end = this.attackPeak + 1;//faceData.end || faceData.attackPeak || 0.0; // ignored "end" and "relax" on shift
+    } else {
         this.attackPeak = faceData.attackPeak || (this.end - this.start) * 0.25 + this.start;
         this.relax = faceData.relax || (this.end - this.attackPeak) / 2 + this.attackPeak;
-    } else {
-        this.attackPeak = faceData.attackPeak || this.end;
-        this.end = 0.0//faceData.end || faceData.attackPeak || 0.0;
-        this.relax = 0;
     }
     this.amount = isNaN(faceData.amount) ? 1 : faceData.amount;
 
     // Target blend shapes
-    this.VA2BSW(this.valaro);
+    this.VA2BSW(this.valaro, shift);
 
     // Start
     this.transition = true;
     this.time = 0;
 }
 
-FacialEmotion.prototype.VA2BSW = function (valAro) {
+FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
 
     let gridsize = this.gridSize;
     let blendValues = [];
@@ -581,32 +582,43 @@ FacialEmotion.prototype.VA2BSW = function (valAro) {
         }
     }
 
+    // swap initial state and current state arrays
     let temp = this.initialVABSW;
     this.initialVABSW = this.currentVABSW; // set initial state as current state (it might be neutral or some other emotion that was cut mid transition)
     this.currentVABSW = temp;
     for (let j = 0; j < blendValues.length; j++) {
         this.targetVABSW[j] = blendValues[j] * this.amount;
         this.currentVABSW[j] = this.initialVABSW[j]; // initial and current should be the same
+        if ( shift ){ // change default pose if shift
+            this.defaultVABSW[j] = this.targetVABSW[j]; 
+        }
     }
 }
 
 FacialEmotion.prototype.updateVABSW = function (dt) {
+    if( this.transition == false ){
+        for (let j = 0; j < this.currentVABSW.length; j++)
+            this.currentVABSW[j] = this.defaultVABSW[j];
+        return;
+    }
     
     // Time increase
     this.time += dt;
 
     // Wait for to reach start time
-    if (this.time < this.start)
+    if (this.time < this.start){
         return;
+    }
 
     // Stay still during attackPeak to relax
-    if (this.time > this.attackPeak && this.time < this.relax)
+    if (this.time > this.attackPeak && this.time < this.relax){
         return;
+    }
 
     // End
     if (this.time >= this.end) {
         for (let j = 0; j < this.currentVABSW.length; j++)
-            this.currentVABSW[j] = 0;
+            this.currentVABSW[j] = this.defaultVABSW[j];
         this.transition = false;
         return;
     }
@@ -630,7 +642,7 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
         inter = Math.cos(Math.PI * inter) * 0.5 + 0.5;
         // Interpolation
         for (let j = 0; j < this.targetVABSW.length; j++)
-            this.currentVABSW[j] = this.targetVABSW[j] * inter;
+           this.currentVABSW[j] = this.defaultVABSW[j] * (1 - inter) + this.targetVABSW[j] * inter;
         return;
     }
 }
@@ -646,8 +658,7 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
 // Scene inputs: gazePositions (head and camera), lookAt objects
 
 // Gaze manager (replace BML)
-GazeManager.gazePositions = {
-    
+GazeManager.gazePositions = {   
     "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
     "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
@@ -656,7 +667,6 @@ GazeManager.gazePositions = {
 };
 
 Gaze.prototype.gazeBS = {
-    
     "RIGHT": { squint: 0, eyelids: 0 }, "LEFT": { squint: 0, eyelids: 0 },
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
     "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
@@ -2114,7 +2124,6 @@ Text2Lip.prototype.getSentenceDuration = function ( text, options ) {
 }
 
 // TABLES ------------------------------
-
 
 //[ "kiss", "upperLipClosed", "lowerLipClosed", "jawOpen", "tongueFrontUp", "tongueBackUp", "tongueOut" ],
 let t2lLowerBound = [

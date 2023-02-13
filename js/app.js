@@ -73,11 +73,13 @@ class App {
             color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
 
-		let folder = gui.addFolder( 'Animations' );
-  
+        let moodFolder = gui.addFolder( "Moods" ).close();
+        let gestureFolder = gui.addFolder( 'Hand Gestures' );
 
-        let folderAnims = {
-/*            happyISLday() {
+        /*
+		let otherFolder = gui.addFolder( 'Animations' );
+        let otherParams = {
+               happyISLday() {
                 that.loadGLB('https://webglstudio.org/projects/signon/repository/files/signon/animations/Happy ISL Day.glb', 'ISL - Happy ISL Day', () => {
                     that.msg = {
                         type: "behaviours",
@@ -104,28 +106,28 @@ class App {
                                 type: "speech",
                                 start: 0.3,
                                 end: 1.3,
-                                text: "aaaaa pii",
+                                text: "aaaaa pii.",
                                 speed: 9/1.3,
                             },
                             {
                                 type: "speech",
                                 start: 1.6,
                                 end: 2.2,
-                                text: "aaaaii",
+                                text: "aaaaii.",
                                 speed: 6/0.7
                             },
                             {
                                 type: "speech",
                                 start: 2.2,
                                 end: 2.6,
-                                text: "ssss",
+                                text: "ssss.",
                                 speed: 4/0.4
                             },
                             {
                                 type: "speech",
                                 start: 2.6,
                                 end: 3.0,
-                                text: "llll",
+                                text: "llll.",
                                 speed: 4/0.4
                             },
                             {
@@ -161,8 +163,146 @@ class App {
                 that.ECAcontroller.reset();
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
+        }
+
+        otherFolder.add(otherParams, 'happyISLday').name('Happy ISL Day');
+        otherFolder.add(otherParams, 'ngt7').name("7 vergadering wanneer");
 */
 
+        let moodIntensity = 1;
+        let moodParams = {
+            neutral() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "NEUTRAL",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            anger() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "ANGER",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            happiness() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "HAPPINESS",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            sadness() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "SADNESS",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            surprise() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "SURPRISE",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            fear() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "FEAR",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            disgust() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "DISGUST",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+            contempt() {
+                let msg = {
+                    type: "behaviours",
+                    data: [
+                        {
+                            type: "faceEmotion",
+                            start: 0.0,
+                            amount: moodIntensity,
+                            shift: true,
+                            emotion: "CONTEMPT",
+                        }
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(msg));
+            },
+        }
+        moodFolder.add(moodParams, 'neutral').name('neutral');
+        moodFolder.add(moodParams, 'anger').name('anger');
+        moodFolder.add(moodParams, 'happiness').name('happiness');
+        moodFolder.add(moodParams, 'sadness').name('sadness');
+        moodFolder.add(moodParams, 'surprise').name('surprise');
+        moodFolder.add(moodParams, 'fear').name('fear');
+        moodFolder.add(moodParams, 'disgust').name('disgust');
+        moodFolder.add(moodParams, 'contempt').name('contempt');
+
+
+        let gestureParams = {
 
             fist(){
                 that.msg = {
@@ -331,29 +471,26 @@ class App {
 
 		};
 
- /*       folder.add(folderAnims, 'happyISLday').name('Happy ISL Day');
-
-        folder.add(folderAnims, 'ngt7').name("7 vergadering wanneer");
-*/
 
 
-        folder.add(folderAnims, "fist").name("fist");
-        folder.add(folderAnims, "finger2").name("finger2");
-        folder.add(folderAnims, "finger23").name("finger23");
-        folder.add(folderAnims, "finger23spread").name("finger23spread");
-        folder.add(folderAnims, "finger2345").name("finger2345");
-        folder.add(folderAnims, "flat").name("flat");
 
-        folder.add(folderAnims, "pinch12").name("pinch12");
-        folder.add(folderAnims, "pinch12open").name("pinch12open");
-        folder.add(folderAnims, "pinchall").name("pinchall");
-        folder.add(folderAnims, "ceeall").name("ceeall");
-        folder.add(folderAnims, "cee12").name("cee12");
-        folder.add(folderAnims, "cee12open").name("cee12open");
-        folder.add(folderAnims, "count").name("count");
+        gestureFolder.add(gestureParams, "fist").name("fist");
+        gestureFolder.add(gestureParams, "finger2").name("finger2");
+        gestureFolder.add(gestureParams, "finger23").name("finger23");
+        gestureFolder.add(gestureParams, "finger23spread").name("finger23spread");
+        gestureFolder.add(gestureParams, "finger2345").name("finger2345");
+        gestureFolder.add(gestureParams, "flat").name("flat");
+
+        gestureFolder.add(gestureParams, "pinch12").name("pinch12");
+        gestureFolder.add(gestureParams, "pinch12open").name("pinch12open");
+        gestureFolder.add(gestureParams, "pinchall").name("pinchall");
+        gestureFolder.add(gestureParams, "ceeall").name("ceeall");
+        gestureFolder.add(gestureParams, "cee12").name("cee12");
+        gestureFolder.add(gestureParams, "cee12open").name("cee12open");
+        gestureFolder.add(gestureParams, "count").name("count");
         
-        folder.add(folderAnims, "rightArm").name("rightArm");
-        folder.add(folderAnims, "leftArm").name("leftArm");
+        gestureFolder.add(gestureParams, "rightArm").name("rightArm");
+        gestureFolder.add(gestureParams, "leftArm").name("leftArm");
 
     }
 
@@ -576,10 +713,11 @@ class App {
 
             let ECAcontroller = this[ "ECAcontroller" + nameString ] = new CharacterController( {character: model} );
             ECAcontroller.start();
+            ECAcontroller.reset();
 
             // load the actual animation to play
             let mixer = this[ "mixer" + nameString ] = new THREE.AnimationMixer( model );
-            mixer.addEventListener('loop', () => { ECAcontroller.reset(); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
+            mixer.addEventListener('loop', () => { ECAcontroller.reset(true); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
 
             if ( callback ){ callback (); }
 

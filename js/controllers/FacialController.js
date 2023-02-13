@@ -159,7 +159,7 @@ FacialController.prototype.start = function (morphTargets) {
     this.autoBlink = new Blink();
 }
 
-FacialController.prototype.reset = function () {
+FacialController.prototype.reset = function ( keepEmotion = false ) {
 
     this.resetFace(); // blendshapes to 0
 
@@ -167,7 +167,7 @@ FacialController.prototype.reset = function () {
     if (this.lipsyncModule) { this.lipsyncModule.stop(); }
 
     this._FacialLexemes.length = 0;
-    this.FA.reset();
+    if ( !keepEmotion ){ this.FA.reset(); } 
 
     this.gazeManager.reset();
     this.headBML.length = 0;
@@ -300,15 +300,12 @@ FacialController.prototype.faceUpdate = function (dt) {
     }
 
     //FacialEmotion ValAro/Emotions
-    if (this.FA.transition) {
-        // Update FA with Val Aro
-        this.FA.updateVABSW(dt);
+    this.FA.updateVABSW(dt);
 
-        for (let j = 0; j < this.FA.currentVABSW.length; j++) {
-            let value = this.FA.currentVABSW[j];
-            this._facialBSAcc["Body"][j] += Math.abs(value); // denominator of biased average
-            this._facialBSFinal["Body"][j] += value * Math.abs(value); // numerator of biased average
-        }
+    for (let j = 0; j < this.FA.currentVABSW.length; j++) {
+        let value = this.FA.currentVABSW[j];
+        this._facialBSAcc["Body"][j] += Math.abs(value); // denominator of biased average
+        this._facialBSFinal["Body"][j] += value * Math.abs(value); // numerator of biased average
     }
 
     // FacialExpr lexemes
