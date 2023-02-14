@@ -1,5 +1,6 @@
 
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
+import { LocationArmIK } from "./LocationArmIK.js";
 import { LocationArm } from "./LocationArm.js";
 
 
@@ -7,6 +8,7 @@ class GestureManager{
     constructor( character ){
         this.character = character;
         this.handShapeRealizer = new HandShapeRealizer( character );
+        //this.locationArm = new LocationArmIK( character );
         this.locationArm = new LocationArm( character );
     }
 

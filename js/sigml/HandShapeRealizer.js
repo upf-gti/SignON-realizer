@@ -81,13 +81,13 @@ handShapes_2 = shapesToQuaternions( handShapes_2 );
 thumbShapes = shapesToQuaternions( thumbShapes );
 
 // clones quaternion and returns its mirror
-function mirrorQuat( quat ){
-    let q = quat.clone();
-    q.x = q.x;
-    q.y = -q.y;
-    q.z = -q.z;
-    q.w = q.w;
-    return q;
+function mirrorQuat( srcQuat, dstQuat = null ){
+    if ( !dstQuat ){ dstQuat = srcQuat; } // mirror to self
+    dstQuat.x = srcQuat.x;
+    dstQuat.y = -srcQuat.y;
+    dstQuat.z = -srcQuat.z;
+    dstQuat.w = srcQuat.w;
+    return dstQuat;
 }
 
 // receives bml instructions and animates the hands
@@ -95,34 +95,76 @@ class HandShapeRealizer {
     constructor(character){
         this.skeleton = null;
                 
-        //// if new gest, set source as current pose. This needs a full copy of arrays to not modify references
+        // if new gest, set source as current pose. This needs a full copy of arrays to not modify references
         this.right = {
             idxs: null,
-            g: [null,null], // [0] source gesture and [1] target gesture
-            duration: 0,
-            t : 0 // current time
+            defG: this._createGestureObject(),
+            srcG: this._createGestureObject(),
+            trgG: this._createGestureObject(),
+            t: 0, // current time of transition
+            start: 0, 
+            attackPeak: 0,
+            relax: 0, 
+            end: 0, 
+            transition: false,
         };
         
         this.left = {
-            idxs: null,
-            g: [null,null], // [0] source gesture and [1] target gesture
-            duration: 0,
-            t : 0 // current time
+            idxs: null, 
+            defG: this._createGestureObject(),
+            srcG: this._createGestureObject(),
+            trgG: this._createGestureObject(),
+            t: 0, // current time of transition
+            start: 0, 
+            attackPeak: 0,
+            relax: 0, 
+            end: 0, 
+            transition: false,
         };        
         
         this.init(character);
     }
 
-    _createGestureFromCurrentPose( indexes ){
+    // Cannot directly clone object as all three.quaternion functions will not be present. Thus manually create them
+    _createGestureObject( ){
         let o = {};
-        let b = this.skeleton.bones;
-        o.thumb = [ b[ indexes.thumb ].quaternion.clone(), b[ indexes.thumb + 1 ].quaternion.clone(), b[ indexes.thumb + 2 ].quaternion.clone() ];
-        o.index = [ b[ indexes.index ].quaternion.clone(), b[ indexes.index + 1 ].quaternion.clone(), b[ indexes.index + 2 ].quaternion.clone() ];
-        o.middle = [ b[ indexes.middle ].quaternion.clone(), b[ indexes.middle + 1 ].quaternion.clone(), b[ indexes.middle + 2 ].quaternion.clone() ];
-        o.ring = [ b[ indexes.ring ].quaternion.clone(), b[ indexes.ring + 1 ].quaternion.clone(), b[ indexes.ring + 2 ].quaternion.clone() ];
-        o.pinky = [ b[ indexes.pinky ].quaternion.clone(), b[ indexes.pinky + 1 ].quaternion.clone(), b[ indexes.pinky + 2 ].quaternion.clone() ];
+        o.thumb = [ new Quaternion(), new Quaternion(), new Quaternion() ];
+        o.index = [ new Quaternion(), new Quaternion(), new Quaternion() ];
+        o.middle = [ new Quaternion(), new Quaternion(), new Quaternion() ];
+        o.ring =  [ new Quaternion(), new Quaternion(), new Quaternion() ];
+        o.pinky = [ new Quaternion(), new Quaternion(), new Quaternion() ];
         return o;
     }
+    _fillGestureFromCurrentPose( indexes, destG ){
+        let o = destG;
+        let b = this.skeleton.bones;
+        o.thumb[0].copy( b[ indexes.thumb ].quaternion );   o.thumb[1].copy( b[ indexes.thumb + 1 ].quaternion );   o.thumb[2].copy( b[ indexes.thumb + 2 ].quaternion );
+        o.index[0].copy( b[ indexes.index ].quaternion );   o.index[1].copy( b[ indexes.index + 1 ].quaternion );   o.index[2].copy( b[ indexes.index + 2 ].quaternion );
+        o.middle[0].copy( b[ indexes.middle ].quaternion ); o.middle[1].copy( b[ indexes.middle + 1 ].quaternion ); o.middle[2].copy( b[ indexes.middle + 2 ].quaternion );
+        o.ring[0].copy( b[ indexes.ring ].quaternion );     o.ring[1].copy( b[ indexes.ring + 1 ].quaternion );     o.ring[2].copy( b[ indexes.ring + 2 ].quaternion );
+        o.pinky[0].copy( b[ indexes.pinky ].quaternion );   o.pinky[1].copy( b[ indexes.pinky + 1 ].quaternion );   o.pinky[2].copy( b[ indexes.pinky + 2 ].quaternion );
+        return o;
+    }
+    _fillGestureFromGesture( destG, srcG ){
+        let o = destG;
+        o.thumb[0].copy( srcG.thumb[0] );   o.thumb[1].copy( srcG.thumb[1] );   o.thumb[2].copy( srcG.thumb[2] );
+        o.index[0].copy( srcG.index[0] );   o.index[1].copy( srcG.index[1] );   o.index[2].copy( srcG.index[2] );
+        o.middle[0].copy( srcG.middle[0] ); o.middle[1].copy( srcG.middle[1] ); o.middle[2].copy( srcG.middle[2] );
+        o.ring[0].copy( srcG.ring[0] );     o.ring[1].copy( srcG.ring[1] );     o.ring[2].copy( srcG.ring[2] );
+        o.pinky[0].copy( srcG.pinky[0] );   o.pinky[1].copy( srcG.pinky[1] );   o.pinky[2].copy( srcG.pinky[2] );
+        return o;
+    }
+    _mirrorGesture( g ){
+        // mirror to self
+        mirrorQuat(g.thumb[0]);     mirrorQuat(g.thumb[1]);      mirrorQuat(g.thumb[2]);
+        mirrorQuat(g.index[0]);     mirrorQuat(g.index[1]);      mirrorQuat(g.index[2]);
+        mirrorQuat(g.middle[0]);    mirrorQuat(g.middle[1]);     mirrorQuat(g.middle[2]);
+        mirrorQuat(g.ring[0]);      mirrorQuat(g.ring[1]);       mirrorQuat(g.ring[2]);
+        mirrorQuat(g.pinky[0]);     mirrorQuat(g.pinky[1]);      mirrorQuat(g.pinky[2]);
+        return g;
+    }
+
+
 
     init( character ){
         // get skeleton reference
@@ -156,77 +198,89 @@ class HandShapeRealizer {
             else if ( bones[i].name.includes("LeftHandPinky1") ){ this.left.idxs.pinky = i; }
             else if ( bones[i].name.includes("LeftHand") ){ this.left.idxs.wrist = i; }
         }
-        
-        this.right.g[0] = this._createGestureFromCurrentPose( this.right.idxs );
-        this.left.g[0] = this._createGestureFromCurrentPose( this.left.idxs );
 
     }
 
     reset() {
         // Force pose update to flat
-        this.right.g[0] = handShapes.flat;
-        this.right.g[1] = handShapes.flat;
-        this.right.t = 1;
-        this.right.duration = 0.1;
-        this.left.g[0] = handShapes.flat;
-        this.left.g[1] = handShapes.flat;
-        this.left.t = 1;
-        this.left.duration = 0.1;
+        this.right.transition = false;
+        this.left.transition = false;
         this.update(0); 
     }
 
     update( dt ){
-        this._updateHand( dt, this.right );
-        this._updateHand( dt, this.left );
+        this.updateHand( dt, this.right );
+        this.updateHand( dt, this.left );
     }
 
-    _updateHand( dt, hand ) {
-        if ( !hand.g[1] ){ return; } // no animation required
-                
+    updateHand( dt, hand ) {
+        if ( !hand.transition ){ return; } // no animation required
+        
         hand.t += dt;
-        let t = (hand.t) / hand.duration;
-        if ( t > 1){ t = 1; }
-        t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+        
+        // wait in same pose
+        if ( hand.t < hand.start ){ return; }
+        if ( hand.t > hand.attackPeak && hand.t < hand.relax ){ return; }
+        
+        if ( hand.t <= hand.attackPeak ){
+            let t = ( hand.t - hand.start ) / ( hand.attackPeak - hand.start );
+            if ( t > 1){ t = 1; }
+            t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-        let bones = this.skeleton.bones;
-        bones[ hand.idxs.wrist ].quaternion.set(0,0,0,1);        
-        for( let i = 0; i < 3; ++i ){
-            bones[ hand.idxs.thumb  + i ].quaternion.slerpQuaternions( hand.g[0].thumb[i],  hand.g[1].thumb[i],  t );
-            bones[ hand.idxs.index  + i ].quaternion.slerpQuaternions( hand.g[0].index[i],  hand.g[1].index[i],  t );
-            bones[ hand.idxs.middle + i ].quaternion.slerpQuaternions( hand.g[0].middle[i], hand.g[1].middle[i], t );
-            bones[ hand.idxs.ring   + i ].quaternion.slerpQuaternions( hand.g[0].ring[i],   hand.g[1].ring[i],   t );
-            bones[ hand.idxs.pinky  + i ].quaternion.slerpQuaternions( hand.g[0].pinky[i],  hand.g[1].pinky[i],  t );
-        }
-
-        if ( hand.t >= hand.duration ){ hand.g[0] = hand.g[1]; hand.g[1] = null; }
-    }
-
-    newGestureBML( bml ){
-        let duration = bml.end - bml.start;
-        if ( !duration || duration < 0 ){
-            console.warn( "Gesture: HandShape negative duration value. The end time must be bigger than the start time" );
+            // shouldar (back), actual shoulder, elbow
+            let bones = this.skeleton.bones;   
+            for( let i = 0; i < 3 ; ++i ){
+                bones[ hand.idxs.thumb  + i ].quaternion.slerpQuaternions( hand.srcG.thumb[i],  hand.trgG.thumb[i],  t );
+                bones[ hand.idxs.index  + i ].quaternion.slerpQuaternions( hand.srcG.index[i],  hand.trgG.index[i],  t );
+                bones[ hand.idxs.middle + i ].quaternion.slerpQuaternions( hand.srcG.middle[i], hand.trgG.middle[i], t );
+                bones[ hand.idxs.ring   + i ].quaternion.slerpQuaternions( hand.srcG.ring[i],   hand.trgG.ring[i],   t );
+                bones[ hand.idxs.pinky  + i ].quaternion.slerpQuaternions( hand.srcG.pinky[i],  hand.trgG.pinky[i],  t );
+            }     
             return;
         }
 
+        if ( hand.t >= hand.relax ){
+            let t = ( hand.t - hand.relax ) / ( hand.end - hand.relax );
+            if ( t > 1){ t = 1; }
+            t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+
+            let bones = this.skeleton.bones;   
+            for( let i = 0; i < 3 ; ++i ){
+                bones[ hand.idxs.thumb  + i ].quaternion.slerpQuaternions( hand.trgG.thumb[i],  hand.defG.thumb[i],  t );
+                bones[ hand.idxs.index  + i ].quaternion.slerpQuaternions( hand.trgG.index[i],  hand.defG.index[i],  t );
+                bones[ hand.idxs.middle + i ].quaternion.slerpQuaternions( hand.trgG.middle[i], hand.defG.middle[i], t );
+                bones[ hand.idxs.ring   + i ].quaternion.slerpQuaternions( hand.trgG.ring[i],   hand.defG.ring[i],   t );
+                bones[ hand.idxs.pinky  + i ].quaternion.slerpQuaternions( hand.trgG.pinky[i],  hand.defG.pinky[i],  t );
+            }     
+        }
+        
+        if ( hand.t > hand.end ){ 
+            hand.transition = false;
+        }
+
+    }
+
+    newGestureBML( bml ){
         let handedness = E_HANDEDNESS.RIGHT; // default hand
         if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
         else if ( bml.hand == "both" ){ handedness = E_HANDEDNESS.BOTH; }
 
-        this.newGesture( bml.handshape, duration, bml.thumbshape, handedness );
+        if ( handedness & E_HANDEDNESS.RIGHT ) { this.newGestureHand( bml, this.right, false ); }
+        if ( handedness & E_HANDEDNESS.LEFT ) { this.newGestureHand( bml, this.left, true ); }
     }
 
-    newGesture( shape, t = 1, thumb = null, handedness = E_HANDEDNESS.RIGHT ){
+    newGestureHand( bml, handInfo, mirror = false ){
         let newG = {};
 
-        let g = handShapes_2[shape]; // pinch table (6 states)
-        if ( g ){ 
-            // this handshape group is not modified by thumb. Set by reference, no cloning involved
+        // fetch/build the correct gesture
+        let g = handShapes_2[bml.handshape]; // pinch table (6 states)
+        if ( g ){  // this handshape group is not modified by thumb. Set by reference, no cloning involved
             newG = g; 
         }else{
             // might be modified by thumb. Set by reference on each finger
-            g = handShapes[shape];
+            g = handShapes[bml.handshape];
             if ( !g ){ 
-                console.warn( "Gesture: HandShape incorrect handshape" );
+                console.warn( "Gesture: HandShape incorrect handshape \"" + bml.handshape + "\"" );
                 return;
             }
             newG.thumb = g.thumb;
@@ -235,10 +289,10 @@ class HandShapeRealizer {
             newG.ring = g.ring;
             newG.pinky = g.pinky;
 
-            if ( thumb ){
-                let thumbGest = thumbShapes[thumb];
+            if ( bml.thumbshape ){
+                let thumbGest = thumbShapes[bml.thumbshape];
                 if ( !thumbGest ){
-                    console.warn( "Gesture: HandShape incorrect thumbshape" );
+                    console.warn( "Gesture: HandShape incorrect thumbshape \"" + bml.thumbshape + "\"" );
                     return;
                 }
                 newG.thumb = thumbGest;
@@ -246,30 +300,30 @@ class HandShapeRealizer {
 
         }
 
-        if ( handedness & E_HANDEDNESS.RIGHT || !handedness){ 
-            if ( this.right.g[1] != null ){  this.right.g[0] = this._createGestureFromCurrentPose( this.right.idxs ); } // mid transition change. Get current hand pose
-            this.right.g[1] = newG; 
-            this.right.duration = t;
-            this.right.t = 0;
-        } 
-        if ( handedness & E_HANDEDNESS.LEFT ){ 
-            if ( this.left.g[1] != null ){ this.left.g[0] = this._createGestureFromCurrentPose( this.left.idxs ); } // mid transition change. Get current hand pose
+        // set source pose
+        this._fillGestureFromCurrentPose( handInfo.idxs, handInfo.srcG );
+        
+        // set target pose (and mirror)
+        this._fillGestureFromGesture( handInfo.trgG, newG );
 
-            // mirror quaternions for the left. Original quaternions are for right hand
-            let mirrored = {};
-            let fingerLength = newG.thumb.length;
-            for( let i = 0; i < fingerLength; ++i ){
-                mirrored.thumb = [ mirrorQuat(newG.thumb[0]), mirrorQuat(newG.thumb[1]), mirrorQuat(newG.thumb[2]) ];
-                mirrored.index = [ mirrorQuat(newG.index[0]), mirrorQuat(newG.index[1]), mirrorQuat(newG.index[2]) ];
-                mirrored.middle = [ mirrorQuat(newG.middle[0]), mirrorQuat(newG.middle[1]), mirrorQuat(newG.middle[2]) ];
-                mirrored.ring = [ mirrorQuat(newG.ring[0]), mirrorQuat(newG.ring[1]), mirrorQuat(newG.ring[2]) ];
-                mirrored.pinky = [ mirrorQuat(newG.pinky[0]), mirrorQuat(newG.pinky[1]), mirrorQuat(newG.pinky[2]) ];
-            }
+        // mirror quaternions for the left. Original quaternions are for right hand
+        if ( mirror ){
+            this._mirrorGesture( handInfo.trgG );
+        }
 
-            this.left.g[1] = mirrored;
-            this.left.duration = t;
-            this.left.t = 0; 
-        } 
+        // set defualt pose if necessary
+        if ( bml.shift ){
+            this._fillGestureFromGesture( handInfo.defG, handInfo.trgG );
+        }
+
+        // check and set timings
+        handInfo.start = bml.start || 0;
+        handInfo.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        handInfo.attackPeak = bml.attackPeak || ( (handInfo.end - handInfo.start) * 0.25 + handInfo.start );
+        handInfo.relax = bml.relax || ( (handInfo.end - handInfo.attackPeak) * 0.5 + handInfo.attackPeak );
+        handInfo.transition = true;
+        handInfo.t = 0; 
+         
     }
 
 }

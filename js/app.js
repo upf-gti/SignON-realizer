@@ -409,7 +409,7 @@ class App {
                     data: [
                         { type: "gesture", start: 0.0, end: duration, handshape: "finger2", hand: "both" },
                         { type: "gesture", start: duration, end: duration * 2, handshape: "finger23spread", thumbshape: "across",  hand: "both" },
-                        { type: "gesture", start: duration * 2, end: duration * 3, handshape: "finger23spread", thumbshape:"out",  hand: "both" },
+                        { type: "gesture", start: duration * 2, end: duration * 3, handshape: "finger23spread", thumbshape:"out",  hand: "both" , shift:true},
                         { type: "gesture", start: duration * 3, end: duration * 4, handshape: "finger2345", thumbshape: "across",  hand: "both" },
                         { type: "gesture", start: duration * 4, end: duration * 5, handshape: "finger2345", thumbshape: "out",  hand: "both" },
                 ]};
@@ -439,6 +439,7 @@ class App {
                         { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
                         { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
                         { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
+                        { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "right" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
@@ -447,7 +448,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "left" },
+                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "left"},
                         { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "left" },
                         { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "left" },
                         { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "left" },
@@ -465,10 +466,28 @@ class App {
                         { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "left" },
                         { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "left" },
                         { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "left" },
-                ]};
+                        { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "left" },
+                    ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
 
+            test(){
+                let duration = 1.0;
+               that.msg = {
+                   type: "behaviours",
+                   data: [
+                       { type: "gesture", start: duration, end: duration * 2, locationArm: "shouldersL", hand: "both", distance: 0 },
+                       { type: "gesture", start: duration * 1.5, end: duration * 3, locationArm: "shouldersR", hand: "both", distance: 0 },
+                       { type: "gesture", start: duration * 2.5, end: duration * 4, locationArm: "shouldersL", hand: "both", distance: 0 },
+                       { type: "gesture", start: duration * 3, end: duration * 5, locationArm: "shouldersR", hand: "both", distance: 0.5 },
+                       { type: "gesture", start: duration * 4, end: duration * 6, locationArm: "shouldersL", hand: "both", distance: 0.5 },
+                       { type: "gesture", start: duration * 4.4, end: duration * 7, locationArm: "shouldersR", hand: "both" , distance: 0.5},
+                       { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "shouldersL", hand: "both", distance: 1 },
+                       { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "shouldersR", hand: "both", distance: 1 },
+                       { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "shouldersL", hand: "both" , distance: 1},
+               ]};
+               that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+           },
 		};
 
 
@@ -491,6 +510,7 @@ class App {
         
         gestureFolder.add(gestureParams, "rightArm").name("rightArm");
         gestureFolder.add(gestureParams, "leftArm").name("leftArm");
+        gestureFolder.add(gestureParams, "test").name("test");
 
     }
 
