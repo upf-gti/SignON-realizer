@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-
-let DEG2RAD = Math.PI / 180;
+import { mirrorQuatSelf, nlerpQuats } from './sigmlUtils.js';
 
 let E_HANDEDNESS = { RIGHT: 1, LEFT: 2, BOTH: 3 };
 
@@ -162,6 +161,7 @@ class LocationArm {
             defG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // default gesture
             srcG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // source gesture
             trgG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // target gesture
+            curG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // target gesture
             t: 0, // current time of transition
             start: 0, 
             attackPeak: 0,
@@ -174,6 +174,7 @@ class LocationArm {
             defG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // default gesture
             srcG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // source gesture
             trgG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // target gesture
+            curG: [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // target gesture
             t: 0, // current time of transition
             start: 0, 
             attackPeak: 0,
@@ -218,9 +219,8 @@ class LocationArm {
         
         // move to default pose and end
         if ( arm.t > arm.end ){ 
-            let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
-                bones[arm.idx + i].quaternion.copy( arm.defG[i] );
+                arm.curG[i].copy( arm.defG[i] );
             }
             arm.transition = false; // flag as "nothing to do"
             return; 
@@ -232,9 +232,9 @@ class LocationArm {
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
             // shouldar (back), actual shoulder, elbow
-            let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
-                bones[arm.idx + i].quaternion.slerpQuaternions( arm.srcG[i], arm.trgG[i], t );
+                arm.curG[i].slerpQuaternions( arm.srcG[i], arm.trgG[i], t ); // expensive but finds correct path
+                //nlerpQuats( arm.curG[i], arm.srcG[i], arm.trgG[i], t ); // cheaper but does not find correct path
             }     
             return;
         }
@@ -245,9 +245,9 @@ class LocationArm {
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
             // shouldar (back), actual shoulder, elbow
-            let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
-                bones[arm.idx + i].quaternion.slerpQuaternions( arm.trgG[i], arm.defG[i], t );
+                arm.curG[i].slerpQuaternions( arm.trgG[i], arm.defG[i], t ); // expensive but finds correct path
+                //nlerpQuats( arm.curG[i], arm.trgG[i], arm.defG[i], t ); // cheaper  but does not find correct path
             }     
         }
     }
@@ -289,21 +289,17 @@ class LocationArm {
         }
 
         // Set target and source poses
-        let bones = this.skeleton.bones;
         for ( let i = 0; i < near.length; ++i ){
             // source: Copy current arm state
-            arm.srcG[i].copy( bones[arm.idx + i].quaternion );
+            arm.srcG[i].copy( arm.curG[i] );
 
             // target (reference)
             let q = arm.trgG[i];
-            q.slerpQuaternions( near[i], far[i], distance );
+            q.slerpQuaternions( near[i], far[i], distance ); // expensive but executed once per gesture 
             
             // mirror target quaternion
-            if ( mirror ){
-                q.x = q.x;
-                q.y = -q.y;
-                q.z = -q.z;
-                q.w = q.w;
+            if ( mirror ){ 
+                mirrorQuatSelf( q );
             }
 
             // change arm's default pose if necesary

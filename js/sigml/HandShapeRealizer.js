@@ -1,4 +1,5 @@
 import { Quaternion } from "three";
+import { mirrorQuatSelf, nlerpQuats } from "./sigmlUtils.js";
 
 /**
  * function printer ( skeleton ){
@@ -80,16 +81,6 @@ handShapes = shapesToQuaternions( handShapes );
 handShapes_2 = shapesToQuaternions( handShapes_2 );
 thumbShapes = shapesToQuaternions( thumbShapes );
 
-// clones quaternion and returns its mirror
-function mirrorQuat( srcQuat, dstQuat = null ){
-    if ( !dstQuat ){ dstQuat = srcQuat; } // mirror to self
-    dstQuat.x = srcQuat.x;
-    dstQuat.y = -srcQuat.y;
-    dstQuat.z = -srcQuat.z;
-    dstQuat.w = srcQuat.w;
-    return dstQuat;
-}
-
 // receives bml instructions and animates the hands
 class HandShapeRealizer {
     constructor(character){
@@ -156,11 +147,11 @@ class HandShapeRealizer {
     }
     _mirrorGesture( g ){
         // mirror to self
-        mirrorQuat(g.thumb[0]);     mirrorQuat(g.thumb[1]);      mirrorQuat(g.thumb[2]);
-        mirrorQuat(g.index[0]);     mirrorQuat(g.index[1]);      mirrorQuat(g.index[2]);
-        mirrorQuat(g.middle[0]);    mirrorQuat(g.middle[1]);     mirrorQuat(g.middle[2]);
-        mirrorQuat(g.ring[0]);      mirrorQuat(g.ring[1]);       mirrorQuat(g.ring[2]);
-        mirrorQuat(g.pinky[0]);     mirrorQuat(g.pinky[1]);      mirrorQuat(g.pinky[2]);
+        mirrorQuatSelf(g.thumb[0]);     mirrorQuatSelf(g.thumb[1]);      mirrorQuatSelf(g.thumb[2]);
+        mirrorQuatSelf(g.index[0]);     mirrorQuatSelf(g.index[1]);      mirrorQuatSelf(g.index[2]);
+        mirrorQuatSelf(g.middle[0]);    mirrorQuatSelf(g.middle[1]);     mirrorQuatSelf(g.middle[2]);
+        mirrorQuatSelf(g.ring[0]);      mirrorQuatSelf(g.ring[1]);       mirrorQuatSelf(g.ring[2]);
+        mirrorQuatSelf(g.pinky[0]);     mirrorQuatSelf(g.pinky[1]);      mirrorQuatSelf(g.pinky[2]);
         return g;
     }
 
@@ -199,13 +190,22 @@ class HandShapeRealizer {
             else if ( bones[i].name.includes("LeftHand") ){ this.left.idxs.wrist = i; }
         }
 
+        this.reset();
+
     }
 
     reset() {
         // Force pose update to flat
-        this.right.transition = false;
-        this.left.transition = false;
-        this.update(0); 
+        
+        this._fillGestureFromGesture( this.right.defG, handShapes[ "flat" ] );
+        this._fillGestureFromGesture( this.left.defG, handShapes[ "flat" ] );
+
+        this.right.transition = true;
+        this.left.transition = true;
+
+        this.right.t = 1; this.right.start = 0; this.right.attackPeak = 0; this.right.relax = 0; this.right.end = 0;
+        this.left.t = 1; this.left.start = 0; this.left.attackPeak = 0; this.left.relax = 0; this.left.end = 0;
+        this.update( 1 ); // force position reset
     }
 
     update( dt ){
@@ -230,11 +230,11 @@ class HandShapeRealizer {
             // shouldar (back), actual shoulder, elbow
             let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
-                bones[ hand.idxs.thumb  + i ].quaternion.slerpQuaternions( hand.srcG.thumb[i],  hand.trgG.thumb[i],  t );
-                bones[ hand.idxs.index  + i ].quaternion.slerpQuaternions( hand.srcG.index[i],  hand.trgG.index[i],  t );
-                bones[ hand.idxs.middle + i ].quaternion.slerpQuaternions( hand.srcG.middle[i], hand.trgG.middle[i], t );
-                bones[ hand.idxs.ring   + i ].quaternion.slerpQuaternions( hand.srcG.ring[i],   hand.trgG.ring[i],   t );
-                bones[ hand.idxs.pinky  + i ].quaternion.slerpQuaternions( hand.srcG.pinky[i],  hand.trgG.pinky[i],  t );
+                nlerpQuats( bones[ hand.idxs.thumb  + i ].quaternion, hand.srcG.thumb[i],  hand.trgG.thumb[i],  t );
+                nlerpQuats( bones[ hand.idxs.index  + i ].quaternion, hand.srcG.index[i],  hand.trgG.index[i],  t );
+                nlerpQuats( bones[ hand.idxs.middle + i ].quaternion, hand.srcG.middle[i], hand.trgG.middle[i], t );
+                nlerpQuats( bones[ hand.idxs.ring   + i ].quaternion, hand.srcG.ring[i],   hand.trgG.ring[i],   t );
+                nlerpQuats( bones[ hand.idxs.pinky  + i ].quaternion, hand.srcG.pinky[i],  hand.trgG.pinky[i],  t );
             }     
             return;
         }
@@ -246,11 +246,11 @@ class HandShapeRealizer {
 
             let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
-                bones[ hand.idxs.thumb  + i ].quaternion.slerpQuaternions( hand.trgG.thumb[i],  hand.defG.thumb[i],  t );
-                bones[ hand.idxs.index  + i ].quaternion.slerpQuaternions( hand.trgG.index[i],  hand.defG.index[i],  t );
-                bones[ hand.idxs.middle + i ].quaternion.slerpQuaternions( hand.trgG.middle[i], hand.defG.middle[i], t );
-                bones[ hand.idxs.ring   + i ].quaternion.slerpQuaternions( hand.trgG.ring[i],   hand.defG.ring[i],   t );
-                bones[ hand.idxs.pinky  + i ].quaternion.slerpQuaternions( hand.trgG.pinky[i],  hand.defG.pinky[i],  t );
+                nlerpQuats( bones[ hand.idxs.thumb  + i ].quaternion, hand.trgG.thumb[i],  hand.defG.thumb[i],  t );
+                nlerpQuats( bones[ hand.idxs.index  + i ].quaternion, hand.trgG.index[i],  hand.defG.index[i],  t );
+                nlerpQuats( bones[ hand.idxs.middle + i ].quaternion, hand.trgG.middle[i], hand.defG.middle[i], t );
+                nlerpQuats( bones[ hand.idxs.ring   + i ].quaternion, hand.trgG.ring[i],   hand.defG.ring[i],   t );
+                nlerpQuats( bones[ hand.idxs.pinky  + i ].quaternion, hand.trgG.pinky[i],  hand.defG.pinky[i],  t );
             }     
         }
         
