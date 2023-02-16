@@ -6,6 +6,9 @@ import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loa
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 import { CharacterController } from './controllers/CharacterController.js'
 
+
+import { rotationTable as extfidirTable } from './sigml/Extfidir.js';
+
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
@@ -77,6 +80,7 @@ class App {
         let armFolder = gui.addFolder( 'Arm Gestures' ).close();
         let handShapeFolder = gui.addFolder( 'Handshape Gestures' ).close();
         let palmorFolder = gui.addFolder( 'Palmor Gestures' );
+        let extfidirFolder = gui.addFolder( 'Extfidir Gestures' );
         let testFolder = gui.addFolder( 'Test' );
 
         /*
@@ -503,8 +507,8 @@ class App {
             that.msg = {
                 type: "behaviours",
                 data: [
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 1 },
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 1 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 0.75 },
                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, handshape: "flat", hand: "both"},
                     { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, palmor: rotname, hand: "both"}, 
                 ]
@@ -512,16 +516,16 @@ class App {
             that.ECAcontroller.processMsg(JSON.stringify(that.msg));
            
         }
+        
         let palmorParams = {
-            u : rotationSimplifier.bind(that, 'u'),
+            u  : rotationSimplifier.bind(that, 'u'),
             ul : rotationSimplifier.bind(that, 'ul'),
-            l : rotationSimplifier.bind(that, 'l'),
+            l  : rotationSimplifier.bind(that, 'l'),
             dl : rotationSimplifier.bind(that, 'dl'),
-            d : rotationSimplifier.bind(that, 'd'),
+            d  : rotationSimplifier.bind(that, 'd'),
             dr : rotationSimplifier.bind(that, 'dr'),
-            r : rotationSimplifier.bind(that, 'r'),
+            r  : rotationSimplifier.bind(that, 'r'),
             ur : rotationSimplifier.bind(that, 'ur'),
-            
         }
         palmorFolder.add(palmorParams, "u").name("u");
         palmorFolder.add(palmorParams, "ul").name("ul");
@@ -533,6 +537,27 @@ class App {
         palmorFolder.add(palmorParams, "ur").name("ur");
 
 
+        function extfidirSimplifier(rotname){
+            let that = this;
+            that.msg = {
+                type: "behaviours",
+                data: [
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 0.75 },
+                    { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, handshape: "flat", hand: "both"},
+                    { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, extfidir: rotname, hand: "both" }, 
+                ]
+            };
+            that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+           
+        }
+        let extfidirParams = {};
+        for( let e in extfidirTable ){
+            extfidirParams[e] = extfidirSimplifier.bind(that, e);
+            extfidirFolder.add(extfidirParams, e).name(e);
+        }
+
+
         let testParams = {            
             HALLO(){
                 let duration = 4.0;
@@ -542,6 +567,7 @@ class App {
                         { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, locationArm: "shouldersR", hand: "right", distance: 0.01 },
                         { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, handshape: "flat", thumbshape: "touch", hand: "right" },
                         { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, palmor: "d", hand: "right", shift: true },
+                        { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, extfidir: "u", hand: "right" },
 
                     ]
                 };
@@ -639,7 +665,7 @@ class App {
         //const gridHelper = new THREE.GridHelper( 10, 10 );
         //gridHelper.position.set(0,0.001,0);
         //this.scene.add( gridHelper );
-                
+                        
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );

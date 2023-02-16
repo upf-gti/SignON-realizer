@@ -51,7 +51,8 @@ class Palmor {
             transition: false,
         };        
 
-        this.axis = new Vector3();
+        this.twistAxisForeArm = new Vector3();
+        this.twistAxisWrist = new Vector3();
 
         this.tempQuat1 = new Quaternion();
         this.tempQuat2 = new Quaternion();
@@ -73,11 +74,16 @@ class Palmor {
 
         let bones = this.skeleton.bones;
         for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes("RightForeArm") ){ this.right.idx = i; }
+            if ( bones[i].name.includes("RightForeArm") ){ 
+                this.right.idx = i; 
+                this.twistAxisForeArm.copy( bones[ i + 1 ].position ).normalize();
+            }
             else if ( bones[i].name.includes("LeftForeArm") ){ this.left.idx = i; }
+            else if ( bones[i].name.includes("RightHandMiddle1") ){ 
+                this.twistAxisWrist.copy( bones[ i ].position ).normalize();
+            }
         }
 
-        this.axis.copy( bones[ this.right.idx + 1 ].position ).normalize();
 
         // set default pose
         this.reset();
@@ -162,8 +168,8 @@ class Palmor {
         handInfo.srcG[1].copy( handInfo.curG[1] );
         
         // set target pose (and mirror)
-        handInfo.trgG[0].setFromAxisAngle( this.axis, angle * 0.5 );
-        handInfo.trgG[1].setFromAxisAngle( this.axis, angle * 0.5 );
+        handInfo.trgG[0].setFromAxisAngle( this.twistAxisForeArm, angle * 0.45 );
+        handInfo.trgG[1].setFromAxisAngle( this.twistAxisWrist, angle * 0.55 );
 
         // mirror quaternions for the left. Original quaternions are for right hand
         if ( mirror ){

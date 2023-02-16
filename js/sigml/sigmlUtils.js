@@ -30,7 +30,8 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     //  R = [ Wr, Vr ] = S * T  source rotation
     // T = norm( [ Wr, proj(Vr) ] ) twist 
     // S = R * inv(T)
-    outTwist.set( q.x * normAxis.x, q.y * normAxis.y, q.z * normAxis.z, q.w )
+    let dot =  q.x * normAxis.x + q.y * normAxis.y + q.z * normAxis.z;
+    outTwist.set( dot * normAxis.x, dot * normAxis.y, dot * normAxis.z, q.w )
     outTwist.normalize(); // already manages (0,0,0,0) quaternions by setting identity
 
     outSwing.copy( outTwist );
