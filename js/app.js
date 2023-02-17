@@ -573,8 +573,44 @@ class App {
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
+
+            test(){
+                let duration = 1.0;
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+
+                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "right" },
+                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "right" },
+                        { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "right" },
+                        { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "right" },
+                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "right" },
+                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "right" },
+                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "right" },
+                        { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "right" },
+                        { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "right" },
+                        { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "right" },
+                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "right" },
+                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "right" },
+                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "right" },
+                        { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "right" },
+                        { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "right" },
+                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
+                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
+                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
+                        { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "right" },
+
+                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21, handshape: "finger2", hand: "right" },
+                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21,  palmor: "u", hand: "right" },
+                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21,  extfidir: "i", hand: "right" },
+
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
         };
         testFolder.add(testParams, "HALLO").name("HALLO");
+        testFolder.add(testParams, "test").name("test");
 
     }
 
@@ -808,7 +844,7 @@ class App {
         }
 
         function loadfinished() {
-            this.model1.position.set(0.05, 0.96, 0 );
+//            this.model1.position.set(0.05, 0.96, 0 );
             let q = new THREE.Quaternion();
             q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
             this.model1.quaternion.premultiply(q); 

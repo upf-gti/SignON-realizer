@@ -9,34 +9,34 @@ let DEG2RAD = Math.PI / 180;
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let rotationTable = {
-    'u'     : new Vector3(  0,   3,   0 ),   
-    'ul'    : new Vector3(  1,   3,   0 ),   
-    'l'     : new Vector3(  1,   2,   0 ),   
-    'dl'    : new Vector3(  1,   1,   0 ),   
-    'd'     : new Vector3(  0,   1,   0 ),   
-    'dr'    : new Vector3( -1,   1,   0 ),  
-    'r'     : new Vector3( -1,   2,   0 ),  
-    'ur'    : new Vector3( -1,   3,   0 ),  
+    'u'     : new Vector3(  0,   2,   0 ),   
+    'ul'    : new Vector3(  1,   2,   0 ),   
+    'l'     : new Vector3(  1,   1,   0 ),   
+    'dl'    : new Vector3(  1,   0,   0 ),   
+    'd'     : new Vector3(  0,   0,   0 ),   
+    'dr'    : new Vector3( -1,   0,   0 ),  
+    'r'     : new Vector3( -1,   1,   0 ),  
+    'ur'    : new Vector3( -1,   2,   0 ),  
 
-    "uo"    : new Vector3(  0,   3,   1 ),
-    "uol"   : new Vector3(  1,   3,   1 ),
-    "ol"    : new Vector3(  1,   2,   1 ),
-    "dol"   : new Vector3(  1,   1,   1 ),
-    "do"    : new Vector3(  0,   1,   1 ),
-    "dor"   : new Vector3( -1,   1,   1 ),
-    "or"    : new Vector3( -1,   2,   1 ),
-    "uor"   : new Vector3( -1,   3,   1 ),
-    "o"     : new Vector3(  0,   2,   1 ),
+    "uo"    : new Vector3(  0,   2,   1 ),
+    "uol"   : new Vector3(  1,   2,   1 ),
+    "ol"    : new Vector3(  1,   1,   1 ),
+    "dol"   : new Vector3(  1,   0,   1 ),
+    "do"    : new Vector3(  0,   0,   1 ),
+    "dor"   : new Vector3( -1,   0,   1 ),
+    "or"    : new Vector3( -1,   1,   1 ),
+    "uor"   : new Vector3( -1,   2,   1 ),
+    "o"     : new Vector3(  0,   1,   1 ),
     
-    "ui"    : new Vector3(  0,   3,   -1 ),
-    "uil"   : new Vector3(  1,   3,   -1 ),
-    "il"    : new Vector3(  1,   2,   -1 ),
-    "dil"   : new Vector3(  1,   1,   -1 ),
-    "di"    : new Vector3(  0,   1,   -1 ),
-    "dir"   : new Vector3( -1,   1,   -1 ),
-    "ir"    : new Vector3( -1,   2,   -1 ),
-    "uir"   : new Vector3( -1,   3,   -1 ),
-    "i"     : new Vector3(  0,   2,   -1 ),
+    "ui"    : new Vector3(  0,   2,   -1 ),
+    "uil"   : new Vector3(  1,   2,   -1 ),
+    "il"    : new Vector3(  1,   1,   -1 ),
+    "dil"   : new Vector3(  1,   0,   -1 ),
+    "di"    : new Vector3(  0,   0,   -1 ),
+    "dir"   : new Vector3( -1,   0,   -1 ),
+    "ir"    : new Vector3( -1,   1,   -1 ),
+    "uir"   : new Vector3( -1,   2,   -1 ),
+    "i"     : new Vector3(  0,   1,   -1 ),
 }
 
 // receives bml instructions and animates the wrists. Swing rotation only 
@@ -47,8 +47,10 @@ class Extfidir {
         // store TWIST quaternions for forearm and hand (visally better than just forearm)
         this.right = {
             idx: 0,
-            defPoint: null, // a vector3 from the rotation table. Used in update for lookup
-            trgPoint: null, // a vector3 from the rotation table. Used in update for lookup
+            defActive: false, // whether to default to a point or not
+            defRelative: true, // is default positioning absolute or relative 
+            defPoint: new Vector3(),
+            trgPoint: new Vector3(), 
             // no defG : new Quaternion. Will reuse srcG and trgG during relax-end
             trgG: new Quaternion(),
             srcG: new Quaternion(),
@@ -59,12 +61,16 @@ class Extfidir {
             relax: 0, 
             end: 0, 
             transition: false,
+
+            relative: true, // false = absolute, true = relative
         };
         
         this.left = {
             idx: 0, 
-            defPoint: null, // a vector3 from the rotation table. Used in update for lookup
-            trgPoint: null,
+            defActive: false, // whether to default to a point or not
+            defRelative: false, // is default positioning absolute or relative 
+            defPoint: new Vector3(),
+            trgPoint: new Vector3(),
             // no defG : new Quaternion. Will reuse srcG and trgG during relax-end
             trgG: new Quaternion(),
             srcG: new Quaternion(),
@@ -75,6 +81,8 @@ class Extfidir {
             relax: 0, 
             end: 0, 
             transition: false,
+
+            relative: true, // false = absolute, true = relative
         };        
 
 
@@ -104,35 +112,54 @@ class Extfidir {
         }
 
         // DEBUG render rotation table as spheres
-        // for ( let e in rotationTable ){
-        //     let color = ( ( Math.max( 0, Math.min( 1, 0.5*(rotationTable[ e ].z + 1) ) ) * 0xff ) & 0xff ) | 0xffff00;
-        //     let k = new THREE.Mesh( new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: color , depthWrite: true }) );
-        //     k.position.copy( rotationTable[ e ] );
-        //     window.global.app.scene.add( k ); 
+        // if ( !window.checks ){
+        //     this.debugPoints = [];
+        //     for ( let e in rotationTable ){
+        //         let color = ( ( Math.max( 0, Math.min( 1, 0.5*(rotationTable[ e ].z + 1) ) ) * 0xff ) & 0xff ) | 0xffff00;
+        //         let k = new THREE.Mesh( new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: color , depthWrite: true }) );
+        //         k.position.copy( rotationTable[ e ] );
+        //         k.name = e;
+        //         window.global.app.scene.add( k );
+        //         this.debugPoints.push( k ); 
+        //     }
+        //     window.checks = true;
         // }
-
         // set default pose
         this.reset();
     }
+
+    // _debug_pointsUpdate( x,y,z ){
+    //     for ( let i = 0; i < this.debugPoints.length; ++i ){
+    //         this.debugPoints[i].position.copy( rotationTable[ this.debugPoints[i].name ] );
+    //         this.debugPoints[i].position.x += x;
+    //         this.debugPoints[i].position.y += y;
+    //         this.debugPoints[i].position.z += z;
+    //     }
+    // }
 
     reset() {
         // Force pose update to flat
         this.right.transition = false;
         this.left.transition = false;
-        this.right.defG = null;
+        this.right.defActive = false;
+        this.left.defActive = false;
         this.right.curG.set( 0,0,0,1 );
-        this.left.defG = null;
         this.left.curG.set( 0,0,0,1 );
     }
 
-    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat ){
+    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, relative = true ){
         let wristBone = this.skeleton.bones[ wristIdx ];
         wristBone.updateWorldMatrix( true, true );
         this.tempMat4.copy( wristBone.matrixWorld );
         this.tempMat4.invert();
         
         let localPoint = this.tempVec3;
-        localPoint.copy( targetPoint );
+        if ( relative ){ // center rotation points on wrist (no rotation involved)
+            localPoint.setFromMatrixPosition( wristBone.matrixWorld );
+            localPoint.add( targetPoint );
+        } else { // center rotation points to 0,0,0
+            localPoint.copy( targetPoint );
+        }
         localPoint.applyMatrix4( this.tempMat4 );
         localPoint.normalize();
 
@@ -162,8 +189,8 @@ class Extfidir {
         if ( hand.t < hand.start ){ return; }
         if ( hand.t > hand.attackPeak && hand.t < hand.relax ){ 
             // only if absolute position.
-            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG ); // trgG update needed for relax-end
-            hand.curG.copy( hand.trgG ); 
+            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.relative ); // trgG update needed for relax-end
+            hand.curG.copy( hand.trgG );
             return; 
         }
         
@@ -172,7 +199,7 @@ class Extfidir {
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG ); // only if absolute position
+            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.relative );
             hand.curG.slerpQuaternions( hand.srcG, hand.trgG, t );
             
             return;
@@ -183,19 +210,17 @@ class Extfidir {
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            
-            if ( hand.defPoint ){
-                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.srcG ); // only if absolute position
+            if ( hand.defActive ){
+                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.srcG, hand.defRelative ); 
             } else{
                 hand.srcG.set( 0,0,0,1 );
             }
-            nlerpQuats( hand.curG, hand.trgG, hand.srcG, t ); // reusing srcG as defG
-
+            hand.curG.slerpQuaternions( hand.trgG, hand.srcG, t ); // reusing srcG as defG
         }
         
         if ( hand.t > hand.end ){ 
-            if ( hand.defPoint ){ // indefinitely update curG to keep pointing at the correct target
-                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.curG ); // only if absolute position
+            if ( hand.defActive ){ // indefinitely update curG to keep pointing at the correct target
+                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.curG, hand.defRelative );
             }else{
                 hand.transition = false;
             }
@@ -203,6 +228,15 @@ class Extfidir {
 
     }
 
+    /**
+     * 
+     * bml info
+     * start, attackPeak, relax, end
+     * extfidir: string from rotationTable
+     * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
+     * extfidirNeutral: (optional) bool - stop current default pointing
+     * absolute: (optional) bool - whether the pointing is to absolute positions or relative to the wrist. Default to relative 
+     */
     newGestureBML( bml ){
         let handedness = E_HANDEDNESS.RIGHT; // default hand
         if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
@@ -217,22 +251,38 @@ class Extfidir {
         if( !bml.extfidir ){ return; }
       
         // undo default pointing. Since it is a constant lookat, there must be a specific attribute to stop
-        if ( bml.extfidirNeutral ){ handInfo.defPoint = null; }
+        if ( bml.extfidirNeutral ){ handInfo.defActive = false; }
 
         let point = rotationTable[ bml.extfidir ];
         if( !point ){ 
             console.warn( "Gesture: Extfidir incorrect direction \"" + bml.extfidir + "\"" );
             return; 
         }
-        
+
+        let secondPoint = rotationTable[ bml.secondExtfidir ];
+        if( !secondPoint ){ 
+            secondPoint = point; 
+        }
+
         // set source pose swing quaternions
         handInfo.srcG.copy( handInfo.curG );
 
-        handInfo.trgPoint = point;
+        // compute midpoint between primary and secondary extfidir
+        handInfo.trgPoint.addVectors( point, secondPoint );
+        handInfo.trgPoint.multiplyScalar( 0.5 );
+        if( handInfo.trgPoint.lengthSq() < 0.1 ){
+            handInfo.trgPoint.copy( rotationTable['o'] );
+        }
+        // absolute positioning (tables) is at 1 meter. Relative should be centered at the wrist
+        if( !bml.absolute ){ 
+            handInfo.trgPoint.y -= rotationTable['o'].y; 
+        }
+        handInfo.relative = !bml.absolute;
         
         // set defualt point if necessary
-        if ( bml.shift ){
-            handInfo.defPoint = point;
+        if( bml.shift ){
+            handInfo.defPoint.copy( handInfo.trgPoint );
+            handInfo.defRelative = handInfo.relative;
         }
 
         // check and set timings
