@@ -191,7 +191,7 @@ FacialController.prototype.update = function (dt) {
     // Update facial expression
     this.faceUpdate(dt);
 
-    /*
+    
     // Gaze
     if (this.gazeManager){
         let weights = this.gazeManager.update(dt);
@@ -231,7 +231,7 @@ FacialController.prototype.update = function (dt) {
         head.update(dt);
         headQuat.multiply( head.currentStrokeQuat );
     }
-    */
+    
 }
 
 // Update facial expressions

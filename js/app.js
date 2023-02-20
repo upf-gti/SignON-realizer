@@ -79,9 +79,9 @@ class App {
         let moodFolder = gui.addFolder( "Moods" ).close();
         let armFolder = gui.addFolder( 'Arm Gestures' ).close();
         let handShapeFolder = gui.addFolder( 'Handshape Gestures' ).close();
-        let palmorFolder = gui.addFolder( 'Palmor Gestures' );
-        let extfidirFolder = gui.addFolder( 'Extfidir Gestures' );
-        let testFolder = gui.addFolder( 'Test' );
+        let palmorFolder = gui.addFolder( 'Palmor Gestures' ).close();
+        let extfidirFolder = gui.addFolder( 'Extfidir Gestures' ).close();
+        let testFolder = gui.addFolder( 'Phrases' );
 
         /*
 		let otherFolder = gui.addFolder( 'Animations' );
@@ -560,49 +560,113 @@ class App {
 
         let testParams = {            
             HALLO(){
-                let duration = 4.0;
+                let halloStart = 0.0;
+                let hallo = 1.0;
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, locationArm: "shouldersR", hand: "right", distance: 0.01 },
-                        { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, handshape: "flat", thumbshape: "touch", hand: "right" },
-                        { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, palmor: "d", hand: "right", shift: true },
-                        { type: "gesture", start: 0, attackPeak: duration*0.2, relax: duration*0.8, end: duration, extfidir: "u", hand: "right" },
+                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
+
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.01 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, handshape: "flat", thumbshape: "touch", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, palmor: "d", hand: "right", shift: true },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, extfidir: "u", hand: "right" },
 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
 
-            test(){
-                let duration = 1.0;
+            LEUK(){
+                let leukStart = 0.0;
+                let leuk = 1.0;
                 that.msg = {
                     type: "behaviours",
                     data: [
+                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk") + ".", sentT: leuk, sentInt: 0.8 },
 
-                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "right" },
-                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "right" },
-                        { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "right" },
-                        { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "right" },
-                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "right" },
-                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "right" },
-                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "right" },
-                        { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "right" },
-                        { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "right" },
-                        { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "right" },
-                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "right" },
-                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "right" },
-                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "right" },
-                        { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "right" },
-                        { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "right" },
-                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
-                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
-                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
-                        { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, handshape: "finger2", thumbshape:"opposed", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, palmor: "u", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, extfidir: "uo", hand: "right" },
+                        
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, locationArm: "stomach", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, handshape: "pinch12", hand: "right" },
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, palmor: "ul", hand: "right" },
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
 
-                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21, handshape: "finger2", hand: "right" },
-                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21,  palmor: "u", hand: "right" },
-                        { type: "gesture", start: 0, attackPeak: duration * 0.8, relax: duration * 20, end: duration * 21,  extfidir: "i", hand: "right" },
+            ONTMOETEN(){
+                let ontStart = 0.0;
+                let ontmoeten = 1.0;
+                let end = ontStart + ontmoeten;
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "right", distance: 0.25 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "left", distance: 0.75 },
+
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.6 },
+
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, handshape: "finger2", hand: "both" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "d", hand: "right" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "r", hand: "left" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+
+            HalloLeukOntmoeten(){
+                let hallo = 0.8;
+                let leuk = 1.0;
+                let ontmoeten = 1.0;
+
+                let halloStart = 0;
+                let leukStart = halloStart + hallo;
+                let ontStart = leukStart + leuk;
+                let end = ontStart + ontmoeten;
+
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "faceLexeme", start: 0, attackPeak: 0.5, relax: end + 1, end: end + 2, lexeme: "NMF_SMILE_CLOSED", amount:0.4 },
+
+                        // hallo
+                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
+
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.01 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, handshape: "flat", thumbshape: "touch", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, palmor: "d", hand: "right", shift: true },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo, relax: 100000, end: 100000, extfidir: "u", hand: "right" },
+
+                        // leuk                  
+                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk") + ".", sentT: leuk + ontmoeten * 0.4, sentInt: 0.8 },
+
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, handshape: "finger2", thumbshape:"opposed", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, palmor: "u", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, extfidir: "uo", hand: "right" },
+                        
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, locationArm: "stomach", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, handshape: "pinch12", hand: "right" },
+                        { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, palmor: "ul", hand: "right" },
+                        
+                        
+                        // ontmoeten
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "right", distance: 0.25 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "left", distance: 0.75 },
+
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.35 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.6 },
+
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, handshape: "finger2", hand: "both" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "d", hand: "right" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "r", hand: "left" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
 
                     ]
                 };
@@ -610,7 +674,11 @@ class App {
             },
         };
         testFolder.add(testParams, "HALLO").name("HALLO");
-        testFolder.add(testParams, "test").name("test");
+        testFolder.add(testParams, "LEUK").name("LEUK");
+        testFolder.add(testParams, "ONTMOETEN").name("ONTMOETEN");
+        
+        testFolder.add(testParams, "HalloLeukOntmoeten").name("Hallo leuk ontmoeten");
+
 
     }
 
@@ -834,6 +902,7 @@ class App {
             let ECAcontroller = this[ "ECAcontroller" + nameString ] = new CharacterController( {character: model} );
             ECAcontroller.start();
             ECAcontroller.reset();
+            ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
 
             // load the actual animation to play
             let mixer = this[ "mixer" + nameString ] = new THREE.AnimationMixer( model );

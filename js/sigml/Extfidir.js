@@ -156,8 +156,11 @@ class Extfidir {
         let localPoint = this.tempVec3;
         if ( relative ){ // center rotation points on wrist (no rotation involved)
             localPoint.setFromMatrixPosition( wristBone.matrixWorld );
+            //this._debug_pointsUpdate( localPoint.x, localPoint.y - rotationTable['o'].y, localPoint.z );
+
             localPoint.add( targetPoint );
         } else { // center rotation points to 0,0,0
+            //this._debug_pointsUpdate( 0,0,0 );
             localPoint.copy( targetPoint );
         }
         localPoint.applyMatrix4( this.tempMat4 );
@@ -270,9 +273,7 @@ class Extfidir {
         // compute midpoint between primary and secondary extfidir
         handInfo.trgPoint.addVectors( point, secondPoint );
         handInfo.trgPoint.multiplyScalar( 0.5 );
-        if( handInfo.trgPoint.lengthSq() < 0.1 ){
-            handInfo.trgPoint.copy( rotationTable['o'] );
-        }
+        
         // absolute positioning (tables) is at 1 meter. Relative should be centered at the wrist
         if( !bml.absolute ){ 
             handInfo.trgPoint.y -= rotationTable['o'].y; 
