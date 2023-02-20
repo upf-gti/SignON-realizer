@@ -370,116 +370,39 @@ class App {
         armFolder.add(armParams, "leftArm").name("leftArm");
 
 
+        function handshapeSimplifier( handshape, thumbshape = null, hand = "right" ){
+            this.msg = {
+                type: "behaviours",
+                data: [
+                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, handshape: handshape, thumbshape: thumbshape, hand: hand },
+            ]};
+            this.ECAcontroller.processMsg(JSON.stringify(this.msg));
+        }
         let handShapeParams = {
 
-            fist(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "fist", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            finger2(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger2", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            finger23(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger23", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            finger23spread(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger23spread", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            finger2345(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "finger2345", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            flat(){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "flat", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-
-            pinch12() {
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinch12", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            pinch12open() {
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinch12open", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            pinchall() {
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "pinchall", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            ceeall() {
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "ceeall", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            cee12() { 
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "cee12", hand: "right" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-            cee12open() {
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, end: 0.3, handshape: "cee12open", hand: "both" },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
-            },
-
+            fist : handshapeSimplifier.bind(that, "fist"),
+            finger2 : handshapeSimplifier.bind(that, "finger2"),
+            finger23 : handshapeSimplifier.bind(that, "finger23"),
+            finger23spread : handshapeSimplifier.bind(that, "finger23spread"),
+            finger2345 : handshapeSimplifier.bind(that, "finger2345"),
+            flat : handshapeSimplifier.bind(that, "flat"),
+            pinch12 : handshapeSimplifier.bind(that, "pinch12"),
+            pinch12open : handshapeSimplifier.bind(that, "pinch12open"),
+            pinchall : handshapeSimplifier.bind(that, "pinchall"),
+            ceeall : handshapeSimplifier.bind(that, "ceeall"),
+            cee12 : handshapeSimplifier.bind(that, "cee12"),
+            cee12open : handshapeSimplifier.bind(that, "cee12open"),
+  
             count(){
                 let duration = 0.8;
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0.0, end: duration, handshape: "finger2", hand: "both" },
-                        { type: "gesture", start: duration, end: duration * 2, handshape: "finger23spread", thumbshape: "across",  hand: "both" },
-                        { type: "gesture", start: duration * 2, end: duration * 3, handshape: "finger23spread", thumbshape:"out",  hand: "both" , shift:true},
-                        { type: "gesture", start: duration * 3, end: duration * 4, handshape: "finger2345", thumbshape: "across",  hand: "both" },
-                        { type: "gesture", start: duration * 4, end: duration * 5, handshape: "finger2345", thumbshape: "out",  hand: "both" },
+                        { type: "gesture", start: 0.0         , attackPeak: duration * 1, end: 1000, handshape: "finger2", hand: "both" },
+                        { type: "gesture", start: duration    , attackPeak: duration * 2, end: 1000, handshape: "finger23spread", thumbshape: "across",  hand: "both" },
+                        { type: "gesture", start: duration * 2, attackPeak: duration * 3, end: 1000, handshape: "finger23spread", thumbshape:"out",  hand: "both" },
+                        { type: "gesture", start: duration * 3, attackPeak: duration * 4, end: 1000, handshape: "finger2345", thumbshape: "across",  hand: "both" },
+                        { type: "gesture", start: duration * 4, attackPeak: duration * 5, relax: duration * 5.5, end: duration * 6, handshape: "finger2345", thumbshape: "out",  hand: "both" },
                 ]};
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },

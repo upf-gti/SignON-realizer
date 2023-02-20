@@ -199,6 +199,7 @@ class HandShapeRealizer {
         
         this._fillGestureFromGesture( this.right.defG, handShapes[ "flat" ] );
         this._fillGestureFromGesture( this.left.defG, handShapes[ "flat" ] );
+        this._mirrorGesture( this.left.defG );
 
         this.right.transition = true;
         this.left.transition = true;
