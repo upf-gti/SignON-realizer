@@ -22,6 +22,15 @@ class GestureManager{
         this.locationArm.reset();
         this.palmor.reset();
         this.extfidir.reset();
+
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.01, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", distance: 0.01, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dr", hand: "right", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "right", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", secondExtfidir:"dor", hand: "left", shift:true } );
+
     }
 
     update( dt ){

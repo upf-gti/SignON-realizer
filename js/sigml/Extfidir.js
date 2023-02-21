@@ -284,6 +284,7 @@ class Extfidir {
         if( bml.shift ){
             handInfo.defPoint.copy( handInfo.trgPoint );
             handInfo.defRelative = handInfo.relative;
+            handInfo.defActive = true;
         }
 
         // check and set timings
