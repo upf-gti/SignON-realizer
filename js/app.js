@@ -8,6 +8,7 @@ import { CharacterController } from './controllers/CharacterController.js'
 
 
 import { rotationTable as extfidirTable } from './sigml/Extfidir.js';
+import { nearArmPosesTable } from './sigml/LocationArm.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -81,7 +82,9 @@ class App {
         let handShapeFolder = gui.addFolder( 'Handshape Gestures' ).close();
         let palmorFolder = gui.addFolder( 'Palmor Gestures' ).close();
         let extfidirFolder = gui.addFolder( 'Extfidir Gestures' ).close();
+        let motionFolder = gui.addFolder( 'Motion' ).close();
         let testFolder = gui.addFolder( 'Phrases' );
+
 
         /*
 		let otherFolder = gui.addFolder( 'Animations' );
@@ -309,6 +312,15 @@ class App {
         moodFolder.add(moodParams, 'contempt').name('contempt');
 
 
+        // ARM FOLDER -----------
+        function armSimplifier( armshape, hand = "right" ){
+            this.msg = {
+                type: "behaviours",
+                data: [
+                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: hand, distance: 0.3 },
+            ]};
+            this.ECAcontroller.processMsg(JSON.stringify(this.msg));
+        }
 
         let armParams = {
             rightArm(){
@@ -329,8 +341,8 @@ class App {
                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "right" },
                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "right" },
                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "right" },
-                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "right" },
-                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "right" },
+                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shoulderL", hand: "right" },
+                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shoulderR", hand: "right" },
                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
@@ -356,8 +368,8 @@ class App {
                        { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "left" },
                        { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "left" },
                        { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "left" },
-                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shouldersL", hand: "left" },
-                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shouldersR", hand: "left" },
+                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shoulderL", hand: "left" },
+                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shoulderR", hand: "left" },
                        { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "left" },
                        { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "left" },
                        { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "left" },
@@ -366,10 +378,15 @@ class App {
                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
            }
         }
-        armFolder.add(armParams, "rightArm").name("rightArm");
-        armFolder.add(armParams, "leftArm").name("leftArm");
+        for( let e in nearArmPosesTable ){
+            armParams[e] = armSimplifier.bind(that, e);
+            armFolder.add(armParams, e).name(e);
+        }
+        armFolder.add(armParams, "rightArm").name("TEST_ALL_R");
+        armFolder.add(armParams, "leftArm").name("TEST_ALL_L");
 
 
+        // HANDSHAPE FOLDER ------------
         function handshapeSimplifier( handshape, thumbshape = null, hand = "right" ){
             this.msg = {
                 type: "behaviours",
@@ -425,6 +442,7 @@ class App {
         handShapeFolder.add(handShapeParams, "count").name("count");
         
 
+        // PALMOR ORIENTATION ----------------------
         function rotationSimplifier(rotname){
             let that = this;
             that.msg = {
@@ -460,6 +478,7 @@ class App {
         palmorFolder.add(palmorParams, "ur").name("ur");
 
 
+        // EXTFIDIR FOLDER PARAMS ------------------
         function extfidirSimplifier(rotname){
             let that = this;
             that.msg = {
@@ -480,7 +499,23 @@ class App {
             extfidirFolder.add(extfidirParams, e).name(e);
         }
 
+        // MOTION FOLDER
+        let motionParams = {
+            circular(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, motion: "circular" }, 
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            }
+        };
+        
+        motionFolder.add(motionParams, "circular").name("circular");
 
+
+        // PHRASES FOLDER PARAMS -------------
         let testParams = {     
       
             HALLO(){
@@ -491,7 +526,7 @@ class App {
                     data: [
                         { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
 
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, handshape: "flat", thumbshape: "touch", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, palmor: "d", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, extfidir: "u", hand: "right" },
@@ -563,7 +598,7 @@ class App {
                         // hallo
                         { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
 
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5 , relax: 100000, end: 100000, locationArm: "shouldersR", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5 , relax: 100000, end: 100000, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, handshape: "flat", thumbshape: "touch", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, palmor: "d", hand: "right"},
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, extfidir: "u", hand: "right" },

@@ -5,6 +5,7 @@ import { LocationArm } from "./LocationArm.js";
 
 import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
+import { Motion } from "./Motion.js";
 
 
 class GestureManager{
@@ -13,8 +14,10 @@ class GestureManager{
         this.handShapeRealizer = new HandShapeRealizer( character );
         //this.locationArm = new LocationArmIK( character );
         this.locationArm = new LocationArm( character );
-        this.palmor = new Palmor( character );
         this.extfidir = new Extfidir( character );
+        this.palmor = new Palmor( character );
+
+        this.motion = new Motion( character );
     }
 
     reset(){
@@ -23,8 +26,8 @@ class GestureManager{
         this.palmor.reset();
         this.extfidir.reset();
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.01, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", distance: 0.01, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dr", hand: "right", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
@@ -44,6 +47,11 @@ class GestureManager{
             bones[ r.idx + i ].quaternion.copy( r.curG[i] );
             bones[ l.idx + i ].quaternion.copy( l.curG[i] );
         }
+        
+
+
+        this.motion.update(dt);
+
         
         // ADD twist to elbow (twist before swing scheme). Overwrite wrist (put only twist)
         this.palmor.update( dt );
@@ -67,17 +75,20 @@ class GestureManager{
     }
 
     newGesture( bml ){
-        if ( bml.handshape ){
-            this.handShapeRealizer.newGestureBML( bml );
-        }
         if ( bml.locationArm ){
             this.locationArm.newGestureBML( bml );
+        }
+        if ( bml.motion ){
+            this.motion.newGestureBML( bml );
         }
         if ( bml.palmor ){
             this.palmor.newGestureBML( bml );
         }
         if ( bml.extfidir ){
             this.extfidir.newGestureBML( bml );
+        }
+        if ( bml.handshape ){
+            this.handShapeRealizer.newGestureBML( bml );
         }
     }
 }

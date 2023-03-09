@@ -156,11 +156,11 @@ class Extfidir {
         let localPoint = this.tempVec3;
         if ( relative ){ // center rotation points on wrist (no rotation involved)
             localPoint.setFromMatrixPosition( wristBone.matrixWorld );
-            //this._debug_pointsUpdate( localPoint.x, localPoint.y - rotationTable['o'].y, localPoint.z );
+            // this._debug_pointsUpdate( localPoint.x, localPoint.y - rotationTable['o'].y, localPoint.z );
 
             localPoint.add( targetPoint );
         } else { // center rotation points to 0,0,0
-            //this._debug_pointsUpdate( 0,0,0 );
+            // this._debug_pointsUpdate( 0,0,0 );
             localPoint.copy( targetPoint );
         }
         localPoint.applyMatrix4( this.tempMat4 );
@@ -239,30 +239,43 @@ class Extfidir {
      * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
      * extfidirNeutral: (optional) bool - stop current default pointing
      * absolute: (optional) bool - whether the pointing is to absolute positions or relative to the wrist. Default to relative 
+     * hand: (optional) "right", "left", "both". Default right
      */
     newGestureBML( bml ){
         let handedness = E_HANDEDNESS.RIGHT; // default hand
         if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
         else if ( bml.hand == "both" ){ handedness = E_HANDEDNESS.BOTH; }
 
-        if ( handedness & E_HANDEDNESS.RIGHT ) { this.newGestureHand( bml, this.right ); }
-        if ( handedness & E_HANDEDNESS.LEFT ) { this.newGestureHand( bml, this.left ); }
+        if ( handedness & E_HANDEDNESS.RIGHT ) { this._newGestureHand( bml, this.right, false ); }
+        if ( handedness & E_HANDEDNESS.LEFT ) { this._newGestureHand( bml, this.left, !!bml.sym ); }
     }
 
     // usual bml attributes + extfidirNeutral to stop shift
-    newGestureHand( bml, handInfo ){
+    _newGestureHand( bml, handInfo, symmetry = false ){
         if( !bml.extfidir ){ return; }
       
         // undo default pointing. Since it is a constant lookat, there must be a specific attribute to stop
         if ( bml.extfidirNeutral ){ handInfo.defActive = false; }
 
-        let point = rotationTable[ bml.extfidir ];
+        let extfidir = bml.extfidir;
+        let secondExtfidir = bml.secondExtfidir;
+
+        if ( extfidir && symmetry ){
+            if ( extfidir[ extfidir.length - 1 ] == "r" ){ extfidir = extfidir.slice( 0, extfidir.length - 1 ) + "l"; }
+            else if ( extfidir[ extfidir.length - 1 ] == "l" ){ extfidir = extfidir.slice( 0, extfidir.length - 1 ) + "r"; }
+        }
+        if ( secondExtfidir && symmetry ){
+            if ( secondExtfidir[ secondExtfidir.length - 1 ] == "r" ){ secondExtfidir = secondExtfidir.slice( 0, secondExtfidir.length - 1 ) + "l"; }
+            else if ( secondExtfidir[ secondExtfidir.length - 1 ] == "l" ){ secondExtfidir = secondExtfidir.slice( 0, secondExtfidir.length - 1 ) + "r"; }
+        }
+
+        let point = rotationTable[ extfidir ];
         if( !point ){ 
-            console.warn( "Gesture: Extfidir incorrect direction \"" + bml.extfidir + "\"" );
+            console.warn( "Gesture: Extfidir incorrect direction \"" + extfidir + "\"" );
             return; 
         }
 
-        let secondPoint = rotationTable[ bml.secondExtfidir ];
+        let secondPoint = rotationTable[ secondExtfidir ];
         if( !secondPoint ){ 
             secondPoint = point; 
         }

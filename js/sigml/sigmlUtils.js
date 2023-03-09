@@ -1,3 +1,26 @@
+import { Vector3 } from "three";
+
+let tempVec3 = new Vector3(0,0,0);
+function cubicBezierVec3( a, b, c, d, out, t ){
+    let invT = 1.0 - t;
+    tempVec3.copy(a);
+    tempVec3.multiplyScalar( invT * invT * invT );
+    out.copy( tempVec3 );
+
+    tempVec3.copy(b);
+    tempVec3.multiplyScalar( 3* t * invT * invT );
+    out.add( tempVec3 );
+
+    tempVec3.copy(c);
+    tempVec3.multiplyScalar( 3* t * t * invT );
+    out.add( tempVec3 );
+
+    tempVec3.copy(d);
+    tempVec3.multiplyScalar( t * t * t );
+    out.add( tempVec3 );
+
+    return out;
+}
 
 // ------------ THREEJS Quaternions
 
@@ -40,4 +63,4 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     outSwing.normalize();
 }
 
-export { mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats }
+export { cubicBezierVec3, mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats }

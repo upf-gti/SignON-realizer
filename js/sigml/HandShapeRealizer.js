@@ -266,11 +266,11 @@ class HandShapeRealizer {
         if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
         else if ( bml.hand == "both" ){ handedness = E_HANDEDNESS.BOTH; }
 
-        if ( handedness & E_HANDEDNESS.RIGHT ) { this.newGestureHand( bml, this.right, false ); }
-        if ( handedness & E_HANDEDNESS.LEFT ) { this.newGestureHand( bml, this.left, true ); }
+        if ( handedness & E_HANDEDNESS.RIGHT ) { this._newGestureHand( bml, this.right, false ); }
+        if ( handedness & E_HANDEDNESS.LEFT ) { this._newGestureHand( bml, this.left, true ); }
     }
 
-    newGestureHand( bml, handInfo, mirror = false ){
+    _newGestureHand( bml, handInfo, mirror = false ){
         let newG = {};
 
         // fetch/build the correct gesture
