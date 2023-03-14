@@ -1,27 +1,29 @@
-import { Vector3 } from "three";
 
-let tempVec3 = new Vector3(0,0,0);
-function cubicBezierVec3( a, b, c, d, out, t ){
+
+function quadraticBezierVec3( a, b, c, out, t ){
     let invT = 1.0 - t;
-    tempVec3.copy(a);
-    tempVec3.multiplyScalar( invT * invT * invT );
-    out.copy( tempVec3 );
+    let ta = invT * invT;
+    let tb = 2 * t * invT;
+    let tc = t * t;
 
-    tempVec3.copy(b);
-    tempVec3.multiplyScalar( 3* t * invT * invT );
-    out.add( tempVec3 );
-
-    tempVec3.copy(c);
-    tempVec3.multiplyScalar( 3* t * t * invT );
-    out.add( tempVec3 );
-
-    tempVec3.copy(d);
-    tempVec3.multiplyScalar( t * t * t );
-    out.add( tempVec3 );
-
+    out.x = a.x * ta + b.x * tb + c.x * tc;
+    out.y = a.y * ta + b.y * tb + c.y * tc;
+    out.z = a.z * ta + b.z * tb + c.z * tc;
     return out;
 }
 
+function cubicBezierVec3( a, b, c, d, out, t ){
+    let invT = 1.0 - t;
+    let ta = invT * invT * invT;
+    let tb = 3 * t * invT * invT;
+    let tc = 3 * t * t * invT;
+    let td = t * t * t;
+
+    out.x = a.x * ta + b.x * tb + c.x * tc + d.x * td;
+    out.y = a.y * ta + b.y * tb + c.y * tc + d.y * td;
+    out.z = a.z * ta + b.z * tb + c.z * tc + d.z * td;
+    return out;
+}
 // ------------ THREEJS Quaternions
 
 // mirror THREE.Quaternion for avatars
@@ -63,4 +65,4 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     outSwing.normalize();
 }
 
-export { cubicBezierVec3, mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats }
+export { quadraticBezierVec3, cubicBezierVec3, mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats }

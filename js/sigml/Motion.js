@@ -1,31 +1,51 @@
-import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
+import { Matrix3, Matrix4, Mesh, MeshPhongMaterial, Quaternion, SphereGeometry, Vector3 } from "three";
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
 import { cubicBezierVec3 } from "./sigmlUtils.js";
 
+let directionTable = {
+    'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
+    'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
+    'l'     : (new Vector3(  1,   0,   0 )).normalize(),   
+    'dl'    : (new Vector3(  1,  -1,   0 )).normalize(),   
+    'd'     : (new Vector3(  0,  -1,   0 )).normalize(),   
+    'dr'    : (new Vector3( -1,  -1,   0 )).normalize(),  
+    'r'     : (new Vector3( -1,   0,   0 )).normalize(),  
+    'ur'    : (new Vector3( -1,   1,   0 )).normalize(),  
 
-let positions = {
-    'u'  : new Vector3( 0.0, 1.0, 0.0 ),  
-    'd'  : new Vector3( 0.0, -1.0, 0.0 ), 
-    'l'  : new Vector3( 1.0, 0.0, 0.0 ),
-    'r'  : new Vector3( -1.0, 0.0, 0.0 ),
-    'ul' : new Vector3( 1.0, 1.0, 0.0 ),
-    'dl' : new Vector3( 1.0, -1.0, 0.0 ),
-    'ur' : new Vector3( -1.0, 1.0, 0.0 ),
-    'dr' : new Vector3( -1.0, -1.0, 0.0 ),
-
-
-    'uBl'  : new Vector3( 0.5, 1.0, 0.0 ),  
-    'uBr'  : new Vector3( -0.5, 1.0, 0.0 ),  
-    'dBl'  : new Vector3( 0.5, -1.0, 0.0 ), 
-    'dBr'  : new Vector3( -0.5, -1.0, 0.0 ), 
-    'lBu'  : new Vector3( 1.0, 0.5, 0.0 ),
-    'lBd'  : new Vector3( 1.0, -0.5, 0.0 ),
-    'rBu'  : new Vector3( -1.0, 0.5, 0.0 ),
-    'rBd'  : new Vector3( -1.0, -0.5, 0.0 ),
-
+    "uo"    : (new Vector3(  0,   1,   1 )).normalize(),
+    "uol"   : (new Vector3(  1,   1,   1 )).normalize(),
+    "ol"    : (new Vector3(  1,   0,   1 )).normalize(),
+    "dol"   : (new Vector3(  1,  -1,   1 )).normalize(),
+    "do"    : (new Vector3(  0,  -1,   1 )).normalize(),
+    "dor"   : (new Vector3( -1,  -1,   1 )).normalize(),
+    "or"    : (new Vector3( -1,   0,   1 )).normalize(),
+    "uor"   : (new Vector3( -1,   1,   1 )).normalize(),
+    "o"     : (new Vector3(  0,   0,   1 )).normalize(),
+    
+    "ui"    : (new Vector3(  0,   1,  -1 )).normalize(),
+    "uil"   : (new Vector3(  1,   1,  -1 )).normalize(),
+    "il"    : (new Vector3(  1,   0,  -1 )).normalize(),
+    "dil"   : (new Vector3(  1,  -1,  -1 )).normalize(),
+    "di"    : (new Vector3(  0,  -1,  -1 )).normalize(),
+    "dir"   : (new Vector3( -1,  -1,  -1 )).normalize(),
+    "ir"    : (new Vector3( -1,   0,  -1 )).normalize(),
+    "uir"   : (new Vector3( -1,   1,  -1 )).normalize(),
+    "i"     : (new Vector3(  0,   0,  -1 )).normalize(),
 }
-class Motion {
 
+let curveDirectionTable = {
+    'u'     : directionTable['u'],   
+    'ul'    : directionTable['ul'],   
+    'l'     : directionTable['l'],   
+    'dl'    : directionTable['dl'],   
+    'd'     : directionTable['d'],   
+    'dr'    : directionTable['dr'],  
+    'r'     : directionTable['r'],  
+    'ur'    : directionTable['ur'],  
+}
+
+// has the ikSolver and the several motions for each arm
+class LocationMotionManager {
     constructor( character ){
         this.skeleton = null;
         character.traverse( o => {
@@ -43,144 +63,34 @@ class Motion {
         this.ikSolver.setIterations(4);
 
 
-
-        this.right = { 
-            shoulder : this.ikSolver.getChain("mixamorig_RightArm"),
-            elbow : this.ikSolver.getChain("mixamorig_RightForeArm"),
-            hand : this.ikSolver.getChain("mixamorig_RightHand"),
-            points : ['u','l','d','r','u'],
-            beziers : ['uBl', 'lBu',  'lBd', 'dBl',  'dBr', 'rBd', 'rBu', 'uBr' ],
-            // points : ['l','d','r'],
-            // beziers : ['u', 'lBu',  'lBd', 'dBl',  'dBr', 'rBd', 'rBu', 'uBr' ],
-            // points : ['ur','ur','ur'],
-            // beziers : ['u', 'rBu',  'r', 'r',  'r', 'r', 'r', 'r', 'dBr', 'rBd', 'rBu', 'uBr' ],
-            dt : 1,
-            time : 0.0,
-            i : 0,
-        }
-
-        this.offset = new Vector3(0,0,0);
-        this.work = false;
-
-        this.w = 0.2;
-        this.speed = 1;
-
-        if ( !window.test )
-            window.test = this;
+        this.leftDirected = new DirectedMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_LeftHand"), this.skeleton );
+        this.rightDirected = new DirectedMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_RightHand"), this.skeleton );
+        this.leftCircular = new CircularMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_LeftHand"), this.skeleton );
+        this.rightCircular = new CircularMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_RightHand"), this.skeleton );
     }
 
     update( dt ){
-        if ( !this.work ){ return; }
-        this.updateArm( dt, this.right );
+        this.leftDirected.update( dt );
+        this.rightDirected.update( dt );
+        this.leftCircular.update( dt );
+        this.rightCircular.update( dt );
     }
 
-    updateArm( dt, arm ){
-        /* 
-            - On each frame the arm is forced into a position by the locationArm
-            - Compute the current offset from the base position
-            - Apply ik from current arm location to arm+offset
-        */ 
-
-
-        arm.time += dt * this.speed;;
-        let temp = Math.floor( arm.time / arm.dt ); 
-        arm.i += temp
-        arm.time = arm.time - temp;
-
-        if ( arm.i > arm.points.length ){ this.work = false; return; }
-
-
-        // compute current offset
-        let t = arm.time / arm.dt;
-        let i = arm.i;
-
-        let w = this.w;
-        
-        if ( i == 0 ){
-            this.offset.copy( positions[arm.points[i]] );
-            this.offset.multiplyScalar( t * w );
+    newGestureBML( bml ){
+        let left = null; let right = null; 
+        if ( bml.motion == "directed" ){
+            left = this.leftDirected;
+            right = this.rightDirected;
         }
-        else if ( i == arm.points.length ){
-            this.offset.copy( positions[arm.points[i-1]] );
-            this.offset.multiplyScalar( (1.0 - t ) * w  );
-        }
-        else{
-            let a = positions[ arm.points[ i-1 ] ];
-            let b = positions[ arm.beziers[ (i-1) * 2 ] ];
-            let c = positions[ arm.beziers[ (i-1) * 2 + 1 ] ];
-            let d = positions[ arm.points[ i ] ];
-
-            cubicBezierVec3(a,b,c,d,this.offset, t);
-            
-            this.offset.multiplyScalar( w );
+        if ( bml.motion == "circular" ){
+            left = this.leftCircular;
+            right = this.rightCircular;
         }
 
-
-        // if ( i == 0 ){
-
-        //     let a = new Vector3(0,0,0);
-        //     let b = positions[ arm.beziers[ i * 2 ] ];
-        //     let c = positions[ arm.beziers[ i * 2 + 1 ] ];
-        //     let d = positions[ arm.points[ i ] ];
-
-        //     t = Math.sin( Math.PI * 0.5 * t - Math.PI*0.5 ) + 1;
-        //     console.log(t);
-        //     cubicBezierVec3(a,b,c,d,this.offset, t);
-            
-        //     this.offset.multiplyScalar( w );
-        // }
-        // else if ( i == arm.points.length ){
-
-        //     let a = positions[ arm.points[ i-1 ] ];
-        //     let b = positions[ arm.beziers[ i * 2 ] ];
-        //     let c = positions[ arm.beziers[ i * 2 + 1 ] ];
-        //     let d = new Vector3(0,0,0);
-
-        //     t = Math.sin( Math.PI * 0.5 * t ); // linear init and ends smooths
-        //     cubicBezierVec3(a,b,c,d,this.offset, t);
-            
-        //     this.offset.multiplyScalar( w );
-        // }
-        // else{
-        //         let a = positions[ arm.points[ i-1 ] ];
-        //         let b = positions[ arm.beziers[ i * 2 ] ];
-        //         let c = positions[ arm.beziers[ i * 2 + 1 ] ];
-        //         let d = positions[ arm.points[ i ] ];
-    
-        //         cubicBezierVec3(a,b,c,d,this.offset, t);
-                
-        //         this.offset.multiplyScalar( w );
-        //   }
-
-        this.skeleton.bones[ arm.hand.chain[0] ].getWorldPosition( this.ikTarget.position );
-        this.ikTarget.position.add( this.offset );
-
-        let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        k.position.copy(this.ikTarget.position);
-        window.global.app.scene.add( k );
-        
-        // compute target pose
-        arm.hand.enabler = true;
-        this.ikSolver.update();
-        arm.hand.enabler = false;
-
-        this.skeleton.bones[ arm.hand.chain[0] ].getWorldPosition( this.ikTarget.position );
-        k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        k.position.copy(this.ikTarget.position);
-        window.global.app.scene.add( k );
+        if ( bml.hand == "left" || bml.hand == "both" ){ left.newGestureBML( bml ); }
+        if ( !bml.hand || bml.hand == "right" || bml.hand == "both" ){ right.newGestureBML( bml ); }
 
     }
-
-    newGestureBML(){
-        this.right.time = 0;
-        this.right.i = 0;
-        this.work = true;
-        this.speed = 3;
-        this.w = 0.05;
-
-        this.color = Math.floor( Math.random() * 0xffffff );
-    }
-
 
     _ikCreateChains( effectorName, rootName ) {
         let bones = this.skeleton.bones;
@@ -228,4 +138,366 @@ class Motion {
     }
 }
 
-export { Motion }
+
+// TODO: check parameters from bml, zig zag attenuation (on update)
+class DirectedMotion {
+    constructor( ikSolver, chain, skeleton ){
+        this.ikSolver = ikSolver;
+        this.chainInfo = chain;
+        this.ikTarget = chain.target;
+        this.skeleton = skeleton;
+
+        this.lookAtQuat = new Quaternion();
+        this.baseOffset = new Vector3(0,0,0);
+        this.finalOffset = new Vector3(0,0,0);        
+        this.bezier = [ new Vector3(), new Vector3(), new Vector3(), new Vector3() ]
+
+        this.distance = 0.05; // cm
+        this.steepness = 0.5; // [0,1] curve steepness
+
+        this.zigzagDir = new Vector3(0,0,1);
+        this.zigzagSize = 0.01; // cm. Complete amplitude. Motion will move half to dir and half to -dir
+        this.zigzagSpeed = 2; // loops per second
+
+        this.transition = false;
+        this.time = 0;
+
+        this.start = 0;
+        this.attackPeak = 0;
+        this.relax = 0;
+        this.end = 0;
+
+    }
+
+    update( dt ){
+        if ( !this.transition ){ return; }
+        
+        this.time += dt;
+        if ( this.time < this.start ){ 
+            this.finalOffset.copy( this.baseOffset );
+        }
+
+        else if ( this.time < this.attackPeak ){
+            let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+            cubicBezierVec3( this.bezier[0], this.bezier[1], this.bezier[2], this.bezier[3], this.finalOffset, t );
+            this.finalOffset.add( this.baseOffset );
+
+            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * this.time ) * this.zigzagSize *0.5;
+            this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
+            this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
+            this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
+        }
+
+        else if ( this.time < this.relax ){ 
+            this.finalOffset.addVectors( this.bezier[3], this.baseOffset );
+        }
+
+        else if ( this.time < this.end ){ // lerp to origin (0,0,0) 
+            let t = ( this.time - this.relax ) / ( this.end - this.relax );
+            this.finalOffset.addVectors( this.bezier[3], this.baseOffset );
+            this.finalOffset.multiplyScalar( 1.0 - t );
+        }
+
+        else { this.transition = false; this.finalOffset.set(0,0,0); }
+
+        this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
+        this.ikTarget.position.add( this.finalOffset );
+
+        // debug points desired location
+        // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+        // k.position.copy(this.ikTarget.position);
+        // window.global.app.scene.add( k );
+
+        this.chainInfo.enabler = true;
+        this.ikSolver.update();
+        this.chainInfo.enabler = false;
+
+        // debug points position after ik
+        // this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
+        // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+        // k.position.copy(this.ikTarget.position);
+        // window.global.app.scene.add( k );
+
+    }
+
+    /**
+     * bml info
+     * start, attackPeak, relax, end
+     * direction: string from directionTable
+     * distance: (optional) size in metres of the displacement. Default 0.2 m (20 cm)
+     * curve: (optional) string from curveDirectionTable. Default to none
+     * curveSteepness: (optional) number from [0,1] meaning the sharpness of the curve
+     * zigzag: (optional) string from directionTable
+     * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+     * zigzagSpeed: (optional) cycles per second. Default 2
+     * hand: (optional) "right", "left", "both". Default right  
+     */
+    newGestureBML( bml ){
+        // debug
+        // this.color = Math.floor( Math.random() * 0xffffff );
+        let tempV = new Vector3(0,0,0);
+                
+        this.time = 0;
+        this.start = bml.start;
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
+        this.end = bml.end;
+        
+        this.baseOffset.copy( this.finalOffset );
+        
+        this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance;//0.20; // cm
+        this.steepness = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
+        let curveDir = curveDirectionTable[ bml.curve ];
+        if ( !curveDir ){ this.steepness = 0; }
+
+        // set default direction (+z), default curve direction (+y) and ajust with size and curve steepness
+        this.bezier[0].set(0,0,0);
+        this.bezier[3].set(0,0,1).multiplyScalar( this.distance );
+        this.bezier[1].set(0,1,0.5).multiplyScalar( this.distance * this.steepness );
+        this.bezier[2].set(0,1,-0.5).multiplyScalar( this.distance * this.steepness ).add( this.bezier[3] );
+                
+        // rotate default curve direction (+y) to match user's one
+        if ( curveDir ){
+            let angle = curveDir.angleTo( curveDirectionTable['u'] ); // [0º,180º]
+            if ( curveDir.x > 0.0 ){ angle = Math.PI * 2 - angle; }   // [0º,360º]
+
+            tempV.set(0,0,1);
+        
+            this.bezier[1].applyAxisAngle( tempV, angle );
+            this.bezier[2].applyAxisAngle( tempV, angle );
+        }
+
+        // rotate default direction to match the user's one
+        let direction = directionTable[ bml.direction ];
+        if ( !direction ){ 
+            console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
+            return;
+        }
+
+        // instead of rotating +90º, change point of view (mirror on xy plane)
+        if ( direction.z < 0 ){
+            this.bezier[0].z *= -1;
+            this.bezier[1].z *= -1;
+            this.bezier[2].z *= -1;
+            this.bezier[3].z *= -1;
+        }
+
+        if ( Math.abs(direction.dot(this.bezier[3])) > 0.999 ){ this.lookAtQuat.set(0,0,0,1); }
+        else{ 
+            let angle = direction.angleTo( this.bezier[3] );
+            tempV.crossVectors( this.bezier[3], direction );
+            tempV.normalize();
+            this.lookAtQuat.setFromAxisAngle( tempV, angle );
+        }
+
+        this.bezier[0].applyQuaternion( this.lookAtQuat );
+        this.bezier[1].applyQuaternion( this.lookAtQuat );
+        this.bezier[2].applyQuaternion( this.lookAtQuat );
+        this.bezier[3].applyQuaternion( this.lookAtQuat );
+
+        // zig-zag
+        let zigzag = directionTable[ bml.zigzag ];
+        if ( !zigzag ){
+            this.zigzagDir.set(0,0,0);
+            this.zigzagSize = 0.0; // cm
+            this.zigzagSpeed = 0; // rps
+        }else{
+            this.zigzagDir.copy( zigzag );
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // cm
+            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
+        }
+
+        // flag to start 
+        this.transition = true;
+    }
+}
+
+// TODO: check parameters from bml, zig zag attenuation (on update, missing outro ending attenuation)
+class CircularMotion {
+    constructor( ikSolver, chain, skeleton ){
+        this.ikSolver = ikSolver;
+        this.chainInfo = chain;
+        this.ikTarget = chain.target;
+        this.skeleton = skeleton;
+
+        // point to rotate (+y +Starting angle already applied)
+        // axis
+        // delta angle ( all movement that needs to be done )
+        // extra angles -10º for entry and +10º outro (outro only if there is no attackPeak-relax phase) (hardcoded)
+            // ·Approach 1: rotate point linearly (angles). For the first extraAngles lerp the point scale from 0 to 1 (check for velocity discontinuities)
+            // ·Approach 2: rotate point linearly (angles). For the first extraAngles compute cubic bezier (harder to setup? more "complex" update?)
+        // current Angle ---- computed
+
+        this.baseOffset = new Vector3(0,0,0);
+        this.finalOffset = new Vector3(0,0,0);
+
+        this.startPoint = new Vector3(0,0,0);
+        this.easingAngle = 60.0 * Math.PI/180.0; // entry/outro extra angle  
+        this.targetDeltaAngle = 0; // entry easing + user specified. Outro will be computed on each update if necessary
+        this.axis = new Vector3(0,0,0);
+        
+        this.zigzagDir = new Vector3(0,0,1);
+        this.zigzagSize = 0.01; // cm. Complete amplitude. Motion will move half to dir and half to -dir
+        this.zigzagSpeed = 2; // loops per second
+
+        this.transition = false;
+        this.time = 0;
+
+        this.start = 0;
+        this.attackPeak = 0;
+        this.relax = 0;
+        this.end = 0;
+
+    }
+
+    update( dt ){
+        if ( !this.transition ){ return; }
+        
+        this.time += dt;
+        if ( this.time < this.start ){ 
+            this.finalOffset.copy( this.baseOffset );
+        }
+
+        else if ( this.time < this.attackPeak ){
+            let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+            let angle = this.targetDeltaAngle * t;
+
+            this.finalOffset.copy( this.startPoint );
+            this.finalOffset.applyAxisAngle( this.axis, angle )
+
+            let zigzagAttenuation = 1;
+            // entry easing
+            if ( Math.abs( angle ) < this.easingAngle ){ 
+                let easingT = Math.abs( angle ) / this.easingAngle;
+                easingT = Math.sin( Math.PI * easingT - Math.PI*0.5 ) * 0.5 + 0.5;
+                this.finalOffset.multiplyScalar( easingT );
+                zigzagAttenuation = easingT;
+            }
+            this.finalOffset.add( this.baseOffset );
+
+            // zigzag 
+            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * this.time ) * this.zigzagSize * 0.5 * zigzagAttenuation;
+            this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
+            this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
+            this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
+        }
+
+        else if ( this.time < this.relax ){ 
+            this.finalOffset.copy( this.startPoint );
+            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle )
+            this.finalOffset.add( this.baseOffset );
+        }
+
+        else if ( this.time < this.end ){ // lerp to origin (0,0,0) 
+            this.finalOffset.copy( this.startPoint );
+            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle )
+            this.finalOffset.add( this.baseOffset );
+            
+            let t = ( this.time - this.relax ) / ( this.end - this.relax );
+            this.finalOffset.multiplyScalar( 1.0 - t );
+        }
+
+        else { this.transition = false; this.finalOffset.set(0,0,0); }
+
+        this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
+        this.ikTarget.position.add( this.finalOffset );
+
+        // debug points desired location
+        // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+        // k.position.copy(this.ikTarget.position);
+        // window.global.app.scene.add( k );
+
+        this.chainInfo.enabler = true;
+        this.ikSolver.update();
+        this.chainInfo.enabler = false;
+
+        // debug points position after ik
+        // this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
+        // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+        // k.position.copy(this.ikTarget.position);
+        // window.global.app.scene.add( k );
+
+    }
+
+    /**
+     * bml info
+     * start, attackPeak, relax, end
+     * direction: string from directionTable. Axis of rotation
+     * distance: (optional) radius in metres of the circle. Default 0.05 m (5 cm)
+     * startAngle: (optional) where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
+     * endAngle: (optional) where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
+     * zigzag: (optional) string from directionTable
+     * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+     * zigzagSpeed: (optional) cycles per second. Default 2
+     * hand: (optional) "right", "left", "both". Default right  
+     */
+    newGestureBML( bml ){
+        // debug
+        // this.color = Math.floor( Math.random() * 0xffffff );
+        let tempV = new Vector3(0,0,0);
+        let tempQ = new Quaternion(0,0,0,1);
+                
+        this.time = 0;
+        this.start = bml.start;
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
+        this.end = bml.end;
+        
+        this.baseOffset.copy( this.finalOffset );
+        
+        // axis
+        let direction = directionTable[ bml.direction ];
+        if ( !direction ) {
+            direction = directionTable['o'];
+        }
+        this.axis.copy(direction);
+
+        // angle computations
+        let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle  * Math.PI / 180.0 );
+        let endAngle = isNaN( bml.endAngle ) ? 0 : ( bml.endAngle  * Math.PI / 180.0 );
+        this.targetDeltaAngle = endAngle - startAngle;
+        if( this.targetDeltaAngle >= 0 ){ // add extra angle for ease-in
+            startAngle -= this.easingAngle;
+            this.targetDeltaAngle += this.easingAngle;
+        }else{
+            startAngle += this.easingAngle;
+            this.targetDeltaAngle -= this.easingAngle;
+        }
+        
+        // rotate starting point from default plane (xy) to the user's specified (given by axis)
+        tempV.set(0,0,1);        // default axis
+        let dot = tempV.dot( direction );
+        if ( dot > 0.999 ){ tempQ.set(0,0,0,1); }
+        else if ( dot < -0.999 ){ tempV.set(0,1,0); tempQ.setFromAxisAngle( tempV, Math.PI ); }
+        else{
+            let angle = tempV.angleTo( direction );
+            tempV.crossVectors( tempV, direction );
+            tempV.normalize();
+            tempQ.setFromAxisAngle( tempV, angle );
+        }
+
+        let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
+        this.startPoint.set(0,1,0).multiplyScalar( distance );
+        this.startPoint.applyQuaternion( tempQ );
+
+        // apply starting angle to startPoint
+        this.startPoint.applyAxisAngle( this.axis, startAngle );
+
+        // zig-zag
+        let zigzag = directionTable[ bml.zigzag ];
+        if ( !zigzag ){
+            this.zigzagDir.set(0,0,0);
+            this.zigzagSize = 0.0; // cm
+            this.zigzagSpeed = 0; // rps
+        }else{
+            this.zigzagDir.copy( zigzag );
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // cm
+            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
+        }
+
+        // flag to start 
+        this.transition = true;
+    }
+}
+
+export {LocationMotionManager}

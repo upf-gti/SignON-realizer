@@ -39,6 +39,8 @@ class App {
         this.skeletonHelper = null;
 
         this.msg = {};
+
+        this.fps = 0;
     }
 
     createPanel() {
@@ -47,12 +49,13 @@ class App {
 
         let gui = new GUI();
 
+        gui.add(this, "fps").name("fps").listen().disable();
         
         let params = {
             colorChroma: 0x141455,
             colorClothes: 0xFFFFFF,
         } 
-                
+   
         // get init color and set them to sGRB (css works in sRGB) 
         let color = new THREE.Color();
         color.copyLinearToSRGB(that.scene.getObjectByName("Chroma").material.color);
@@ -499,19 +502,34 @@ class App {
             extfidirFolder.add(extfidirParams, e).name(e);
         }
 
+        window.direction = 'u';
+        window.steep = 0.5;
+        window.distance = 0.1;
+        window.startAngle = 0;
+        window.endAngle = 180;
         // MOTION FOLDER
         let motionParams = {
+            directed(){ 
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, motion: "directed", direction: window.direction, steepness: window.steep, distance: window.distance, curve: window.curve, zigzag: window.zigzag, zigzagSize: window.zigSize, zigzagSpeed: window.zigSpeed }, 
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
             circular(){ 
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, motion: "circular" }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, motion: "circular", direction: window.direction, distance: window.distance, startAngle: window.startAngle, endAngle: window.endAngle, zigzag: window.zigzag, zigzagSize: window.zigSize, zigzagSpeed: window.zigSpeed }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             }
         };
         
+        motionFolder.add(motionParams, "directed").name("directed");
         motionFolder.add(motionParams, "circular").name("circular");
 
 
@@ -890,9 +908,11 @@ class App {
         // Load both models "synchronous". model1 = eva_Y    model2 = Signs
         this.loaderGLB.load( './data/anim/Eva_Y.glb', 
             loadModel.bind( this, "1",  
-                    ()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+                    //()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
+                    ()=>this.loaderGLB.load( './data/anim/Eva_Y.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
             ) 
         );
+
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
     }
@@ -927,6 +947,7 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
+        this.fps = Math.floor( 1.0 / delta );
         if ( this.mixer ) { this.mixer.update(delta); }
         if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 

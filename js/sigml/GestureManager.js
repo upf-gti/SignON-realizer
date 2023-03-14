@@ -1,11 +1,10 @@
 
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
-import { LocationArmIK } from "./LocationArmIK.js";
 import { LocationArm } from "./LocationArm.js";
 
 import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
-import { Motion } from "./Motion.js";
+import { LocationMotionManager } from "./Motion.js";
 
 
 class GestureManager{
@@ -17,7 +16,8 @@ class GestureManager{
         this.extfidir = new Extfidir( character );
         this.palmor = new Palmor( character );
 
-        this.motion = new Motion( character );
+        // this.motion = new Motion( character );
+        this.motion = new LocationMotionManager( character );
     }
 
     reset(){
