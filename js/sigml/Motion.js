@@ -63,28 +63,66 @@ class LocationMotionManager {
         this.ikSolver.setIterations(4);
 
 
-        this.leftDirected = new DirectedMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_LeftHand"), this.skeleton );
-        this.rightDirected = new DirectedMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_RightHand"), this.skeleton );
-        this.leftCircular = new CircularMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_LeftHand"), this.skeleton );
-        this.rightCircular = new CircularMotion( this.ikSolver, this.ikSolver.getChain("mixamorig_RightHand"), this.skeleton );
+        this.leftHandChain = this.ikSolver.getChain("mixamorig_LeftHand");
+        this.rightHandChain = this.ikSolver.getChain("mixamorig_RightHand");
+
+        this.leftMotions = [ new DirectedMotion(), new CircularMotion() ];
+        this.rightMotions = [ new DirectedMotion(), new CircularMotion() ];
+
+        this.updateOffset = new Vector3();
     }
 
     update( dt ){
-        this.leftDirected.update( dt );
-        this.rightDirected.update( dt );
-        this.leftCircular.update( dt );
-        this.rightCircular.update( dt );
+        this._updateArm( dt, this.leftHandChain, this.leftMotions );
+        this._updateArm( dt, this.rightHandChain, this.rightMotions );
+    } 
+
+    _updateArm( dt, chain, motions ){
+        this.updateOffset.set(0,0,0);
+        let computeFlag = false;
+
+        // check if any motion is active and update it
+        for ( let i = 0; i < motions.length; ++i ){
+            if ( motions[i].transition ){
+                computeFlag = true;
+                this.updateOffset.add( motions[i].update( dt ) );
+            }
+        }
+
+        // compute ik only if necessary
+        if( computeFlag ){
+            this.skeleton.bones[ chain.chain[0] ].getWorldPosition( this.ikTarget.position );
+            this.ikTarget.position.add( this.updateOffset );
+
+            // debug points desired location
+            // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // k.position.copy(this.ikTarget.position);
+            // window.global.app.scene.add( k );
+    
+            chain.enabler = true;
+            this.ikSolver.update();
+            chain.enabler = false;
+    
+            // debug points position after ik
+            // this.skeleton.bones[ chain.chain[0] ].getWorldPosition( this.ikTarget.position );
+            // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // k.position.copy(this.ikTarget.position);
+            // window.global.app.scene.add( k );
+        }            
     }
 
     newGestureBML( bml ){
+        // debug
+        // this.color = Math.floor( Math.random() * 0xffffff );
+
         let left = null; let right = null; 
         if ( bml.motion == "directed" ){
-            left = this.leftDirected;
-            right = this.rightDirected;
+            left = this.leftMotions[0];
+            right = this.rightMotions[0];
         }
         if ( bml.motion == "circular" ){
-            left = this.leftCircular;
-            right = this.rightCircular;
+            left = this.leftMotions[1];
+            right = this.rightMotions[1];
         }
 
         if ( bml.hand == "left" || bml.hand == "both" ){ left.newGestureBML( bml ); }
@@ -141,12 +179,7 @@ class LocationMotionManager {
 
 // TODO: check parameters from bml, zig zag attenuation (on update)
 class DirectedMotion {
-    constructor( ikSolver, chain, skeleton ){
-        this.ikSolver = ikSolver;
-        this.chainInfo = chain;
-        this.ikTarget = chain.target;
-        this.skeleton = skeleton;
-
+    constructor(){
         this.lookAtQuat = new Quaternion();
         this.baseOffset = new Vector3(0,0,0);
         this.finalOffset = new Vector3(0,0,0);        
@@ -166,7 +199,6 @@ class DirectedMotion {
         this.attackPeak = 0;
         this.relax = 0;
         this.end = 0;
-
     }
 
     update( dt ){
@@ -200,24 +232,7 @@ class DirectedMotion {
 
         else { this.transition = false; this.finalOffset.set(0,0,0); }
 
-        this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
-        this.ikTarget.position.add( this.finalOffset );
-
-        // debug points desired location
-        // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        // k.position.copy(this.ikTarget.position);
-        // window.global.app.scene.add( k );
-
-        this.chainInfo.enabler = true;
-        this.ikSolver.update();
-        this.chainInfo.enabler = false;
-
-        // debug points position after ik
-        // this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
-        // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        // k.position.copy(this.ikTarget.position);
-        // window.global.app.scene.add( k );
-
+        return this.finalOffset;
     }
 
     /**
@@ -233,8 +248,6 @@ class DirectedMotion {
      * hand: (optional) "right", "left", "both". Default right  
      */
     newGestureBML( bml ){
-        // debug
-        // this.color = Math.floor( Math.random() * 0xffffff );
         let tempV = new Vector3(0,0,0);
                 
         this.time = 0;
@@ -314,20 +327,7 @@ class DirectedMotion {
 
 // TODO: check parameters from bml, zig zag attenuation (on update, missing outro ending attenuation)
 class CircularMotion {
-    constructor( ikSolver, chain, skeleton ){
-        this.ikSolver = ikSolver;
-        this.chainInfo = chain;
-        this.ikTarget = chain.target;
-        this.skeleton = skeleton;
-
-        // point to rotate (+y +Starting angle already applied)
-        // axis
-        // delta angle ( all movement that needs to be done )
-        // extra angles -10º for entry and +10º outro (outro only if there is no attackPeak-relax phase) (hardcoded)
-            // ·Approach 1: rotate point linearly (angles). For the first extraAngles lerp the point scale from 0 to 1 (check for velocity discontinuities)
-            // ·Approach 2: rotate point linearly (angles). For the first extraAngles compute cubic bezier (harder to setup? more "complex" update?)
-        // current Angle ---- computed
-
+    constructor(){
         this.baseOffset = new Vector3(0,0,0);
         this.finalOffset = new Vector3(0,0,0);
 
@@ -347,7 +347,6 @@ class CircularMotion {
         this.attackPeak = 0;
         this.relax = 0;
         this.end = 0;
-
     }
 
     update( dt ){
@@ -398,25 +397,8 @@ class CircularMotion {
         }
 
         else { this.transition = false; this.finalOffset.set(0,0,0); }
-
-        this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
-        this.ikTarget.position.add( this.finalOffset );
-
-        // debug points desired location
-        // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        // k.position.copy(this.ikTarget.position);
-        // window.global.app.scene.add( k );
-
-        this.chainInfo.enabler = true;
-        this.ikSolver.update();
-        this.chainInfo.enabler = false;
-
-        // debug points position after ik
-        // this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( this.ikTarget.position );
-        // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-        // k.position.copy(this.ikTarget.position);
-        // window.global.app.scene.add( k );
-
+        
+        return this.finalOffset;
     }
 
     /**

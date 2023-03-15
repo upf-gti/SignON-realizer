@@ -947,7 +947,7 @@ class App {
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
 
-        this.fps = Math.floor( 1.0 / delta );
+        this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
         if ( this.mixer ) { this.mixer.update(delta); }
         if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 

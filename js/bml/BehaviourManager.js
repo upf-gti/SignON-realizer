@@ -49,8 +49,63 @@ BehaviourManager.prototype.reset = function (){
 }
 
 // TODO: PROVIDE FEEDBACK AND WARNINGS
-BehaviourManager.prototype.update = function (actionCallback, time) {
+// BehaviourManager.prototype.update = function (actionCallback, time) {
 
+// 	// Time now
+// 	this.time = time;
+
+// 	// Several blocks can be active (MERGE composition)
+// 	for (let i = 0; i < this.stack.length; i++) {
+// 		// If it is not active
+// 		if (!this.stack[i].isActive) {
+// 			// Block starts
+// 			if (this.stack[i].startGlobalTime <= this.time) {
+// 				this.stack[i].isActive = true;
+// 			}
+// 		}
+// 		// Check if has ended
+// 		if ( this.stack[i].isActive ) {
+// 			if (this.stack[i].endGlobalTime <= this.time) {
+// 				this.stack[i].isActive = false;
+// 				// Remove
+// 				this.removeFromStacks(this.stack[i]);
+// 				this.stack.splice(i, 1);
+// 				i--;
+// 			}
+// 		}
+// 	}
+	
+
+// 	// Check active BML and blocks (from BMLStacks)
+// 	for (let i = 0; i < this.BMLStacks.length; i++) {
+// 		// Select bml instructions stack
+// 		let stack = this.BMLStacks[i];
+// 		for (let j = 0; j < stack.length; j++) {
+// 			let bml = stack[j];
+
+// 			// BML is not active
+// 			if ( !bml.isActive ) {
+// 				// Set BML to active
+// 				if (bml.startGlobalTime <= this.time) {
+// 					bml.isActive = true;
+// 					actionCallback(bml.key, bml); // CALL BML INSTRUCTION
+// 				}
+// 			}
+// 			// BML has finished
+// 			else if (bml.isActive) {
+// 				if (bml.endGlobalTime <= this.time) {
+// 					bml.isActive = undefined;
+// 					// Remove from bml stack
+// 					stack.splice(j, 1);
+// 					j--;
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+// V2 update: stacks will only contain blocks/bmls that have not started yet
+BehaviourManager.prototype.update = function (actionCallback, time) {
 	// Time now
 	this.time = time;
 
@@ -60,17 +115,7 @@ BehaviourManager.prototype.update = function (actionCallback, time) {
 		if (!this.stack[i].isActive) {
 			// Block starts
 			if (this.stack[i].startGlobalTime <= this.time) {
-				this.stack[i].isActive = true;
-			}
-		}
-		// Check if has ended
-		if ( this.stack[i].isActive ) {
-			if (this.stack[i].endGlobalTime <= this.time) {
-				this.stack[i].isActive = false;
-				// Remove
-				this.removeFromStacks(this.stack[i]);
-				this.stack.splice(i, 1);
-				i--;
+				this.stack.slice(i, 1);
 			}
 		}
 	}
@@ -83,22 +128,10 @@ BehaviourManager.prototype.update = function (actionCallback, time) {
 		for (let j = 0; j < stack.length; j++) {
 			let bml = stack[j];
 
-			// BML is not active
-			if ( !bml.isActive ) {
-				// Set BML to active
-				if (bml.startGlobalTime <= this.time) {
-					bml.isActive = true;
-					actionCallback(bml.key, bml); // CALL BML INSTRUCTION
-				}
-			}
-			// BML has finished
-			else if (bml.isActive) {
-				if (bml.endGlobalTime <= this.time) {
-					bml.isActive = undefined;
-					// Remove from bml stack
-					stack.splice(j, 1);
-					j--;
-				}
+			// Set BML to active
+			if (bml.startGlobalTime <= this.time) {
+				actionCallback(bml.key, bml); // CALL BML INSTRUCTION
+				stack.splice(j, 1);
 			}
 		}
 	}
