@@ -41,9 +41,9 @@ let rotationTable = {
 
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
-    constructor(character){
-        this.skeleton = null;
-                
+    constructor( skeleton ){
+        this.skeleton = skeleton;
+
         // store TWIST quaternions for forearm and hand (visally better than just forearm)
         this.right = {
             idx: 0,
@@ -91,17 +91,6 @@ class Extfidir {
         this.tempQuat2 = new Quaternion(); // swing function 
         this.tempMat4 = new Matrix4(); // swing function 
         
-        // get skeleton reference
-        if ( character.skeleton ){ this.skeleton = character.skeleotn; }
-        else{ 
-            this.skeleton = null;
-            character.traverse( o => {
-                if( o.isSkinnedMesh ){
-                    this.skeleton = o.skeleton;
-                }
-            });
-        }
-
         this.twistAxis = new Vector3();
 
         let bones = this.skeleton.bones;
@@ -232,14 +221,15 @@ class Extfidir {
     }
 
     /**
-     * 
      * bml info
      * start, attackPeak, relax, end
      * extfidir: string from rotationTable
      * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
      * extfidirNeutral: (optional) bool - stop current default pointing
      * absolute: (optional) bool - whether the pointing is to absolute positions or relative to the wrist. Default to relative 
+     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      * hand: (optional) "right", "left", "both". Default right
+     * shift: (optional) bool - make this the default position
      */
     newGestureBML( bml ){
         let handedness = E_HANDEDNESS.RIGHT; // default hand

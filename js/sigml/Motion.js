@@ -1,6 +1,5 @@
-import { Matrix3, Matrix4, Mesh, MeshPhongMaterial, Quaternion, SphereGeometry, Vector3 } from "three";
-import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
-import { cubicBezierVec3 } from "./sigmlUtils.js";
+import { Quaternion, Vector3 } from "three";
+import { cubicBezierVec3, nlerpQuats } from "./sigmlUtils.js";
 
 let directionTable = {
     'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
@@ -44,138 +43,6 @@ let curveDirectionTable = {
     'ur'    : directionTable['ur'],  
 }
 
-// has the ikSolver and the several motions for each arm
-class LocationMotionManager {
-    constructor( character ){
-        this.skeleton = null;
-        character.traverse( o => {
-            if ( o.isSkinnedMesh ) {
-                this.skeleton = o.skeleton;
-            }
-        } );
-
-        this.ikSolver = new FABRIKSolver( this.skeleton );
-        this.ikTarget = { position: new Vector3(0,0,0) }; // worldposition
-        this._ikCreateChains( "LeftHand", "LeftShoulder" );
-        this._ikCreateChains( "RightHand", "RightArm" );
-        this.ikSolver.constraintsEnabler = false;
-        this.ikSolver.setChainEnablerAll(false);
-        this.ikSolver.setIterations(4);
-
-
-        this.leftHandChain = this.ikSolver.getChain("mixamorig_LeftHand");
-        this.rightHandChain = this.ikSolver.getChain("mixamorig_RightHand");
-
-        this.leftMotions = [ new DirectedMotion(), new CircularMotion() ];
-        this.rightMotions = [ new DirectedMotion(), new CircularMotion() ];
-
-        this.updateOffset = new Vector3();
-    }
-
-    update( dt ){
-        this._updateArm( dt, this.leftHandChain, this.leftMotions );
-        this._updateArm( dt, this.rightHandChain, this.rightMotions );
-    } 
-
-    _updateArm( dt, chain, motions ){
-        this.updateOffset.set(0,0,0);
-        let computeFlag = false;
-
-        // check if any motion is active and update it
-        for ( let i = 0; i < motions.length; ++i ){
-            if ( motions[i].transition ){
-                computeFlag = true;
-                this.updateOffset.add( motions[i].update( dt ) );
-            }
-        }
-
-        // compute ik only if necessary
-        if( computeFlag ){
-            this.skeleton.bones[ chain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            this.ikTarget.position.add( this.updateOffset );
-
-            // debug points desired location
-            // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-            // k.position.copy(this.ikTarget.position);
-            // window.global.app.scene.add( k );
-    
-            chain.enabler = true;
-            this.ikSolver.update();
-            chain.enabler = false;
-    
-            // debug points position after ik
-            // this.skeleton.bones[ chain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-            // k.position.copy(this.ikTarget.position);
-            // window.global.app.scene.add( k );
-        }            
-    }
-
-    newGestureBML( bml ){
-        // debug
-        // this.color = Math.floor( Math.random() * 0xffffff );
-
-        let left = null; let right = null; 
-        if ( bml.motion == "directed" ){
-            left = this.leftMotions[0];
-            right = this.rightMotions[0];
-        }
-        if ( bml.motion == "circular" ){
-            left = this.leftMotions[1];
-            right = this.rightMotions[1];
-        }
-
-        if ( bml.hand == "left" || bml.hand == "both" ){ left.newGestureBML( bml ); }
-        if ( !bml.hand || bml.hand == "right" || bml.hand == "both" ){ right.newGestureBML( bml ); }
-
-    }
-
-    _ikCreateChains( effectorName, rootName ) {
-        let bones = this.skeleton.bones;
-        let effector = this.skeleton.getBoneByName( effectorName );
-        let root = this.skeleton.getBoneByName( rootName );
-
-        if ( !effector ) { // find similarly named bone
-            for ( let i = 0; i < bones.length; ++i ) {
-                if ( bones[ i ].name.includes( effectorName ) ) {
-                    effector = bones[ i ];
-                    break;
-                }
-            }
-        }
-        if ( !root ) { // bind similarly named bone
-            for ( let i = 0; i < bones.length; ++i ) {
-                if ( bones[ i ].name.includes( rootName ) ) {
-                    root = bones[ i ];
-                    break;
-                }
-            }
-        }
-        if ( !effector || !root ) { return; }
-
-        let chain = []
-        let bone = effector;
-        while ( true ) {
-            let i = bones.indexOf( bone );
-            if ( i < 0 ) { console.warn( "IK chain: Skeleton root was reached before chain root " ); break; }
-
-            chain.push( i );
-
-            if ( bone == root ) { break; }
-            bone = bone.parent;
-        }
-
-        effector = bones[ chain[ 0 ] ];
-        while ( effector != root ) {
-            if ( !this.ikSolver.getChain( effector.name ) ) {
-                this.ikSolver.createChain( chain, null, this.ikTarget, effector.name );
-            }
-            chain.splice( 0, 1 );
-            effector = bones[ chain[ 0 ] ];
-        }
-    }
-}
-
 
 // TODO: check parameters from bml, zig zag attenuation (on update)
 class DirectedMotion {
@@ -199,6 +66,12 @@ class DirectedMotion {
         this.attackPeak = 0;
         this.relax = 0;
         this.end = 0;
+    }
+
+    reset(){
+        this.transition = false;
+        this.finalOffset.set(0,0,0);
+        this.baseOffset.set(0,0,0);
     }
 
     update( dt ){
@@ -349,6 +222,12 @@ class CircularMotion {
         this.end = 0;
     }
 
+    reset(){
+        this.transition = false;
+        this.finalOffset.set(0,0,0);
+        this.baseOffset.set(0,0,0);
+    }
+
     update( dt ){
         if ( !this.transition ){ return; }
         
@@ -482,4 +361,93 @@ class CircularMotion {
     }
 }
 
-export {LocationMotionManager}
+
+
+let fingerPlayTable = {
+    index : new Quaternion ( 0.3056621,  0.0039430, -0.0053422, 0.9521169 ),
+    middle: new Quaternion ( 0.3522030,  0.0105015, -0.0046960, 0.9358529 ),
+    ring  : new Quaternion ( 0.2910635,  0.0143004,  0.0083483, 0.9565603 ),
+    pinky : new Quaternion ( 0.2807940, -0.0096333,  0.0081887, 0.9596847 ),
+}
+
+class FingerPlay {
+    constructor(){ 
+        this.index = new Quaternion(0,0,0,1);
+        this.middle = new Quaternion(0,0,0,1);
+        this.ring = new Quaternion(0,0,0,1);
+        this.pinky = new Quaternion(0,0,0,1);
+        
+        this.transition = false;
+        this.time = 0;
+        this.speed = 3;
+        this.intensity = 0.3;
+
+        this.start = 0;
+        this.attackPeak = 0;
+        this.relax = 0;
+        this.end = 0;
+    }
+    reset(){
+        this.transition = false;
+        this.index.set(0,0,0,1);
+        this.middle.set(0,0,0,1);
+        this.ring.set(0,0,0,1);
+        this.pinky.set(0,0,0,1);
+    }
+
+    update( dt ){
+        if ( !this.transition ){ return; }
+
+        this.time += dt;
+        let intensity = 0;
+        if ( this.time < this.start ){ intensity = 0; }
+        else if ( this.time < this.attackPeak ){ intensity = ( this.time - this.start ) / ( this.attackPeak - this.start ); }
+        else if ( this.time < this.relax ){ intensity = 1; }
+        else if ( this.time < this.end ){ intensity = ( this.time - this.relax ) / ( this.end - this.relax ); intensity = 1.0-intensity; }
+        else {
+            intensity = 0; 
+            this.transition = false;
+        }
+
+        intensity *= this.intensity;
+
+        // 2 t: entry T, interpolation t 
+        // interpolatino -- cos(t + X) where is different for each finger
+        this.index.identity();
+        nlerpQuats( this.index, this.index, fingerPlayTable.index,    ( Math.cos( Math.PI * 2 * this.speed * this.time ) * 0.5 + 0.5 ) * intensity );
+        this.middle.identity();
+        nlerpQuats( this.middle, this.middle, fingerPlayTable.middle, ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) * 0.5 + 0.5 ) * intensity * 0.9);
+        this.ring.identity();
+        nlerpQuats( this.ring, this.ring, fingerPlayTable.ring,       ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) * 0.5 + 0.5 ) * intensity * 0.7 );
+        this.pinky.identity();
+        nlerpQuats( this.pinky, this.pinky, fingerPlayTable.pinky,    ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) * 0.5 + 0.5 ) * intensity * 0.5 );
+    }
+
+     /**
+     * bml info
+     * start, attackPeak, relax, end
+     * speed = (optional) oscillations per second. Default 3
+     * intensity = (optional) [0,1]. Default 0.3
+     */
+    newGestureBML( bml ){
+        this.time = 0;
+        this.speed = 1;
+        
+        this.start = bml.start;
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
+        this.end = bml.end;
+
+        this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
+        this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
+        this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
+
+        this.transition = true;
+    }
+
+
+
+
+};
+
+export { DirectedMotion, CircularMotion, FingerPlay}

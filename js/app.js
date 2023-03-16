@@ -502,18 +502,13 @@ class App {
             extfidirFolder.add(extfidirParams, e).name(e);
         }
 
-        window.direction = 'u';
-        window.steep = 0.5;
-        window.distance = 0.1;
-        window.startAngle = 0;
-        window.endAngle = 180;
         // MOTION FOLDER
         let motionParams = {
             directed(){ 
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, motion: "directed", direction: window.direction, steepness: window.steep, distance: window.distance, curve: window.curve, zigzag: window.zigzag, zigzagSize: window.zigSize, zigzagSpeed: window.zigSpeed }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "directed", direction: "u", curve: "l" }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -522,7 +517,16 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, motion: "circular", direction: window.direction, distance: window.distance, startAngle: window.startAngle, endAngle: window.endAngle, zigzag: window.zigzag, zigzagSize: window.zigSize, zigzagSpeed: window.zigSpeed }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470 }, 
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            fingerplay(){
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: 0, attackPeak: 1, relax: 3, end: 4, hand: "both", motion: "fingerplay", speed: 4, intensity: 0.3 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -531,6 +535,7 @@ class App {
         
         motionFolder.add(motionParams, "directed").name("directed");
         motionFolder.add(motionParams, "circular").name("circular");
+        motionFolder.add(motionParams, "fingerplay").name("fingerplay");
 
 
         // PHRASES FOLDER PARAMS -------------

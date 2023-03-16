@@ -83,8 +83,8 @@ thumbShapes = shapesToQuaternions( thumbShapes );
 
 // receives bml instructions and animates the hands
 class HandShapeRealizer {
-    constructor(character){
-        this.skeleton = null;
+    constructor( skeleton ){
+        this.skeleton = skeleton;
                 
         // if new gest, set source as current pose. This needs a full copy of arrays to not modify references
         this.right = {
@@ -113,7 +113,28 @@ class HandShapeRealizer {
             transition: false,
         };        
         
-        this.init(character);
+        // base bone indexes. The used bones will be i, i+1 and i+2.
+        this.right.idxs = { wrist: 0, thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 };
+        this.left.idxs = { wrist: 0, thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 };
+        
+        let bones = this.skeleton.bones;
+        for( let i = 0; i < bones.length; ++i ){
+            if ( bones[i].name.includes("RightHandThumb1") ){ this.right.idxs.thumb = i; }
+            else if ( bones[i].name.includes("RightHandIndex1") ){ this.right.idxs.index = i; }
+            else if ( bones[i].name.includes("RightHandMiddle1") ){ this.right.idxs.middle = i; }
+            else if ( bones[i].name.includes("RightHandRing1") ){ this.right.idxs.ring = i; }
+            else if ( bones[i].name.includes("RightHandPinky1") ){ this.right.idxs.pinky = i; }
+            else if ( bones[i].name.includes("RightHand") ){ this.right.idxs.wrist = i; }
+            
+            else if ( bones[i].name.includes("LeftHandThumb1") ){ this.left.idxs.thumb = i; }
+            else if ( bones[i].name.includes("LeftHandIndex1") ){ this.left.idxs.index = i; }
+            else if ( bones[i].name.includes("LeftHandMiddle1") ){ this.left.idxs.middle = i; }
+            else if ( bones[i].name.includes("LeftHandRing1") ){ this.left.idxs.ring = i; }
+            else if ( bones[i].name.includes("LeftHandPinky1") ){ this.left.idxs.pinky = i; }
+            else if ( bones[i].name.includes("LeftHand") ){ this.left.idxs.wrist = i; }
+        }
+
+        this.reset();
     }
 
     // Cannot directly clone object as all three.quaternion functions will not be present. Thus manually create them
@@ -155,45 +176,6 @@ class HandShapeRealizer {
         return g;
     }
 
-
-
-    init( character ){
-        // get skeleton reference
-        if ( character.skeleton ){ this.skeleton = character.skeleotn; }
-        else{ 
-            this.skeleton = null;
-            character.traverse( o => {
-                if( o.isSkinnedMesh ){
-                    this.skeleton = o.skeleton;
-                }
-            });
-        }
-
-        // base bone indexes. The used bones will be i, i+1 and i+2.
-        this.right.idxs = { wrist: 0, thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 };
-        this.left.idxs = { wrist: 0, thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 };
-        
-        let bones = this.skeleton.bones;
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes("RightHandThumb1") ){ this.right.idxs.thumb = i; }
-            else if ( bones[i].name.includes("RightHandIndex1") ){ this.right.idxs.index = i; }
-            else if ( bones[i].name.includes("RightHandMiddle1") ){ this.right.idxs.middle = i; }
-            else if ( bones[i].name.includes("RightHandRing1") ){ this.right.idxs.ring = i; }
-            else if ( bones[i].name.includes("RightHandPinky1") ){ this.right.idxs.pinky = i; }
-            else if ( bones[i].name.includes("RightHand") ){ this.right.idxs.wrist = i; }
-            
-            else if ( bones[i].name.includes("LeftHandThumb1") ){ this.left.idxs.thumb = i; }
-            else if ( bones[i].name.includes("LeftHandIndex1") ){ this.left.idxs.index = i; }
-            else if ( bones[i].name.includes("LeftHandMiddle1") ){ this.left.idxs.middle = i; }
-            else if ( bones[i].name.includes("LeftHandRing1") ){ this.left.idxs.ring = i; }
-            else if ( bones[i].name.includes("LeftHandPinky1") ){ this.left.idxs.pinky = i; }
-            else if ( bones[i].name.includes("LeftHand") ){ this.left.idxs.wrist = i; }
-        }
-
-        this.reset();
-
-    }
-
     reset() {
         // Force pose update to flat
         
@@ -221,13 +203,22 @@ class HandShapeRealizer {
         
         // wait in same pose
         if ( hand.t < hand.start ){ return; }
-        if ( hand.t > hand.attackPeak && hand.t < hand.relax ){ return; }
+        if ( hand.t > hand.attackPeak && hand.t < hand.relax ){ 
+            let bones = this.skeleton.bones;   
+            for( let i = 0; i < 3 ; ++i ){
+                bones[ hand.idxs.thumb  + i ].quaternion.copy( hand.trgG.thumb[i]);
+                bones[ hand.idxs.index  + i ].quaternion.copy( hand.trgG.index[i]);
+                bones[ hand.idxs.middle + i ].quaternion.copy( hand.trgG.middle[i]);
+                bones[ hand.idxs.ring   + i ].quaternion.copy( hand.trgG.ring[i]);
+                bones[ hand.idxs.pinky  + i ].quaternion.copy( hand.trgG.pinky[i]);
+            }
+            return; }
         
         if ( hand.t <= hand.attackPeak ){
             let t = ( hand.t - hand.start ) / ( hand.attackPeak - hand.start );
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-
+            
             // shouldar (back), actual shoulder, elbow
             let bones = this.skeleton.bones;   
             for( let i = 0; i < 3 ; ++i ){
@@ -256,11 +247,27 @@ class HandShapeRealizer {
         }
         
         if ( hand.t > hand.end ){ 
-            hand.transition = false;
+            let bones = this.skeleton.bones;   
+            for( let i = 0; i < 3 ; ++i ){
+                bones[ hand.idxs.thumb  + i ].quaternion.copy( hand.defG.thumb[i]);
+                bones[ hand.idxs.index  + i ].quaternion.copy( hand.defG.index[i]);
+                bones[ hand.idxs.middle + i ].quaternion.copy( hand.defG.middle[i]);
+                bones[ hand.idxs.ring   + i ].quaternion.copy( hand.defG.ring[i]);
+                bones[ hand.idxs.pinky  + i ].quaternion.copy( hand.defG.pinky[i]);
+            }
+            // hand.transition = false;
         }
 
     }
 
+    /** 
+     * bml info
+     * start, attackPeak, relax, end
+     * handshape: string from the handshape tables
+     * thumbshape: (optional) string from thumbshape table. 
+     * hand: (optional) "right", "left", "both". Default right
+     * shift: (optional) bool - make this the default position
+     */
     newGestureBML( bml ){
         let handedness = E_HANDEDNESS.RIGHT; // default hand
         if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }

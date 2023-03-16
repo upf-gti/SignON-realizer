@@ -162,13 +162,8 @@ farPoses = shapesToQuaternions( farPoses );
 
 
 class LocationArm {
-    constructor( character ) {
-        this.skeleton = null;
-        character.traverse( o => {
-            if ( o.isSkinnedMesh ) {
-                this.skeleton = o.skeleton;
-            }
-        } );
+    constructor( skeleton ) {
+        this.skeleton = skeleton;
 
         // three bones: shoulder (back), actual shoulder, elbow
         this.right = {  
@@ -269,12 +264,13 @@ class LocationArm {
 
 
     /**
-     * 
      * bml info
      * start, attackPeak, relax, end
      * locationArm: string from nearPoses
+     * distance: (optional) [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
      * hand: (optional) "right", "left", "both". Default right
-     * sym: (optional) boolean. Default true
+     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
+     * shift: (optional) bool - make this the default position
      */
     newGestureBML( bml ) {
         // arm tomove
