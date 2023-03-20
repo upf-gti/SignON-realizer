@@ -39,6 +39,11 @@ let rotationTable = {
     "i"     : new Vector3(  0,   1,   -1 ),
 }
 
+let EXTFIDIR_MODES = {
+    ABSOLUTE : 1,
+    RELATIVE : 2,
+    LOCAL : 3
+}
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
     constructor( skeleton ){
@@ -48,7 +53,7 @@ class Extfidir {
         this.right = {
             idx: 0,
             defActive: false, // whether to default to a point or not
-            defRelative: true, // is default positioning absolute or relative 
+            defmode: EXTFIDIR_MODES.RELATIVE, // is default positioning absolute, relative or local 
             defPoint: new Vector3(),
             trgPoint: new Vector3(), 
             // no defG : new Quaternion. Will reuse srcG and trgG during relax-end
@@ -62,13 +67,13 @@ class Extfidir {
             end: 0, 
             transition: false,
 
-            relative: true, // false = absolute, true = relative
+            mode: EXTFIDIR_MODES.RELATIVE,
         };
         
         this.left = {
             idx: 0, 
             defActive: false, // whether to default to a point or not
-            defRelative: false, // is default positioning absolute or relative 
+            defmode: EXTFIDIR_MODES.RELATIVE, // is default positioning absolute, relative or local 
             defPoint: new Vector3(),
             trgPoint: new Vector3(),
             // no defG : new Quaternion. Will reuse srcG and trgG during relax-end
@@ -82,7 +87,7 @@ class Extfidir {
             end: 0, 
             transition: false,
 
-            relative: true, // false = absolute, true = relative
+            mode: EXTFIDIR_MODES.RELATIVE,
         };        
 
 
@@ -115,14 +120,18 @@ class Extfidir {
         // }
         // set default pose
         this.reset();
+
     }
 
-    // _debug_pointsUpdate( x,y,z ){
+    // _debug_pointsUpdate( x,y,z, worldMat = null ){
     //     for ( let i = 0; i < this.debugPoints.length; ++i ){
     //         this.debugPoints[i].position.copy( rotationTable[ this.debugPoints[i].name ] );
     //         this.debugPoints[i].position.x += x;
     //         this.debugPoints[i].position.y += y;
     //         this.debugPoints[i].position.z += z;
+    //         if ( worldMat ){
+    //              this.debugPoints[i].position.applyMatrix4( worldMat );
+    //         } 
     //     }
     // }
 
@@ -136,25 +145,33 @@ class Extfidir {
         this.left.curG.set( 0,0,0,1 );
     }
 
-    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, relative = true ){
+    // compute the swing rotation to get the twistAxis to point at a certain location
+    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, mode = EXTFIDIR_MODES.RELATIVE ){
         let wristBone = this.skeleton.bones[ wristIdx ];
         wristBone.updateWorldMatrix( true, true );
         this.tempMat4.copy( wristBone.matrixWorld );
         this.tempMat4.invert();
         
+        // compute targetPoint into local wrist coordinates
         let localPoint = this.tempVec3;
-        if ( relative ){ // center rotation points on wrist (no rotation involved)
+        if ( mode == EXTFIDIR_MODES.RELATIVE ){ // center rotation points on wrist (no rotation involved)
             localPoint.setFromMatrixPosition( wristBone.matrixWorld );
             // this._debug_pointsUpdate( localPoint.x, localPoint.y - rotationTable['o'].y, localPoint.z );
-
             localPoint.add( targetPoint );
-        } else { // center rotation points to 0,0,0
+            localPoint.applyMatrix4( this.tempMat4 );
+        } 
+        else if ( mode == EXTFIDIR_MODES.ABSOLUTE ) { // center rotation points to 0,0,0
             // this._debug_pointsUpdate( 0,0,0 );
             localPoint.copy( targetPoint );
+            localPoint.applyMatrix4( this.tempMat4 );
         }
-        localPoint.applyMatrix4( this.tempMat4 );
+        else{ // EXTFIDIR_MODES.LOCAL
+            // this._debug_pointsUpdate( 0,0,0, wristBone.matrixWorld );
+            localPoint.copy( targetPoint );    
+        }
         localPoint.normalize();
 
+        // compute rotation
         let angle = this.twistAxis.angleTo( localPoint );
 
         let rotAx = this.tempVec3;
@@ -180,8 +197,7 @@ class Extfidir {
         // wait in same pose
         if ( hand.t < hand.start ){ return; }
         if ( hand.t > hand.attackPeak && hand.t < hand.relax ){ 
-            // only if absolute position.
-            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.relative ); // trgG update needed for relax-end
+            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.mode ); // trgG update needed for relax-end
             hand.curG.copy( hand.trgG );
             return; 
         }
@@ -191,7 +207,7 @@ class Extfidir {
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.relative );
+            this._computeSwingFromCurrentPose( hand.trgPoint, hand.idx, hand.trgG, hand.mode );
             hand.curG.slerpQuaternions( hand.srcG, hand.trgG, t );
             
             return;
@@ -203,7 +219,7 @@ class Extfidir {
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
             if ( hand.defActive ){
-                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.srcG, hand.defRelative ); 
+                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.srcG, hand.defmode ); 
             } else{
                 hand.srcG.set( 0,0,0,1 );
             }
@@ -212,7 +228,7 @@ class Extfidir {
         
         if ( hand.t > hand.end ){ 
             if ( hand.defActive ){ // indefinitely update curG to keep pointing at the correct target
-                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.curG, hand.defRelative );
+                this._computeSwingFromCurrentPose( hand.defPoint, hand.idx, hand.curG, hand.defmode );
             }else{
                 hand.transition = false;
             }
@@ -226,7 +242,7 @@ class Extfidir {
      * extfidir: string from rotationTable
      * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
      * extfidirNeutral: (optional) bool - stop current default pointing
-     * absolute: (optional) bool - whether the pointing is to absolute positions or relative to the wrist. Default to relative 
+     * mode: (optional) number - whether the pointing is to absolute (1), relative (2) or local (3) positions to the wrist  
      * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      * hand: (optional) "right", "left", "both". Default right
      * shift: (optional) bool - make this the default position
@@ -277,16 +293,16 @@ class Extfidir {
         handInfo.trgPoint.addVectors( point, secondPoint );
         handInfo.trgPoint.multiplyScalar( 0.5 );
         
-        // absolute positioning (tables) is at 1 meter. Relative should be centered at the wrist
-        if( !bml.absolute ){ 
+        // absolute positioning (tables) is at 1 meter. Relative & Local should be centered at the wrist
+        if( bml.mode != EXTFIDIR_MODES.ABSOLUTE ){ 
             handInfo.trgPoint.y -= rotationTable['o'].y; 
         }
-        handInfo.relative = !bml.absolute;
-        
+        handInfo.mode = bml.mode;
+
         // set defualt point if necessary
         if( bml.shift ){
             handInfo.defPoint.copy( handInfo.trgPoint );
-            handInfo.defRelative = handInfo.relative;
+            handInfo.defmode = handInfo.mode;
             handInfo.defActive = true;
         }
 

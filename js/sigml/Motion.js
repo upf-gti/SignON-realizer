@@ -52,11 +52,11 @@ class DirectedMotion {
         this.finalOffset = new Vector3(0,0,0);        
         this.bezier = [ new Vector3(), new Vector3(), new Vector3(), new Vector3() ]
 
-        this.distance = 0.05; // cm
+        this.distance = 0.05; // metres
         this.steepness = 0.5; // [0,1] curve steepness
 
         this.zigzagDir = new Vector3(0,0,1);
-        this.zigzagSize = 0.01; // cm. Complete amplitude. Motion will move half to dir and half to -dir
+        this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
         this.zigzagSpeed = 2; // loops per second
 
         this.transition = false;
@@ -84,10 +84,12 @@ class DirectedMotion {
 
         else if ( this.time < this.attackPeak ){
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
             cubicBezierVec3( this.bezier[0], this.bezier[1], this.bezier[2], this.bezier[3], this.finalOffset, t );
             this.finalOffset.add( this.baseOffset );
 
-            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * this.time ) * this.zigzagSize *0.5;
+            let zigzagAttenuation = Math.min( ( this.attackPeak - this.time ) / 0.5, Math.min( 1, ( this.time - this.start ) / 0.5 ) );  // min( outro, full, intro ). 0.5 seconds of intro and 0.5 of outro if possible
+            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * zigzagAttenuation;
             this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
             this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
             this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
@@ -99,6 +101,7 @@ class DirectedMotion {
 
         else if ( this.time < this.end ){ // lerp to origin (0,0,0) 
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
+            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
             this.finalOffset.addVectors( this.bezier[3], this.baseOffset );
             this.finalOffset.multiplyScalar( 1.0 - t );
         }
@@ -131,7 +134,7 @@ class DirectedMotion {
         
         this.baseOffset.copy( this.finalOffset );
         
-        this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance;//0.20; // cm
+        this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
         this.steepness = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
         let curveDir = curveDirectionTable[ bml.curve ];
         if ( !curveDir ){ this.steepness = 0; }
@@ -185,11 +188,11 @@ class DirectedMotion {
         let zigzag = directionTable[ bml.zigzag ];
         if ( !zigzag ){
             this.zigzagDir.set(0,0,0);
-            this.zigzagSize = 0.0; // cm
+            this.zigzagSize = 0.0; // metres
             this.zigzagSpeed = 0; // rps
         }else{
             this.zigzagDir.copy( zigzag );
-            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // cm
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
             this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
 
@@ -210,7 +213,7 @@ class CircularMotion {
         this.axis = new Vector3(0,0,0);
         
         this.zigzagDir = new Vector3(0,0,1);
-        this.zigzagSize = 0.01; // cm. Complete amplitude. Motion will move half to dir and half to -dir
+        this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
         this.zigzagSpeed = 2; // loops per second
 
         this.transition = false;
@@ -238,6 +241,8 @@ class CircularMotion {
 
         else if ( this.time < this.attackPeak ){
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
+
             let angle = this.targetDeltaAngle * t;
 
             this.finalOffset.copy( this.startPoint );
@@ -254,7 +259,8 @@ class CircularMotion {
             this.finalOffset.add( this.baseOffset );
 
             // zigzag 
-            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * this.time ) * this.zigzagSize * 0.5 * zigzagAttenuation;
+            zigzagAttenuation = Math.min( ( this.attackPeak - this.time ) / 0.5, Math.min( 1, zigzagAttenuation ) );  // min( outro, full, intro ). X seconds of intro and 0.5 of outro if possible
+            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * zigzagAttenuation;
             this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
             this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
             this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
@@ -272,6 +278,7 @@ class CircularMotion {
             this.finalOffset.add( this.baseOffset );
             
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
+            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
             this.finalOffset.multiplyScalar( 1.0 - t );
         }
 
@@ -348,11 +355,11 @@ class CircularMotion {
         let zigzag = directionTable[ bml.zigzag ];
         if ( !zigzag ){
             this.zigzagDir.set(0,0,0);
-            this.zigzagSize = 0.0; // cm
+            this.zigzagSize = 0.0; // metres
             this.zigzagSpeed = 0; // rps
         }else{
             this.zigzagDir.copy( zigzag );
-            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // cm
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
             this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
 
@@ -387,6 +394,7 @@ class FingerPlay {
         this.relax = 0;
         this.end = 0;
     }
+
     reset(){
         this.transition = false;
         this.index.set(0,0,0,1);
@@ -431,7 +439,6 @@ class FingerPlay {
      */
     newGestureBML( bml ){
         this.time = 0;
-        this.speed = 1;
         
         this.start = bml.start;
         this.attackPeak = bml.attackPeak;
@@ -445,9 +452,120 @@ class FingerPlay {
         this.transition = true;
     }
 
-
-
-
 };
 
-export { DirectedMotion, CircularMotion, FingerPlay}
+
+
+class WristMotion {
+    constructor( wristBone ){
+        this.wristBone = wristBone;
+        
+        // for the EVA model 
+        this.nodAxis = new Vector3(1,0,0);
+        this.swingAxis = new Vector3(0,1,0);
+        this.twistAxis = new Vector3(0,0,1);
+
+        this.mode = 0; // FLAGS 0=NONE, 1=TWIST, 2=NOD, 4=SWING 
+        this.intensity = 1;
+        this.speed = 1;
+        this.tempQ = new Quaternion(0,0,0,1);
+
+        this.time = 0;
+        this.start = 0;
+        this.attackPeak = 0;
+        this.relax = 0;
+        this.end = 0;
+    }
+
+    reset(){
+        this.time = 0;
+        this.mode = 0;
+    }
+
+    update( dt ){
+        if ( !this.mode ){ return; }
+
+        this.time += dt;
+        let intensity = 0;
+        if ( this.time < this.start ){ intensity = 0; }
+        else if ( this.time < this.attackPeak ){ intensity = ( this.time - this.start ) / ( this.attackPeak - this.start ); }
+        else if ( this.time < this.relax ){ intensity = 1; }
+        else if ( this.time < this.end ){ intensity = ( this.time - this.relax ) / ( this.end - this.relax ); intensity = 1.0-intensity; }
+        else {
+            intensity = 0; 
+            this.mode = 0x00; // tansition = false
+        }
+        intensity *= this.intensity;
+
+        if ( this.mode & 0x01 ){ // TWIST
+            this.twistAxis.set(0,0,1);
+            this.twistAxis.applyQuaternion( this.wristBone.quaternion );
+            let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
+            this.tempQ.setFromAxisAngle( this.twistAxis, angle );
+            this.wristBone.quaternion.premultiply( this.tempQ );
+        }
+        if ( this.mode & 0x02 ){ // NOD
+            this.nodAxis.set(1,0,0);
+            this.nodAxis.applyQuaternion( this.wristBone.quaternion );
+            let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
+            this.tempQ.setFromAxisAngle( this.nodAxis, angle );
+            this.wristBone.quaternion.premultiply( this.tempQ );
+        }
+        if ( this.mode & 0x04 ){ // SWING
+            this.swingAxis.set(0,1,0);
+            this.swingAxis.applyQuaternion( this.wristBone.quaternion );
+            let angle = Math.sin( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 ); // PHASE of 90ª with respect to NOD (see newGestureBML)
+            this.tempQ.setFromAxisAngle( this.swingAxis, angle );
+            this.wristBone.quaternion.premultiply( this.tempQ );
+        }
+
+    }
+
+     /**
+     * bml info
+     * start, attackPeak, relax, end
+     * mode = either a: 
+     *          - string from [ "nod", "swing", "twist", "spinCW", "spinCCW", "all" ]
+     *          - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
+     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = spinCW
+     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = spinCW
+     * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
+     * intensity = (optional) [0,1]. Default 0.3
+     */
+    newGestureBML( bml ){
+        this.time = 0;
+        
+        this.start = bml.start;
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
+        this.end = bml.end;
+
+        this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
+        this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
+        this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
+
+        if ( typeof( bml.mode ) == "string" ){
+            switch( bml.mode ){
+                case "nod": this.mode = 0x02; break;
+                case "swing": this.mode = 0x04; break;
+                case "twist": this.mode = 0x01; break;
+                case "spinCW": this.mode = 0x06; break; // 0x02 | 0x04
+                case "spinCCW": this.mode = 0x06; this.speed *= -1; break;
+                case "all": this.mode = 0x07; break;
+                default:
+                    console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
+                    return;
+            }
+        }
+        else if ( !isNaN( bml.mode ) ) {
+            console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
+            return;
+        }
+        else{
+            this.mode = bml.mode & 0x07; // take only the necessary bits
+        }
+
+    }
+};
+
+export { DirectedMotion, CircularMotion, FingerPlay, WristMotion }

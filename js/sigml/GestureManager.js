@@ -4,7 +4,7 @@ import { LocationArm } from "./LocationArm.js";
 
 import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
-import { CircularMotion, DirectedMotion, FingerPlay } from "./Motion.js";
+import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
 import { FABRIKSolver } from "./IKSolver.js";
 
@@ -45,7 +45,8 @@ class GestureManager{
         // Wrist 
         this.extfidir = new Extfidir( this.skeleton );
         this.palmor = new Palmor( this.skeleton );
-        // missing wrist motion
+        this.leftWristMotion = new WristMotion( this.skeleton.getBoneByName( "mixamorig_LeftHand" ) );
+        this.rightWristMotion = new WristMotion( this.skeleton.getBoneByName( "mixamorig_RightHand" ) );
 
         // Fingers
         this.handShapeRealizer = new HandShapeRealizer( this.skeleton );
@@ -64,6 +65,8 @@ class GestureManager{
 
         this.extfidir.reset();
         this.palmor.reset();
+        this.leftWristMotion.reset();
+        this.rightWristMotion.reset();
         
         this.handShapeRealizer.reset();
         this.leftFingerplay.reset();
@@ -129,7 +132,7 @@ class GestureManager{
         this._updateLocationMotions( dt, this.leftHandChain, this.leftLocationMotions );
 
         
-        // ADD twist to elbow (twist before swing scheme). Overwrite wrist (put only twist)
+        // ADD twist to elbow (twist before swing scheme). Overwrite wrist rotation (put only twist)
         this.palmor.update( dt );
         r = this.palmor.right;
         l = this.palmor.left;
@@ -144,6 +147,11 @@ class GestureManager{
         l = this.extfidir.left;
         bones[ r.idx ].quaternion.premultiply( r.curG );
         bones[ l.idx ].quaternion.premultiply( l.curG );
+
+        // wristmotion. ADD rotation to wrist
+        this.leftWristMotion.update(dt);
+        this.rightWristMotion.update(dt);
+
 
 
         // overwrite finger rotations
@@ -167,14 +175,14 @@ class GestureManager{
         }
         if ( bml.motion ){
             // debug
-            this.color = Math.floor( Math.random() * 0xffffff );
+            // this.color = Math.floor( Math.random() * 0xffffff );
 
             let left = null; let right = null;
             if ( bml.motion == "fingerplay"){ left = this.leftFingerplay; right = this.rightFingerplay; }
+            else if ( bml.motion == "wrist"){ left = this.leftWristMotion; right = this.rightWristMotion; }
             else if ( bml.motion == "directed"){ left = this.leftLocationMotions[0]; right = this.rightLocationMotions[0]; }
             else if ( bml.motion == "circular"){ left = this.leftLocationMotions[1]; right = this.rightLocationMotions[1]; }
-            // missing wrist motion
-
+         
             if ( left && ( bml.hand == "left" || bml.hand == "both" ) ){ left.newGestureBML( bml ); }
             if ( right && ( bml.hand != "left" ) ){ right.newGestureBML( bml ); }
         }

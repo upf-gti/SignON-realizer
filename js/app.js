@@ -320,7 +320,7 @@ class App {
             this.msg = {
                 type: "behaviours",
                 data: [
-                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: hand, distance: 0.3 },
+                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: hand, distance: 0.01 },
             ]};
             this.ECAcontroller.processMsg(JSON.stringify(this.msg));
         }
@@ -333,8 +333,8 @@ class App {
                    data: [
                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "right" },
                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "right" },
-                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "right" },
-                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "right" },
+                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyeL", hand: "right" },
+                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyeR", hand: "right" },
                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "right" },
                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "right" },
                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "right" },
@@ -360,8 +360,8 @@ class App {
                    data: [
                        { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "left"},
                        { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "left" },
-                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyesL", hand: "left" },
-                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyesR", hand: "left" },
+                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyeL", hand: "left" },
+                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyeR", hand: "left" },
                        { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "left" },
                        { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "left" },
                        { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "left" },
@@ -490,7 +490,7 @@ class App {
                      { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 0.75 },
                      { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 0.75 },
                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, handshape: "flat", hand: "both"},
-                    { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, extfidir: rotname, hand: "both" }, 
+                    { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, extfidir: rotname, hand: "both", mode: 2 }, 
                 ]
             };
             that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -508,7 +508,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "directed", direction: "u", curve: "l" }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "directed", direction: "u", curve: "l", zigzag:"i", zigzagSpeed:1.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -517,7 +517,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470, zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -530,12 +530,22 @@ class App {
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
+            },
+            wristMotion(){
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        { type: "gesture", start: 0, attackPeak: 1, relax: 3, end: 4, hand: "both", motion: "wrist", speed: 1, intensity: 0.3, mode: "spinCW" }, 
+                    ]
+                };
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             }
         };
-        
+
         motionFolder.add(motionParams, "directed").name("directed");
         motionFolder.add(motionParams, "circular").name("circular");
         motionFolder.add(motionParams, "fingerplay").name("fingerplay");
+        motionFolder.add(motionParams, "wristMotion").name("wristMotion");
 
 
         // PHRASES FOLDER PARAMS -------------
