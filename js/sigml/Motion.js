@@ -277,9 +277,9 @@ class CircularMotion {
             this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle )
             this.finalOffset.add( this.baseOffset );
             
-            let t = ( this.time - this.relax ) / ( this.end - this.relax );
+            let t = ( this.end - this.time ) / ( this.end - this.relax );
             t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
-            this.finalOffset.multiplyScalar( 1.0 - t );
+            this.finalOffset.multiplyScalar( t );
         }
 
         else { this.transition = false; this.finalOffset.set(0,0,0); }

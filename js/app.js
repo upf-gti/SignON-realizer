@@ -324,7 +324,6 @@ class App {
             ]};
             this.ECAcontroller.processMsg(JSON.stringify(this.msg));
         }
-
         let armParams = {
             rightArm(){
                 let duration = 0.8;
@@ -517,7 +516,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470, zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 2, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470}, //zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -598,11 +597,11 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "right", distance: 0.25 },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "left", distance: 0.75 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "right", distance: 0.00025 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end, end: end, locationArm: "stomach", hand: "left", distance: 0.00075 },
 
-                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.35 },
-                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.6 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.00035 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: end, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.0006 },
 
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, handshape: "finger2", hand: "both" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "dr", hand: "right" },
@@ -670,7 +669,7 @@ class App {
         
         testFolder.add(testParams, "HalloLeukOntmoeten").name("Hallo leuk ontmoeten");
 
-
+        
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -900,6 +899,7 @@ class App {
             mixer.addEventListener('loop', () => { ECAcontroller.reset(true); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
 
             if ( callback ){ callback (); }
+            
 
         }
 
@@ -930,6 +930,31 @@ class App {
 
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+
+        let that = this;
+        this.counter = 0;
+        this.sideDist = 0;
+        window.loc = "eyeL";
+        window.addEventListener("keydown", function(e){
+
+            if ( e.which == 87 ){ that.counter += 0.01; }
+            if ( e.which == 83 ){ that.counter -= 0.01; }
+            if ( e.which == 39 ){ that.sideDist += 0.01; }
+            if ( e.which == 37 ){ that.sideDist -= 0.01; }
+            
+            if ( e.which == 87 || e.which == 83 || e.which == 39 || e.which == 37 ){
+                that.msg = {
+                    type: "behaviours",
+                    data: [
+                        {   type: "gesture", start: 0.0, attackPeak: 0.01, relax : 5, end: 5.3, locationArm: window.loc, hand: "right", 
+                            distance: Math.sin( Math.PI * that.counter - Math.PI * 0.5) * 0.5 + 0.5, 
+                            side: "l", sideDistance: Math.sin( Math.PI * that.sideDist - Math.PI * 0.5) * 0.5 + 0.5 
+                        },
+                ]};
+                that.ECAcontroller.processMsg(JSON.stringify(that.msg)); 
+            }
+
+        });
     }
 
     switchModel ( visibleModel ) {

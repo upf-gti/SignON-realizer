@@ -6,7 +6,8 @@ import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
-import { FABRIKSolver } from "./IKSolver.js";
+import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
+import { LocationArmManager } from "./LocationArmIK.js";
 
 
 
@@ -24,20 +25,23 @@ class GestureManager{
         } );
 
         // ik for arm, shared among all modules
-        this.ikSolver = new FABRIKSolver( this.skeleton );
+        this.ikSolver = new CCDIKSolver( this.skeleton );
         this.ikTarget = { position: new Vector3(0,0,0) }; // worldposition
-        this._ikCreateChains( "LeftHand", "LeftArm" );
-        this._ikCreateChains( "RightHand", "RightArm" );
+        this._ikCreateChain( "LeftHand", "LeftArm", "LeftArm" );
+        this._ikCreateChain( "RightHand", "RightArm", "RightArm" );
+        this._ikCreateChain( "LeftHand", "LeftShoulder", "LeftShoulder" );
+        this._ikCreateChain( "RightHand", "RightShoulder", "RightShoulder" );
         this.ikSolver.constraintsEnabler = false;
         this.ikSolver.setChainEnablerAll(false);
         this.ikSolver.setIterations(1);
-        this.leftHandChain = this.ikSolver.getChain("mixamorig_LeftHand");
-        this.rightHandChain = this.ikSolver.getChain("mixamorig_RightHand");
+        this.leftHandChain = this.ikSolver.getChain("LeftArm");
+        this.rightHandChain = this.ikSolver.getChain("RightArm");
 
         
         // -------------- All modules --------------
         // Location Arm
-        this.locationArm = new LocationArm( this.skeleton );
+        this.locationArm = new LocationArmManager( this.skeleton, this.ikSolver );
+        // this.locationArm = new LocationArm( this.skeleton );
         this.leftLocationMotions = [ new  DirectedMotion(), new CircularMotion() ];
         this.rightLocationMotions = [ new DirectedMotion(), new CircularMotion() ];
         this.locationUpdateOffset = new Vector3(0,0,0);
@@ -101,9 +105,9 @@ class GestureManager{
             this.ikTarget.position.add( this.locationUpdateOffset );
 
             // debug points desired location
-            let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-            k.position.copy(this.ikTarget.position);
-            window.global.app.scene.add( k );
+            // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // k.position.copy(this.ikTarget.position);
+            // window.global.app.scene.add( k );
     
             ikChain.enabler = true;
             this.ikSolver.update();
@@ -118,7 +122,6 @@ class GestureManager{
     }
 
     update( dt ){
-
         // overwrite arm posture.
         this.locationArm.update( dt );
         let r = this.locationArm.right;
@@ -151,7 +154,6 @@ class GestureManager{
         // wristmotion. ADD rotation to wrist
         this.leftWristMotion.update(dt);
         this.rightWristMotion.update(dt);
-
 
 
         // overwrite finger rotations
@@ -198,7 +200,7 @@ class GestureManager{
         
     }
 
-    _ikCreateChains( effectorName, rootName ) {
+    _ikCreateChain( effectorName, rootName, chainName ) {
         let bones = this.skeleton.bones;
         let effector = this.skeleton.getBoneByName( effectorName );
         let root = this.skeleton.getBoneByName( rootName );
@@ -219,7 +221,7 @@ class GestureManager{
                 }
             }
         }
-        if ( !effector || !root ) { return; }
+        if ( !effector || !root ) { return false; }
 
         let chain = []
         let bone = effector;
@@ -233,14 +235,12 @@ class GestureManager{
             bone = bone.parent;
         }
 
-        effector = bones[ chain[ 0 ] ];
-        while ( effector != root ) {
-            if ( !this.ikSolver.getChain( effector.name ) ) {
-                this.ikSolver.createChain( chain, null, this.ikTarget, effector.name );
-            }
-            chain.splice( 0, 1 );
-            effector = bones[ chain[ 0 ] ];
+        if ( !this.ikSolver.getChain( chainName ) ) {
+            this.ikSolver.createChain( chain, null, this.ikTarget, chainName );
+            return true;
         }
+
+        return false;
     }
 }
 

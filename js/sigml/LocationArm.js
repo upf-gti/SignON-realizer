@@ -67,6 +67,7 @@ let testPoints = {
 }
 
 // from right arm perspective
+// [ ShoulderBack, Shoulder, Elbow ]
 let nearPoses = {
     neutral:        [ 0.025, -0.700, 0.037, 0.712,0.546, 0.182, -0.046, 0.817,0.281, 0.341, -0.008, 0.897 ],
 
@@ -217,7 +218,12 @@ class LocationArm {
         
         // wait in same pose
         if ( arm.t < arm.start ){ return; }
-        if ( arm.t > arm.attackPeak && arm.t < arm.relax ){ return; }
+        if ( arm.t > arm.attackPeak && arm.t < arm.relax ){ 
+            for( let i = 0; i < 3 ; ++i ){
+                arm.curG[i].copy( arm.trgG[i] );
+            }
+            return; 
+        }
         
         // move to default pose and end
         if ( arm.t > arm.end ){ 
@@ -236,7 +242,6 @@ class LocationArm {
             // shouldar (back), actual shoulder, elbow
             for( let i = 0; i < 3 ; ++i ){
                 arm.curG[i].slerpQuaternions( arm.srcG[i], arm.trgG[i], t ); // expensive but finds correct path
-                //nlerpQuats( arm.curG[i], arm.srcG[i], arm.trgG[i], t ); // cheaper but does not find correct path
             }     
             return;
         }
@@ -249,7 +254,6 @@ class LocationArm {
             // shouldar (back), actual shoulder, elbow
             for( let i = 0; i < 3 ; ++i ){
                 arm.curG[i].slerpQuaternions( arm.trgG[i], arm.defG[i], t ); // expensive but finds correct path
-                //nlerpQuats( arm.curG[i], arm.trgG[i], arm.defG[i], t ); // cheaper  but does not find correct path
             }     
         }
     }
@@ -311,7 +315,7 @@ class LocationArm {
             // target (reference)
             let q = arm.trgG[i];
             q.slerpQuaternions( near[i], far[i], distance );
-            
+
             // mirror target quaternion. (left arm cannot use right arms Quaternions as they are)
             if ( mirror ){ 
                 mirrorQuatSelf( q );
