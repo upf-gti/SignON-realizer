@@ -77,13 +77,13 @@ class GestureManager{
         this.rightFingerplay.reset();
 
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", side: 'o', sideDistance: 0.036, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", side: 'or', sideDistance: 0.05, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dr", hand: "right", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "d", hand: "right", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "right", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", secondExtfidir:"dor", hand: "left", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o",  hand: "right", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", hand: "left", mode: "local", shift:true } );
 
     }
 

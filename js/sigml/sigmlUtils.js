@@ -35,7 +35,7 @@ function mirrorQuat( destQuat, srcQuat ){
 }
 
 function mirrorQuatSelf( q ){
-    //q.x = srcQuat.x;
+    //q.x = -q.x;
     q.y = -q.y;
     q.z = -q.z;
     //q.w = q.w;

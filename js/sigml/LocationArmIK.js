@@ -67,55 +67,91 @@ let testPoints = {
     
 }
 
-// from right arm perspective
+// arm quaternions from right arm perspective
 // [ ShoulderBack, Shoulder, Elbow ]
 let nearPoses = {
-    neutral:        [ 0.025, -0.700, 0.037, 0.712,0.546, 0.182, -0.046, 0.817,0.281, 0.341, -0.008, 0.897 ],
+    neutral:        [ new Quaternion(-0.0030244,-0.6014008,0.0175197,0.7987496), new Quaternion(0.5977453,0.1557497,-0.0462050,0.7850526), new Quaternion(0.2523842,0.2125053,0.0112892,0.9439365)  ],
 
-    headtop:        [-0.176,-0.723,-0.231,0.627,   -0.23,0.068,0.364,0.900,   -0.29,0.682,0.229,0.631 ],
-    forehead:       [0,-0.733,0.000,0.681,   -0.115,0.608,0.122,0.776,   -0.306,0.722,0.208,0.584 ],
-    eyeL:          [-0.105,-0.716,-0.135,0.677,   0.353,0.812,0.056,0.461,   -0.249,0.801,0.238,0.490 ],
-    eyeR:          [-0.086,-0.741,-0.113,0.656,   0.392,0.737,0.065,0.546,   -0.262,0.851,0.194,0.412 ],
-    nose:           [-0.152,-0.645,-0.184,0.726,   0.502,0.707,0.065,0.494,   -0.266,0.865,0.179,0.385 ],
-    upperlip:       [-0.02,-0.745,-0.028,0.666,   -0.111,-0.649,0.027,-0.752,   -0.33,0.782,0.170,0.500 ],
-    mouth:          [-0.002,-0.715,0.001,0.700,   -0.128,-0.650,0.081,-0.745,   -0.33,0.782,0.170,0.500 ],
-    chin:           [-0.038,-0.756,-0.053,0.651,   -0.219,-0.715,0.149,-0.647,   -0.339,0.804,0.155,0.464 ],
-    cheekL:         [-0.031,-0.728,-0.039,0.684,   -0.155,-0.902,0.040,-0.400,   -0.237,0.755,0.271,0.548 ],
-    cheekR:         [-0.016,-0.517,0.013,0.856,   0.304,0.632,0.181,0.689,   -0.307,0.867,0.143,0.365 ],
-    earL:           [-0.018,-0.495,0.014,0.869,   -0.145,-0.834,0.053,-0.530,   -0.245,0.786,0.249,0.511 ],
-    earR:           [-0.016,-0.517,0.013,0.856,   0.304,0.632,0.181,0.689,   -0.28,0.910,0.119,0.280 ],
-    neck:           [-0.016,-0.727,-0.020,0.687,   -0.347,-0.683,0.169,-0.621,   -0.268,0.875,0.168,0.366 ],
-    chest:          [0.098, -0.768, 0.118, 0.622,0.448, 0.262, 0.013, 0.855,0.325, 0.843, -0.016, 0.428 ],
-    stomach:        [ 0.054, -0.709, 0.073, 0.699,0.529, 0.093, -0.049, 0.842,0.225, 0.803, -0.019, 0.551],
-    belowstomach:   [-0.111,-0.524,-0.112,0.837,   -0.419,-0.516,0.527,-0.529,   -0.253,0.591,0.269,0.717 ],
-    shoulderL:     [ -0.052,-0.559,-0.040,0.827,  -0.237,-0.633,0.250,-0.694,  -0.260,0.848,0.198,0.417 ],
-    shoulderR:     [ -0.026,-0.749,-0.036,0.661,  -0.590,-0.402,0.253,-0.652,  0.689,-0.668,0.072,-0.272 ],    
-
-    loc3mid: [0.032, -0.652, 0.055, 0.755,0.494, 0.135, 0.015, 0.859,-0.731, 0.596, -0.076, 0.323],
-
+    headtop:        [ new Quaternion(-0.0506604,-0.7341385,-0.0660531,0.6738776), new Quaternion(-0.4668017,0.0198618,-0.0204699,0.8839019), new Quaternion(-0.6623683,0.1071393,-0.0464818,0.7400194)  ],
+    forehead:       [ new Quaternion(0.0052382,-0.7376279,0.0058476,0.6751617), new Quaternion(-0.0995180,0.7498349,-0.0055130,0.6540743), new Quaternion(-0.6971409,0.3354671,-0.0556369,0.6311582)  ],
+    eyeL:           [ new Quaternion(0.1273960,-0.7585008,0.1566673,0.6195983), new Quaternion(0.0285814,0.8482021,-0.0000513,0.5289008), new Quaternion(-0.4557415,0.5937748,-0.0472286,0.6614382)  ],
+    eyeR:           [ new Quaternion(0.1152192,-0.7544016,0.1422677,0.6303669), new Quaternion(0.0714903,0.8325108,0.0018608,0.5493736), new Quaternion(-0.5646459,0.5390549,-0.0528718,0.6227353)  ],
+    nose:           [ new Quaternion(-0.0252475,-0.7199582,-0.0304132,0.6928908), new Quaternion(0.0454818,0.7106191,0.0009248,0.7021046), new Quaternion(-0.6405263,0.5539174,-0.0584294,0.5286657)  ],
+    upperlip:       [ new Quaternion(-0.0288777,-0.7174093,-0.0346774,0.6951887), new Quaternion(0.0694745,0.6986833,0.0019989,0.7120469), new Quaternion(-0.5996578,0.6148312,-0.0575356,0.5090016)  ],
+    mouth:          [ new Quaternion(-0.0039781,-0.7422616,-0.0068752,0.6700630), new Quaternion(0.1569718,0.7319968,0.0057865,0.6629531), new Quaternion(-0.5367775,0.6554966,-0.0545482,0.5284112)  ],
+    chin:           [ new Quaternion(-0.0144784,-0.7336383,-0.0188906,0.6791231), new Quaternion(0.2120324,0.6909716,0.0082736,0.6910368), new Quaternion(-0.4265878,0.7764973,-0.0508725,0.4609626)  ],
+    cheekL:         [ new Quaternion(0.0352934,-0.7555276,0.0411269,0.6528713), new Quaternion(0.0514777,0.8204809,0.0010022,0.5693505), new Quaternion(-0.4342420,0.7208578,-0.0496679,0.5378949)  ],
+    cheekR:         [ new Quaternion(0.0230982,-0.7083715,0.0339334,0.7046451), new Quaternion(0.1192426,0.7429874,0.0041107,0.6585848), new Quaternion(-0.7864518,0.4759690,-0.0659315,0.3880720)  ],
+    earL:           [ new Quaternion(0.1029711,-0.6166821,0.1499909,0.7659000), new Quaternion(0.0893024,0.8568030,0.0026013,0.5078452), new Quaternion(-0.3381405,0.7009594,-0.0426242,0.6264982)  ],
+    earR:           [ new Quaternion(0.1681397,-0.5996382,0.2337173,0.7466855), new Quaternion(-0.1995244,0.7336113,-0.0098819,0.6495434), new Quaternion(-0.7972906,0.4242612,-0.0650900,0.4243739)  ],
+    neck:           [ new Quaternion(-0.0311668,-0.6967750,-0.0340783,0.7158014), new Quaternion(0.4273569,0.5905589,0.0178945,0.6843142), new Quaternion(-0.2417393,0.8818185,-0.0417702,0.4027573)  ],
+    chest:          [ new Quaternion(-0.0107485,-0.6729800,-0.0036564,0.7395734), new Quaternion(0.6108346,0.2714558,0.0264699,0.7432981), new Quaternion(0.2821601,0.8551173,-0.0061830,0.4348812)  ],
+    stomach:        [ new Quaternion(-0.0125816,-0.6608236,-0.0040435,0.7504248), new Quaternion(0.5685093,0.1448031,0.0248173,0.8094524), new Quaternion(0.5358218,0.5919117,0.0185811,0.6018223)  ],
+    belowstomach:   [ new Quaternion(-0.0134201,-0.6603696,-0.0050532,0.7508037), new Quaternion(0.5879901,0.1971521,0.0255878,0.7840560), new Quaternion(0.4416799,0.2915858,0.0214299,0.8481964)  ],
+    shoulderL:      [ new Quaternion(0.0466722,-0.5776748,0.0846167,0.8105266), new Quaternion(0.4878578,0.5500982,0.0206168,0.6774670), new Quaternion(0.2735958,0.8199461,-0.0056520,0.5027938)  ],
+    shoulderR:      [ new Quaternion(-0.0091726,-0.7450993,-0.0141048,0.6667412), new Quaternion(0.5866297,0.3048243,0.0253537,0.7498699), new Quaternion(-0.3295025,0.9072888,-0.0484754,0.2567200)  ],    
 }
-
+    // 1 = right, 5 = left. Different numbering than "signing space" of Irene's thesis. This is better for symmetry and others
+    nearPoses.loctop1 = nearPoses.shoulderR;       
+    nearPoses.loctop2 = nearPoses.shoulderR;       
+    nearPoses.loctop3 = nearPoses.shoulderR;        
+    nearPoses.loctop4 = nearPoses.shoulderR;       
+    nearPoses.loctop5 = nearPoses.shoulderR;       
+ 
+    nearPoses.locmid1 = nearPoses.shoulderR;       
+    nearPoses.locmid2 = nearPoses.shoulderR;       
+    nearPoses.locmid3 = nearPoses.shoulderR;        
+    nearPoses.locmid4 = nearPoses.shoulderR;       
+    nearPoses.locmid5 = nearPoses.shoulderR;       
+ 
+    nearPoses.locbot1 = nearPoses.shoulderR;       
+    nearPoses.locbot2 = nearPoses.shoulderR;       
+    nearPoses.locbot3 = nearPoses.shoulderR;        
+    nearPoses.locbot4 = nearPoses.shoulderR;       
+    nearPoses.locbot5 = nearPoses.shoulderR;       
+             
+// positions to be used by ik
 let farPoses = {
     neutral:      new Vector3( 0,1.8,1),    
-    headtop:      new Vector3( 0,1.8,1),    
-    forehead:     new Vector3( 0,1.8,1), 
-    eyeL:         new Vector3( 0,1.8,1),  
-    eyeR:         new Vector3( 0,1.8,1),  
-    nose:         new Vector3( 0,1.8,1),  
-    upperlip:     new Vector3( 0,1.8,1),  
-    mouth:        new Vector3( 0,1.8,1),   
-    chin:         new Vector3( 0,1.8,1), 
-    cheekR:       new Vector3( 0,1.8,1),  
-    cheekL:       new Vector3( 0,1.8,1),   
-    earL:         new Vector3( 0,1.8,1),  
-    earR:         new Vector3( 0,1.8,1),   
-    neck:         new Vector3( 0,1.8,1),  
-    chest:        new Vector3( 0,1.8,1),  
-    stomach:      new Vector3( 0,1.8,1),
-    belowstomach: new Vector3( 0,1.8,1), 
-    shoulderL:    new Vector3( 0,1.8,1), 
-    shoulderR:    new Vector3( 0,1.8,1), 
-    loc3mid:      new Vector3( 0,1.8,1), 
+    headtop:      new Vector3( 0,1.8,1),  
+      
+    forehead:     new Vector3( 0.0,1.5,0.7 ), 
+    eyeL:         new Vector3( 0.0,1.5,0.7 ),  
+    eyeR:         new Vector3( 0.0,1.5,0.7 ),  
+    nose:         new Vector3( 0.0,1.5,0.7 ),  
+    upperlip:     new Vector3( 0.0,1.5,0.7 ),  
+    mouth:        new Vector3( 0.0,1.5,0.7 ),   
+    chin:         new Vector3( 0.0,1.5,0.7 ), 
+    cheekR:       new Vector3( 0.0,1.5,0.7 ),  
+    cheekL:       new Vector3( 0.0,1.5,0.7 ),   
+    earL:         new Vector3( 0.0,1.5,0.7 ),  
+    earR:         new Vector3( 0.0,1.5,0.7 ),   
+
+    neck:         new Vector3( 0.0,1.4,0.7 ),  
+    chest:        new Vector3( 0.0,1.3,0.7 ),  
+    stomach:      new Vector3( 0.0,1.15,0.7 ),
+    belowstomach: new Vector3( 0.0,1.0,0.7 ), 
+    shoulderL:    new Vector3( 0.0,1.3,0.7 ), 
+    shoulderR:    new Vector3( 0.0,1.3,0.7 ), 
+
+    // 1 = right, 5 = left. Different numbering than "signing space" of Irene's thesis. This is better for symmetry and others
+    loctop1:      new Vector3(-0.59,2.00,0.23 ),   
+    loctop2:      new Vector3(-0.39,2.00,0.39 ),   
+    loctop3:      new Vector3(-0.15,2.00,0.46 ),   
+    loctop4:      new Vector3( 0.05,2.00,0.31 ),   
+    loctop5:      new Vector3( 0.17,2.40,0.18 ),
+   
+    locmid1:      new Vector3(-0.59,1.30,0.23 ),
+    locmid2:      new Vector3(-0.39,1.30,0.39 ),
+    locmid3:      new Vector3(-0.15,1.30,0.46 ),
+    locmid4:      new Vector3( 0.05,1.40,0.31 ),
+    locmid5:      new Vector3( 0.17,1.40,0.18 ),
+                
+    locbot1:      new Vector3( -0.59,0.74,0.23 ),
+    locbot2:      new Vector3( -0.39,0.74,0.39 ),
+    locbot3:      new Vector3( -0.15,0.74,0.46 ),
+    locbot4:      new Vector3(  0.05,0.74,0.31 ),
+    locbot5:      new Vector3(  0.17,0.74,0.18 ),
 }
 
 let sides = {
@@ -148,37 +184,6 @@ let sides = {
     "uir"   : (new Vector3( -1,   1,  -1 )).normalize(),
     "i"     : (new Vector3(  0,   0,  -1 )).normalize(),
 }
-
-function shapesToQuaternions( shapes ){
-    let o = {}
-    let keys = Object.keys( shapes );
-
-    function floatArrayToQuatArray ( array ){
-        let arrayQuat = [];
-        let arrayQuatLength = Math.floor( (array.length + 0.5) / 4 ); // +0.5 to avoid floating errors, just in case...
-
-        for( let i = 0; i < arrayQuatLength; ++i ){
-            let q = new THREE.Quaternion();
-            q.fromArray( array, i * 4 );
-            q.normalize();
-            arrayQuat.push( q );
-        }
-        return arrayQuat;
-    }
-
-
-    for ( let i = 0; i < keys.length; ++i ){
-        if ( shapes[ keys[i] ].length > 0 ){
-            o[keys[i]] = floatArrayToQuatArray( shapes[ keys[i] ] ); 
-        }
-    }
-
-    return o;
-}
-
-// transform tables into THREE.Quaternions
-nearPoses = shapesToQuaternions( nearPoses );
-
 
 class LocationArmIK {
     constructor( skeleton, shoulderIndex, ikSolver, chain ) {
@@ -296,6 +301,11 @@ class LocationArmIK {
             else if( location[location.length-1] == "R" ){
                 location = location.slice(0, location.length-1) + "L";
             } 
+            else if( !isNaN( location[location.length-1] ) ){ // spatial locations
+                let val = 6 - parseInt( location[location.length-1] );
+                location = location.slice(0, location.length-1) + val.toFixed(0);
+            }
+
         }
         
         let near = nearPoses[ location ];
@@ -305,6 +315,19 @@ class LocationArmIK {
             return;
         }
 
+        // same as in location
+        let side = bml.side;
+        if ( (mirror ^ symmetry) && side ){ 
+            if ( side && side[side.length-1] == "l" ){
+                side = side.slice(0, side.length-1) + "r";
+            } 
+            else if( side && side[side.length-1] == "r" ){
+                side = side.slice(0, side.length-1) + "l";
+            }
+        }
+        side = sides[ side ];
+
+
         // Set target and source poses AND prepare skeleton for ik
         for ( let i = 0; i < near.length; ++i ){
             // source: Copy current arm state
@@ -313,11 +336,6 @@ class LocationArmIK {
             // target (reference)
             this.trgG[i].copy( near[i] );
             
-            // mirror target quaternion. (left arm cannot use right arms Quaternions as they are)
-            if ( mirror ){ 
-                mirrorQuatSelf( this.trgG[i] );
-            }
-
             // IK - copy nearTarget into bone quaternions
             this.skeleton.bones[ this.idx + i ].quaternion.copy( this.trgG[i] ); 
         }
@@ -329,7 +347,6 @@ class LocationArmIK {
         this.chainInfo.target.position.y = pos.y * (1-distance) + far.y * distance;
         this.chainInfo.target.position.z = pos.z * (1-distance) + far.z * distance;
 
-        let side = sides[ bml.side ];
         if ( side ){
             let sideDist = isNaN( bml.sideDistance ) ? 0 : bml.sideDistance;
             this.chainInfo.target.position.x += side.x * sideDist;
@@ -339,7 +356,6 @@ class LocationArmIK {
 
         // Actual IK
         this.chainInfo.enabler = true;
-        this.ikSolver.setIterations( 4 );
         this.ikSolver.update();
         this.chainInfo.enabler = false;
 
@@ -348,11 +364,17 @@ class LocationArmIK {
             // copy results into target
             this.trgG[i].copy( this.skeleton.bones[ this.idx + i ].quaternion );
             
+            // mirror target quaternion. (left arm cannot use right arms Quaternions as they are)
+            if ( mirror ){ 
+                mirrorQuatSelf( this.trgG[i] );
+            }
+
             // copy src (current quaternions) into bone quaternions
             this.skeleton.bones[ this.idx + i ].quaternion.copy( this.srcG[i] );
                         
             // copy src into curG (just in case)
             this.curG[i].copy( this.srcG[i] ); 
+
 
             // change arm's default pose if necesary
             if ( bml.shift ){
@@ -380,8 +402,8 @@ class LocationArmManager {
             else if ( bones[i].name.includes("LeftShoulder") ){ this.lIdx = i; }
         }
 
-        this.right = new LocationArmIK( skeleton, this.rIdx, ikSolver, ikSolver.getChain("RightShoulder"));
-        this.left = new LocationArmIK( skeleton, this.lIdx, ikSolver, ikSolver.getChain("LeftShoulder"));
+        this.right = new LocationArmIK( skeleton, this.rIdx, ikSolver, ikSolver.getChain("RightArm"));
+        this.left = new LocationArmIK( skeleton, this.lIdx, ikSolver, ikSolver.getChain("LeftArm"));
     }
 
     reset(){

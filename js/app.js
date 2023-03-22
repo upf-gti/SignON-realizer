@@ -8,7 +8,7 @@ import { CharacterController } from './controllers/CharacterController.js'
 
 
 import { rotationTable as extfidirTable } from './sigml/Extfidir.js';
-import { nearArmPosesTable } from './sigml/LocationArm.js';
+import { nearArmPosesTable } from './sigml/LocationArmIK.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -316,11 +316,12 @@ class App {
 
 
         // ARM FOLDER -----------
+        window.armDist = 0.01;
         function armSimplifier( armshape, hand = "right" ){
             this.msg = {
                 type: "behaviours",
                 data: [
-                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: hand, distance: 0.01 },
+                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: 'both', distance: window.armDist },
             ]};
             this.ECAcontroller.processMsg(JSON.stringify(this.msg));
         }
@@ -380,6 +381,7 @@ class App {
                that.ECAcontroller.processMsg(JSON.stringify(that.msg));
            }
         }
+      
         for( let e in nearArmPosesTable ){
             armParams[e] = armSimplifier.bind(that, e);
             armFolder.add(armParams, e).name(e);
@@ -558,11 +560,11 @@ class App {
                     data: [
                         { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
 
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, locationArm: "shoulderR", hand: "right", distance: 0.1 },
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, handshape: "flat", thumbshape: "touch", hand: "right" },
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, palmor: "d", hand: "right" },
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: 100000, end: 100000, extfidir: "u", hand: "right" },
-                        // { type: "gesture", start: halloStart + hallo * 0.5, attackPeak: halloStart + hallo, relax: 100000, end: 100000, locationArm: "loc3mid", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, locationArm: "shoulderR", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, handshape: "flat", thumbshape: "touch", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, palmor: "dr", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, extfidir: "u", hand: "right" },
+                        { type: "gesture", start: halloStart + hallo * 0.4, attackPeak: halloStart + hallo, relax:halloStart + hallo + 1, end: halloStart + hallo + 2, motion: "directed", direction: "r", distance: 0.05, curve:'u' },
 
                     ]
                 };
@@ -931,30 +933,6 @@ class App {
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
-        let that = this;
-        this.counter = 0;
-        this.sideDist = 0;
-        window.loc = "eyeL";
-        window.addEventListener("keydown", function(e){
-
-            if ( e.which == 87 ){ that.counter += 0.01; }
-            if ( e.which == 83 ){ that.counter -= 0.01; }
-            if ( e.which == 39 ){ that.sideDist += 0.01; }
-            if ( e.which == 37 ){ that.sideDist -= 0.01; }
-            
-            if ( e.which == 87 || e.which == 83 || e.which == 39 || e.which == 37 ){
-                that.msg = {
-                    type: "behaviours",
-                    data: [
-                        {   type: "gesture", start: 0.0, attackPeak: 0.01, relax : 5, end: 5.3, locationArm: window.loc, hand: "right", 
-                            distance: Math.sin( Math.PI * that.counter - Math.PI * 0.5) * 0.5 + 0.5, 
-                            side: "l", sideDistance: Math.sin( Math.PI * that.sideDist - Math.PI * 0.5) * 0.5 + 0.5 
-                        },
-                ]};
-                that.ECAcontroller.processMsg(JSON.stringify(that.msg)); 
-            }
-
-        });
     }
 
     switchModel ( visibleModel ) {

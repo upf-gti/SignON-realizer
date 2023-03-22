@@ -40,9 +40,16 @@ let rotationTable = {
 }
 
 let EXTFIDIR_MODES = {
+    1 : 1,
     ABSOLUTE : 1,
+    absolute : 1,
+    2 : 2,
     RELATIVE : 2,
-    LOCAL : 3
+    relative : 2,
+    3 : 3,
+    LOCAL : 3,
+    local : 3,
+
 }
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
@@ -146,7 +153,7 @@ class Extfidir {
     }
 
     // compute the swing rotation to get the twistAxis to point at a certain location
-    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, mode = EXTFIDIR_MODES.RELATIVE ){
+    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, mode ){
         let wristBone = this.skeleton.bones[ wristIdx ];
         wristBone.updateWorldMatrix( true, true );
         this.tempMat4.copy( wristBone.matrixWorld );
@@ -242,7 +249,7 @@ class Extfidir {
      * extfidir: string from rotationTable
      * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
      * extfidirNeutral: (optional) bool - stop current default pointing
-     * mode: (optional) number - whether the pointing is to absolute (1), relative (2) or local (3) positions to the wrist  
+     * mode: (optional) number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
      * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      * hand: (optional) "right", "left", "both". Default right
      * shift: (optional) bool - make this the default position
@@ -294,10 +301,10 @@ class Extfidir {
         handInfo.trgPoint.multiplyScalar( 0.5 );
         
         // absolute positioning (tables) is at 1 meter. Relative & Local should be centered at the wrist
-        if( bml.mode != EXTFIDIR_MODES.ABSOLUTE ){ 
+        handInfo.mode = ( EXTFIDIR_MODES[ bml.mode ] ) ? EXTFIDIR_MODES[ bml.mode ] : EXTFIDIR_MODES.RELATIVE; 
+        if( handInfo.mode != EXTFIDIR_MODES.ABSOLUTE ){ 
             handInfo.trgPoint.y -= rotationTable['o'].y; 
         }
-        handInfo.mode = bml.mode;
 
         // set defualt point if necessary
         if( bml.shift ){
