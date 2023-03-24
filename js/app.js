@@ -391,7 +391,7 @@ class App {
 
 
         // HANDSHAPE FOLDER ------------
-        function handshapeSimplifier( handshape, thumbshape = null, hand = "right" ){
+        function handshapeSimplifier( handshape, thumbshape = null, hand = "both" ){
             this.msg = {
                 type: "behaviours",
                 data: [
@@ -509,7 +509,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", motion: "directed", direction: "u", curve: "l", zigzag:"i", zigzagSpeed:1.33, zigzagSize:0.05 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", sym:true, motion: "directed", direction: "u", curve: "l" },//, zigzag:"i", zigzagSpeed:1.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -518,7 +518,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 2, end: 4, hand: "both", motion: "circular", direction: "u", startAngle: 0, endAngle: 470}, //zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 2, end: 4, hand: "both", sym: true, motion: "circular", direction: "u", startAngle: 0, endAngle: 470}, //zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -913,7 +913,8 @@ class App {
             q.setFromAxisAngle( new THREE.Vector3(0,0,1), 2 * Math.PI /180 ); // slightly tilted on z axis
             this.model1.quaternion.premultiply(q); 
 
-            this.model2.position.set(0, 0., 0);
+            this.model1.position.set(0.05, 0, 0 );
+            this.model2.position.set(0, 0, 0);
 
             this.switchModel( this.model1 );
 

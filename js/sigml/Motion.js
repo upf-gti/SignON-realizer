@@ -121,9 +121,10 @@ class DirectedMotion {
      * zigzag: (optional) string from directionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
-     * hand: (optional) "right", "left", "both". Default right  
+     * hand: (optional) "right", "left", "both". Default right
+     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      */
-    newGestureBML( bml ){
+    newGestureBML( bml, symmetry ){
         let tempV = new Vector3(0,0,0);
                 
         this.time = 0;
@@ -136,7 +137,14 @@ class DirectedMotion {
         
         this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
         this.steepness = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
-        let curveDir = curveDirectionTable[ bml.curve ];
+        
+        // fetch curve direction and adjust steepness if not present
+        let curveDir = bml.curve;
+        if ( curveDir && symmetry ){
+            if ( curveDir[ curveDir.length - 1 ] == "r" ){ curveDir = curveDir.slice( 0, curveDir.length - 1 ) + "l"; }
+            else if ( curveDir[ curveDir.length - 1 ] == "l" ){ curveDir = curveDir.slice( 0, curveDir.length - 1 ) + "r"; }
+        }
+        curveDir = curveDirectionTable[ curveDir ];
         if ( !curveDir ){ this.steepness = 0; }
 
         // set default direction (+z), default curve direction (+y) and ajust with size and curve steepness
@@ -156,8 +164,13 @@ class DirectedMotion {
             this.bezier[2].applyAxisAngle( tempV, angle );
         }
 
-        // rotate default direction to match the user's one
-        let direction = directionTable[ bml.direction ];
+        // fetch direction
+        let direction = bml.direction;
+        if ( direction && symmetry ){
+            if ( direction[ direction.length - 1 ] == "r" ){ direction = direction.slice( 0, direction.length - 1 ) + "l"; }
+            else if ( direction[ direction.length - 1 ] == "l" ){ direction = direction.slice( 0, direction.length - 1 ) + "r"; }
+        }
+        direction = directionTable[ direction ];
         if ( !direction ){ 
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
             return;
@@ -170,7 +183,8 @@ class DirectedMotion {
             this.bezier[2].z *= -1;
             this.bezier[3].z *= -1;
         }
-
+        
+        // rotate default direction to match the user's one
         if ( Math.abs(direction.dot(this.bezier[3])) > 0.999 ){ this.lookAtQuat.set(0,0,0,1); }
         else{ 
             let angle = direction.angleTo( this.bezier[3] );
@@ -178,7 +192,6 @@ class DirectedMotion {
             tempV.normalize();
             this.lookAtQuat.setFromAxisAngle( tempV, angle );
         }
-
         this.bezier[0].applyQuaternion( this.lookAtQuat );
         this.bezier[1].applyQuaternion( this.lookAtQuat );
         this.bezier[2].applyQuaternion( this.lookAtQuat );
@@ -298,8 +311,9 @@ class CircularMotion {
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
      * hand: (optional) "right", "left", "both". Default right  
+     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      */
-    newGestureBML( bml ){
+    newGestureBML( bml, symmetry ){
         // debug
         // this.color = Math.floor( Math.random() * 0xffffff );
         let tempV = new Vector3(0,0,0);
@@ -314,7 +328,12 @@ class CircularMotion {
         this.baseOffset.copy( this.finalOffset );
         
         // axis
-        let direction = directionTable[ bml.direction ];
+        let direction = bml.direction;
+        if ( direction && symmetry ){
+            if ( direction[ direction.length - 1 ] == "r" ){ direction = direction.slice( 0, direction.length - 1 ) + "l"; }
+            else if ( direction[ direction.length - 1 ] == "l" ){ direction = direction.slice( 0, direction.length - 1 ) + "r"; }
+        }
+        direction = directionTable[ direction ];
         if ( !direction ) {
             direction = directionTable['o'];
         }
@@ -322,7 +341,7 @@ class CircularMotion {
 
         // angle computations
         let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle  * Math.PI / 180.0 );
-        let endAngle = isNaN( bml.endAngle ) ? 0 : ( bml.endAngle  * Math.PI / 180.0 );
+        let endAngle = isNaN( bml.endAngle ) ? ( Math.PI * 2 ) : ( bml.endAngle  * Math.PI / 180.0 );
         this.targetDeltaAngle = endAngle - startAngle;
         if( this.targetDeltaAngle >= 0 ){ // add extra angle for ease-in
             startAngle -= this.easingAngle;
@@ -330,6 +349,9 @@ class CircularMotion {
         }else{
             startAngle += this.easingAngle;
             this.targetDeltaAngle -= this.easingAngle;
+        }
+        if( symmetry ){ // startAngle does not need to change. EndAngle is no longer used
+            this.targetDeltaAngle *= -1;
         }
         
         // rotate starting point from default plane (xy) to the user's specified (given by axis)

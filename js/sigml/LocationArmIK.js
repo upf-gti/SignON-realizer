@@ -113,7 +113,7 @@ let nearPoses = {
 // positions to be used by ik
 let farPoses = {
     neutral:      new Vector3( 0,1.8,1),    
-    headtop:      new Vector3( 0,1.8,1),  
+    headtop:      new Vector3( 0,2.5,0.1),  
       
     forehead:     new Vector3( 0.0,1.5,0.7 ), 
     eyeL:         new Vector3( 0.0,1.5,0.7 ),  
@@ -186,12 +186,13 @@ let sides = {
 }
 
 class LocationArmIK {
-    constructor( skeleton, shoulderIndex, ikSolver, chain ) {
+    constructor( skeleton, ikSolver, isLeftHand = false ) {
         this.skeleton = skeleton;
         this.ikSolver = ikSolver;
-        this.chainInfo = chain;
+        this.chainInfo = null;
+        this.mirror = !!isLeftHand;
 
-        this.idx = shoulderIndex;
+        this.idx = 0; // shoulder (back) index 
 
         // three bones: shoulder (back), actual shoulder, elbow
         this.defG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // default gesture
@@ -207,6 +208,13 @@ class LocationArmIK {
         this.end = 0;
         
         this.transition = false;
+
+        let bones = this.skeleton.bones;
+        let handName = ( this.mirror ) ? "Left" : "Right";
+        for( let i = 0; i < bones.length; ++i ){
+            if ( bones[i].name.includes( handName + "Shoulder") ){ this.idx = i; }
+        }
+        this.chainInfo = this.ikSolver.getChain( handName + "Arm" );
 
         // set default poses
         this.reset();
@@ -285,7 +293,7 @@ class LocationArmIK {
      * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      * shift: (optional) bool - make this the default position
      */
-    newGesture( bml, mirror = false, symmetry = false ) {
+    newGestureBML( bml, symmetry = false ) {
         // distance: touch vs far
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
 
@@ -294,7 +302,7 @@ class LocationArmIK {
         // for mirror - with left arm, to point right shoulder the "shoulderL" is needed, and then quaternions must be mirrored
         // for symmetry - the left and right must be swapped wanted
         // not only quaternions are mirrored. The left/right actions need to be swapped. All actions are from right arm's perspective
-        if ( (mirror ^ symmetry) && location ){ 
+        if ( (this.mirror ^ symmetry) && location ){ 
             if ( location[location.length-1] == "L" ){
                 location = location.slice(0, location.length-1) + "R";
             } 
@@ -317,7 +325,7 @@ class LocationArmIK {
 
         // same as in location
         let side = bml.side;
-        if ( (mirror ^ symmetry) && side ){ 
+        if ( (symmetry) && side ){ 
             if ( side && side[side.length-1] == "l" ){
                 side = side.slice(0, side.length-1) + "r";
             } 
@@ -335,6 +343,10 @@ class LocationArmIK {
 
             // target (reference)
             this.trgG[i].copy( near[i] );
+            // mirror target quaternion. (left arm cannot use right arms Quaternions as they are)
+            if ( this.mirror ){ 
+                mirrorQuatSelf( this.trgG[i] );
+            }
             
             // IK - copy nearTarget into bone quaternions
             this.skeleton.bones[ this.idx + i ].quaternion.copy( this.trgG[i] ); 
@@ -364,11 +376,6 @@ class LocationArmIK {
             // copy results into target
             this.trgG[i].copy( this.skeleton.bones[ this.idx + i ].quaternion );
             
-            // mirror target quaternion. (left arm cannot use right arms Quaternions as they are)
-            if ( mirror ){ 
-                mirrorQuatSelf( this.trgG[i] );
-            }
-
             // copy src (current quaternions) into bone quaternions
             this.skeleton.bones[ this.idx + i ].quaternion.copy( this.srcG[i] );
                         
@@ -393,41 +400,5 @@ class LocationArmIK {
 }
 
 
-class LocationArmManager {
-    constructor( skeleton, ikSolver ){
-        this.skeleton = skeleton;
-        let bones = this.skeleton.bones;
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes("RightShoulder") ){ this.rIdx = i; }
-            else if ( bones[i].name.includes("LeftShoulder") ){ this.lIdx = i; }
-        }
-
-        this.right = new LocationArmIK( skeleton, this.rIdx, ikSolver, ikSolver.getChain("RightArm"));
-        this.left = new LocationArmIK( skeleton, this.lIdx, ikSolver, ikSolver.getChain("LeftArm"));
-    }
-
-    reset(){
-        this.right.reset();
-        this.left.reset();
-    }
-
-    update( dt ){
-        this.right.update(dt);
-        this.left.update(dt);
-    }
-
-    newGestureBML( bml ) {
-        // arm to move
-        let handedness = E_HANDEDNESS.RIGHT; // default hand
-        if ( bml.hand == "left" ){ handedness = E_HANDEDNESS.LEFT; }
-        else if ( bml.hand == "both" ){ handedness = E_HANDEDNESS.BOTH; }
-
-        // actual gesture 
-        if ( handedness & E_HANDEDNESS.RIGHT ){ this.right.newGesture( bml, false, false ); }
-        if ( handedness & E_HANDEDNESS.LEFT ){ this.left.newGesture( bml, true, !!bml.sym ); }
-    }
-}
-
-
 let nearArmPosesTable = nearPoses;
-export { LocationArmIK, LocationArmManager, nearArmPosesTable };
+export { LocationArmIK, nearArmPosesTable };

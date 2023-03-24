@@ -1,13 +1,12 @@
 
-import { HandShapeRealizer } from "./HandShapeRealizer.js"
-import { LocationArm } from "./LocationArm.js";
-
+import { LocationArmIK } from "./LocationArmIK.js";
 import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
+import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
-import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
+
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
-import { LocationArmManager } from "./LocationArmIK.js";
+import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
 
 
 
@@ -27,55 +26,57 @@ class GestureManager{
         // ik for arm, shared among all modules
         this.ikSolver = new CCDIKSolver( this.skeleton );
         this.ikTarget = { position: new Vector3(0,0,0) }; // worldposition
-        this._ikCreateChain( "LeftHand", "LeftArm", "LeftArm" );
+        this._ikCreateChain( "LeftHand", "LeftArm", "LeftArm" ); // locationIK
         this._ikCreateChain( "RightHand", "RightArm", "RightArm" );
         this._ikCreateChain( "LeftHand", "LeftShoulder", "LeftShoulder" );
         this._ikCreateChain( "RightHand", "RightShoulder", "RightShoulder" );
         this.ikSolver.constraintsEnabler = false;
         this.ikSolver.setChainEnablerAll(false);
-        this.ikSolver.setIterations(1);
-        this.leftHandChain = this.ikSolver.getChain("LeftArm");
-        this.rightHandChain = this.ikSolver.getChain("RightArm");
-
+        this.ikSolver.setIterations(10);
         
         // -------------- All modules --------------
-        // Location Arm
-        this.locationArm = new LocationArmManager( this.skeleton, this.ikSolver );
-        // this.locationArm = new LocationArm( this.skeleton );
-        this.leftLocationMotions = [ new  DirectedMotion(), new CircularMotion() ];
-        this.rightLocationMotions = [ new DirectedMotion(), new CircularMotion() ];
         this.locationUpdateOffset = new Vector3(0,0,0);
-       
-        // Wrist 
-        this.extfidir = new Extfidir( this.skeleton );
-        this.palmor = new Palmor( this.skeleton );
-        this.leftWristMotion = new WristMotion( this.skeleton.getBoneByName( "mixamorig_LeftHand" ) );
-        this.rightWristMotion = new WristMotion( this.skeleton.getBoneByName( "mixamorig_RightHand" ) );
 
-        // Fingers
-        this.handShapeRealizer = new HandShapeRealizer( this.skeleton );
-        this.leftFingerplay = new FingerPlay();
-        this.rightFingerplay = new FingerPlay();
+        this.right = {
+            armChain : this.ikSolver.getChain( "RightArm" ),
+            loc : new LocationArmIK( this.skeleton, this.ikSolver, false ),
+            locMotions : [ new DirectedMotion(), new CircularMotion() ],
+            extfidir : new Extfidir( this.skeleton, false ),
+            palmor : new Palmor( this.skeleton, false ),
+            wristMotion : new WristMotion( this.skeleton.getBoneByName( "mixamorig_RightHand" ) ),
+            handshape : new HandShapeRealizer( this.skeleton, false ),
+            fingerplay : new FingerPlay()
+        }
+        this.left = {
+            armChain : this.ikSolver.getChain( "LeftArm" ),
+            loc : new LocationArmIK( this.skeleton, this.ikSolver, true ),
+            locMotions : [ new DirectedMotion(), new CircularMotion() ],
+            extfidir : new Extfidir( this.skeleton, true ),
+            palmor : new Palmor( this.skeleton, true ),
+            wristMotion : new WristMotion( this.skeleton.getBoneByName( "mixamorig_LeftHand" ) ),
+            handshape : new HandShapeRealizer( this.skeleton, true ),
+            fingerplay : new FingerPlay()
+        }
 
+        this.dominant = this.right;
+    }
+
+    _resetArm( arm ){
+        arm.loc.reset();
+        arm.locMotions[0].reset();
+        arm.locMotions[1].reset();
+        arm.extfidir.reset();
+        arm.palmor.reset();
+        arm.wristMotion.reset();
+        arm.handshape.reset();
+        arm.fingerplay.reset();
     }
 
     reset(){
-        this.locationArm.reset();
-        this.leftLocationMotions[0].reset();
-        this.leftLocationMotions[1].reset();
-        this.rightLocationMotions[0].reset();
-        this.rightLocationMotions[1].reset();
         this.locationUpdateOffset.set(0,0,0);
 
-        this.extfidir.reset();
-        this.palmor.reset();
-        this.leftWristMotion.reset();
-        this.rightWristMotion.reset();
-        
-        this.handShapeRealizer.reset();
-        this.leftFingerplay.reset();
-        this.rightFingerplay.reset();
-
+        this._resetArm( this.right );
+        this._resetArm( this.left );
 
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", side: 'o', sideDistance: 0.036, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", side: 'or', sideDistance: 0.05, shift:true } );
@@ -85,6 +86,11 @@ class GestureManager{
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o",  hand: "right", mode: "local", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", hand: "left", mode: "local", shift:true } );
 
+    }
+
+    setDominantHand( isRightHandDominant ){
+        if( isRightHandDominant ){ this.dominant = this.right; }
+        else{ this.dominant = this.left; }
     }
 
     _updateLocationMotions( dt, ikChain, motions ){
@@ -115,89 +121,80 @@ class GestureManager{
     
             // debug points position after ik
             // this.skeleton.bones[ ikChain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            // k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-            // k.position.copy(this.ikTarget.position);
-            // window.global.app.scene.add( k );
+            // let kk = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // kk.position.copy(this.ikTarget.position);
+            // window.global.app.scene.add( kk );
         }    
     }
 
-    update( dt ){
-        // overwrite arm posture.
-        this.locationArm.update( dt );
-        let r = this.locationArm.right;
-        let l = this.locationArm.left;
+    _updateArm( dt, arm ){
         let bones = this.skeleton.bones;
-        for( let i = 0; i < r.curG.length ; ++i ){
-            bones[ r.idx + i ].quaternion.copy( r.curG[i] );
-            bones[ l.idx + i ].quaternion.copy( l.curG[i] );
-        }
-        this._updateLocationMotions( dt, this.rightHandChain, this.rightLocationMotions );
-        this._updateLocationMotions( dt, this.leftHandChain, this.leftLocationMotions );
 
-        
+        // overwrite arm posture.
+        arm.loc.update( dt );
+         for( let i = 0; i < arm.loc.curG.length ; ++i ){ 
+            bones[ arm.loc.idx + i ].quaternion.copy( arm.loc.curG[i] );
+        }
+        this._updateLocationMotions( dt, arm.armChain, arm.locMotions );
+
+     
         // ADD twist to elbow (twist before swing scheme). Overwrite wrist rotation (put only twist)
-        this.palmor.update( dt );
-        r = this.palmor.right;
-        l = this.palmor.left;
-        bones[ r.idx ].quaternion.multiply( r.curG[0] ); // elbow
-        bones[ l.idx ].quaternion.multiply( l.curG[0] );
-        bones[ r.idx + 1 ].quaternion.copy( r.curG[1] ); // wrist
-        bones[ l.idx + 1 ].quaternion.copy( l.curG[1] );
+        arm.palmor.update( dt );
+        bones[ arm.palmor.idx ].quaternion.multiply( arm.palmor.curG[0] ); // elbow - add rotation
+        bones[ arm.palmor.idx + 1 ].quaternion.copy( arm.palmor.curG[1] ); // wrist - overwrite
 
         // extfidir - ADD only swing (twist before swing scheme)
-        this.extfidir.update(dt);
-        r = this.extfidir.right;
-        l = this.extfidir.left;
-        bones[ r.idx ].quaternion.premultiply( r.curG );
-        bones[ l.idx ].quaternion.premultiply( l.curG );
+        arm.extfidir.update(dt);
+        bones[ arm.extfidir.idx ].quaternion.premultiply( arm.extfidir.curG ); // wrist - add rotation
 
         // wristmotion. ADD rotation to wrist
-        this.leftWristMotion.update(dt);
-        this.rightWristMotion.update(dt);
+        arm.wristMotion.update(dt); // wrist - add rotation
 
 
         // overwrite finger rotations
-        this.handShapeRealizer.update( dt );
-        this.rightFingerplay.update(dt);
-        bones[37].quaternion.premultiply( this.rightFingerplay.pinky );
-        bones[41].quaternion.premultiply( this.rightFingerplay.ring );
-        bones[45].quaternion.premultiply( this.rightFingerplay.middle );
-        bones[49].quaternion.premultiply( this.rightFingerplay.index );
-        this.leftFingerplay.update(dt);
-        bones[29].quaternion.premultiply( this.leftFingerplay.pinky );
-        bones[25].quaternion.premultiply( this.leftFingerplay.ring );
-        bones[21].quaternion.premultiply( this.leftFingerplay.middle );
-        bones[17].quaternion.premultiply( this.leftFingerplay.index );
+        arm.handshape.update( dt );
+        arm.fingerplay.update(dt);
+        bones[ arm.handshape.idxs.pinky  ].quaternion.premultiply( arm.fingerplay.pinky );
+        bones[ arm.handshape.idxs.ring   ].quaternion.premultiply( arm.fingerplay.ring );
+        bones[ arm.handshape.idxs.middle ].quaternion.premultiply( arm.fingerplay.middle );
+        bones[ arm.handshape.idxs.index  ].quaternion.premultiply( arm.fingerplay.index );
+        
+    }
 
+    update( dt ){
+        this._updateArm( dt, this.right );
+        this._updateArm( dt, this.left );
+    }
+
+    _newGestureArm( bml, arm,  symmetry = false ){
+        if ( bml.locationArm ){
+            arm.loc.newGestureBML( bml, symmetry );
+        }
+        else if ( bml.motion ){
+            let m = null;
+            if ( bml.motion == "fingerplay"){ m = arm.fingerplay; }
+            else if ( bml.motion == "wrist"){ m = arm.wristMotion; }
+            else if ( bml.motion == "directed"){ m = arm.locMotions[0]; }
+            else if ( bml.motion == "circular"){ m = arm.locMotions[1]; }
+            
+            if( m ){ 
+                m.newGestureBML( bml, symmetry ); 
+            }
+        }
+        else if ( bml.palmor ){
+            arm.palmor.newGestureBML( bml, symmetry );
+        }
+        else if ( bml.extfidir ){
+            arm.extfidir.newGestureBML( bml, symmetry );
+        }
+        else if ( bml.handshape ){
+            arm.handshape.newGestureBML( bml, symmetry );
+        } 
     }
 
     newGesture( bml ){
-        if ( bml.locationArm ){
-            this.locationArm.newGestureBML( bml );
-        }
-        if ( bml.motion ){
-            // debug
-            // this.color = Math.floor( Math.random() * 0xffffff );
-
-            let left = null; let right = null;
-            if ( bml.motion == "fingerplay"){ left = this.leftFingerplay; right = this.rightFingerplay; }
-            else if ( bml.motion == "wrist"){ left = this.leftWristMotion; right = this.rightWristMotion; }
-            else if ( bml.motion == "directed"){ left = this.leftLocationMotions[0]; right = this.rightLocationMotions[0]; }
-            else if ( bml.motion == "circular"){ left = this.leftLocationMotions[1]; right = this.rightLocationMotions[1]; }
-         
-            if ( left && ( bml.hand == "left" || bml.hand == "both" ) ){ left.newGestureBML( bml ); }
-            if ( right && ( bml.hand != "left" ) ){ right.newGestureBML( bml ); }
-        }
-        if ( bml.palmor ){
-            this.palmor.newGestureBML( bml );
-        }
-        if ( bml.extfidir ){
-            this.extfidir.newGestureBML( bml );
-        }
-        if ( bml.handshape ){
-            this.handShapeRealizer.newGestureBML( bml );
-        }
-        
+        if ( ( bml.hand == "left" || bml.hand == "both" ) ){ this._newGestureArm( bml, this.left, !!bml.sym && ( this.dominant != this.left ) ); }
+        if ( ( bml.hand != "left" ) ){ this._newGestureArm( bml, this.right, !!bml.sym && ( this.dominant != this.right ) ); }        
     }
 
     _ikCreateChain( effectorName, rootName, chainName ) {
