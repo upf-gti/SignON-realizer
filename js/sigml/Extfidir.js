@@ -43,22 +43,30 @@ let EXTFIDIR_MODES = {
     1 : 1,
     ABSOLUTE : 1,
     absolute : 1,
+    A: 1,
+
     2 : 2,
     RELATIVE : 2,
     relative : 2,
+    R: 2,
+
     3 : 3,
     LOCAL : 3,
     local : 3,
-
+    L: 3,
 }
 
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
-    constructor( skeleton, isLeftHand = false ){
+    constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.mirror = !!isLeftHand;
 
-        this.idx = 0; // wrist index
+        let handName = ( isLeftHand ) ? "L" : "R";
+        let bones = this.skeleton.bones;
+        this.idx = boneMap[ handName + "Wrist" ]; // wrist index
+        this.twistAxis = ( new Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize();
+
         this.defmode = EXTFIDIR_MODES.LOCAL; // is default positioning absolute, relative or local 
         this.defPoint = new Vector3();
         this.trgPoint = new Vector3(); 
@@ -81,15 +89,6 @@ class Extfidir {
         this.tempQuat2 = new Quaternion(); // swing function 
         this.tempMat4 = new Matrix4(); // swing function 
         
-        this.twistAxis = new Vector3();
-
-        let bones = this.skeleton.bones;
-        let handName = ( this.mirror ) ? "Left" : "Right";
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes( handName + "ForeArm") ){ this.idx = i + 1; } // RightHand is also used by fingers. To avoid many ifs, just pick the next bone after the forearm 
-            else if( bones[i].name.includes( handName + "HandMiddle1") ){ this.twistAxis.copy( bones[ i ].position ).normalize(); }
-        }
-
         // DEBUG render rotation table as spheres
         // if ( !window.checks ){
         //     this.debugPoints = [];

@@ -186,13 +186,14 @@ let sides = {
 }
 
 class LocationArmIK {
-    constructor( skeleton, ikSolver, isLeftHand = false ) {
+    constructor( boneMap, skeleton, ikSolver, isLeftHand = false ) {
         this.skeleton = skeleton;
         this.ikSolver = ikSolver;
         this.chainInfo = null;
         this.mirror = !!isLeftHand;
 
-        this.idx = 0; // shoulder (back) index 
+        this.idx = ( isLeftHand ) ? boneMap[ "LShoulder" ] : boneMap[ "RShoulder" ]; // shoulder (back) index 
+        this.chainInfo = ( isLeftHand ) ? this.ikSolver.getChain( "LeftArm" ) : this.ikSolver.getChain( "RightArm" );
 
         // three bones: shoulder (back), actual shoulder, elbow
         this.defG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // default gesture
@@ -208,13 +209,6 @@ class LocationArmIK {
         this.end = 0;
         
         this.transition = false;
-
-        let bones = this.skeleton.bones;
-        let handName = ( this.mirror ) ? "Left" : "Right";
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes( handName + "Shoulder") ){ this.idx = i; }
-        }
-        this.chainInfo = this.ikSolver.getChain( handName + "Arm" );
 
         // set default poses
         this.reset();

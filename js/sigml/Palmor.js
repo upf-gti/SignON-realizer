@@ -19,10 +19,15 @@ let rotationTable = {
 
 // receives bml instructions and animates the hands
 class Palmor {
-    constructor( skeleton, isLeftHand = false ){
+    constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.mirror = !!isLeftHand;
-        this.idx = 0; // elbow (forearm) joint index. 
+        
+        let handName = ( isLeftHand ) ? "L" : "R";
+        let bones = this.skeleton.bones;
+        this.idx = boneMap[ handName + "Elbow" ]; // elbow (forearm) joint index. 
+        this.twistAxisForeArm = ( new Vector3() ).copy( bones[ boneMap[ handName + "Wrist"] ].position ).normalize();
+        this.twistAxisWrist =  ( new Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle"] ].position ).normalize();
 
                 
         // store TWIST quaternions for forearm and hand (visally better than just forearm or wrist)
@@ -39,26 +44,9 @@ class Palmor {
         this.transition = false;
         
 
-        this.twistAxisForeArm = new Vector3();
-        this.twistAxisWrist = new Vector3();
-
         this.tempQuat1 = new Quaternion();
         this.tempQuat2 = new Quaternion();
         
-
-        // get twist axes
-        let bones = this.skeleton.bones;
-        let handName = ( isLeftHand ) ? "Left" : "Right";
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes( handName + "ForeArm") ){ 
-                this.idx = i; 
-                this.twistAxisForeArm.copy( bones[ i + 1 ].position ).normalize();
-            }
-            else if ( bones[i].name.includes( handName + "HandMiddle1") ){ 
-                this.twistAxisWrist.copy( bones[ i ].position ).normalize();
-            }
-        }
-
         // set default pose
         this.reset();
     }

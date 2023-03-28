@@ -7,6 +7,7 @@ import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motio
 
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
 import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
+import { findIndexOfBone } from "./sigmlUtils.js";
 
 
 
@@ -16,15 +17,15 @@ class GestureManager{
         this.character = character;
 
         // get skeleton
-        this.skeleton = null;
+        let skeleton = this.skeleton = null;
         character.traverse( o => {
             if ( o.isSkinnedMesh ) {
-                this.skeleton = o.skeleton;
+                skeleton = this.skeleton = o.skeleton;
             }
         } );
 
         // ik for arm, shared among all modules
-        this.ikSolver = new CCDIKSolver( this.skeleton );
+        let ikSolver = this.ikSolver = new CCDIKSolver( this.skeleton );
         this.ikTarget = { position: new Vector3(0,0,0) }; // worldposition
         this._ikCreateChain( "LeftHand", "LeftArm", "LeftArm" ); // locationIK
         this._ikCreateChain( "RightHand", "RightArm", "RightArm" );
@@ -34,27 +35,50 @@ class GestureManager{
         this.ikSolver.setChainEnablerAll(false);
         this.ikSolver.setIterations(10);
         
+        // name to index map. If model changes, only this map (and ik) names need to be changed
+        let boneMap = this.boneMap ={
+            RShoulder:  findIndexOfBone( this.skeleton, "mixamorig_RightShoulder" ),  
+            RArm:       findIndexOfBone( this.skeleton, "mixamorig_RightArm" ),  
+            RElbow:     findIndexOfBone( this.skeleton, "mixamorig_RightForeArm" ),
+            RWrist:     findIndexOfBone( this.skeleton, "mixamorig_RightHand" ),
+            RHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_RightHandThumb1" ),
+            RHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_RightHandIndex1" ),
+            RHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_RightHandMiddle1" ),
+            RHandRing:      findIndexOfBone( this.skeleton, "mixamorig_RightHandRing1" ),
+            RHandPinky:     findIndexOfBone( this.skeleton, "mixamorig_RightHandPinky1" ),
+            LShoulder:  findIndexOfBone( this.skeleton, "mixamorig_LeftShoulder" ),
+            LArm:       findIndexOfBone( this.skeleton, "mixamorig_LeftArm" ),
+            LElbow:     findIndexOfBone( this.skeleton, "mixamorig_LeftForeArm" ),
+            LWrist:     findIndexOfBone( this.skeleton, "mixamorig_LeftHand" ),
+            LHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandThumb1" ),
+            LHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandIndex1" ),
+            LHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_LeftHandMiddle1" ),
+            LHandRing:      findIndexOfBone( this.skeleton, "mixamorig_LeftHandRing1" ),
+            LHandPinky:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandPinky1" ),
+        }
+
+
         // -------------- All modules --------------
         this.locationUpdateOffset = new Vector3(0,0,0);
 
         this.right = {
             armChain : this.ikSolver.getChain( "RightArm" ),
-            loc : new LocationArmIK( this.skeleton, this.ikSolver, false ),
+            loc : new LocationArmIK( boneMap, skeleton, ikSolver, false ),
             locMotions : [ new DirectedMotion(), new CircularMotion() ],
-            extfidir : new Extfidir( this.skeleton, false ),
-            palmor : new Palmor( this.skeleton, false ),
-            wristMotion : new WristMotion( this.skeleton.getBoneByName( "mixamorig_RightHand" ) ),
-            handshape : new HandShapeRealizer( this.skeleton, false ),
+            extfidir : new Extfidir( boneMap, skeleton, false ),
+            palmor : new Palmor( boneMap, skeleton, false ),
+            wristMotion : new WristMotion( skeleton.bones[ boneMap["RWrist"] ] ),
+            handshape : new HandShapeRealizer( boneMap, skeleton, false ),
             fingerplay : new FingerPlay()
         }
         this.left = {
             armChain : this.ikSolver.getChain( "LeftArm" ),
-            loc : new LocationArmIK( this.skeleton, this.ikSolver, true ),
+            loc : new LocationArmIK( boneMap, skeleton, ikSolver, true ),
             locMotions : [ new DirectedMotion(), new CircularMotion() ],
-            extfidir : new Extfidir( this.skeleton, true ),
-            palmor : new Palmor( this.skeleton, true ),
-            wristMotion : new WristMotion( this.skeleton.getBoneByName( "mixamorig_LeftHand" ) ),
-            handshape : new HandShapeRealizer( this.skeleton, true ),
+            extfidir : new Extfidir( boneMap, skeleton, true ),
+            palmor : new Palmor( boneMap, skeleton, true ),
+            wristMotion : new WristMotion( skeleton.bones[ boneMap["LWrist"] ] ),
+            handshape : new HandShapeRealizer( boneMap, skeleton, true ),
             fingerplay : new FingerPlay()
         }
 
@@ -135,7 +159,7 @@ class GestureManager{
          for( let i = 0; i < arm.loc.curG.length ; ++i ){ 
             bones[ arm.loc.idx + i ].quaternion.copy( arm.loc.curG[i] );
         }
-        this._updateLocationMotions( dt, arm.armChain, arm.locMotions );
+        this._updateLocationMotions( dt, arm.armChain, arm.locMotions ); // IK
 
      
         // ADD twist to elbow (twist before swing scheme). Overwrite wrist rotation (put only twist)
@@ -153,7 +177,7 @@ class GestureManager{
 
         // overwrite finger rotations
         arm.handshape.update( dt );
-        arm.fingerplay.update(dt);
+        arm.fingerplay.update(dt); // add finger rotations
         bones[ arm.handshape.idxs.pinky  ].quaternion.premultiply( arm.fingerplay.pinky );
         bones[ arm.handshape.idxs.ring   ].quaternion.premultiply( arm.fingerplay.ring );
         bones[ arm.handshape.idxs.middle ].quaternion.premultiply( arm.fingerplay.middle );

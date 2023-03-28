@@ -78,10 +78,19 @@ thumbShapes = shapesToQuaternions( thumbShapes );
 
 
 class HandShapeRealizer {
-    constructor( skeleton, isLeftHand = false ){
+    constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.mirror = !!isLeftHand;
-        this.idxs = { wrist: 0, thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 }; // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger).
+
+        let handName = ( this.mirror ) ? "L" : "R";
+        this.idxs = { // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
+            wrist:  boneMap[ handName + "Wrist" ], 
+            thumb:  boneMap[ handName + "HandThumb" ], 
+            index:  boneMap[ handName + "HandIndex" ],
+            middle: boneMap[ handName + "HandMiddle" ], 
+            ring:   boneMap[ handName + "HandRing" ], 
+            pinky:  boneMap[ handName + "HandPinky" ] 
+        };
         
         this.defG = this._createGestureObject();
         this.srcG = this._createGestureObject();
@@ -93,17 +102,6 @@ class HandShapeRealizer {
         this.relax = 0; 
         this.end = 0;
         
-        let bones = this.skeleton.bones;
-        let handName = ( this.mirror ) ? "Left" : "Right";
-        for( let i = 0; i < bones.length; ++i ){
-            if ( bones[i].name.includes( handName + "HandThumb1" ) )      { this.idxs.thumb = i; }
-            else if ( bones[i].name.includes( handName + "HandIndex1" ) ) { this.idxs.index = i; }
-            else if ( bones[i].name.includes( handName + "HandMiddle1" ) ){ this.idxs.middle = i; }
-            else if ( bones[i].name.includes( handName + "HandRing1" ) )  { this.idxs.ring = i; }
-            else if ( bones[i].name.includes( handName + "HandPinky1" ) ) { this.idxs.pinky = i; }
-            else if ( bones[i].name.includes( handName + "Hand" ) )       { this.idxs.wrist = i; }
-        }
-
         this.reset();
     }
 

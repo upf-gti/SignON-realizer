@@ -65,4 +65,17 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     outSwing.normalize();
 }
 
-export { quadraticBezierVec3, cubicBezierVec3, mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats }
+
+
+// Skeleton
+
+// O(n)
+function findIndexOfBone( skeleton, name ){
+    let b = skeleton.bones;
+    for( let i = 0; i < b.length; ++i ){
+        if ( b[i].name == name ){ return i; }
+    }
+    return -1;
+}
+
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats,  findIndexOfBone }
