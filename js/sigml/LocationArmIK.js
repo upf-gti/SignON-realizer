@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { Quaternion, Vector3 } from 'three';
-import { mirrorQuatSelf } from './sigmlUtils.js';
-
-let E_HANDEDNESS = { RIGHT: 1, LEFT: 2, BOTH: 3 };
+import { directionStringSymmetry, mirrorQuatSelf } from './sigmlUtils.js';
 
 // Description of sigml points supported. Commented are the original tags (from ngt sigml file specification). The uncommented are our proposal (which tries to simplify and combine the "sides" tag)
 let testPoints = { 
@@ -283,20 +281,17 @@ class LocationArmIK {
      * distance: (optional) [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
      * side: (optional) string from sides table. Location will offset into that direction
      * sideDistance: (optional) [0,1] how far to move the indicate side. 0 = no offset, 1 = full offset 
-     * hand: (optional) "right", "left", "both". Default right
-     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
-     * shift: (optional) bool - make this the default position
      */
-    newGestureBML( bml, symmetry = false ) {
+    newGestureBML( bml, symmetry = 0x00 ) {
         // distance: touch vs far
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
 
         let location = bml.locationArm;
 
         // for mirror - with left arm, to point right shoulder the "shoulderL" is needed, and then quaternions must be mirrored
-        // for symmetry - the left and right must be swapped wanted
-        // not only quaternions are mirrored. The left/right actions need to be swapped. All actions are from right arm's perspective
-        if ( (this.mirror ^ symmetry) && location ){ 
+        // for symmetry - the left and right must be swapped
+        // not only quaternions are mirrored. The left/right actions need to be swapped. All actions in table are from right arm's perspective
+        if ( (this.mirror ^ ( symmetry & 0x01 ) ) && location ){ 
             if ( location[location.length-1] == "L" ){
                 location = location.slice(0, location.length-1) + "R";
             } 
@@ -307,7 +302,6 @@ class LocationArmIK {
                 let val = 6 - parseInt( location[location.length-1] );
                 location = location.slice(0, location.length-1) + val.toFixed(0);
             }
-
         }
         
         let near = nearPoses[ location ];
@@ -319,14 +313,7 @@ class LocationArmIK {
 
         // same as in location
         let side = bml.side;
-        if ( (symmetry) && side ){ 
-            if ( side && side[side.length-1] == "l" ){
-                side = side.slice(0, side.length-1) + "r";
-            } 
-            else if( side && side[side.length-1] == "r" ){
-                side = side.slice(0, side.length-1) + "l";
-            }
-        }
+        if ( side && symmetry ){ side = directionStringSymmetry( side, symmetry ); }
         side = sides[ side ];
 
 

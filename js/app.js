@@ -509,7 +509,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", sym:true, motion: "directed", direction: "u", curve: "l" },//, zigzag:"i", zigzagSpeed:1.33, zigzagSize:0.05 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 3, end: 4, hand: "both", lrSym:true, motion: "directed", direction: "u", curve: "l" },//, zigzag:"i", zigzagSpeed:1.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -518,7 +518,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 2, relax: 2, end: 4, hand: "both", sym: true, motion: "circular", direction: "u", startAngle: 0, endAngle: 470}, //zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
+                        { type: "gesture", start: 0, attackPeak: 2, relax: 2, end: 4, hand: "both", lrSym: true, motion: "circular", direction: "u", startAngle: 0, endAngle: 470}, //zigzag:"u", zigzagSpeed:3.33, zigzagSize:0.05 }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -604,7 +604,7 @@ class App {
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "dr", hand: "right" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "d", hand: "left" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
-                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 1, end: end + 2, motion: "directed", direction:"l", hand: "both", sym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 1, end: end + 2, motion: "directed", direction:"l", hand: "both", lrSym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -652,7 +652,7 @@ class App {
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "dr", hand: "right" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "d", hand: "left" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
-                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 0.5, end: end + 1.5, motion: "directed", direction:"l", hand: "both", sym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 0.5, end: end + 1.5, motion: "directed", direction:"l", hand: "both", lrSym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
 
                     ]
                 };
@@ -667,7 +667,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("tweeentwintig") + ".", sentT: sign, sentInt: 0.5 },
+                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("tweeentwintig") + ".", sentT: sign, sentInt: 0.25 },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, handshape: "finger23spread", thumbshape: "across", hand: "right",  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, extfidir: "u", hand: "right" },
@@ -690,12 +690,12 @@ class App {
                     data: [
                         { type: "speech", start: start, end: 100000, text: that.wordsToArpa("bos") + ".", sentT: sign, sentInt: 0.5 },
 
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", sym: true, distance: 0.25, side: 'r', sideDistance: 0.08 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.25, side: 'r', sideDistance: 0.08 },
 
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "o", hand: "both" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "both", sym: true },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "both", lrSym: true },
                     
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'r', distance: 0.05, hand: "right", zigzag: 'u', zigzagSize: 0.1 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'l', distance: 0.05, hand: "left", zigzag: 'd', zigzagSize: 0.1 },
@@ -714,15 +714,14 @@ class App {
                     data: [
                         { type: "speech", start: start, end: 100000, text: that.wordsToArpa("aarde") + ".", sentT: sign, sentInt: 0.5 },
 
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", sym: true, distance: 0.2, side: 'r', sideDistance: 0.08 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.2, side: 'r', sideDistance: 0.08 },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "uo", hand: "both" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", sym: true },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
                     
-                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'r', distance: 0.05, hand: "right"},
-                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'l', distance: 0.05, hand: "left" },
+                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "right"},
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign*0.2, relax: end - relax, end: end, motion: "fingerplay", hand: 'both', speed: 5, intensity: 0.7 },
                     ]
                 };
@@ -732,7 +731,7 @@ class App {
             automatische(){
                 let start = 0.0;
                 let sign = 3.0; // sign duration
-                let relax = 100.5; // relax duration
+                let relax = 0.5; // relax duration
                 let end = start + sign + relax;
                 that.msg = {
                     type: "behaviours",
@@ -867,7 +866,7 @@ class App {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
-        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.enabled = false;
         document.body.appendChild( this.renderer.domElement );
 
         // camera
@@ -1059,7 +1058,8 @@ class App {
 
     animate() {
 
-        requestAnimationFrame( this.animate.bind(this) );
+        window.setTimeout( this.animate.bind(this), 32 );
+        //requestAnimationFrame( this.animate.bind(this) );
 
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();
@@ -1073,6 +1073,9 @@ class App {
         this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
 
         this.renderer.render( this.scene, this.camera );
+
+
+
     }
     
     onWindowResize() {

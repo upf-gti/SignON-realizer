@@ -226,8 +226,6 @@ class HandShapeRealizer {
      * start, attackPeak, relax, end
      * handshape: string from the handshape tables
      * thumbshape: (optional) string from thumbshape table. 
-     * hand: (optional) "right", "left", "both". Default right
-     * shift: (optional) bool - make this the default position
      */
     newGestureBML( bml ){
         let newG = {};

@@ -37,19 +37,19 @@ class GestureManager{
         
         // name to index map. If model changes, only this map (and ik) names need to be changed
         let boneMap = this.boneMap ={
-            RShoulder:  findIndexOfBone( this.skeleton, "mixamorig_RightShoulder" ),  
-            RArm:       findIndexOfBone( this.skeleton, "mixamorig_RightArm" ),  
-            RElbow:     findIndexOfBone( this.skeleton, "mixamorig_RightForeArm" ),
-            RWrist:     findIndexOfBone( this.skeleton, "mixamorig_RightHand" ),
+            RShoulder:      findIndexOfBone( this.skeleton, "mixamorig_RightShoulder" ),  
+            RArm:           findIndexOfBone( this.skeleton, "mixamorig_RightArm" ),  
+            RElbow:         findIndexOfBone( this.skeleton, "mixamorig_RightForeArm" ),
+            RWrist:         findIndexOfBone( this.skeleton, "mixamorig_RightHand" ),
             RHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_RightHandThumb1" ),
             RHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_RightHandIndex1" ),
             RHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_RightHandMiddle1" ),
             RHandRing:      findIndexOfBone( this.skeleton, "mixamorig_RightHandRing1" ),
             RHandPinky:     findIndexOfBone( this.skeleton, "mixamorig_RightHandPinky1" ),
-            LShoulder:  findIndexOfBone( this.skeleton, "mixamorig_LeftShoulder" ),
-            LArm:       findIndexOfBone( this.skeleton, "mixamorig_LeftArm" ),
-            LElbow:     findIndexOfBone( this.skeleton, "mixamorig_LeftForeArm" ),
-            LWrist:     findIndexOfBone( this.skeleton, "mixamorig_LeftHand" ),
+            LShoulder:      findIndexOfBone( this.skeleton, "mixamorig_LeftShoulder" ),
+            LArm:           findIndexOfBone( this.skeleton, "mixamorig_LeftArm" ),
+            LElbow:         findIndexOfBone( this.skeleton, "mixamorig_LeftForeArm" ),
+            LWrist:         findIndexOfBone( this.skeleton, "mixamorig_LeftHand" ),
             LHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandThumb1" ),
             LHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandIndex1" ),
             LHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_LeftHandMiddle1" ),
@@ -102,13 +102,13 @@ class GestureManager{
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", side: 'o', sideDistance: 0.036, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left", side: 'or', sideDistance: 0.05, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.06, side: "dl", sideDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left",  distance: 0.04, side: "r", sideDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "d", hand: "right", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o",  hand: "right", mode: "local", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", hand: "left", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "right", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "left", mode: "local", shift:true } );
 
     }
 
@@ -190,7 +190,7 @@ class GestureManager{
         this._updateArm( dt, this.left );
     }
 
-    _newGestureArm( bml, arm,  symmetry = false ){
+    _newGestureArm( bml, arm, symmetry = 0x00 ){
         if ( bml.locationArm ){
             arm.loc.newGestureBML( bml, symmetry );
         }
@@ -216,9 +216,25 @@ class GestureManager{
         } 
     }
 
+    /**
+    * lrSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
+    * udSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
+    * ioSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
+    * hand: (optional) "right", "left", "both". Default right
+    * shift: (optional) bool - make this the default position. Motions not affected
+    */
     newGesture( bml ){
-        if ( ( bml.hand == "left" || bml.hand == "both" ) ){ this._newGestureArm( bml, this.left, !!bml.sym && ( this.dominant != this.left ) ); }
-        if ( ( bml.hand != "left" ) ){ this._newGestureArm( bml, this.right, !!bml.sym && ( this.dominant != this.right ) ); }        
+        // symmetry: bit0 = lr, bit1 = ud, bit2 = io
+        let symmetryFlags = ( !!bml.lrSym );
+        symmetryFlags |= ( ( !!bml.udSym ) << 1 );
+        symmetryFlags |= ( ( !!bml.ioSym ) << 2 );
+
+        if ( ( bml.hand == "left" || bml.hand == "both" ) ){ 
+            this._newGestureArm( bml, this.left, ( this.dominant != this.left ) ? symmetryFlags : 0x00 ); 
+        }
+        if ( ( bml.hand != "left" ) ){ 
+            this._newGestureArm( bml, this.right, ( this.dominant != this.right ) ? symmetryFlags : 0x00 ); 
+        }        
     }
 
     _ikCreateChain( effectorName, rootName, chainName ) {

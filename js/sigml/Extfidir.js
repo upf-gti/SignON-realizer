@@ -1,11 +1,6 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
 import * as THREE from "three";
-import { mirrorQuat, nlerpQuats, twistSwingQuats } from "./sigmlUtils.js";
-
-let E_HANDEDNESS = { RIGHT: 1, LEFT: 2, BOTH: 3 };
-
-let DEG2RAD = Math.PI / 180;
-
+import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./sigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let rotationTable = {
@@ -216,9 +211,6 @@ class Extfidir {
      * extfidir: string from rotationTable
      * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
      * mode: (optional) number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
-     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
-     * hand: (optional) "right", "left", "both". Default right
-     * shift: (optional) bool - make this the default position
      */
     newGestureBML( bml, symmetry = false ){
         if( !bml.extfidir ){ return; }
@@ -226,14 +218,8 @@ class Extfidir {
         let extfidir = bml.extfidir;
         let secondExtfidir = bml.secondExtfidir;
 
-        if ( extfidir && symmetry ){
-            if ( extfidir[ extfidir.length - 1 ] == "r" ){ extfidir = extfidir.slice( 0, extfidir.length - 1 ) + "l"; }
-            else if ( extfidir[ extfidir.length - 1 ] == "l" ){ extfidir = extfidir.slice( 0, extfidir.length - 1 ) + "r"; }
-        }
-        if ( secondExtfidir && symmetry ){
-            if ( secondExtfidir[ secondExtfidir.length - 1 ] == "r" ){ secondExtfidir = secondExtfidir.slice( 0, secondExtfidir.length - 1 ) + "l"; }
-            else if ( secondExtfidir[ secondExtfidir.length - 1 ] == "l" ){ secondExtfidir = secondExtfidir.slice( 0, secondExtfidir.length - 1 ) + "r"; }
-        }
+        if ( extfidir && symmetry ){ extfidir = directionStringSymmetry( extfidir, symmetry ); }
+        if ( secondExtfidir && symmetry ){ secondExtfidir = directionStringSymmetry( secondExtfidir, symmetry ); }
 
         let point = rotationTable[ extfidir ];
         if( !point ){ 

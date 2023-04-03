@@ -65,6 +65,27 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     outSwing.normalize();
 }
 
+// symmetry string
+function directionStringSymmetry( str, flags ){
+    let result = str;
+
+    if ( flags & 0x01 ){ // left-right symmetry
+        if ( result.includes( "l" ) ){ result = result.replace( "l", "r" ); } 
+        else if( result.includes( "r" ) ){ result =result.replace( "r", "l" ); }
+    }
+
+    if ( flags & 0x02 ){ // up-down symmetry
+        if ( result.includes( "u" ) ){ result = result.replace( "u", "d" ); } 
+        else if( result.includes( "d" ) ){ result =result.replace( "d", "u" ); }
+    }
+
+    if ( flags & 0x04 ){ // in-out symmetry
+        if ( result.includes( "i" ) ){ result = result.replace( "i", "o" ); } 
+        else if( result.includes( "o" ) ){ result =result.replace( "o", "i" ); }
+    }
+
+    return result;
+}
 
 
 // Skeleton
@@ -78,4 +99,4 @@ function findIndexOfBone( skeleton, name ){
     return -1;
 }
 
-export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats,  findIndexOfBone }
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats,  directionStringSymmetry,  findIndexOfBone }

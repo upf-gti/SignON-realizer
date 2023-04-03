@@ -1,5 +1,5 @@
 import { Quaternion, Vector3 } from "three";
-import { cubicBezierVec3, nlerpQuats } from "./sigmlUtils.js";
+import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUtils.js";
 
 let directionTable = {
     'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
@@ -121,8 +121,6 @@ class DirectedMotion {
      * zigzag: (optional) string from directionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
-     * hand: (optional) "right", "left", "both". Default right
-     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      */
     newGestureBML( bml, symmetry ){
         let tempV = new Vector3(0,0,0);
@@ -140,10 +138,7 @@ class DirectedMotion {
         
         // fetch curve direction and adjust steepness if not present
         let curveDir = bml.curve;
-        if ( curveDir && symmetry ){
-            if ( curveDir[ curveDir.length - 1 ] == "r" ){ curveDir = curveDir.slice( 0, curveDir.length - 1 ) + "l"; }
-            else if ( curveDir[ curveDir.length - 1 ] == "l" ){ curveDir = curveDir.slice( 0, curveDir.length - 1 ) + "r"; }
-        }
+        if ( curveDir && symmetry ){ curveDir = directionStringSymmetry( curveDir, symmetry ); }
         curveDir = curveDirectionTable[ curveDir ];
         if ( !curveDir ){ this.steepness = 0; }
 
@@ -166,10 +161,7 @@ class DirectedMotion {
 
         // fetch direction
         let direction = bml.direction;
-        if ( direction && symmetry ){
-            if ( direction[ direction.length - 1 ] == "r" ){ direction = direction.slice( 0, direction.length - 1 ) + "l"; }
-            else if ( direction[ direction.length - 1 ] == "l" ){ direction = direction.slice( 0, direction.length - 1 ) + "r"; }
-        }
+        if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
         direction = directionTable[ direction ];
         if ( !direction ){ 
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
@@ -310,8 +302,6 @@ class CircularMotion {
      * zigzag: (optional) string from directionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
-     * hand: (optional) "right", "left", "both". Default right  
-     * sym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
      */
     newGestureBML( bml, symmetry ){
         // debug
@@ -329,10 +319,7 @@ class CircularMotion {
         
         // axis
         let direction = bml.direction;
-        if ( direction && symmetry ){
-            if ( direction[ direction.length - 1 ] == "r" ){ direction = direction.slice( 0, direction.length - 1 ) + "l"; }
-            else if ( direction[ direction.length - 1 ] == "l" ){ direction = direction.slice( 0, direction.length - 1 ) + "r"; }
-        }
+        if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
         direction = directionTable[ direction ];
         if ( !direction ) {
             direction = directionTable['o'];
@@ -405,6 +392,8 @@ class FingerPlay {
         this.middle = new Quaternion(0,0,0,1);
         this.ring = new Quaternion(0,0,0,1);
         this.pinky = new Quaternion(0,0,0,1);
+
+        this.fingerEnabler = 0x00; // flags. bit0 = thumb, bit1 = index, bit2 = middle, bit3 = ring, bit4 = pinky
         
         this.transition = false;
         this.time = 0;
@@ -443,14 +432,22 @@ class FingerPlay {
 
         // 2 t: entry T, interpolation t 
         // interpolatino -- cos(t + X) where is different for each finger
-        this.index.identity();
-        nlerpQuats( this.index, this.index, fingerPlayTable.index,    ( Math.cos( Math.PI * 2 * this.speed * this.time ) * 0.5 + 0.5 ) * intensity );
-        this.middle.identity();
-        nlerpQuats( this.middle, this.middle, fingerPlayTable.middle, ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) * 0.5 + 0.5 ) * intensity * 0.9);
-        this.ring.identity();
-        nlerpQuats( this.ring, this.ring, fingerPlayTable.ring,       ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) * 0.5 + 0.5 ) * intensity * 0.7 );
-        this.pinky.identity();
-        nlerpQuats( this.pinky, this.pinky, fingerPlayTable.pinky,    ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) * 0.5 + 0.5 ) * intensity * 0.5 );
+        if ( this.fingerEnabler & 0x02 ) { 
+            this.index.identity();
+            nlerpQuats( this.index, this.index, fingerPlayTable.index,    ( Math.cos( Math.PI * 2 * this.speed * this.time ) * 0.5 + 0.5 ) * intensity );
+        }
+        if ( this.fingerEnabler & 0x04 ) { 
+            this.middle.identity();
+            nlerpQuats( this.middle, this.middle, fingerPlayTable.middle, ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) * 0.5 + 0.5 ) * intensity * 0.9);
+        }
+        if ( this.fingerEnabler & 0x08 ) { 
+            this.ring.identity();
+            nlerpQuats( this.ring, this.ring, fingerPlayTable.ring,       ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) * 0.5 + 0.5 ) * intensity * 0.7 );
+        }
+        if ( this.fingerEnabler & 0x10 ) { 
+            this.pinky.identity();
+            nlerpQuats( this.pinky, this.pinky, fingerPlayTable.pinky,    ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) * 0.5 + 0.5 ) * intensity * 0.5 );
+        }
     }
 
      /**
@@ -458,6 +455,7 @@ class FingerPlay {
      * start, attackPeak, relax, end
      * speed = (optional) oscillations per second. Default 3
      * intensity = (optional) [0,1]. Default 0.3
+     * fingers = (optional) string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled
      */
     newGestureBML( bml ){
         this.time = 0;
@@ -472,6 +470,18 @@ class FingerPlay {
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
 
         this.transition = true;
+
+        this.fingerEnabler = 0x1f;
+        if ( typeof( bml.fingers ) == 'string' ){
+            // enable only the specified fingers (bits)
+            this.fingerEnabler = 0x00; 
+            for( let i = 0; i < bml.fingers.length; ++i ){
+                let val = parseInt( bml.fingers[i] );
+                if ( !isNaN( val ) ){ this.fingerEnabler |= 0x01 << val; }
+            }
+            this.fingerEnabler &= 0x1f; // mask unused bits
+        }
+
     }
 
 };
@@ -547,10 +557,10 @@ class WristMotion {
      * bml info
      * start, attackPeak, relax, end
      * mode = either a: 
-     *          - string from [ "nod", "swing", "twist", "spinCW", "spinCCW", "all" ]
+     *          - string from [ "nod", "swing", "twist", "stirCW", "stirCCW", "all" ]
      *          - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
-     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = spinCW
-     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = spinCW
+     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
+     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
      * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
      * intensity = (optional) [0,1]. Default 0.3
      */
@@ -571,8 +581,8 @@ class WristMotion {
                 case "nod": this.mode = 0x02; break;
                 case "swing": this.mode = 0x04; break;
                 case "twist": this.mode = 0x01; break;
-                case "spinCW": this.mode = 0x06; break; // 0x02 | 0x04
-                case "spinCCW": this.mode = 0x06; this.speed *= -1; break;
+                case "stirCW": this.mode = 0x06; break; // 0x02 | 0x04
+                case "stirCCW": this.mode = 0x06; this.speed *= -1; break;
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
