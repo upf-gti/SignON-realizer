@@ -153,6 +153,7 @@ class HandShapeRealizer {
         this.update( 1 ); // force position reset
     }
        
+    // must always update bones. (this.transition would be useless)
     update( dt ) {
         
         if ( this.time > this.end ){ // no transition needed

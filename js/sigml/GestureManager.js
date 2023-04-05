@@ -229,6 +229,10 @@ class GestureManager{
         symmetryFlags |= ( ( !!bml.udSym ) << 1 );
         symmetryFlags |= ( ( !!bml.ioSym ) << 2 );
 
+        if ( bml.dominant ){
+            this.setDominantHand( bml.dominant == "right" );
+        }
+
         if ( ( bml.hand == "left" || bml.hand == "both" ) ){ 
             this._newGestureArm( bml, this.left, ( this.dominant != this.left ) ? symmetryFlags : 0x00 ); 
         }

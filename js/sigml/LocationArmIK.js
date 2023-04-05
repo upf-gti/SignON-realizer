@@ -280,7 +280,7 @@ class LocationArmIK {
      * locationArm: string from nearPoses
      * distance: (optional) [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
      * side: (optional) string from sides table. Location will offset into that direction
-     * sideDistance: (optional) [0,1] how far to move the indicate side. 0 = no offset, 1 = full offset 
+     * sideDistance: (optional) how far to move the indicate side. Metres
      */
     newGestureBML( bml, symmetry = 0x00 ) {
         // distance: touch vs far
@@ -371,11 +371,11 @@ class LocationArmIK {
         }
 
         // check and set timings
-        this.time = 0;
         this.start = bml.start || 0;
         this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
         this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
         this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.time = 0;
         this.transition = true;
     }   
 }

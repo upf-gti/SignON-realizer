@@ -191,9 +191,9 @@ FacialController.prototype.update = function (dt) {
     // Update facial expression
     this.faceUpdate(dt);
 
-    /*
+    
     // Gaze
-    if (this.gazeManager){
+    /*if (this.gazeManager){
         let weights = this.gazeManager.update(dt);
         let keys = Object.keys(this._facialBS);
         
@@ -208,7 +208,7 @@ FacialController.prototype.update = function (dt) {
                 this._facialBS[keys[i]][this._squintBS[i][j]] = weights.squint;
             }
         }
-    }
+    }*/
 
     let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
     let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
@@ -231,7 +231,7 @@ FacialController.prototype.update = function (dt) {
         head.update(dt);
         headQuat.multiply( head.currentStrokeQuat );
     }
-    */
+    
 }
 
 // Update facial expressions

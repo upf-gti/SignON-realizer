@@ -1,4 +1,4 @@
-# Non Manual Features (NMF) BML Instructions
+# BML Instructions
 Data sent to processMsg
 
 ``` javascript
@@ -28,23 +28,23 @@ Example of objects inside the  "data" array
     lexeme: "NMF_ARCH"
 }
 ```
+The attribute ```shift``` indicates whether the action should be interpreted as the default pose to which return.
 
----
+<br>
+
+# Non Manual Features (NMF) 
 
 ## Eye Lookat
 ``` javascript
-type: "gaze" 
-type: "gazeShift" // shift automatically set to true
-
 {
-    type: "gaze",
+    type: "gaze" || "gazeShift", // shift automatically set to true
     start: 0.1,
     ready: 0.2,
     relax: 0.3,
     end: 0.4,
 
-    influence: "NECK" || "HEAD" || "EYES"
-    offsetDirection: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN"
+    influence: "NECK" || "HEAD" || "EYES",
+    offsetDirection: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN",
 
     shift: false // optional
 }
@@ -54,10 +54,8 @@ type: "gazeShift" // shift automatically set to true
 
 ## Head NOD / SHAKE / TILT
 ``` javascript
-type: "head"
-
 {
-    type: "head"
+    type: "head",
 	start: 0.1,
 	ready: 0.2,         // gets to position to initiate head stroke
 	strokeStart: 0.3,   //optional, if not present, automatically set to ready
@@ -68,7 +66,7 @@ type: "head"
     amount: 1,  
 	repetition: 3,       //amount of times to REPEAT stroke repetition cancels stroke attribute. Default 0 (meaning only moves once)
 
-    lexeme: "NOD" || "SHAKE" || "TILT"
+    lexeme: "NOD" || "SHAKE" || "TILT",
 }
 ```
 
@@ -76,15 +74,16 @@ type: "head"
 
 ## Speech
 ``` javascript
-type: "speech"
-
 {
     type: "speech",
-    text: ["ApakAlIptIkAl"], // "apocalyptical " arpabet 1-letter consonats and vowels plus "." and " "
+    start: 0,
+    text: "ApakAlIptIkAl", // "apocalyptical " arpabet 1-letter consonats and vowels plus "." and " "
+
+    // optionals
     phT: [0.1,0.2,0.3,...], // duration (seconds) of each phoneme. Overrides sentT.  
     sentT: 2.3,  //duration (seconds) of whole sentence. Overrides speed. Delay not included.  
     speed: 1/10, //phonemes per second of the whole string. Overrides default speed. 
-    phInt: [0.8,0.9,1,...] // intensity of each phoneme. Overrides sentInt.
+    phInt: [0.8,0.9,1,...], // intensity of each phoneme. Overrides sentInt.
     sentInt: 1,
 }
 ```
@@ -93,22 +92,20 @@ type: "speech"
 
 ## Face Emotion
 ``` javascript
-type: "faceEmotion"
-type: "faceVA"
-
 {
-    type: "faceEmotion"
+    type: "faceEmotion" || "faceVA", 
     start: 0.1,
     attackPeak: 0.2, // reaches target/amount
     relax: 0.3,  // starts undoing blink
     end: 0.4, 
-    amount: 1,
 
-    // choose one
-	valaro: [ 0.8, 0.6 ] // [ valence, arousal ] 
+    // choose one: either "valaro" or "emotion"
+    valaro: [ 0.8, 0.6 ], // [ valence, arousal ] 
     emotion: "ANGER" || "HAPPINESS" || "SADNESS" || "SURPRISE" || "FEAR" || "DISGUST" || "CONTEMPT",
 
-    shift: false // optional
+    // optionals
+    amount: 1,
+    shift: false,
 }
 ```
 
@@ -116,24 +113,19 @@ type: "faceVA"
 
 ## Face Lexeme
 ``` javascript
-type: "face"
-type: "faceShift" // shift automatically set to true
-type: "faceLexeme" 
-type: "faceFACS"  // shift automatically set to false
-
 {
-    type: "faceLexeme",
+    type: "face" || "faceLexeme" || "faceFACS" || "faceShift", // faceShift = shift automatically set to true
     start: 0.1,
     attackPeak: 0.2, 
     relax: 0.3,  
-    end: 0.4 
-    amount: 1
+    end: 0.4, 
 
-    // choose one ( they are the same )
+    // choose one, either "lexeme" or "au" ( they are synonyms )
 	lexeme: string  ||   { lexeme: "RAISE_BROWS", amount: 0.1 }   ||   [{...}, {...}, ...],
     au: string  ||   { au: "RAISE_BROWS", amount: 0.1 }   ||   [{...}, {...}, ...],
 
-    shift: false // optional
+    // optionals
+    amount: 1,
 }
 
 ```
@@ -203,3 +195,267 @@ DIMPLER_RIGHT
 JAW_DROP                   
 MOUTH_STRETCH
 </details>
+
+
+<br>
+
+<br>
+
+# Manual Features (MF)
+
+```
+8 directions
+u=up, d=down, l=left, r=right, i=in, o=out, 
+u,ul,l,dl,d,dr,r,ur, 
+```
+```
+26 directions
+u=up, d=down, l=left, r=right, i=in, o=out, 
+u,ul,l,dl,d,dr,r,ur, 
+uo,uol,ol,dol,do,dor,or,uor,o,
+ui,uil,il,dil,di,dir,ir,uir,i,
+```
+
+All gestures share some optional attributes 
+``` javascript
+{
+    hand: "right" || "left" || "both", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "right"
+    dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right".
+    lrSym: true,  // bool, only applied to the non-dominant hand
+    udSym: false, // bool, only applied to the non-dominant hand
+    ioSym: false, // bool, only applied to the non-dominant hand
+}
+```
+
+## Arm Location
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    locationArm: "chest", // string
+   
+    // optionals
+    distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
+    side: "l", // string, 26 directions. Location will be offseted into that direction
+    sideDistance: 0.05, // number how far to move to the indicated side. Metres 
+    shift: false
+}
+
+```
+<details>
+<summary>Click to view the complete list of available locations</summary>
+
+neutral               
+headtop               
+forehead               
+eyeL               
+eyeR               
+nose               
+upperlip               
+mouth               
+chin               
+cheekL               
+cheekR               
+earL               
+earR               
+neck               
+chest               
+stomach               
+belowstomach               
+shoulderL               
+shoulderR               
+loctop1               
+loctop2               
+loctop3               
+loctop4               
+loctop5               
+locmid1               
+locmid2               
+locmid3               
+locmid4               
+locmid5                   
+locbot1               
+locbot2               
+locbot3               
+locbot4               
+locbot5               
+</details>
+
+---
+
+## Palm Orientation
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    palmor: "u", //string 8 directions. Relative to arm (not to world coordinates )
+
+    shift: false // optional
+}
+
+```
+
+---
+
+## Extfidir
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    extfidir: "l", // string  26 directions
+    
+    // optionals
+    secondExtfidir: "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir
+    mode: "local", // number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
+    shift: false, // optional
+}
+
+```
+---
+## Handshape
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    handshape: "flat", //string from the handshape table
+    
+    // optionals
+    thumbshape: "touch", //string from thumbshape table. if not present, a predefined thumbshape for the handshape will be used
+    shift: false,
+}
+
+```
+<details>
+<summary>Click to view the complete list of available handshapes</summary>
+
+fist               
+finger2               
+finger23               
+finger23spread               
+finger2345               
+flat               
+pinch12               
+pinch12open               
+pinchall               
+ceeall               
+cee12               
+cee12open               
+</details>
+
+<details>
+<summary>Click to view the complete list of available thumbshapes</summary>
+
+default               
+out               
+opposed               
+across               
+touch               
+</details>
+
+---
+## Directed Motion
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    direction: "o", // string 26 directions
+    
+    // optionals
+    distance: 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
+    curve: "u", // string 8 directions. Default to none
+    curveSteepness: 1, // number from [0,1] meaning the sharpness of the curve
+    zigzag: "l", // string 26 directions
+    zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+    zigzagSpeed: 3, // oscillations per second. Default 2
+}
+
+```
+
+---
+## Circular Motion
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    direction: "o", // string 26 directions. Axis of rotation
+    
+    // optionals
+    distance: 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
+    startAngle: 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
+    endAngle: 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
+    zigzag: "l", // string 26 directions
+    zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+    zigzagSpeed: 3, // oscillations per second. Default 2
+}
+
+```
+
+---
+## Fingerplay Motion
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    // optionals
+    speed: 2, // oscillations per second. Default 3
+    intensity: 0.5, //[0,1]. Default 0.3
+    fingers: "13", // string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled. Thumb is not moved
+}
+
+```
+
+
+---
+## Circular Motion
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    mode: "nod",
+    /* either a: 
+        - string from [ "nod", "swing", "twist", "stirCW", "stirCCW", "all" ]
+        - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
+    Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
+    Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
+    */
+
+    // optionals
+    speed: 3, // oscillations per second. Negative values accepted. Default 3. 
+    intensity: 0.3, // [0,1]. Default 0.3
+}
+
+```
+
+

@@ -54,7 +54,58 @@ class App {
         let params = {
             colorChroma: 0x141455,
             colorClothes: 0xFFFFFF,
+            reset: (function(){ this.ECAcontroller.reset(); }).bind(this),
+            openInput: () => {
+                // open window and set all html elements (copy previous state)
+                let handle = window.open("", "BML Input", "width=700, height=700");
+                let previousText = "";
+                while( handle.document.body.firstChild ){
+                    if ( handle.document.body.firstChild.id == "bmlInput" ){ previousText = handle.document.body.firstChild.value; }
+                    handle.document.body.removeChild( handle.document.body.firstChild );
+                }
+
+                let htmlStr = "<a href=\"https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md\" target=\"_blank\">Click here to see BML instructions and attributes</a>";
+                htmlStr += "<p>Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed. </p>";
+                htmlStr += "<p>Note: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one. </p>";
+                htmlStr += '<p>An example: <br>{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, <br> { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationArm": "shoulderR", "lrSym": true, "hand": "both", "distance": 0.1 }</p>';
+                htmlStr += "<textarea id=\"bmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:70%;\"></textarea>  ";
+                htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
+                handle.document.write(htmlStr);
+                let textarea = handle.document.getElementById( "bmlInput" );
+                textarea.value = previousText;
+                let button = handle.document.getElementById( "sendButton" );
+                
+                // generate msg and send it to ECAController
+                button.addEventListener( "click", () => { 
+                    let msg = {
+                            type: "behaviours",
+                            data: JSON.parse( "[" + textarea.value + "]" ),
+                    };
+
+                    // for mouthing, find those words that need to be translated into phonemes (ARPA)
+                    for( let i = 0; i < msg.data.length; ++i ){
+                        if ( msg.data[i].type == "speech" && typeof( msg.data[i].text ) == "string" ){
+                            let strSplit = msg.data[i].text.split( "%" ); // words in NGT are between "%"
+                            let result = "";
+                            for( let j = 0; j < strSplit.length; ){
+                                result += strSplit[j]; // everything before are phonemes
+                                j++;
+                                if ( j < ( strSplit.length - 1 ) ){ // word to translate
+                                    result += this.wordsToArpa( strSplit[j] );
+                                }
+                                j++;
+                            }
+                            msg.data[i].text = result + ".";
+                        }
+                    }
+
+                    window.global.app.ECAcontroller.processMsg(JSON.stringify(msg));
+                
+                });
+
+            }
         } 
+        
    
         // get init color and set them to sGRB (css works in sRGB) 
         let color = new THREE.Color();
@@ -63,7 +114,6 @@ class App {
 
         color.copyLinearToSRGB(that.model1.getObjectByName("Tops").material.color);
         params.colorClothes = color.getHex();
-
 
         gui.addColor(params, 'colorChroma').onChange( (e) => {
             let color = that.scene.getObjectByName("Chroma").material.color; // css works in sRGB
@@ -79,6 +129,9 @@ class App {
             color.setHex(e);
             color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
+
+        gui.add( params, "reset").name("reset Pose");
+        gui.add( params, "openInput").name("bml input");
 
         let moodFolder = gui.addFolder( "Moods" ).close();
         let armFolder = gui.addFolder( 'Arm Gestures' ).close();
@@ -721,7 +774,7 @@ class App {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "uo", hand: "both" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
                     
-                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "right"},
+                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "both"},
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign*0.2, relax: end - relax, end: end, motion: "fingerplay", hand: 'both', speed: 5, intensity: 0.7 },
                     ]
                 };
@@ -1058,8 +1111,7 @@ class App {
 
     animate() {
 
-        window.setTimeout( this.animate.bind(this), 32 );
-        //requestAnimationFrame( this.animate.bind(this) );
+        requestAnimationFrame( this.animate.bind(this) );
 
         let delta = this.clock.getDelta();
         let et = this.clock.getElapsedTime();

@@ -242,16 +242,17 @@ FacialExpr.prototype.initFaceLexeme = function (faceData, shift, lexemes) {
 
         let lexemeStr = lexemes[i].lexeme || lexemes[i].au;
 
-        let indices = FacialExpr.NMF[lexemeStr][0]; // returns array [ BlendshapeIndices, weights ]
-        let weights = FacialExpr.NMF[lexemeStr][1]; // get only the blendshape weights
-
         // does lexeme exist?
-        if (!indices || !weights || indices.length == 0 || weights.length == 0) {
+        if ( !FacialExpr.NMF[lexemeStr] ) {
             this.transition = false;
             this.time = this.end;
             console.warn("Facial lexeme not found:", lexemeStr, ". Please refer to the standard.");
             continue;
         }
+
+        // FacialExpr.NMF[lexemeStr] returns array [ BlendshapeIndices, weights ]
+        let indices = FacialExpr.NMF[lexemeStr][0]; // get only the blendshape indices
+        let weights = FacialExpr.NMF[lexemeStr][1]; // get only the blendshape weights
 
         // Indices
         this.indicesLex[j] = indices;

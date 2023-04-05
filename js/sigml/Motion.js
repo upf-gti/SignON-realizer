@@ -124,13 +124,7 @@ class DirectedMotion {
      */
     newGestureBML( bml, symmetry ){
         let tempV = new Vector3(0,0,0);
-                
-        this.time = 0;
-        this.start = bml.start;
-        this.attackPeak = bml.attackPeak;
-        this.relax = bml.relax;
-        this.end = bml.end;
-        
+                       
         this.baseOffset.copy( this.finalOffset );
         
         this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
@@ -200,6 +194,13 @@ class DirectedMotion {
             this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
             this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
+
+        // check and set timings
+        this.start = bml.start || 0;
+        this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
+        this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.time = 0; 
 
         // flag to start 
         this.transition = true;
@@ -309,12 +310,6 @@ class CircularMotion {
         let tempV = new Vector3(0,0,0);
         let tempQ = new Quaternion(0,0,0,1);
                 
-        this.time = 0;
-        this.start = bml.start;
-        this.attackPeak = bml.attackPeak;
-        this.relax = bml.relax;
-        this.end = bml.end;
-        
         this.baseOffset.copy( this.finalOffset );
         
         // axis
@@ -371,6 +366,13 @@ class CircularMotion {
             this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
             this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
+
+        // check and set timings
+        this.start = bml.start || 0;
+        this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
+        this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.time = 0; 
 
         // flag to start 
         this.transition = true;
@@ -458,12 +460,6 @@ class FingerPlay {
      * fingers = (optional) string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled
      */
     newGestureBML( bml ){
-        this.time = 0;
-        
-        this.start = bml.start;
-        this.attackPeak = bml.attackPeak;
-        this.relax = bml.relax;
-        this.end = bml.end;
 
         this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
         this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
@@ -482,6 +478,12 @@ class FingerPlay {
             this.fingerEnabler &= 0x1f; // mask unused bits
         }
 
+        // check and set timings
+        this.start = bml.start || 0;
+        this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
+        this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.time = 0; 
     }
 
 };
@@ -565,17 +567,11 @@ class WristMotion {
      * intensity = (optional) [0,1]. Default 0.3
      */
     newGestureBML( bml ){
-        this.time = 0;
         
-        this.start = bml.start;
-        this.attackPeak = bml.attackPeak;
-        this.relax = bml.relax;
-        this.end = bml.end;
-
         this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
         this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
-
+        
         if ( typeof( bml.mode ) == "string" ){
             switch( bml.mode ){
                 case "nod": this.mode = 0x02; break;
@@ -596,8 +592,14 @@ class WristMotion {
         else{
             this.mode = bml.mode & 0x07; // take only the necessary bits
         }
-
+        
+        // check and set timings
+        this.start = bml.start || 0;
+        this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
+        this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.time = 0; 
     }
 };
-
+    
 export { DirectedMotion, CircularMotion, FingerPlay, WristMotion }
