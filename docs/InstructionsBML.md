@@ -377,7 +377,8 @@ touch
     attackPeak: 0.2, 
     relax: 0.3,  
     end: 0.4,
-    
+
+    motion: "directed",
     direction: "o", // string 26 directions
     
     // optionals
@@ -401,6 +402,7 @@ touch
     relax: 0.3,  
     end: 0.4,
     
+    motion: "circular",
     direction: "o", // string 26 directions. Axis of rotation
     
     // optionals
@@ -424,6 +426,8 @@ touch
     relax: 0.3,  
     end: 0.4,
     
+    motion: "fingerplay",
+
     // optionals
     speed: 2, // oscillations per second. Default 3
     intensity: 0.5, //[0,1]. Default 0.3
@@ -434,7 +438,7 @@ touch
 
 
 ---
-## Circular Motion
+## Wrist Motion
 ``` javascript
 {
     type: "gesture",
@@ -443,6 +447,7 @@ touch
     relax: 0.3,  
     end: 0.4,
     
+    motion: "wrist",
     mode: "nod",
     /* either a: 
         - string from [ "nod", "swing", "twist", "stirCW", "stirCCW", "all" ]
