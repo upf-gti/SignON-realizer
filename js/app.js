@@ -77,6 +77,28 @@ class App {
                 
                 // generate msg and send it to ECAController
                 button.addEventListener( "click", () => { 
+                    let parser = new DOMParser();
+                    let xmlDoc = parser.parseFromString( "<xml>" + textarea.value + "</xml>","text/xml");
+
+                    // XML - all attributes should be parsed. If parsing is not possible it means it is a plain string
+                    // let msg = {
+                    //     type: "behaviours",
+                    //     data: []
+                    // };
+
+                    // for ( let i = 0; i < xmlDoc.children[0].children.length; ++i ){
+                    //     let bml = {};
+                    //     bml.type = xmlDoc.children[0].children[i].tagName;
+                    //     let attributes = xmlDoc.children[0].children[i].attributes;
+                    //     for ( let a = 0; a < attributes.length; ++a ){
+                    //         bml[ attributes[a].name ] = attributes[a].value; 
+                    //          // attribute parsing should be done here 
+                    //     }
+                    //     msg.data.push( bml );
+                    // }
+                    // console.log( msg );
+
+                    // JSON
                     let msg = {
                             type: "behaviours",
                             data: JSON.parse( "[" + textarea.value + "]" ),

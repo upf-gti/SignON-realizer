@@ -464,6 +464,11 @@ FacialController.prototype.newFA = function (faceData, shift) {
 
 }
 
+// --------------------- BLINK ---------------------
+FacialController.prototype.newBlink = function ( bml ){
+    this.autoBlink.blink();
+}
+
 // --------------------- GAZE ---------------------
 // BML
 // <gaze or gazeShift start ready* relax* end influence target influence offsetAngle offsetDirection>

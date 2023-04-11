@@ -11,11 +11,15 @@ function Blink() {
     
     this.start = 0;
     this.end = 0;
-    this.initWs = [0, 0];
-    this.weights = [0, 0];
+    this.elapsedTime = 0;
+    this.initWs = [0, 0]; // initial pose of eyelids
+    this.endWs = [0, 0]; // target pose of eyelids ( constantly changes during update )
+    this.weights = [0, 0]; // current status
+
+    this.needsInit = true;
     this.blinking = false;
     this.between = false;
-    this.elapsedTime = 0;
+    
 }
 
 Blink.prototype.getEnd = function () {
@@ -25,44 +29,54 @@ Blink.prototype.getEnd = function () {
 
 Blink.prototype.initBlinking = function (cw0, cw1) {
     
-    this.initWs[0] = cw0; this.initWs[1] = cw1;
-    this.weights[0] = cw0; this.weights[1] = cw1;
+    if( this.blinking ){ // forced a blink while already executing one
+        this.initWs[0] = this.weights[0]; this.initWs[1] = this.weights[1];
+    }else{
+        this.initWs[0] = cw0; this.initWs[1] = cw1;
+        this.weights[0] = cw0; this.weights[1] = cw1;
+    }
+    this.endWs[0] = cw0; this.endWs[1] = cw1;
+    
     this.elapsedTime = 0;
     this.start = 0;
     let lowestWeight = Math.min(cw0, cw1);
     lowestWeight = Math.min(1, Math.max(0, lowestWeight));
     this.end = this.getEnd() * (1 - lowestWeight);
     this.end = Math.max(this.end, this.start); // just in case
+
+    this.needsInit = false;
+    this.blinking = true;
+    this.between = false;
 }
 
 Blink.prototype.blink = function () {
     
     this.start = -1;
     this.elapsedTime = -1;
-    this.blinking = true;
+    this.needsInit = true;
     this.between = false;
+    // this.blinking = true;
+    // this.between = false;
 }
 
-Blink.prototype.update = function (dt, currentWeight0, currentWeight1) {
+Blink.prototype.update = function ( dt, currentWeight0, currentWeight1 ) {
 
-    if (this.blinking && dt > 0) {
-        if (this.start < 0) {
-            this.initBlinking(currentWeight0, currentWeight1);
-        }
-
+    if ( this.needsInit ) {
+        this.initBlinking( currentWeight0, currentWeight1 );
+    }
+    if ( this.blinking && dt > 0 ) {
         this.elapsedTime += dt;
-        this.initWs[0] = currentWeight0;
-        this.initWs[1] = currentWeight1;
+        this.endWs[0] = currentWeight0;
+        this.endWs[1] = currentWeight1;
 
-        this.computeWeight(this.elapsedTime);
+        this.computeWeight( this.elapsedTime );
 
-        if (this.elapsedTime > this.end) {
+        if (this.elapsedTime > this.end ) { // schedule next blink
             this.blinking = false;
-            return
+            this.between = true;
+            setTimeout( this.blink.bind( this ), Math.random() * 3000 + 1500 );
+            return;
         }
-    } else if (!this.between) {
-        this.between = true;
-        setTimeout(this.blink.bind(this), Math.random() * 3000 + 1500);
     }
 }
 
@@ -86,14 +100,17 @@ Blink.prototype.computeWeight = function (dt) {
     let b = 1.18;
     let c = mu / 100;
     let w = 0;
+    let srcWs = null;
     if (t <= mu) {
         w = a - Math.pow(t / mu, 2);
+        srcWs = this.initWs;
     } else {
-        w = b - Math.pow(Math.E, (-c * Math.log2(t - mu + 1)))
+        w = b - Math.pow(Math.E, (-c * Math.log2(t - mu + 1)));
+        srcWs = this.endWs;
     }
     w = Math.min(1, Math.max(0, w));
-    this.weights[0] = 1 - w * (1 - this.initWs[0]);
-    this.weights[1] = 1 - w * (1 - this.initWs[1]);
+    this.weights[0] = 1 - w * (1 - srcWs[0]);
+    this.weights[1] = 1 - w * (1 - srcWs[1]);
 }
 
 

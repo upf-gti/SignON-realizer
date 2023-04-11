@@ -34,6 +34,17 @@ The attribute ```shift``` indicates whether the action should be interpreted as 
 
 # Non Manual Features (NMF) 
 
+## Blink
+Blink is automatically executed by the realizer. However, a blink can be forced with this instruction. For a more controlled eyelid movement, use lexemes instead.
+``` javascript
+{
+    type: "blink",
+    start: 0.1
+}
+```
+
+---
+
 ## Eye Lookat
 ``` javascript
 {
@@ -82,7 +93,7 @@ The attribute ```shift``` indicates whether the action should be interpreted as 
     // optionals
     phT: [0.1,0.2,0.3,...], // duration (seconds) of each phoneme. Overrides sentT.  
     sentT: 2.3,  //duration (seconds) of whole sentence. Overrides speed. Delay not included.  
-    speed: 1/10, //phonemes per second of the whole string. Overrides default speed. 
+    speed: 0.1, //phonemes per second of the whole string. Overrides default speed. Humans speak at 8 phonemes per second (lower boundary) 
     phInt: [0.8,0.9,1,...], // intensity of each phoneme. Overrides sentInt.
     sentInt: 1,
 }
