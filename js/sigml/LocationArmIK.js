@@ -134,22 +134,22 @@ let farPoses = {
 
     // 1 = right, 5 = left. Different numbering than "signing space" of Irene's thesis. This is better for symmetry and others
     loctop1:      new Vector3(-0.59,2.00,0.23 ),   
-    loctop2:      new Vector3(-0.39,2.00,0.39 ),   
-    loctop3:      new Vector3(-0.15,2.00,0.46 ),   
-    loctop4:      new Vector3( 0.05,2.00,0.31 ),   
-    loctop5:      new Vector3( 0.17,2.40,0.18 ),
+    loctop2:      new Vector3(-0.29,2.00,0.39 ),   
+    loctop3:      new Vector3( 0.00,2.00,0.46 ),   
+    loctop4:      new Vector3( 0.29,2.00,0.39 ),   
+    loctop5:      new Vector3( 0.59,2.00,0.23 ),
    
     locmid1:      new Vector3(-0.59,1.30,0.23 ),
-    locmid2:      new Vector3(-0.39,1.30,0.39 ),
-    locmid3:      new Vector3(-0.15,1.30,0.46 ),
-    locmid4:      new Vector3( 0.05,1.40,0.31 ),
-    locmid5:      new Vector3( 0.17,1.40,0.18 ),
+    locmid2:      new Vector3(-0.29,1.30,0.39 ),
+    locmid3:      new Vector3( 0.00,1.30,0.46 ),
+    locmid4:      new Vector3( 0.29,1.30,0.39 ),
+    locmid5:      new Vector3( 0.59,1.30,0.23 ),
                 
     locbot1:      new Vector3( -0.59,0.74,0.23 ),
-    locbot2:      new Vector3( -0.39,0.74,0.39 ),
-    locbot3:      new Vector3( -0.15,0.74,0.46 ),
-    locbot4:      new Vector3(  0.05,0.74,0.31 ),
-    locbot5:      new Vector3(  0.17,0.74,0.18 ),
+    locbot2:      new Vector3( -0.29,0.74,0.39 ),
+    locbot3:      new Vector3(  0.00,0.74,0.46 ),
+    locbot4:      new Vector3(  0.29,0.74,0.31 ),
+    locbot5:      new Vector3(  0.59,0.74,0.18 ),
 }
 
 let sides = {
@@ -298,10 +298,10 @@ class LocationArmIK {
             else if( location[location.length-1] == "R" ){
                 location = location.slice(0, location.length-1) + "L";
             } 
-            else if( !isNaN( location[location.length-1] ) ){ // spatial locations
-                let val = 6 - parseInt( location[location.length-1] );
-                location = location.slice(0, location.length-1) + val.toFixed(0);
-            }
+            // else if( !isNaN( location[location.length-1] ) ){ // spatial locations
+            //     let val = 6 - parseInt( location[location.length-1] );
+            //     location = location.slice(0, location.length-1) + val.toFixed(0);
+            // }
         }
         
         let near = nearPoses[ location ];

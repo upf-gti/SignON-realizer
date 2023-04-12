@@ -64,11 +64,12 @@ class App {
                     handle.document.body.removeChild( handle.document.body.firstChild );
                 }
 
-                let htmlStr = "<a href=\"https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md\" target=\"_blank\">Click here to see BML instructions and attributes</a>";
+                let htmlStr = "<p>Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.</p>";
+                htmlStr += "<a href=\"https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md\" target=\"_blank\">Click here to see BML instructions and attributes</a>";
                 htmlStr += "<p>Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed. </p>";
                 htmlStr += "<p>Note: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one. </p>";
                 htmlStr += '<p>An example: <br>{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, <br> { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationArm": "shoulderR", "lrSym": true, "hand": "both", "distance": 0.1 }</p>';
-                htmlStr += "<textarea id=\"bmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:70%;\"></textarea>  ";
+                htmlStr += "<textarea id=\"bmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
                 let textarea = handle.document.getElementById( "bmlInput" );
@@ -77,32 +78,17 @@ class App {
                 
                 // generate msg and send it to ECAController
                 button.addEventListener( "click", () => { 
-                    let parser = new DOMParser();
-                    let xmlDoc = parser.parseFromString( "<xml>" + textarea.value + "</xml>","text/xml");
-
-                    // XML - all attributes should be parsed. If parsing is not possible it means it is a plain string
-                    // let msg = {
-                    //     type: "behaviours",
-                    //     data: []
-                    // };
-
-                    // for ( let i = 0; i < xmlDoc.children[0].children.length; ++i ){
-                    //     let bml = {};
-                    //     bml.type = xmlDoc.children[0].children[i].tagName;
-                    //     let attributes = xmlDoc.children[0].children[i].attributes;
-                    //     for ( let a = 0; a < attributes.length; ++a ){
-                    //         bml[ attributes[a].name ] = attributes[a].value; 
-                    //          // attribute parsing should be done here 
-                    //     }
-                    //     msg.data.push( bml );
-                    // }
-                    // console.log( msg );
-
-                    // JSON
                     let msg = {
-                            type: "behaviours",
-                            data: JSON.parse( "[" + textarea.value + "]" ),
+                        type: "behaviours",
+                        data: []
                     };
+                    // JSON
+                    try {
+                        msg.data = JSON.parse( "[" + textarea.value + "]" ); 
+                    } catch (error) {
+                        handle.alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
+                        return;
+                    }
 
                     // for mouthing, find those words that need to be translated into phonemes (ARPA)
                     for( let i = 0; i < msg.data.length; ++i ){
@@ -161,7 +147,7 @@ class App {
         let palmorFolder = gui.addFolder( 'Palmor Gestures' ).close();
         let extfidirFolder = gui.addFolder( 'Extfidir Gestures' ).close();
         let motionFolder = gui.addFolder( 'Motion' ).close();
-        let testFolder = gui.addFolder( 'Phrases' );
+        let testFolder = gui.addFolder( 'Preset Signs' );
 
 
         /*
@@ -611,7 +597,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: 0, attackPeak: 1, relax: 3, end: 4, hand: "both", motion: "wrist", speed: 1, intensity: 0.3, mode: "spinCW" }, 
+                        { type: "gesture", start: 0, attackPeak: 1, relax: 3, end: 4, hand: "both", motion: "wrist", speed: 1, intensity: 0.3, mode: "stirCW" }, 
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -763,15 +749,15 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("bos") + ".", sentT: sign, sentInt: 0.5 },
-
+                        
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.25, side: 'r', sideDistance: 0.08 },
-
-
+                        
+                        
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "o", hand: "both" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "both", lrSym: true },
-                    
+                        
+                        { type: "speech", start:  start + sign * 0.1, end: 100000, text: that.wordsToArpa("bos") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'r', distance: 0.05, hand: "right", zigzag: 'u', zigzagSize: 0.1 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'l', distance: 0.05, hand: "left", zigzag: 'd', zigzagSize: 0.1 },
                     ]
@@ -781,23 +767,23 @@ class App {
 
             aarde(){
                 let start = 0.0;
-                let sign = 3.0; // sign duration
+                let sign = 1.5; // sign duration
                 let relax = 0.5; // relax duration
                 let end = start + sign + relax;
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("aarde") + ".", sentT: sign, sentInt: 0.5 },
-
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.2, side: 'r', sideDistance: 0.08 },
-
+                        
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.2, side: 'r', sideDistance: 0.04 },
+                        
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
-
+                        
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "uo", hand: "both" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
-                    
+                        
+                        { type: "speech", start: start + sign * 0.1, end: 100000, text: that.wordsToArpa("aarde") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "both"},
-                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign*0.2, relax: end - relax, end: end, motion: "fingerplay", hand: 'both', speed: 5, intensity: 0.7 },
+                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign*0.2, relax: start + sign*0.8, end: start + sign, motion: "fingerplay", hand: 'both', speed: 5, intensity: 0.7 },
                     ]
                 };
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
@@ -805,13 +791,13 @@ class App {
 
             automatische(){
                 let start = 0.0;
-                let sign = 3.0; // sign duration
+                let sign = 2.0; // sign duration
                 let relax = 0.5; // relax duration
                 let end = start + sign + relax;
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("automatisch") + ".", sentT: sign, sentInt: 0.5 },
+                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("automatisch") + ".", sentInt: 0.5 },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "right", distance: 0.22, side: 'ir', sideDistance: 0.06 },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "left", distance: 0.22, side: 'l', sideDistance: 0.13},
@@ -834,15 +820,15 @@ class App {
                 that.ECAcontroller.processMsg(JSON.stringify(that.msg));
             },
         };
-        testFolder.add(testParams, "HALLO").name("HALLO");
-        testFolder.add(testParams, "LEUK").name("LEUK");
-        testFolder.add(testParams, "ONTMOETEN").name("ONTMOETEN");
+        testFolder.add(testParams, "HALLO").name("Hallo");
+        testFolder.add(testParams, "LEUK").name("Leuk");
+        testFolder.add(testParams, "ONTMOETEN").name("Ontmoeten");
         testFolder.add(testParams, "HalloLeukOntmoeten").name("Hallo leuk ontmoeten");
         
-        testFolder.add(testParams, "tweeentwintig").name("tweeentwintig");
-        testFolder.add(testParams, "bos").name("bos");
-        testFolder.add(testParams, "aarde").name("aarde");
-        testFolder.add(testParams, "automatische").name("automatische");
+        testFolder.add(testParams, "tweeentwintig").name("Tweeentwintig");
+        testFolder.add(testParams, "bos").name("Bos");
+        testFolder.add(testParams, "aarde").name("Aarde");
+        testFolder.add(testParams, "automatische").name("Automatische");
         
     }
 
