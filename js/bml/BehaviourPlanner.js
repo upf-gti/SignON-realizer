@@ -184,7 +184,7 @@ BehaviourPlanner.prototype.createBlock = function(){
           relax: start + (end-start)*0.5,
           end: end,
           lexeme: {
-            lexeme: "RAISE_BROWS", 
+            lexeme: "BROW_RAISER", 
             amount: 0.1 + Math.random()*0.2
           },
           type:"face"
@@ -266,7 +266,7 @@ BehaviourPlanner.prototype.createBlock = function(){
           relax: start + (end-start)*0.5,
           end: end,
           lexeme: {
-            lexeme: "RAISE_BROWS", 
+            lexeme: "BROW_RAISER", 
             amount: 0.1 + Math.random()*0.2
           },
            type:"face"
@@ -329,7 +329,7 @@ BehaviourPlanner.prototype.createBlock = function(){
           end: 1 + Math.random(),
           lexeme: [
             {
-              lexeme: "LOWER_BROWS", 
+              lexeme: "BROW_LOWERER", 
               amount: 0.2 + Math.random()*0.5
             }
           ],
@@ -341,7 +341,7 @@ BehaviourPlanner.prototype.createBlock = function(){
       if (Math.random() < 0.3)
       {
         var lexeme = {
-          lexeme: "PRESS_LIPS",
+          lexeme: "LIP_PRESSOR",
           amount: 0.1 + 0.3 * Math.random()
         };
         if(block.face)

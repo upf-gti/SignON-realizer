@@ -84,6 +84,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 ---
 
 ## Speech
+Mouthing.
 ``` javascript
 {
     type: "speech",
@@ -143,68 +144,66 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 <details>
 <summary>Click to view the complete list of available lexemes</summary>
 
-NMF_FROWN                 
-NMF_ARCH                  
-NMF_OPEN_WIDE_EYE          
-NMF_SQUINT                 
-NMF_BLINK                  
-NMF_CLOSED                 
-NMF_SUCK_IN_RIGHT          
-NMF_SUCK_IN_LEFT           
-NMF_SUCK_IN_BOTH           
-NMF_BLOW_RIGHT             
-NMF_BLOW_LEFT              
-NMF_BLOW_BOTH              
-NMF_OPEN_WIDE_MOUTH        
-NMF_CLOSE_TIGHT            
-NMF_SMILE_TEETH            
-NMF_SMILE_TEETH_WIDE       
-NMF_SMILE_CLOSED           
-NMF_ROUND_OPEN             
-NMF_ROUND_CLOSED           
-NMF_OUT_POINTED            
-NMF_OUT_ROUND              
-NMF_CRINKLE                
-NMF_FLARE                  
-LIP_CORNER_DEPRESSOR       
-LIP_CORNER_DEPRESSOR_LEFT  
-LIP_CORNER_DEPRESSOR_RIGHT 
-LIP_CORNER_PULLER          
-LIP_CORNER_PULLER_LEFT     
-LIP_CORNER_PULLER_RIGHT    
-LIP_STRECHER               
-LIP_FUNNELER               
-LIP_TIGHTENER              
-LIP_PRESSOR                
-LIP_PUCKERER               
-PRESS_LIPS                 
-MOUTH_OPEN                 
-LOWER_LIP_DEPRESSOR        
-CHIN_RAISER                
-TONGUE_SHOW                
-BROW_LOWERER               
-BROW_LOWERER_LEFT          
-LOWER_RIGHT_BROW           
-LOWER_BROWS                
-INNER_BROW_RAISER          
-OUTER_BROW_RAISER          
-RAISE_LEFT_BROW            
-RAISE_RIGHT_BROW           
-RAISE_BROWS                
-UPPER_LID_RAISER           
-CHEEK_RAISER               
-LID_TIGHTENER              
-EYES_CLOSED                
-BLINK                      
-WINK_LEFT                  
-WINK_RIGHT                 
-NOSE_WRINKLER              
-UPPER_LIP_RAISER           
-DIMPLER                    
-DIMPLER_LEFT               
-DIMPLER_RIGHT              
-JAW_DROP                   
-MOUTH_STRETCH
+NMF_FROWN                       
+NMF_ARCH                        
+NMF_OPEN_WIDE_EYE               
+NMF_SQUINT                      
+NMF_BLINK                       
+NMF_CLOSED                      
+NMF_SUCK_IN_RIGHT               
+NMF_SUCK_IN_LEFT                
+NMF_SUCK_IN_BOTH                
+NMF_BLOW_RIGHT                  
+NMF_BLOW_LEFT                   
+NMF_BLOW_BOTH                   
+NMF_OPEN_WIDE_MOUTH             
+NMF_CLOSE_TIGHT                 
+NMF_SMILE_TEETH                 
+NMF_SMILE_TEETH_WIDE            
+NMF_SMILE_CLOSED                
+NMF_ROUND_OPEN                  
+NMF_ROUND_CLOSED                
+NMF_OUT_POINTED                 
+NMF_OUT_ROUND                   
+NMF_CRINKLE                     
+NMF_FLARE                       
+LIP_CORNER_DEPRESSOR            
+LIP_CORNER_DEPRESSOR_LEFT       
+LIP_CORNER_DEPRESSOR_RIGHT      
+LIP_CORNER_PULLER               
+LIP_CORNER_PULLER_LEFT          
+LIP_CORNER_PULLER_RIGHT         
+LIP_STRECHER                    
+LIP_FUNNELER                    
+LIP_TIGHTENER                   
+LIP_PUCKERER                    
+LIP_PRESSOR                     
+LOWER_LIP_DEPRESSOR             
+UPPER_LIP_RAISER                
+CHIN_RAISER                     
+DIMPLER                         
+DIMPLER_LEFT                    
+DIMPLER_RIGHT                   
+NOSE_WRINKLER                   
+MOUTH_STRETCH                   
+MOUTH_OPEN                      
+JAW_DROP                        
+TONGUE_SHOW                     
+BROW_LOWERER                    
+BROW_LOWERER_LEFT               
+BROW_LOWERER_RIGHT              
+BROW_RAISER                     
+BROW_RAISER_LEFT                
+BROW_RAISER_RIGHT               
+INNER_BROW_RAISER               
+OUTER_BROW_RAISER               
+UPPER_LID_RAISER                
+CHEEK_RAISER                    
+LID_TIGHTENER                   
+EYES_CLOSED                     
+BLINK                           
+WINK_LEFT                       
+WINK_RIGHT                      
 </details>
 
 
@@ -239,6 +238,7 @@ All gestures share some optional attributes
 ```
 
 ## Arm Location
+Moves the arm (wrist) to a location.
 ``` javascript
 {
     type: "gesture",
@@ -299,6 +299,7 @@ locbot5
 ---
 
 ## Palm Orientation
+Roll of the wrist joint.
 ``` javascript
 {
     type: "gesture",
@@ -317,6 +318,7 @@ locbot5
 ---
 
 ## Extfidir
+Yaw and Pitch of the wrist joint.
 ``` javascript
 {
     type: "gesture",
@@ -336,6 +338,7 @@ locbot5
 ```
 ---
 ## Handshape
+Sets the posture of the fingers of a hand.
 ``` javascript
 {
     type: "gesture",
@@ -381,6 +384,7 @@ touch
 
 ---
 ## Directed Motion
+Moves the wrist in a linear direction. Not suited for large displacements.
 ``` javascript
 {
     type: "gesture",
@@ -405,6 +409,7 @@ touch
 
 ---
 ## Circular Motion
+Moves the wrist in a circular motion.
 ``` javascript
 {
     type: "gesture",
@@ -429,6 +434,7 @@ touch
 
 ---
 ## Fingerplay Motion
+Wiggle fingers of the hand.
 ``` javascript
 {
     type: "gesture",
@@ -450,6 +456,7 @@ touch
 
 ---
 ## Wrist Motion
+Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
 ``` javascript
 {
     type: "gesture",

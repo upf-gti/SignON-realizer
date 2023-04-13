@@ -164,48 +164,44 @@ FacialExpr.NMF.NMF_FLARE =                  [[], []];       // missing new blend
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[14,15], [1,1]]; // AU15 sad
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[14], [1]]; // LAU15 sad
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[15], [1]]; // RAU15 sad
-
 FacialExpr.NMF.LIP_CORNER_PULLER =          [[41,42], [1,1]]; // AU12 happy
 FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[41], [1]]; // LAU12 happy
 FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[42], [1]]; // RAU12 happy
 FacialExpr.NMF.LIP_STRECHER =               [[14,15,32], [1,1,1]];// AU20
 FacialExpr.NMF.LIP_FUNNELER =               [[37,38], [1,1]];     // AU22
 FacialExpr.NMF.LIP_TIGHTENER =              [[30,31], [1,1]];     // AU23
-FacialExpr.NMF.LIP_PRESSOR =                [[25,28,46], [1,1,1]];// AU24
 FacialExpr.NMF.LIP_PUCKERER =               [[33,34], [1,1]]; // AU18 mouth narrow
-FacialExpr.NMF.PRESS_LIPS =                 [[14,15,32], [1,1,1]]; // lips pressed
-
-FacialExpr.NMF.MOUTH_OPEN =                 [[35], [1]]; // jaw
+FacialExpr.NMF.LIP_PRESSOR =                [[25,28,46], [1,1,1]];// AU24
 FacialExpr.NMF.LOWER_LIP_DEPRESSOR =        [[26,27], [1,1]]; // AU16
+FacialExpr.NMF.UPPER_LIP_RAISER =           [[48,49], [1,1]]; // AU10
 FacialExpr.NMF.CHIN_RAISER =                [[36], [1]]; // AU17 mouth up
+FacialExpr.NMF.DIMPLER =                    [[33,34,26,27,48,49,28,46], [-0.753,-0.753,-0.35,-0.35,-0.15,-0.15,1,0.1]]; // AU14 -- MouthNarrow + LowerLipDown + UpperLipUp + LowerLipIn + UpperLipIn 
+FacialExpr.NMF.DIMPLER_LEFT =               [[33,26,48,28,46], [-0.753,-0.25,-0.15,1.0,0.1]]; // LAU14
+FacialExpr.NMF.DIMPLER_RIGHT =              [[34,26,27,48,49,28,46], [-0.753,-0.25,-0.25,-0.15,-0.15,1.0,0.1]]; // RAU14 -- for some reason right side looks different
+
+FacialExpr.NMF.NOSE_WRINKLER =              [[39,40], [1,1]]; // AU9
+FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27
+FacialExpr.NMF.MOUTH_OPEN =                 [[35], [1]]; // jaw
+FacialExpr.NMF.JAW_DROP =                   [[22], [1]]; // AU26
 FacialExpr.NMF.TONGUE_SHOW =                [[45], [1]]; // AU19
 
 FacialExpr.NMF.BROW_LOWERER =               [[2,3,4,5], [1,1,1,1]]; // AU4 
 FacialExpr.NMF.BROW_LOWERER_LEFT =          [[2,4], [1,1]]; // 
-FacialExpr.NMF.LOWER_RIGHT_BROW =           [[3], [1]]; // brows down
-FacialExpr.NMF.LOWER_BROWS =                [[4,5], [1,1]];
-
+FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[3,4], [1,1]]; // brows down
+FacialExpr.NMF.BROW_RAISER =                [[8,9], [1,1]]; //  brow up
+FacialExpr.NMF.BROW_RAISER_LEFT =           [[8], [1]]; // left brow up
+FacialExpr.NMF.BROW_RAISER_RIGHT =          [[9], [1]]; // right brow up
 FacialExpr.NMF.INNER_BROW_RAISER =          [[6,7], [1,1]]; // AU1 rows rotate outwards
 FacialExpr.NMF.OUTER_BROW_RAISER =          [[8,9], [1,1]]; // AU2 brows up (right)
-FacialExpr.NMF.RAISE_LEFT_BROW =            [[8], [1]]; // left brow up
-FacialExpr.NMF.RAISE_RIGHT_BROW =           [[9], [1]]; // right brow up
-FacialExpr.NMF.RAISE_BROWS =                [[8,9], [1,1]]; //  brow up
 
 FacialExpr.NMF.UPPER_LID_RAISER =           [[12,13], [1,1]]; // AU5 negative eyelids closed /wide eyes
 FacialExpr.NMF.CHEEK_RAISER =               [[43,44], [1,1]]; // AU6 squint
-FacialExpr.NMF.LID_TIGHTENER =              [[43,44], [1,1]]; // AU44 squint
+FacialExpr.NMF.LID_TIGHTENER =              [[43,44], [1,1]]; // AU7 or AU44 squint
 FacialExpr.NMF.EYES_CLOSED =                [[0,1], [1,1]]; // AU43 eyelids closed
 FacialExpr.NMF.BLINK =                      [[0,1], [1,1]]; // AU45 eyelids closed
 FacialExpr.NMF.WINK_LEFT =                  [[0], [1]]; // AU46   
 FacialExpr.NMF.WINK_RIGHT =                 [[1], [1]]; // AU46   
 
-FacialExpr.NMF.NOSE_WRINKLER =              [[39,40], [1,1]]; // AU9
-FacialExpr.NMF.UPPER_LIP_RAISER =           [[48,49], [1,1]]; // AU10
-FacialExpr.NMF.DIMPLER =                    [[43,44,25], [-1,-1,1]]; // AU14
-FacialExpr.NMF.DIMPLER_LEFT =               [[43,25], [-1,1]]; // LAU14
-FacialExpr.NMF.DIMPLER_RIGHT =              [[44,25], [-1,1]]; // RAU14
-FacialExpr.NMF.JAW_DROP =                   [[22], [1]]; // AU26
-FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27
 
 // Constructor
 function FacialExpr(faceData, shift) {
