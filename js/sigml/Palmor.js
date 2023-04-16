@@ -120,13 +120,29 @@ class Palmor {
      * start, attackPeak, relax, end
      * palmor: string from rotationTable
      */
-    newGestureBML( bml, symmetry = false ){
+    newGestureBML( bml, symmetry = 0x00 ){
         if( !bml.palmor ){ return; }
 
         let rotationName = bml.palmor;
-        if ( symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
+        let secondRotName = bml.secondPalmor;
+        if ( rotationName && symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
+        if ( secondRotName && symmetry ){ secondRotName = directionStringSymmetry( secondRotName, symmetry ); }
+        
         let angle = ( this.mirror ) ? leftRotationTable[ rotationName ] : rotationTable[ rotationName ];
         if( isNaN( angle ) ){ return; }
+        let secondAngle = ( this.mirror ) ? leftRotationTable[ secondRotName ] : rotationTable[ secondRotName ];
+        if( !isNaN( secondAngle ) ){ 
+            // find shortest path in the circle and adjust secondAngle
+            if( Math.abs(angle - secondAngle) > Math.PI ){
+                if( ( angle - secondAngle ) < 0 ){ secondAngle -= 2 * Math.PI; }
+                else{ secondAngle += 2 * Math.PI; }
+            }
+            // avoid impossible angles
+            if( this.mirror ){ secondAngle = Math.max( leftRotationTable['ul'], Math.min( rotationTable['l'], secondAngle ) ); }
+            else{ secondAngle = Math.max( leftRotationTable['ur'], Math.min( rotationTable['u'], secondAngle ) ); }
+
+            angle = 0.5 * angle + 0.5 * secondAngle; 
+        }
         
         // set source pose twist quaternions
         this.srcAngle = this.curAngle; 

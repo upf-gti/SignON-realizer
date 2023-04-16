@@ -251,7 +251,8 @@ Moves the arm (wrist) to a location.
    
     // optionals
     distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
-    side: "l", // string, 26 directions. Location will be offseted into that direction
+    side: "u", // string, 26 directions. Location will be offseted into that direction
+    secondSide: "l", // string, 26 directions. Will compute the midpoint between side and secondSide
     sideDistance: 0.05, // number how far to move to the indicated side. Metres 
     shift: false
 }
@@ -309,8 +310,10 @@ Roll of the wrist joint.
     end: 0.4,
     
     palmor: "u", //string 8 directions. Relative to arm (not to world coordinates )
-
-    shift: false // optional
+    
+    // optionals
+    secondPalmor: "l", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
+    shift: false 
 }
 
 ```
@@ -384,7 +387,9 @@ touch
 
 ---
 ## Directed Motion
-Moves the wrist in a linear direction. Not suited for large displacements.
+Moves the arm (wrist) in a linear direction. Not suited for large displacements.
+
+The motion is cut if an arm location is executed afterwards.
 ``` javascript
 {
     type: "gesture",
@@ -397,8 +402,10 @@ Moves the wrist in a linear direction. Not suited for large displacements.
     direction: "o", // string 26 directions
     
     // optionals
+    secondDirection: "l", // string 8 directions. Will compute midpoint between direction and secondDirection.
     distance: 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
     curve: "u", // string 8 directions. Default to none
+    secondCurve: "l", // string 8 directions. Will compute midpoint between curve and secondCurve.
     curveSteepness: 1, // number from [0,1] meaning the sharpness of the curve
     zigzag: "l", // string 26 directions
     zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
@@ -409,7 +416,9 @@ Moves the wrist in a linear direction. Not suited for large displacements.
 
 ---
 ## Circular Motion
-Moves the wrist in a circular motion.
+Moves the arm (wrist) in a circular motion.
+
+The motion is cut if an arm location is executed afterwards.
 ``` javascript
 {
     type: "gesture",
@@ -422,6 +431,7 @@ Moves the wrist in a circular motion.
     direction: "o", // string 26 directions. Axis of rotation
     
     // optionals
+    secondDirection: "l", // string 8 directions. Will compute midpoint between direction and secondDirection.
     distance: 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
     startAngle: 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
     endAngle: 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]

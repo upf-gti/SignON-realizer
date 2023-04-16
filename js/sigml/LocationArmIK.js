@@ -282,7 +282,8 @@ class LocationArmIK {
      * side: (optional) string from sides table. Location will offset into that direction
      * sideDistance: (optional) how far to move the indicate side. Metres
      */
-    newGestureBML( bml, symmetry = 0x00 ) {
+    newGestureBML( bml, symmetry = 0x00, lastFrameQuaternions = null ) {
+        let tempV = new Vector3(0,0,0);
         // distance: touch vs far
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
 
@@ -298,10 +299,6 @@ class LocationArmIK {
             else if( location[location.length-1] == "R" ){
                 location = location.slice(0, location.length-1) + "L";
             } 
-            // else if( !isNaN( location[location.length-1] ) ){ // spatial locations
-            //     let val = 6 - parseInt( location[location.length-1] );
-            //     location = location.slice(0, location.length-1) + val.toFixed(0);
-            // }
         }
         
         let near = nearPoses[ location ];
@@ -311,16 +308,10 @@ class LocationArmIK {
             return;
         }
 
-        // same as in location
-        let side = bml.side;
-        if ( side && symmetry ){ side = directionStringSymmetry( side, symmetry ); }
-        side = sides[ side ];
-
-
         // Set target and source poses AND prepare skeleton for ik
         for ( let i = 0; i < near.length; ++i ){
             // source: Copy current arm state
-            this.srcG[i].copy( this.curG[i] );
+            this.srcG[i].copy( lastFrameQuaternions ? lastFrameQuaternions[i] : this.curG[i] );
 
             // target (reference)
             this.trgG[i].copy( near[i] );
@@ -334,17 +325,30 @@ class LocationArmIK {
         }
 
         // set ikTarget as lerp( nearPoint, farPoint, distance ) + side
-        let pos = new Vector3(0,0,0);
+        let pos = tempV;
         this.skeleton.bones[ this.chainInfo.chain[0] ].getWorldPosition( pos )
         this.chainInfo.target.position.x = pos.x * (1-distance) + far.x * distance;
         this.chainInfo.target.position.y = pos.y * (1-distance) + far.y * distance;
         this.chainInfo.target.position.z = pos.z * (1-distance) + far.z * distance;
 
+        // same as in location
+        let side = bml.side;
+        if ( side && symmetry ){ side = directionStringSymmetry( side, symmetry ); }
+        side = sides[ side ];
         if ( side ){
+            let secondSide = bml.secondSide;
+            if ( secondSide && symmetry ){ secondSide = directionStringSymmetry( secondSide, symmetry ); }
+            secondSide = sides[ secondSide ];
+            if( !secondSide ){ secondSide = side; }
+            let finalSide = tempV;
+            finalSide.lerpVectors( side, secondSide, 0.5 );
+            finalSide.normalize(); 
+            if( finalSide.lengthSq() < 0.0001 ){ finalSide.copy( side ); }
+
             let sideDist = isNaN( bml.sideDistance ) ? 0 : bml.sideDistance;
-            this.chainInfo.target.position.x += side.x * sideDist;
-            this.chainInfo.target.position.y += side.y * sideDist;
-            this.chainInfo.target.position.z += side.z * sideDist;
+            this.chainInfo.target.position.x += finalSide.x * sideDist;
+            this.chainInfo.target.position.y += finalSide.y * sideDist;
+            this.chainInfo.target.position.z += finalSide.z * sideDist;
         }
 
         // Actual IK
@@ -360,9 +364,8 @@ class LocationArmIK {
             // copy src (current quaternions) into bone quaternions
             this.skeleton.bones[ this.idx + i ].quaternion.copy( this.srcG[i] );
                         
-            // copy src into curG (just in case)
+            // copy src into curG (not really needed, just in case)
             this.curG[i].copy( this.srcG[i] ); 
-
 
             // change arm's default pose if necesary
             if ( bml.shift ){

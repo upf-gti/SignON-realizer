@@ -236,8 +236,7 @@ class Extfidir {
         this.srcG.copy( this.curG );
 
         // compute midpoint between primary and secondary extfidir
-        this.trgPoint.addVectors( point, secondPoint );
-        this.trgPoint.multiplyScalar( 0.5 );
+        this.trgPoint.lerpVectors( point, secondPoint, 0.5 );
         
         // absolute positioning (tables) is at 1 meter. Relative & Local should be centered at the wrist
         this.mode = ( EXTFIDIR_MODES[ bml.mode ] ) ? EXTFIDIR_MODES[ bml.mode ] : EXTFIDIR_MODES.RELATIVE; 

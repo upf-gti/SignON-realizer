@@ -1,6 +1,8 @@
 import { Quaternion, Vector3 } from "three";
 import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUtils.js";
 
+let DEG2RAD = Math.PI / 180;
+
 let directionTable = {
     'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
     'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
@@ -32,15 +34,16 @@ let directionTable = {
     "i"     : (new Vector3(  0,   0,  -1 )).normalize(),
 }
 
+// in x,y plane -> angle with respect to +y axis
 let curveDirectionTable = {
-    'u'     : directionTable['u'],   
-    'ul'    : directionTable['ul'],   
-    'l'     : directionTable['l'],   
-    'dl'    : directionTable['dl'],   
-    'd'     : directionTable['d'],   
-    'dr'    : directionTable['dr'],  
-    'r'     : directionTable['r'],  
-    'ur'    : directionTable['ur'],  
+    'u'     : 0 * DEG2RAD,   
+    'ul'    : 315 * DEG2RAD,   
+    'l'     : 270 * DEG2RAD,   
+    'dl'    : 225 * DEG2RAD,   
+    'd'     : 180 * DEG2RAD,   
+    'dr'    : 135 * DEG2RAD,  
+    'r'     : 90 * DEG2RAD,  
+    'ur'    : 45 * DEG2RAD,  
 }
 
 
@@ -134,7 +137,21 @@ class DirectedMotion {
         let curveDir = bml.curve;
         if ( curveDir && symmetry ){ curveDir = directionStringSymmetry( curveDir, symmetry ); }
         curveDir = curveDirectionTable[ curveDir ];
-        if ( !curveDir ){ this.steepness = 0; }
+        if ( isNaN( curveDir ) ){ this.steepness = 0; }
+        else{
+            //second curve direction
+            let secondCurveDir = bml.secondCurve;
+            if ( secondCurveDir && symmetry ){ secondCurveDir = directionStringSymmetry( secondCurveDir, symmetry ); }
+            secondCurveDir = curveDirectionTable[ secondCurveDir ];
+            if ( isNaN( secondCurveDir ) ){ secondCurveDir = curveDir; }
+            else{
+                // find shortest path in circle
+                if ( ( curveDir - secondCurveDir ) < -Math.PI ){ secondCurveDir -= 2 * Math.PI; }
+                else if ( ( curveDir - secondCurveDir ) > Math.PI ){ secondCurveDir += 2 * Math.PI; }
+            }
+            curveDir = 0.5 * curveDir + 0.5 * secondCurveDir;
+        }
+
 
         // set default direction (+z), default curve direction (+y) and ajust with size and curve steepness
         this.bezier[0].set(0,0,0);
@@ -143,17 +160,13 @@ class DirectedMotion {
         this.bezier[2].set(0,1,-0.5).multiplyScalar( this.distance * this.steepness ).add( this.bezier[3] );
                 
         // rotate default curve direction (+y) to match user's one
-        if ( curveDir ){
-            let angle = curveDir.angleTo( curveDirectionTable['u'] ); // [0º,180º]
-            if ( curveDir.x > 0.0 ){ angle = Math.PI * 2 - angle; }   // [0º,360º]
-
-            tempV.set(0,0,1);
-        
-            this.bezier[1].applyAxisAngle( tempV, angle );
-            this.bezier[2].applyAxisAngle( tempV, angle );
+        if ( !isNaN( curveDir ) ){
+            tempV.set(0,0,1);        
+            this.bezier[1].applyAxisAngle( tempV, curveDir );
+            this.bezier[2].applyAxisAngle( tempV, curveDir );
         }
 
-        // fetch direction
+        // fetch direction and secondDirection
         let direction = bml.direction;
         if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
         direction = directionTable[ direction ];
@@ -161,9 +174,18 @@ class DirectedMotion {
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
             return;
         }
+        let secondDirection = bml.secondDirection;
+        if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
+        secondDirection = directionTable[ secondDirection ];
+        if ( !secondDirection ){ secondDirection = direction; }
+        
+        let finalDir = tempV;
+        finalDir.lerpVectors( direction, secondDirection, 0.5 );
+        finalDir.normalize();
+        if( finalDir.lengthSq < 0.0001 ){ finalDir.copy( direction ); }
 
-        // instead of rotating +90º, change point of view (mirror on xy plane)
-        if ( direction.z < 0 ){
+        // default looks at +z. If direction falls in -z, change default to -z to avoid accidental left-right, up-down mirror
+        if ( finalDir.z < 0 ){
             this.bezier[0].z *= -1;
             this.bezier[1].z *= -1;
             this.bezier[2].z *= -1;
@@ -171,10 +193,10 @@ class DirectedMotion {
         }
         
         // rotate default direction to match the user's one
-        if ( Math.abs(direction.dot(this.bezier[3])) > 0.999 ){ this.lookAtQuat.set(0,0,0,1); }
+        if ( Math.abs(finalDir.dot(this.bezier[3])) > 0.999 ){ this.lookAtQuat.set(0,0,0,1); }
         else{ 
-            let angle = direction.angleTo( this.bezier[3] );
-            tempV.crossVectors( this.bezier[3], direction );
+            let angle = finalDir.angleTo( this.bezier[3] );
+            tempV.crossVectors( this.bezier[3], finalDir );
             tempV.normalize();
             this.lookAtQuat.setFromAxisAngle( tempV, angle );
         }
@@ -316,14 +338,20 @@ class CircularMotion {
         let direction = bml.direction;
         if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
         direction = directionTable[ direction ];
-        if ( !direction ) {
-            direction = directionTable['o'];
-        }
-        this.axis.copy(direction);
+        if ( !direction ) { direction = directionTable['o']; }
+        
+        let secondDirection = bml.secondDirection;
+        if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
+        secondDirection = directionTable[ secondDirection ];
+        if ( !secondDirection ) { secondDirection = direction; }
+
+        this.axis.lerpVectors( direction, secondDirection, 0.5 );
+        this.axis.normalize();
+        if( this.axis.lengthSq() < 0.0001 ){ this.axis.copy( direction ); }
 
         // angle computations
-        let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle  * Math.PI / 180.0 );
-        let endAngle = isNaN( bml.endAngle ) ? ( Math.PI * 2 ) : ( bml.endAngle  * Math.PI / 180.0 );
+        let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
+        let endAngle = isNaN( bml.endAngle ) ? ( 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
         this.targetDeltaAngle = endAngle - startAngle;
         if( this.targetDeltaAngle >= 0 ){ // add extra angle for ease-in
             startAngle -= this.easingAngle;
@@ -585,7 +613,7 @@ class WristMotion {
                     return;
             }
         }
-        else if ( !isNaN( bml.mode ) ) {
+        else if ( isNaN( bml.mode ) ) {
             console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
             return;
         }

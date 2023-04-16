@@ -6,7 +6,7 @@ import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
-import { Mesh, MeshPhongMaterial, SphereGeometry, Vector3 } from "three";
+import { Mesh, MeshPhongMaterial, Quaternion, SphereGeometry, Vector3 } from "three";
 import { findIndexOfBone } from "./sigmlUtils.js";
 
 
@@ -63,6 +63,7 @@ class GestureManager{
 
         this.right = {
             armChain : this.ikSolver.getChain( "RightArm" ),
+            locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, false ),
             locMotions : [ new DirectedMotion(), new CircularMotion() ],
             extfidir : new Extfidir( boneMap, skeleton, false ),
@@ -73,6 +74,7 @@ class GestureManager{
         }
         this.left = {
             armChain : this.ikSolver.getChain( "LeftArm" ),
+            locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, true ),
             locMotions : [ new DirectedMotion(), new CircularMotion() ],
             extfidir : new Extfidir( boneMap, skeleton, true ),
@@ -102,10 +104,10 @@ class GestureManager{
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.06, side: "dl", sideDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.065, side: "dl", sideDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left",  distance: 0.04, side: "r", sideDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "d", hand: "right", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "d", secondPalmor: "dr", hand: "right", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "right", mode: "local", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "left", mode: "local", shift:true } );
@@ -145,7 +147,7 @@ class GestureManager{
     
             // debug points position after ik
             // this.skeleton.bones[ ikChain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            // let kk = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // let kk = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ depthTest:false, depthWrite: false }) );
             // kk.position.copy(this.ikTarget.position);
             // window.global.app.scene.add( kk );
         }    
@@ -161,6 +163,9 @@ class GestureManager{
         }
         this._updateLocationMotions( dt, arm.armChain, arm.locMotions ); // IK
 
+        arm.locationLastFrameQuats[0].copy( bones[ arm.loc.idx ].quaternion );
+        arm.locationLastFrameQuats[1].copy( bones[ arm.loc.idx + 1 ].quaternion );
+        arm.locationLastFrameQuats[2].copy( bones[ arm.loc.idx + 2 ].quaternion );
      
         // ADD twist to elbow (twist before swing scheme). Overwrite wrist rotation (put only twist)
         arm.palmor.update( dt );
@@ -191,8 +196,10 @@ class GestureManager{
     }
 
     _newGestureArm( bml, arm, symmetry = 0x00 ){
-        if ( bml.locationArm ){
-            arm.loc.newGestureBML( bml, symmetry );
+        if ( bml.locationArm ){ // when location change, cut directed and circular motions
+            arm.loc.newGestureBML( bml, symmetry, arm.locationLastFrameQuats );
+            arm.locMotions[0].reset();
+            arm.locMotions[1].reset();
         }
         else if ( bml.motion ){
             let m = null;

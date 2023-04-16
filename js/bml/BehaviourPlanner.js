@@ -232,13 +232,13 @@ BehaviourPlanner.prototype.createBlock = function(){
       this.nextBlockIn = 2 + Math.random()*4;
       // Head
       if (Math.random() < 0.2){
-        block.head = {
-          start: 0,
-          end: 2.5 + Math.random()*1.5,
-          lexeme: "TILT",
-          amount: 0.05 + Math.random()*0.05,
-          type:"head"
-        }
+        // block.head = {
+        //   start: 0,
+        //   end: 2.5 + Math.random()*1.5,
+        //   lexeme: "TILT",
+        //   amount: 0.05 + Math.random()*0.05,
+        //   type:"head"
+        // }
         // Deviate head slightly
         if (Math.random() < 0.85)
         {
@@ -312,13 +312,13 @@ BehaviourPlanner.prototype.createBlock = function(){
       // head nods
       if (Math.random() < 0.3)
       {
-        block.head = {
-          start: 0,
-          end: 1.5 + Math.random()*2,
-          lexeme: Math.random() < 0.2 ? "TILT" : "NOD",
-          amount: 0.05 + Math.random()*0.1,
-          type:"head"
-        }
+        // block.head = {
+        //   start: 0,
+        //   end: 1.5 + Math.random()*2,
+        //   lexeme: Math.random() < 0.2 ? "TILT" : "NOD",
+        //   amount: 0.05 + Math.random()*0.1,
+        //   type:"head"
+        // }
       }
 
       // frown
