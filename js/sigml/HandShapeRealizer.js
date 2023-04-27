@@ -226,6 +226,7 @@ class HandShapeRealizer {
      * bml info
      * start, attackPeak, relax, end
      * handshape: string from the handshape tables
+     * f1, f2, f3, f4, f5: string from the handshape tables. Overrides handshape and thumbshape for that specific finger. 1=thumb, 5=pinky
      * thumbshape: (optional) string from thumbshape table. 
      */
     newGestureBML( bml ){
@@ -251,6 +252,12 @@ class HandShapeRealizer {
             }
             newG.thumb = thumbGest;
         }
+
+        if ( handShapes[ bml.f1 ] ){ newG.thumb = handShapes[ bml.f1 ].thumb; } 
+        if ( handShapes[ bml.f2 ] ){ newG.index = handShapes[ bml.f2 ].index; } 
+        if ( handShapes[ bml.f3 ] ){ newG.middle = handShapes[ bml.f3 ].middle; } 
+        if ( handShapes[ bml.f4 ] ){ newG.ring = handShapes[ bml.f4 ].ring; } 
+        if ( handShapes[ bml.f5 ] ){ newG.pinky = handShapes[ bml.f5 ].pinky; } 
 
         // set source pose
         this._fillGestureFromCurrentPose( this.idxs, this.srcG );

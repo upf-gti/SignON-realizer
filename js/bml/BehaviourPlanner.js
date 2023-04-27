@@ -232,27 +232,20 @@ BehaviourPlanner.prototype.createBlock = function(){
       this.nextBlockIn = 2 + Math.random()*4;
       // Head
       if (Math.random() < 0.2){
-        // block.head = {
-        //   start: 0,
-        //   end: 2.5 + Math.random()*1.5,
-        //   lexeme: "TILT",
-        //   amount: 0.05 + Math.random()*0.05,
-        //   type:"head"
-        // }
         // Deviate head slightly
         if (Math.random() < 0.85)
         {
           var start = Math.random();
           var offsetDirections = ["CAMERA","DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
           var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
-          block.headDirectionShift = {
-            start: start,
-            end: start + Math.random(),
-            target: "CAMERA",
-            offsetDirection: randOffset,
-            offsetAngle: 1 + Math.random()*3,
-            type:"headDirectionShift"
-          }
+          // block.headDirectionShift = {
+          //   start: start,
+          //   end: start + Math.random(),
+          //   target: "CAMERA",
+          //   offsetDirection: randOffset,
+          //   offsetAngle: 1 + Math.random()*3,
+          //   type:"headDirectionShift"
+          // }
         }
       }
       // Esporadic raising eyebrows
@@ -275,15 +268,15 @@ BehaviourPlanner.prototype.createBlock = function(){
       // Redirect gaze to user
       if (Math.random() < 0.7)
       {
-        var start = Math.random();
-        var end = start + 0.5 + Math.random()*1;
-        block.gazeShift = {
-          start: start,
-          end: end,
-          influence: "EYES",
-          target: "CAMERA",
-          type:"gazeShift"
-        }
+        // var start = Math.random();
+        // var end = start + 0.5 + Math.random()*1;
+        // block.gazeShift = {
+        //   start: start,
+        //   end: end,
+        //   influence: "EYES",
+        //   target: "CAMERA",
+        //   type:"gazeShift"
+        // }
         block.composition = "MERGE";
       }
 
@@ -298,15 +291,15 @@ BehaviourPlanner.prototype.createBlock = function(){
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
       if(Math.random() < 0.8)
       {
-        block.gazeShift = {
-          start: 0,
-          end: 1 + Math.random(),
-          influence: "EYES",
-          target: "CAMERA",
-          offsetDirection: randOffset,
-          offsetAngle: 10 + 5*Math.random(),
-          type:"gazeShift"
-        }
+        // block.gazeShift = {
+        //   start: 0,
+        //   end: 1 + Math.random(),
+        //   influence: "EYES",
+        //   target: "CAMERA",
+        //   offsetDirection: randOffset,
+        //   offsetAngle: 10 + 5*Math.random(),
+        //   type:"gazeShift"
+        // }
       }
 
       // head nods
@@ -363,15 +356,15 @@ BehaviourPlanner.prototype.createBlock = function(){
       // gaze
       var offsetDirections = ["CAMERA","DOWN", "DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
-      block.gazeShift = {
-        start: 0,
-        end: 1 + Math.random(),
-        target: "CAMERA",
-        influence: Math.random()>0.5 ? "HEAD":"EYES",
-        offsetDirection: offsetDirections[randOffset],
-        offsetAngle: 5 + 5*Math.random(),
-        type:"gazeShift"
-      }
+      // block.gazeShift = {
+      //   start: 0,
+      //   end: 1 + Math.random(),
+      //   target: "CAMERA",
+      //   influence: Math.random()>0.5 ? "HEAD":"EYES",
+      //   offsetDirection: offsetDirections[randOffset],
+      //   offsetAngle: 5 + 5*Math.random(),
+      //   type:"gazeShift"
+      // }
 
       // Set to neutral face (VALENCE-AROUSAL)
       //block.faceShift = {start: 0, end: 2, valaro: [0,0], type:"faceShift"};
@@ -431,15 +424,15 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function(dt){
     if (!block) 
       block = {};
     
-    block.gaze = {
-      start: 0,
-      end: Math.random()*0.1+0.1,
-      target: target, 
-      influence: "EYES",
-      offsetDirection: "CAMERA",
-      offsetAngle: Math.random()*3 + 2,
-      type:"gaze"
-    }
+    // block.gaze = {
+    //   start: 0,
+    //   end: Math.random()*0.1+0.1,
+    //   target: target, 
+    //   influence: "EYES",
+    //   offsetDirection: "CAMERA",
+    //   offsetAngle: Math.random()*3 + 2,
+    //   type:"gaze"
+    // }
     
     this.saccCountdown = this.saccDur;
     if (this.state ==BehaviourPlanner.LISTENING || this.state == BehaviourPlanner.SPEAKING)
@@ -461,27 +454,27 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
   var startGaze = startHead + Math.random()*0.5; // Late start
   
 	// gazeShift
-	var gazeShift = {
-    id: "gazeEnd",
-		start: startGaze,
-		end: end,
-		influence: "EYES",
-		target: "CAMERA",
-    type:"gazeShift"
-	}
+	// var gazeShift = {
+  //   id: "gazeEnd",
+	// 	start: startGaze,
+	// 	end: end,
+	// 	influence: "EYES",
+	// 	target: "CAMERA",
+  //   type:"gazeShift"
+	// }
   
 	// headDirectionShift
 	var offsetDirections = ["CAMERA","DOWN", "DOWNLEFT", "DOWNRIGHT"]; // Submissive? Listening?
   var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
 	var startDir = -Math.random()*0.3;
-	var headDir = {
-		start: startHead,
-		end: end,
-		target: "CAMERA",
-    offsetDirection: "CAMERA",
-    offsetAngle: 2 + 5*Math.random(),
-    type:"headDirectionShift"
-	}
+	// var headDir = {
+	// 	start: startHead,
+	// 	end: end,
+	// 	target: "CAMERA",
+  //   offsetDirection: "CAMERA",
+  //   offsetAngle: 2 + 5*Math.random(),
+  //   type:"headDirectionShift"
+	// }
   
   var faceVA = {
     start: startHead,
@@ -496,15 +489,15 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
   {
     //block.blink = blink;
     //block.faceVA = faceVA;
-    block.gazeShift = gazeShift;
-    block.headDirectionShift = headDir;
+    // block.gazeShift = gazeShift;
+    // block.headDirectionShift = headDir;
   } 
   else
   {
     //this.addToBlock(blink, block, "blink");
     //this.addToBlock(faceVA, block, "faceVA");
-    this.addToBlock(gazeShift, block, "gazeShift");
-    this.addToBlock(headDir, block, "headDirectionShift");
+    // this.addToBlock(gazeShift, block, "gazeShift");
+    // this.addToBlock(headDir, block, "headDirectionShift");
   }
 }
 

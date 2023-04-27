@@ -9,6 +9,7 @@ import { CharacterController } from './controllers/CharacterController.js'
 
 import { rotationTable as extfidirTable } from './sigml/Extfidir.js';
 import { nearArmPosesTable } from './sigml/LocationArmIK.js';
+import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -55,7 +56,7 @@ class App {
             colorChroma: 0x141455,
             colorClothes: 0xFFFFFF,
             reset: (function(){ this.ECAcontroller.reset(); }).bind(this),
-            openInput: () => {
+            openBMLInput: () => {
                 // open window and set all html elements (copy previous state)
                 let handle = window.open("", "BML Input", "width=700, height=700");
                 let previousText = "";
@@ -111,6 +112,43 @@ class App {
                 
                 });
 
+            },
+            openSiGMLInput: () => {
+                // open window and set all html elements (copy previous state)
+                let handle = window.open("", "SiGML Input", "width=700, height=700");
+                let previousText = "";
+                while( handle.document.body.firstChild ){
+                    if ( handle.document.body.firstChild.id == "sigmlInput" ){ previousText = handle.document.body.firstChild.value; }
+                    handle.document.body.removeChild( handle.document.body.firstChild );
+                }
+
+                let htmlStr = "<p>Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.</p>";
+                htmlStr += "<textarea id=\"sigmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
+                handle.document.write(htmlStr);
+                let textarea = handle.document.getElementById( "sigmlInput" );
+                textarea.value = previousText;
+                let button = handle.document.getElementById( "sendButton" );
+                
+                // generate msg and send it to ECAController
+                button.addEventListener( "click", () => { 
+                    let msg = {
+                        type: "behaviours",
+                        data: []
+                    };
+                    msg.data = sigmlStringToBML( textarea.value );
+                    // try {
+                    // } catch (error) {
+                    //     handle.alert( "Invalid SiGML message." );
+                    //     console.error( error );
+                    //     return;
+                    // }
+
+                    window.global.app.ECAcontroller.processMsg(JSON.stringify(msg));
+
+                
+                });
+
             }
         } 
         
@@ -139,7 +177,8 @@ class App {
         });
 
         gui.add( params, "reset").name("reset Pose");
-        gui.add( params, "openInput").name("bml input");
+        gui.add( params, "openBMLInput").name("bml input");
+        gui.add( params, "openSiGMLInput").name("SiGML input");
 
         let moodFolder = gui.addFolder( "Moods" ).close();
         let armFolder = gui.addFolder( 'Arm Gestures' ).close();
@@ -998,18 +1037,22 @@ class App {
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
         this.scene.add( backPlane );
-        
+
+        // let center = new THREE.Mesh( new THREE.SphereGeometry(0.05, 5, 5), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: true }) );
+        // center.position.set(0,0,0);
+        // this.scene.add( center );
+
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
-        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
+        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
         this.eyesTarget.name = "eyesTarget";
         this.eyesTarget.position.set(0, 2.5, 15); 
-        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
+        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
         this.headTarget.name = "headTarget";
         this.headTarget.position.set(0, 2.5, 15); 
-        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 5, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
+        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
         this.neckTarget.name = "neckTarget";
         this.neckTarget.position.set(0, 2.5, 15); 
 
@@ -1064,14 +1107,13 @@ class App {
         }
 
         function loadfinished() {
-//            this.model1.position.set(0.05, 0.96, 0 );
             let q = new THREE.Quaternion();
             q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
             this.model1.quaternion.premultiply(q); 
             q.setFromAxisAngle( new THREE.Vector3(0,0,1), 2 * Math.PI /180 ); // slightly tilted on z axis
             this.model1.quaternion.premultiply(q); 
 
-            this.model1.position.set(0.05, 0, 0 );
+            this.model1.position.set(0, 0, 0);
             this.model2.position.set(0, 0, 0);
 
             this.switchModel( this.model1 );

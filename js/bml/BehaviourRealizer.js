@@ -195,6 +195,8 @@ FacialExpr.NMF.INNER_BROW_RAISER =          [[6,7], [1,1]]; // AU1 rows rotate o
 FacialExpr.NMF.OUTER_BROW_RAISER =          [[8,9], [1,1]]; // AU2 brows up (right)
 
 FacialExpr.NMF.UPPER_LID_RAISER =           [[12,13], [1,1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[12], [1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[13], [1]]; // AU5 negative eyelids closed /wide eyes
 FacialExpr.NMF.CHEEK_RAISER =               [[43,44], [1,1]]; // AU6 squint
 FacialExpr.NMF.LID_TIGHTENER =              [[43,44], [1,1]]; // AU7 or AU44 squint
 FacialExpr.NMF.EYES_CLOSED =                [[0,1], [1,1]]; // AU43 eyelids closed
@@ -677,7 +679,7 @@ GazeManager.gazePositions = {
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
     "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
     "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
-    "CAMERA": new THREE.Vector3(0, 2, 100)
+    "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
 };
 
 Gaze.prototype.gazeBS = {
@@ -685,7 +687,7 @@ Gaze.prototype.gazeBS = {
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
     "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
     "DOWNRIGHT": { squint: 0, eyelids: 0.2 }, "DOWNLEFT": { squint: 0, eyelids: 0.2 },
-    "CAMERA": { squint: 0, eyelids: 0 }, "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
+    "FRONT": { squint: 0, eyelids: 0 }, "CAMERA": { squint: 0, eyelids: 0 }, "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
 };
 
 // Constructor (lookAt objects and gazePositions)
@@ -805,8 +807,7 @@ Gaze.prototype.initGazeData = function (gazeData, shift) {
     this.offsetDirection = stringToUpperCase(gazeData.offsetDirection, "Gaze offsetDirection", "RIGHT");
 
     // Target
-    this.target = stringToUpperCase(gazeData.target, "Gaze target", "CAMERA");
-    if (this.target == "FRONT") this.target = "CAMERA";
+    this.target = stringToUpperCase(gazeData.target, "Gaze target", "FRONT");
 
     // Angle
     this.offsetAngle = gazeData.offsetAngle || 0.0;

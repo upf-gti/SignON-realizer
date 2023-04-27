@@ -14,10 +14,11 @@ function FacialController(config = null) {
 
     this._gazePositions = {
         "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
-        "UP": new THREE.Vector3(-10, 20, 100), "DOWN": new THREE.Vector3(-10, -20, 100),
+        "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
         "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
         "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
-        "CAMERA": new THREE.Vector3(0, 2, 100)
+        "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
+
     };
 
     this.squintBSName = "Squint";
@@ -191,12 +192,10 @@ FacialController.prototype.update = function (dt) {
     // Update facial expression
     this.faceUpdate(dt);
 
-    
     // Gaze
-    /*if (this.gazeManager){
+    if (this.gazeManager){
         let weights = this.gazeManager.update(dt);
         let keys = Object.keys(this._facialBS);
-        
         // for each part (body, eyelashes)
         for(let i = 0; i < keys.length; ++i ){
             // eyelids update
@@ -208,17 +207,16 @@ FacialController.prototype.update = function (dt) {
                 this._facialBS[keys[i]][this._squintBS[i][j]] = weights.squint;
             }
         }
-    }*/
+    }
+
 
     let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
     let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
     let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-    this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
-    this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
-
-    this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+    
     this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
-
+    this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+    
     // HEAD (nod, shake, tilt)
     let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
     for( let i = 0; i< this.headBML.length; ++i){
@@ -231,6 +229,9 @@ FacialController.prototype.update = function (dt) {
         head.update(dt);
         headQuat.multiply( head.currentStrokeQuat );
     }
+    
+    this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
+    this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
     
 }
 
@@ -374,7 +375,7 @@ FacialController.prototype.faceUpdate = function (dt) {
 
 // ----------------------- TEXT TO LIP --------------------
 // Create a Text to Lip mouthing
-FacialController.prototype.newTextToLip = function (info) {
+FacialController.prototype.newTextToLip = function (bml) {
     
     if (!this.textToLip) { // setup
 
@@ -410,7 +411,7 @@ FacialController.prototype.newTextToLip = function (info) {
     }
 
     this.textToLip.cleanQueueSentences();
-    this.textToLip.pushSentence(info.text, info); // use info object as options container also  
+    this.textToLip.pushSentence(bml.text, bml); // use info object as options container also  
 }
 
 
@@ -479,7 +480,7 @@ FacialController.prototype.newBlink = function ( bml ){
 
 // "HEAD" position is added on Start
 
-FacialController.prototype.newGaze = function (gazeData, shift, gazePositions, headOnly) {
+FacialController.prototype.newGaze = function (gazeData, shift, gazePositions = null) {
 
     // TODO: recicle gaze in gazeManager
     let keys = Object.keys(this._facialBS);
@@ -490,7 +491,7 @@ FacialController.prototype.newGaze = function (gazeData, shift, gazePositions, h
     gazeData.squintWeight = squintW;
     gazeData.blinkWeight = blinkW;
 
-    this.gazeManager.newGaze(gazeData, shift, gazePositions, headOnly);
+    this.gazeManager.newGaze(gazeData, shift, gazePositions, !!gazeData.headOnly);
 
 }
 

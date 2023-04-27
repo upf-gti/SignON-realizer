@@ -55,9 +55,13 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
     end: 0.4,
 
     influence: "NECK" || "HEAD" || "EYES",
-    offsetDirection: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN",
+    target: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT",
 
-    shift: false // optional
+    // optionals
+    offsetDirection: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN",
+    offsetAngle: 0, // degrees
+    headOnly: true, // whether to move the eyes with a head movement
+    shift: false
 }
 ```
 
@@ -423,8 +427,6 @@ The motion is cut if an arm location is executed afterwards.
 {
     type: "gesture",
     start: 0.1,
-    attackPeak: 0.2, 
-    relax: 0.3,  
     end: 0.4,
     
     motion: "circular",

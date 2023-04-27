@@ -37,12 +37,6 @@ function CharacterController(o) {
         console.error("FacialController module not found");
     }
 
-    /*let playAnimation = new PlayAnimation();
-    if(!playAnimation )
-        console.error("PlayAnimation module not found") 
-    else
-        this.animationManager = new AnimationManager(playAnimation) ;*/
-
     if ( typeof(GestureManager) !== 'undefined'){ 
         this.gestureManager = new GestureManager( this.character );
     } 
@@ -67,9 +61,6 @@ CharacterController.prototype.reset = function ( keepEmotion = false ) {
 
     if (this.gestureManager){ 
         this.gestureManager.reset(); }
-
-    // if (this.animationManager){ 
-    //     this.animationManager.reset(); }
 
     this.endSpeakingTime = -1;
     this.speaking = false;
@@ -103,9 +94,6 @@ CharacterController.prototype.update = function (dt, et) {
     if (this.gestureManager){
         this.gestureManager.update(dt)
     }
-
-    // if (this.animationManager)
-    //     this.animationManager.update(dt)
 
 
     // lipsync stuff????
@@ -301,7 +289,6 @@ CharacterController.prototype.processBML = function (key, bml) {
             break;
         case "animation":
             // TODO
-            //this.animationManager.newAnimation(bml)
             break;
         case "lg":
             thatFacial.newLipsync( bml );
