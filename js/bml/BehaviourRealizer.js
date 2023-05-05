@@ -1,5 +1,5 @@
 //@BehaviorRealizer
-import '../gl-matrix-min.js'
+
 import * as THREE from 'three';
 let DEG2RAD = Math.PI / 180;
 let RAD2DEG = 180 / Math.PI;
@@ -18,8 +18,7 @@ function Blink() {
 
     this.needsInit = true;
     this.blinking = false;
-    this.between = false;
-    
+    this.between = false;    
 }
 
 Blink.prototype.getEnd = function () {
@@ -446,12 +445,11 @@ FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
     // each emotion's valaro as point
     let valAroPoints = [];
     for (let count = 0; count < this._pit.length; count++) {
-        let point = vec2.create();
-        point.set([this._pit[count][0], this._pit[count][1]]);
+        let point = new THREE.Vector2(this._pit[count][0], this._pit[count][1]); 
         valAroPoints.push(point);
     }
     let num_points = valAroPoints.length;
-    let pos = vec2.create();
+    let pos = new THREE.Vector2();
 
     // create grid
     let total_nums = 2 * gridsize * gridsize;
@@ -465,15 +463,15 @@ FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
             let nearest = -1;
             let min_dist = 100000;
             //normalize
-            pos[0] = x / gridsize;
-            pos[1] = y / gridsize;
+            pos.x = x / gridsize;
+            pos.y = y / gridsize;
             // center coords
-            pos[0] = pos[0] * 2 - 1;
-            pos[1] = pos[1] * 2 - 1;
+            pos.x = pos.x * 2 - 1;
+            pos.y = pos.y * 2 - 1;
 
             // which emotion is closer to this point and its distance
             for (var i = 0; i < num_points; ++i) {
-                let dist = vec2.distance(pos, valAroPoints[i]);
+                let dist = pos.distanceToSquared(valAroPoints[i]); 
                 if (dist > min_dist)
                     continue;
                 nearest = i;
@@ -490,41 +488,42 @@ FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
 FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
 
     // Valence and arousal
-    this.valaro = faceData.valaro || [0.1, 0.1];
+    //let valaro = faceData.valaro || [0.1, 0.1];
+    this.valaro = new THREE.Vector2().fromArray(faceData.valaro || [0.1, 0.1]);
     if (faceData.emotion) {
         switch (faceData.emotion) {
             case "ANGER":
-                this.valaro = this._pit[0].slice(0, 2);
+                this.valaro.fromArray(this._pit[0].slice(0, 2));
                 break;
             case "HAPPINESS":
-                this.valaro = this._pit[1].slice(0, 2);
+                this.valaro.fromArray(this._pit[1].slice(0, 2));
                 break;
             case "SADNESS":
-                this.valaro = this._pit[2].slice(0, 2);
+                this.valaro.fromArray(this._pit[2].slice(0, 2));
                 break;
             case "SURPRISE":
-                this.valaro = this._pit[3].slice(0, 2);
+                this.valaro.fromArray(this._pit[3].slice(0, 2));
                 break;
             case "FEAR":
-                this.valaro = this._pit[4].slice(0, 2);
+                this.valaro.fromArray(this._pit[4].slice(0, 2));
                 break;
             case "DISGUST":
-                this.valaro = this._pit[5].slice(0, 2);
+                this.valaro.fromArray(this._pit[5].slice(0, 2));
                 break;
             case "CONTEMPT":
-                this.valaro = this._pit[6].slice(0, 2);
+                this.valaro.fromArray(this._pit[6].slice(0, 2));
                 break;
             default: // "NEUTRAL"
-                this.valaro = this._pit[7].slice(0, 2);
+                this.valaro.fromArray(this._pit[7].slice(0, 2));
                 break;
         }
     }
 
     // Normalize
-    let magn = vec2.length(this.valaro);
+    let magn = this.valaro.length();
     if ( magn > 1 ) {
-        this.valaro[0] /= magn;
-        this.valaro[1] /= magn;
+        this.valaro.x /= magn;
+        this.valaro.y /= magn;
     }
 
     // Sync
@@ -556,8 +555,7 @@ FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
     blendValues.fill(0);
 
     // position in grid to check
-    let pos = vec2.create();
-    pos.set(valAro);
+    let pos = valAro.clone();
 
     //precompute VA points weight in the grid
     let values = this._precomputed_weights;
@@ -568,21 +566,21 @@ FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
     weights.fill(0);
 
     let total_inside = 0;
-    let pos2 = vec2.create();
+    let pos2 = new THREE.Vector2(); 
     //for each position in grid, check if distance to pos is lower than distance to its nearest emotion
     for (let y = 0; y < gridsize; ++y) {
         for (let x = 0; x < gridsize; ++x) {
             //normalize
-            pos2[0] = x / gridsize;
-            pos2[1] = y / gridsize;
+            pos2.x = x / gridsize;
+            pos2.y = y / gridsize;
             //center
-            pos2[0] = pos2[0] * 2 - 1;
-            pos2[1] = pos2[1] * 2 - 1;
+            pos2.x = pos2.x * 2 - 1;
+            pos2.y = pos2.y * 2 - 1;
 
             let data_pos = (x + y * gridsize) * 2; // two values in each entry
             let point_index = values[data_pos];
             let point_distance = values[data_pos + 1];
-            let is_inside = vec2.distance(pos2, pos) < (point_distance + 0.001); //epsilon
+            let is_inside = pos2.distanceToSquared(pos) < (point_distance + 0.001);//epsilon
             if (is_inside) {
                 weights[point_index] += 1;
                 total_inside++;
