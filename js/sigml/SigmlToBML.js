@@ -5,14 +5,14 @@
 
 let DEFTIMESLOT = 1;
 
-function sigmlStringToBML( str ) {
+function sigmlStringToBML( str, timeOffset = 0 ) {
     let parser = new DOMParser();
     let xmlDoc = null;
 
     xmlDoc = parser.parseFromString( str, "text/xml" ).children[0];
     
     let msg = [];
-    let time = 0;
+    let time = (isNaN(timeOffset)) ? 0 : timeOffset;
     // for each hamnosis sign
     for( let i = 0; i < xmlDoc.children.length ; ++i ){
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
@@ -21,7 +21,7 @@ function sigmlStringToBML( str ) {
         msg = msg.concat( result.data );
     }
 
-    return msg;
+    return { data: msg, duration: time };
 }
 
 
@@ -127,7 +127,7 @@ function signManual( xml, start ){
     
     // these actions should last for the entirety of the sign. If there is a change mid sign, the new will overwrite the previous, so no problem with conflicting ends 
     for ( let i = 0; i < result.length; ++i ){
-        if ( result[i].extfidir || result[i].extfidir || result[i].handshape || result[i].locationArm || result[i].motion == "directed" ){ 
+        if ( result[i].extfidir || result[i].palmor || result[i].handshape || result[i].locationArm || result[i].motion == "directed" ){ 
             result[i].attackPeak = result[i].start + DEFTIMESLOT;
             result[i].relax = time;
             result[i].end = time + DEFTIMESLOT; 
@@ -184,6 +184,37 @@ function handconfigParser( xml, start, end, hand, symmetry ){
     return result;
 }
 
+
+let locationMap ={
+    head: "forehead", 
+    headtop: "headtop",
+    forehead: "forehead",
+    eyebrows: "eye",
+    eyes: "eye",
+    uppereyelid: "eye",
+    lowereyelid: "eye",
+    nose: "nose",
+    nostrils: "nose",
+    lips: "mouth",
+    upperlip: "mouth",
+    lowerlip: "mouth",
+    tongue: "mouth",
+    teeth: "mouth",
+    upperteeth: "mouth",
+    lowerteeth: "mouth",
+    chin: "chin",
+    underchin: "chin",
+    neck: "neck",
+    shoulders: "shoulder",
+    shouldertop: "shoulder",
+    chest: "chest",
+    stomach: "stomach",
+    belowstomach: "belowstomach",
+    ear: "ear",
+    earlobe: "ear",
+    cheek: "cheek"
+}
+
 function locationArmParser( xml, start, end, hand, symmetry ){
     let attributes = {}
     for( let attr = 0; attr < xml.attributes.length; ++attr ){
@@ -194,9 +225,11 @@ function locationArmParser( xml, start, end, hand, symmetry ){
 
     if ( attributes.contact == "touch" ){ result.distance = 0.0; }
     else if ( attributes.contact == "armextended" ){ result.distance = 0.9; }
-    else if ( attributes.contact ){ result.distance = 0.3; }
+    else { result.distance = 0.3; }
 
-    result.locationArm = attributes.location;
+    let loc =locationMap[ attributes.location ];
+    if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){ loc += (hand == "right")?'R':'L'; }
+    result.locationArm = loc;
 
     result.lrSym = symmetry & 0x01;
     result.udSym = symmetry & 0x02;
@@ -240,6 +273,7 @@ function simpleMotionParser( xml, start, end, hand, symmetry ){
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ result.zigzag = "l"; }
         if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.1; } // "small" == default value
+        
     }
     else if ( xml.tagName == "circularmotion" ){
         result.motion = "circular";
@@ -261,10 +295,10 @@ function simpleMotionParser( xml, start, end, hand, symmetry ){
     }
     else if ( xml.tagName == "wristmotion" ){
         result.motion = "wrist";
-        if ( attributes.size == "big" ){ result.intensity = 0.5; } // "small" == default value
-        else { result.intensity = 0.1; } // "small" == default value
+        if ( attributes.size == "big" ){ result.intensity = 0.3; } 
+        else { result.intensity = 0.1; }
         result.mode = attributes.motion;
-        result.speed = 5;
+        result.speed = 4;
     }
     else if ( xml.tagName == "fingerplay" ){
         result.motion = "fingerplay";
@@ -357,7 +391,7 @@ function baseActionToJSON( xml, startTime, endTime ){
         case "mouth_picture": 
             let text = obj.picture;
             // transform text from SIL encoding to ARPABET encoding
-            result = { type:"speech", text:text, sentInt: 0.5 };
+            result = { type:"speech", text:text+".", sentInt: 0.5 };
             break; // - picture
         case "mouth_meta": break; // - mouthmetatype    --- ?????
         case "extra_movement": break; // - movement     --- ?????

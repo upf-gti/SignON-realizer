@@ -1,0 +1,3 @@
+ELLENDIG	ELLENDIG.sigml
+HALLO	HALLO.sigml
+PIJN	PIJN.sigml

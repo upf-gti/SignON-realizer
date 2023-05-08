@@ -12,7 +12,7 @@ import { findIndexOfBone } from "./sigmlUtils.js";
 
 
 // EVERY MODULE WILL WORK WITH THE RIGHT HAND AS DOMINANT 
-class GestureManager{
+class BodyController{
     constructor( character ){
         this.character = character;
 
@@ -293,6 +293,6 @@ class GestureManager{
 }
 
 
-export { GestureManager };
+export { BodyController };
 
 

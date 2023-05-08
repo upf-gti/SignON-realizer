@@ -3,7 +3,7 @@ import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
 
-import { GestureManager } from '../sigml/GestureManager.js';
+import { BodyController } from '../sigml/BodyController.js';
 
 //States
 CharacterController.prototype.WAITING = 0;
@@ -37,8 +37,8 @@ function CharacterController(o) {
         console.error("FacialController module not found");
     }
 
-    if ( typeof(GestureManager) !== 'undefined'){ 
-        this.gestureManager = new GestureManager( this.character );
+    if ( typeof(BodyController) !== 'undefined'){ 
+        this.bodyController = new BodyController( this.character );
     } 
 }
 
@@ -59,8 +59,8 @@ CharacterController.prototype.reset = function ( keepEmotion = false ) {
     if (this.BehaviourManager){ 
         this.BehaviourManager.reset(); }
 
-    if (this.gestureManager){ 
-        this.gestureManager.reset(); }
+    if (this.bodyController){ 
+        this.bodyController.reset(); }
 
     this.endSpeakingTime = -1;
     this.speaking = false;
@@ -91,8 +91,8 @@ CharacterController.prototype.update = function (dt, et) {
 
 
 
-    if (this.gestureManager){
-        this.gestureManager.update(dt)
+    if (this.bodyController){
+        this.bodyController.update(dt)
     }
 
 
@@ -285,7 +285,7 @@ CharacterController.prototype.processBML = function (key, bml) {
             thatFacial.newTextToLip(bml);
             break;
         case "gesture":
-            this.gestureManager.newGesture( bml );
+            this.bodyController.newGesture( bml );
             break;
         case "animation":
             // TODO

@@ -1,6 +1,6 @@
 //@FacialController
 
-import { Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, AnimationManager, Text2LipInterface, T2LTABLES } from '../bml/BehaviourRealizer.js';
+import { Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, Text2LipInterface, T2LTABLES } from '../bml/BehaviourRealizer.js';
 import * as THREE from 'three';
 
 function FacialController(config = null) {

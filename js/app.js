@@ -42,6 +42,49 @@ class App {
         this.msg = {};
 
         this.fps = 0;
+
+
+        this.glossDictionary = null;
+    }
+
+    // entry point of data from the mobile app
+    async processMessage( data ){
+        // check there is a gloss to file dictionary
+        if ( !this.glossDictionary ){ return; }
+
+        // received data is a json in string format
+        json = JSON.parse( data );
+
+        // check whether there is something to do
+        if ( !json.glosses || json.glosses.length < 1 ){
+            // TODO DEFAULT SKIPPING SIGN MESSAGE
+            return;
+        }
+
+        // for each gloss, fetch its sigml file, convert it into bml
+        let orders = [];
+        let time = 0;
+        for( let i = 0; i < json.glosses.length; ++i ){
+            let glossFile = this.glossDictionary[ json.glosses[i] ];
+            if ( !glossFile ){ 
+                // TODO DEFAULT SKIPPING SIGN MESSAGE
+                time += 3; continue; 
+            }
+
+            await fetch( "data/dictionaries/NGT/Glosses/"+glossFile).then(x=>x.text()).then( (text) =>{ 
+               let result = sigmlStringToBML( text, time );
+               orders = orders.concat(result.data);
+               time += result.duration;
+            } ).catch(e =>{ console.log("failed at loading dictionary file: " + glossFile) } );
+        }
+
+
+        // give the orders to the avatar controller 
+        let msg = {
+            type: "behaviours",
+            data: orders
+        };
+        this.ECAcontroller.processMsg(JSON.stringify(msg));
     }
 
     createPanel() {
@@ -136,7 +179,7 @@ class App {
                         type: "behaviours",
                         data: []
                     };
-                    msg.data = sigmlStringToBML( textarea.value );
+                    msg.data = sigmlStringToBML( textarea.value ).data;
                     // try {
                     // } catch (error) {
                     //     handle.alert( "Invalid SiGML message." );
@@ -158,7 +201,7 @@ class App {
         color.copyLinearToSRGB(that.scene.getObjectByName("Chroma").material.color);
         params.colorChroma = color.getHex();
 
-        color.copyLinearToSRGB(that.model1.getObjectByName("Tops").material.color);
+        color.copyLinearToSRGB(that.model.getObjectByName("Tops").material.color);
         params.colorClothes = color.getHex();
 
         gui.addColor(params, 'colorChroma').onChange( (e) => {
@@ -167,11 +210,7 @@ class App {
             color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
         gui.addColor(params, 'colorClothes').onChange( (e) => {
-            let color = that.model1.getObjectByName("Tops").material.color; // css works in sRGB
-            color.setHex(e);
-            color.copySRGBToLinear(color); // material.color needs to be in linearSpace
-
-            color = that.model2.getObjectByName("Tops").material.color; // css works in sRGB
+            let color = that.model.getObjectByName("Tops").material.color; // css works in sRGB
             color.setHex(e);
             color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
@@ -875,7 +914,7 @@ class App {
     loadMouthingDictinoary(){
         let that = this;
                
-        fetch("data/phonetics/nl_ipa.txt").then(x => x.text()).then(function(text){ 
+        fetch("data/dictionaries/NGT/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
 
             let texts = text.split("\n");
             let IPADict = {}; // keys: plain text word,   value: ipa transcription
@@ -952,6 +991,18 @@ class App {
     init() {
 
         this.loadMouthingDictinoary();
+
+        fetch( "data/dictionaries/NGT/Glosses/glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
+            this.glossDictionary = {};
+            let lines = file.split("\n");
+            for( let i = 0; i < lines.length; ++i ){
+                if ( !lines[i] || lines[i].length < 1 ){ continue; }
+                let map = lines[i].split("\t");
+                if ( map.length < 2 ){ continue; }
+                this.glossDictionary[ map[0] ] = map[1];
+            }
+        } );
+
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
@@ -1060,11 +1111,8 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        // loads a model
-        function loadModel ( nameString, callback, glb ) {
-            let model = this["model"+nameString] = glb.scene;
-
-            model = glb.scene;
+        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
+            let model = this.model = glb.scene;
             model.rotateOnAxis( new THREE.Vector3(1,0,0), -Math.PI/2 );
             model.castShadow = true;
             
@@ -1083,7 +1131,7 @@ class App {
                 }
             } );
 
-            let skeletonHelper = this[ "skeletonHelper" + nameString ] = new THREE.SkeletonHelper( model );
+            let skeletonHelper = this.skeletonHelper = new THREE.SkeletonHelper( model );
             skeletonHelper.visible = false;
             this.scene.add(skeletonHelper);
             this.scene.add(model);
@@ -1092,70 +1140,23 @@ class App {
             model.headTarget = this.headTarget;
             model.neckTarget = this.neckTarget;
 
-            let ECAcontroller = this[ "ECAcontroller" + nameString ] = new CharacterController( {character: model} );
+            let ECAcontroller = this.ECAcontroller = new CharacterController( {character: model} );
             ECAcontroller.start();
             ECAcontroller.reset();
             ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
 
             // load the actual animation to play
-            let mixer = this[ "mixer" + nameString ] = new THREE.AnimationMixer( model );
+            let mixer = this.mixer = new THREE.AnimationMixer( model );
             mixer.addEventListener('loop', () => { ECAcontroller.reset(true); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
-
-            if ( callback ){ callback (); }
-            
-
-        }
-
-        function loadfinished() {
-            let q = new THREE.Quaternion();
-            q.setFromAxisAngle( new THREE.Vector3(1,0,0), -5 * Math.PI /180 ); // slightly tilted on x axis
-            this.model1.quaternion.premultiply(q); 
-            q.setFromAxisAngle( new THREE.Vector3(0,0,1), 2 * Math.PI /180 ); // slightly tilted on z axis
-            this.model1.quaternion.premultiply(q); 
-
-            this.model1.position.set(0, 0, 0);
-            this.model2.position.set(0, 0, 0);
-
-            this.switchModel( this.model1 );
-
+        
             this.createPanel();
             this.animate();
             $('#loading').fadeOut(); //hide();
-        }
-
-        // Load both models "synchronous". model1 = eva_Y    model2 = Signs
-        this.loaderGLB.load( './data/anim/Eva_Y.glb', 
-            loadModel.bind( this, "1",  
-                    //()=>this.loaderGLB.load( './data/anim/Signs.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
-                    ()=>this.loaderGLB.load( './data/anim/Eva_Y.glb', loadModel.bind( this, "2", loadfinished.bind(this)) )  
-            ) 
-        );
-
+        
+    
+        });
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
-
-    }
-
-    switchModel ( visibleModel ) {
-        // could be done with arrays but it is just a demo...
-        if ( visibleModel === this.model1 ){
-            this.model = this.model1;
-            this.ECAcontroller = this.ECAcontroller1;
-            this.mixer = this.mixer1;
-            this.skeletonHelper = this.skeletonHelper1;
-    
-            this.model1.visible = true;
-            this.model2.visible = false;
-        }
-        else {
-            this.model = this.model2;
-            this.ECAcontroller = this.ECAcontroller2;
-            this.mixer = this.mixer2;
-            this.skeletonHelper = this.skeletonHelper2;
-    
-            this.model1.visible = false;
-            this.model2.visible = true;
-        }
 
     }
 
@@ -1167,7 +1168,7 @@ class App {
         let et = this.clock.getElapsedTime();
 
         this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
-        if ( this.mixer ) { this.mixer.update(delta); }
+        // if ( this.mixer ) { this.mixer.update(delta); }
         if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 
         // correct hand's size
@@ -1188,75 +1189,6 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    loadBVH( filename, callback=null ) {
-
-        this.loaderBVH.load( filename , (result) => {
-            
-            for (let i = 0; i < result.clip.tracks.length; i++) {
-                result.clip.tracks[i].name = result.clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
-            }
-            
-            this.switchModel( this.model1 ); // use signs model
-            this.ECAcontroller.reset(); // reset face status
-            this.msg = {};
-            
-            this.mixer.stopAllAction();
-            this.mixer._actions.length = 0;
-            this.mixer.timeScale = 1;
-            
-            let anim = this.mixer.clipAction( result.clip );
-            anim.setEffectiveWeight( 1.0 ).play();
-            this.mixer.update(0);
-            
-            // reset clock to avoid counting loading time as dt in update
-            this.clock.stop();
-            this.clock.start();
-            this.ECAcontroller.time = 0;
-
-
-            if (callback) {
-                callback();
-            }
-
-        } );
-    }
-
-    loadGLB( filename, anim, callback=null ) {
-
-        this.loaderGLB.load( filename , (result) => {
-            result.animations.forEach(( clip ) => {
-
-                if (clip.name == anim) {
-
-                    for (let i = 0; i < clip.tracks.length; i++) {
-                        clip.tracks[i].name = clip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
-                    }
-
-                    this.switchModel( this.model2 ); // use signs model
-                    this.ECAcontroller.reset(); // reset face status
-                    this.msg = {};
-                    
-                    this.mixer.stopAllAction();
-                    this.mixer._actions.length = 0;
-                    this.mixer.timeScale = 1;
-                    
-                    let anim = this.mixer.clipAction( clip );
-                    anim.setEffectiveWeight( 1.0 ).play();
-                    this.mixer.update(0);
-                    
-                    // reset clock to avoid counting loading time as dt in update
-                    this.clock.stop();
-                    this.clock.start();
-                    this.ECAcontroller.time = 0;
-
-                    if (callback) {
-                        callback();
-                    }
-
-                }
-            });
-        });
-    }
 }
 
 let app = new App();
