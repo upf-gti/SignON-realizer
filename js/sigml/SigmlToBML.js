@@ -382,7 +382,7 @@ function baseActionToJSON( xml, startTime, endTime ){
     switch( xml.tagName ){
         case "shoulder_movement": break;  // - movement   
         case "body_movement": break; // - movement
-        case "head_movement": result = headMovementTable[ obj.direction ]; break; // - movement
+        case "head_movement": result = headMovementTable[ obj.movement ]; break; // - movement
         case "eye_gaze": result = eyeGazeTable[ obj.direction ]; break;
         case "eye_brows": result = eyebrowsTable[ obj.movement ]; break;
         case "eye_lids": result = eyelidsTable[ obj.movement ]; break;
