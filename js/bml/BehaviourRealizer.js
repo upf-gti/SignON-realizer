@@ -994,7 +994,7 @@ Gaze.prototype.initGazeValues = function () {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT]
+// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 
@@ -1115,6 +1115,27 @@ HeadBML.prototype.initHeadValues = function () {
         this.strokeDeg = this.amount * 20;
         this.readyDeg = this.strokeDeg * 0.5;
     }
+    else if (this.lexeme == "TILTLEFT") {
+        this.strokeAxis.set(0, 0, 1);
+        this.strokeDeg = this.amount * 20;
+        this.readyDeg = this.strokeDeg * 0.5;
+        if(!this.repetition) {
+            
+            this.strokeStart = this.ready;
+            this.strokeEnd = this.relax;
+        }
+    }
+    else if (this.lexeme == "TILTRIGHT") {
+        this.strokeAxis.set(0, 0, -1);
+        this.strokeDeg = this.amount * 20;
+        this.readyDeg = this.strokeDeg * 0.5;
+        if(!this.repetition) {
+            
+            this.strokeStart = this.ready;
+            this.strokeEnd = this.relax;
+        }
+        
+    }
 
     this.currentStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // current state of rotation
     this.deltaStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // temporal variable to store results
@@ -1133,11 +1154,15 @@ HeadBML.prototype.update = function (dt) {
     if (this.time < this.relax && this.time >= this.strokeEnd && this.repeatedIndx < this.repetition) {
         this.repeatedIndx++;
         let timeRep = (this.strokeEnd - this.strokeStart);
-
         this.strokeStart = this.strokeEnd;
         this.strokeEnd += timeRep;
         this.stroke = (this.strokeEnd + this.strokeStart) / 2;
 
+        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT") {
+
+            this.prevDeg = 0;
+        }
+        
         this.phase = 0;
     }
 
@@ -1159,20 +1184,23 @@ HeadBML.prototype.update = function (dt) {
     }
 
     // StrokeStart
-    else if (this.time > this.ready && this.time < this.strokeStart)
-        return;
+    else if (this.time > this.ready && this.time < this.strokeStart) {
+            return;
+    }
 
     // Stroke (phase 1)
-    else if (this.time >= this.strokeStart && this.time <= this.stroke) {
+    else if (this.time >= this.strokeStart && this.time <= this.stroke &&this.repeatedIndx < this.repetition) {
         inter = (this.time - this.strokeStart) / (this.stroke - this.strokeStart);
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
 
         // Should store previous rotation applied, so it is not additive
-        if (this.phase != 1) {
-            this.prevDeg = 0;
+        if (this.phase != 1 ) {
+            if(this.lexeme != "TILTLEFT"&& this.lexeme != "TILTRIGHT")
+                this.prevDeg = 0;
+
             this.phase = 1;
-        }
+
 
         let angle = inter * this.strokeDeg - this.prevDeg;
         this.prevDeg = inter * this.strokeDeg;
@@ -1182,7 +1210,7 @@ HeadBML.prototype.update = function (dt) {
     }
 
     // Stroke (phase 2)
-    else if (this.time > this.stroke && this.time <= this.strokeEnd) {
+    else if (this.time > this.stroke && this.time <= this.strokeEnd && this.repeatedIndx < this.repetition ) {
         inter = (this.time - this.stroke) / (this.strokeEnd - this.stroke);
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
@@ -1190,7 +1218,7 @@ HeadBML.prototype.update = function (dt) {
         // Should store previous rotation applied, so it is not additive
         if (this.phase != 2) {
             this.prevDeg = 0;
-            this.phase = 2;
+             this.phase = 2;
         }
 
         var angle = inter * this.strokeDeg - this.prevDeg;
