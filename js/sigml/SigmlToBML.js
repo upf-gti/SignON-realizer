@@ -382,7 +382,7 @@ function baseActionToJSON( xml, startTime, endTime ){
     switch( xml.tagName ){
         case "shoulder_movement": break;  // - movement   
         case "body_movement": break; // - movement
-        case "head_movement": result = eyeGazeTable[ obj.direction ]; break; // - movement
+        case "head_movement": result = headMovementTable[ obj.direction ]; break; // - movement
         case "eye_gaze": result = eyeGazeTable[ obj.direction ]; break;
         case "eye_brows": result = eyebrowsTable[ obj.movement ]; break;
         case "eye_lids": result = eyelidsTable[ obj.movement ]; break;
@@ -421,8 +421,8 @@ let headMovementTable = {
     SH: { type: "head", lexeme: "SHAKE", repetition: 3 }, //_shaking_left_and_right  
     SR: { type: "gaze", influence: "HEAD", target: "RIGHT", headOnly: true }, //_turned_right            
     SL: { type: "gaze", influence: "HEAD", target: "LEFT", headOnly: true }, //_turned_left             
-    //TR: , //_tilted_right            
-    //TL: , //_tilted_left             
+    TR: { type: "head", lexeme: "TILTRIGHT", repetition: 0 }, //_tilted_right            
+    TL: { type: "head", lexeme: "TILTLEFT", repetition: 0 }, //_tilted_left             
     //NF: , //_tilted_forward          
     //NB: , //_tilted_back             
     //PF: , //_pushed_forward          

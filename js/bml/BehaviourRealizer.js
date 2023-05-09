@@ -1196,12 +1196,12 @@ HeadBML.prototype.update = function (dt) {
 
         // Should store previous rotation applied, so it is not additive
         if (this.phase != 1 ) {
-            if(this.lexeme != "TILTLEFT"&& this.lexeme != "TILTRIGHT")
+            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT")
                 this.prevDeg = 0;
 
             this.phase = 1;
-
-
+        }
+        
         let angle = inter * this.strokeDeg - this.prevDeg;
         this.prevDeg = inter * this.strokeDeg;
         // Apply rotation
