@@ -503,16 +503,16 @@ let mouthGestureTable = {
             ], //_lower_jaw_chews_mouth_remains_closed                       
     J03:    [   { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: 1, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.16, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",  amount: 0.9, start: 0,   duration: 0.8 }
             ], //_mouth_open_jaw_forward_teeth_visible                       
-    J04: { type: "speech", text: "GA GA GA GA GA", sentInt: 0.5, start: 0, sentT: 1 }, //_mouth_open_jaw_gagaga_at_pharynx                           
+    J04: { type: "speech", text: "GA GA GA GA GA", sentInt: 0.5, sentT: 1 }, //_mouth_open_jaw_gagaga_at_pharynx                           
     
-    // L01: { type: "speech", text: "S", sentInt: 0.3 }, //_sh                                                         
-    // L02: { type: "speech", text: "prre", sentInt: 0.3 }, //_prrr                                                       
-    // L03: { type: "speech", text: "pr", sentInt: 0.3 }, //_pr                                                         
-    // L04: { type: "speech", text: "", sentInt: 0.3 }, //_pursed_lips                                                
-    // L05: { type: "speech", text: "", sentInt: 0.3 }, //_o_oa_open_o                                                
-    // L06: { type: "speech", text: "", sentInt: 0.3 }, //_ooo_closed_o                                               
-    // L07: { type: "speech", text: "", sentInt: 0.3 }, //_oa                                                         
-    // L08: { type: "speech", text: "", sentInt: 0.3 }, //_boam                                                       
+    L01: { type: "speech", text: " S ", sentInt: 1.2 , sentT: 0.7}, //_sh                                                         
+    L02: { type: "speech", text: "p r r r", phT: [0.2, 0.05, 0.05, 0.05],  phInt: [0.2, 0.3, 0.3, 0.3] }, //_prrr                                                       
+    L03: { type: "speech", text: "p r", phT: [0.2, 0.2],  phInt: [0.15, 0.3] }, //_pr                                                         
+    L04: { type: "faceLexeme", lexeme: "LIP_TIGHTENER",  amount: 0.8, start: 0,   duration: 0.8 }, //_pursed_lips                                                
+    L05: { type: "speech", text: " Oo ", sentInt: 1.2, sentT: 0.8 }, //_o_oa_open_o                                                
+    L06: { type: "speech", text: " O ", sentInt: 0.8, sentT: 0.8 }, //_ooo_closed_o                                               
+    L07: { type: "speech", text: " o ", sentInt: 1.2, sentT: 0.8 }, //_oa                                                         
+    L08: { type: "speech", text: "boAm", phInt: [0.1, 0.3, 0.2, 0.3], phT: [0.1, 0.05, 0.05, 0.15] }, //_boam                                                       
     // L09: { type: "speech", text: "", sentInt: 0.3 }, //_bam                                                        
     // L10: { type: "speech", text: "", sentInt: 0.3 }, //_boa                                                        
     // L11: { type: "speech", text: "", sentInt: 0.3 }, //_ba                                                         
