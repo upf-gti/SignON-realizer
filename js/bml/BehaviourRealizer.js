@@ -994,7 +994,7 @@ Gaze.prototype.initGazeValues = function () {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT]
+// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 
@@ -1036,7 +1036,7 @@ HeadBML.prototype.initHeadData = function (headData) {
     this.amount = headData.amount || 0.2;
 
     // Maximum rotation amplitude
-    if (this.lexeme == "NOD")
+    if (this.lexeme == "NOD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
         this.maxDeg = this.limVert * 2;
     else
         this.maxDeg = this.limHor * 2;
@@ -1089,57 +1089,87 @@ HeadBML.prototype.initHeadValues = function () {
     this.strokeDeg = 0; // degrees of stroke
     this.readyDeg = 0; // ready will have some inertia in the opposite direction of stroke 
 
-    if (this.lexeme == "NOD") {
-        // nod will always be downwards
-        this.strokeAxis.set(1, 0, 0);
-        this.strokeDeg = this.amount * this.maxDeg;
-        this.readyDeg = this.strokeDeg * 0.5;
+    switch ( this.lexeme ) {
+        case "NOD":
+            // nod will always be downwards
+            this.strokeAxis.set(1, 0, 0);
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.5;
 
-        // If the stroke rotation passes the limit, change readyDeg
-        if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
-            this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
-            
-    } else if (this.lexeme == "SHAKE") {
-        this.strokeAxis.set(0, 1, 0);
-
-        this.strokeDeg = this.amount * this.maxDeg;
-        this.readyDeg = this.strokeDeg * 0.5;
-
-        // Sign (left rigth)
-        this.RorL = Math.sign(eulerRot.y) ? Math.sign(eulerRot.y) : 1;
-        this.readyDeg *= -this.RorL;
-        this.strokeDeg *= -this.RorL;
-    
-    } else if (this.lexeme == "TILT") {
-        this.strokeAxis.set(0, 0, 1);
-        this.strokeDeg = this.amount * 20;
-        this.readyDeg = this.strokeDeg * 0.5;
-    }
-    else if (this.lexeme == "TILTLEFT") {
-        this.strokeAxis.set(0, 0, 1);
-        this.strokeDeg = this.amount * 20;
-        this.readyDeg = this.strokeDeg * 0.5;
-        if(!this.repetition) {
-            
-            this.strokeStart = this.ready;
-            this.strokeEnd = this.relax;
-        }
-    }
-    else if (this.lexeme == "TILTRIGHT") {
-        this.strokeAxis.set(0, 0, -1);
-        this.strokeDeg = this.amount * 20;
-        this.readyDeg = this.strokeDeg * 0.5;
-        if(!this.repetition) {
-            
-            this.strokeStart = this.ready;
-            this.strokeEnd = this.relax;
-        }
+            // If the stroke rotation passes the limit, change readyDeg
+            if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
+                this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
+            break;
         
+        case "SHAKE":
+            this.strokeAxis.set(0, 1, 0);
+
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.5;
+
+            // Sign (left rigth)
+            this.RorL = Math.sign(eulerRot.y) ? Math.sign(eulerRot.y) : 1;
+            this.readyDeg *= -this.RorL;
+            this.strokeDeg *= -this.RorL;
+            break;
+    
+        case "TILT":
+            this.strokeAxis.set(0, 0, 1);
+            this.strokeDeg = this.amount * 20;
+            this.readyDeg = this.strokeDeg * 0.5;
+            break;
+
+        case "TILTLEFT":
+            this.strokeAxis.set(0, 0, 1);
+            this.strokeDeg = this.amount * 20;
+            this.readyDeg = this.strokeDeg * 0.5;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
+
+        case "TILTRIGHT":
+            this.strokeAxis.set(0, 0, -1);
+            this.strokeDeg = this.amount * 20;
+            this.readyDeg = this.strokeDeg * 0.5;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
+            
+        case "FORWARD":
+            // nod will always be downwards
+            this.strokeAxis.set(1, 0, 0);
+            this.strokeDeg = this.amount * ( -this.maxDeg );
+            this.readyDeg = this.strokeDeg * 0.5;
+
+            // If the stroke rotation passes the limit, change readyDeg
+            if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
+                this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
+            
+            break;
+
+        case "BACKWARD":
+            // nod will always be downwards
+            this.strokeAxis.set(1, 0, 0);
+            this.strokeDeg = this.amount *  this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.5;
+
+            // If the stroke rotation passes the limit, change readyDeg
+            if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
+                this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
+            
+            break;
     }
 
     this.currentStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // current state of rotation
     this.deltaStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // temporal variable to store results
 }
+
 
 HeadBML.prototype.update = function (dt) {
 
@@ -1158,7 +1188,7 @@ HeadBML.prototype.update = function (dt) {
         this.strokeEnd += timeRep;
         this.stroke = (this.strokeEnd + this.strokeStart) / 2;
 
-        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT") {
+        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD") {
 
             this.prevDeg = 0;
         }
@@ -1196,12 +1226,12 @@ HeadBML.prototype.update = function (dt) {
 
         // Should store previous rotation applied, so it is not additive
         if (this.phase != 1 ) {
-            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT")
+            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT" && this.lexeme != "FORWARD" && this.lexeme != "BACKWARD")
                 this.prevDeg = 0;
 
             this.phase = 1;
         }
-        
+
         let angle = inter * this.strokeDeg - this.prevDeg;
         this.prevDeg = inter * this.strokeDeg;
         // Apply rotation

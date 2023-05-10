@@ -7,6 +7,7 @@ function FacialController(config = null) {
     
     // define some properties
     this.headNode = "mixamorig_Head";
+    this.neckNode = "mixamorig_Neck";
     this.lookAt = "target";
     this.lookAtEyes = "eyesTarget";
     this.lookAtHead = "headTarget";
@@ -217,8 +218,9 @@ FacialController.prototype.update = function (dt) {
     this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
     this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
     
-    // HEAD (nod, shake, tilt)
+    // HEAD (nod, shake, tilt, tiltleft, tiltright, forward, backward)
     let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
+    let neckQuat = this.character.getObjectByName("mixamorig_Neck").quaternion; // Not a copy, but a reference
     for( let i = 0; i< this.headBML.length; ++i){
         let head = this.headBML[i];
         if( !head.transition ){
@@ -227,7 +229,13 @@ FacialController.prototype.update = function (dt) {
             continue;
         }
         head.update(dt);
-        headQuat.multiply( head.currentStrokeQuat );
+        if(head.lexeme == "FORWARD" || head.lexeme == "BACKWARD") {
+            neckQuat.multiply( head.currentStrokeQuat );
+            headQuat.multiply( head.currentStrokeQuat ).inverse();
+        }
+            
+        else
+            headQuat.multiply( head.currentStrokeQuat );
     }
     
     this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
@@ -508,14 +516,16 @@ FacialController.prototype.headDirectionShift = function (headData, cmdId) {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT]
+// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 // New head behavior
 FacialController.prototype.newHeadBML = function (headData) {
     
-    let lookAt = this.character.getObjectByName(this.headNode);
+    let node = headData.lexeme == "FORWARD" || headData.lexeme == "BACKWARD" ? this.neckNode : this.headNode;
+    let lookAt = this.character.getObjectByName(node);
     if (lookAt) {
+       
         this.headBML.push(new HeadBML(headData, lookAt, lookAt.quaternion.clone()));
     }
 }
