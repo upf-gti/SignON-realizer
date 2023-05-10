@@ -387,7 +387,7 @@ function baseActionToJSON( xml, startTime, endTime ){
         case "eye_brows": result = eyebrowsTable[ obj.movement ]; break;
         case "eye_lids": result = eyelidsTable[ obj.movement ]; break;
         case "nose": result = noseTable[ obj.movement ]; break;
-        case "mouth_gesture": break; // - movement
+        case "mouth_gesture": result = mouthGestureTable[ obj.movement ]; break; // - movement
         case "mouth_picture": 
             let text = obj.picture;
             // transform text from SIL encoding to ARPABET encoding
@@ -408,9 +408,17 @@ function baseActionToJSON( xml, startTime, endTime ){
         result = [ result ];
     }
     for( let i = 0; i < result.length; ++i ){
-        result[i].start = startTime;
-        if ( result[i].type == "speech" ) { result[i].sentT = endTime - startTime; } 
-        else { result[i].end = endTime; }
+        result[i].start = result[i].start ? startTime + result[i].start : startTime;
+        if ( result[i].type == "speech" ) { 
+            if(result[i].speed) {
+                result[i].sentT = result[i].text.length * result[i].speed;
+            }
+            result[i].sentT = result[i].sentT || (endTime - startTime); 
+        } 
+        else {
+            endTime = result[i].duration ? result[i].duration + result[i].start : endTime; 
+            result[i].end = result[i].end ? startTime + result[i].end : endTime; 
+        }
     }
     return result;
 }
@@ -483,10 +491,19 @@ let mouthGestureTable = {
     // D08: { type: "speech", text: "as", sentInt: 0.5 }, //_one_bite_lips_stretched_teeth_visible                      
     // D09: { type: "speech", text: "tai", sentInt: 0.5 }, //_teeth_on_lower_lip_open_almost_close_tongue_behind_upper_teeth 
 
-    // J01: { type: "speech", text: "", sentInt: 0.3 }, //_lower_jaw_moves_sideways_left_and_right                    
-    // J02: { type: "speech", text: "", sentInt: 0.3 }, //_lower_jaw_chews_mouth_remains_closed                       
-    // J03: { type: "speech", text: "", sentInt: 0.3 }, //_mouth_open_jaw_forward_teeth_visible                       
-    // J04: { type: "speech", text: "", sentInt: 0.3 }, //_mouth_open_jaw_gagaga_at_pharynx                           
+    J01:    [   { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0,   duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0,   duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0,   duration: 0.2 },
+                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.2, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.2, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.2, duration: 0.2 },
+                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0.4, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0.4, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0.4, duration: 0.2 },
+                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.6, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.6, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.6, duration: 0.2 }
+            ], //_lower_jaw_moves_sideways_left_and_right                    
+    J02:    [   { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0,   duration: 0.6 },
+                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0.8, duration: 0.6 },
+                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 1.6, duration: 0.6 },
+                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 2.4, duration: 0.6 },
+            ], //_lower_jaw_chews_mouth_remains_closed                       
+    J03:    [   { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: 1, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.16, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",  amount: 0.9, start: 0,   duration: 0.8 }
+            ], //_mouth_open_jaw_forward_teeth_visible                       
+    J04: { type: "speech", text: "GA GA GA GA GA", sentInt: 0.5, start: 0, sentT: 1 }, //_mouth_open_jaw_gagaga_at_pharynx                           
     
     // L01: { type: "speech", text: "S", sentInt: 0.3 }, //_sh                                                         
     // L02: { type: "speech", text: "prre", sentInt: 0.3 }, //_prrr                                                       
