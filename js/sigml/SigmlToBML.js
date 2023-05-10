@@ -423,10 +423,10 @@ let headMovementTable = {
     SL: { type: "gaze", influence: "HEAD", target: "LEFT", headOnly: true }, //_turned_left             
     TR: { type: "head", lexeme: "TILTRIGHT", repetition: 0 }, //_tilted_right            
     TL: { type: "head", lexeme: "TILTLEFT", repetition: 0 }, //_tilted_left             
-    //NF: , //_tilted_forward          
-    //NB: , //_tilted_back             
-    //PF: , //_pushed_forward          
-    //PB: , //_pushed_backward         
+    NF: { type: "head", lexeme: "TILTFORWARD", repetition: 0 }, //_tilted_forward          
+    NB: { type: "head", lexeme: "TILTBACKWARD", repetition: 0 }, //_tilted_back             
+    PF: { type: "head", lexeme: "FORWARD", repetition: 0 }, //_pushed_forward          
+    PB: { type: "head", lexeme: "BACKWARD", repetition: 0 }, //_pushed_backward         
     //LI: , //_head_movement_linked_to_eye_gaze
 };
 let eyeGazeTable = {

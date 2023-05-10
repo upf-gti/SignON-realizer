@@ -994,7 +994,7 @@ Gaze.prototype.initGazeValues = function () {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, FORWARD, BACKWARD]
+// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, TILTFORWARD, TILTBACKWARD, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 
@@ -1036,7 +1036,7 @@ HeadBML.prototype.initHeadData = function (headData) {
     this.amount = headData.amount || 0.2;
 
     // Maximum rotation amplitude
-    if (this.lexeme == "NOD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
+    if (this.lexeme == "NOD" || this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "TILTFORWARD" || this.lexeme == "TILTBACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
         this.maxDeg = this.limVert * 2;
     else
         this.maxDeg = this.limHor * 2;
@@ -1121,7 +1121,7 @@ HeadBML.prototype.initHeadValues = function () {
 
         case "TILTLEFT":
             this.strokeAxis.set(0, 0, 1);
-            this.strokeDeg = this.amount * 20;
+            this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.5;
             if(!this.repetition) {
                 
@@ -1132,7 +1132,29 @@ HeadBML.prototype.initHeadValues = function () {
 
         case "TILTRIGHT":
             this.strokeAxis.set(0, 0, -1);
-            this.strokeDeg = this.amount * 20;
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.5;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
+        
+        case "TILTFORWARD":
+            this.strokeAxis.set(1, 0, 0);
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.5;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
+
+        case "TILTBACKWARD":
+            this.strokeAxis.set(-1, 0, 0);
+            this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.5;
             if(!this.repetition) {
                 
@@ -1143,8 +1165,8 @@ HeadBML.prototype.initHeadValues = function () {
             
         case "FORWARD":
             // nod will always be downwards
-            this.strokeAxis.set(1, 0, 0);
-            this.strokeDeg = this.amount * ( -this.maxDeg );
+            this.strokeAxis.set(-1, 0, 0);
+            this.strokeDeg = this.amount * this.maxDeg ;
             this.readyDeg = this.strokeDeg * 0.5;
 
             // If the stroke rotation passes the limit, change readyDeg
@@ -1188,7 +1210,7 @@ HeadBML.prototype.update = function (dt) {
         this.strokeEnd += timeRep;
         this.stroke = (this.strokeEnd + this.strokeStart) / 2;
 
-        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD") {
+        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "TILTFORWARD" || this.lexeme == "TILTBACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD") {
 
             this.prevDeg = 0;
         }
@@ -1219,16 +1241,18 @@ HeadBML.prototype.update = function (dt) {
     }
 
     // Stroke (phase 1)
-    else if (this.time >= this.strokeStart && this.time <= this.stroke &&this.repeatedIndx < this.repetition) {
+    else if (this.time >= this.strokeStart && this.time <= this.stroke ) {
         inter = (this.time - this.strokeStart) / (this.stroke - this.strokeStart);
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
 
         // Should store previous rotation applied, so it is not additive
         if (this.phase != 1 ) {
-            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT" && this.lexeme != "FORWARD" && this.lexeme != "BACKWARD")
+            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT" && this.lexeme != "TILTFORWARD" && this.lexeme != "TILTBACKWARD" && this.lexeme != "FORWARD" && this.lexeme != "BACKWARD")
                 this.prevDeg = 0;
-
+            else if(this.repeatedIndx >= this.repetition)
+                return;
+      
             this.phase = 1;
         }
 
@@ -1247,7 +1271,8 @@ HeadBML.prototype.update = function (dt) {
 
         // Should store previous rotation applied, so it is not additive
         if (this.phase != 2) {
-            this.prevDeg = 0;
+                this.prevDeg = 0;
+            
              this.phase = 2;
         }
 
@@ -1257,7 +1282,7 @@ HeadBML.prototype.update = function (dt) {
         this.deltaStrokeQuat.setFromAxisAngle(this.strokeAxis, -angle * DEG2RAD);
         this.currentStrokeQuat.multiplyQuaternions(this.deltaStrokeQuat, this.currentStrokeQuat);
     }
-
+   
     // StrokeEnd (no repetition)
     else if (this.time >= this.strokeEnd && this.time < this.relax) {
         return;
