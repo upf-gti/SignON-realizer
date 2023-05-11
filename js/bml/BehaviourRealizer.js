@@ -157,7 +157,7 @@ FacialExpr.NMF.NMF_OUT_POINTED =            [[], []];       // missing new blend
 FacialExpr.NMF.NMF_OUT_ROUND =              [[], []];       // missing new blendshapes
 FacialExpr.NMF.NMF_CRINKLE =                [[39, 40], [1, 1]];
 FacialExpr.NMF.NMF_FLARE =                  [[], []];       // missing new blendshape
-
+FacialExpr.NMF.NMF_MOUTH_DOWN =             [[32], [1]];
 // others (legacy mainly)
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[14,15], [1,1]]; // AU15 sad
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[14], [1]]; // LAU15 sad
@@ -190,6 +190,8 @@ FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[18], [1]]; // AU30L
 FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[19], [1]]; // AU30R
 FacialExpr.NMF.JAW_THRUST =                 [[17], [1]]; // AU29
 FacialExpr.NMF.TONGUE_SHOW =                [[45], [1]]; // AU19
+FacialExpr.NMF.CHEEK_BLOW =                 [[10, 11, 33, 34], [1, 1, -0.3, -0.3]]; //AU33
+FacialExpr.NMF.CHEEK_SUCK =                 [[10, 11, 33, 34, 35, 37, 38], [-0.8, -0.8, 0.6, 0.6, -0.1, 0.4, 0.4]]; //AU35
 
 FacialExpr.NMF.BROW_LOWERER =               [[2,3,4,5], [1,1,1,1]]; // AU4 
 FacialExpr.NMF.BROW_LOWERER_LEFT =          [[2,4], [1,1]]; // 

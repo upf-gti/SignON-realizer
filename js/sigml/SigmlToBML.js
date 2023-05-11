@@ -491,34 +491,34 @@ let mouthGestureTable = {
     // D08: { type: "speech", text: "as", sentInt: 0.5 }, //_one_bite_lips_stretched_teeth_visible                      
     // D09: { type: "speech", text: "tai", sentInt: 0.5 }, //_teeth_on_lower_lip_open_almost_close_tongue_behind_upper_teeth 
 
-    J01:    [   { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0,   duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0,   duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0,   duration: 0.2 },
-                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.2, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.2, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.2, duration: 0.2 },
-                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0.4, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0.4, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0.4, duration: 0.2 },
-                { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.6, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.6, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.6, duration: 0.2 }
-            ], //_lower_jaw_moves_sideways_left_and_right                    
-    J02:    [   { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0,   duration: 0.6 },
-                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0.8, duration: 0.6 },
-                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 1.6, duration: 0.6 },
-                { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.7, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 2.4, duration: 0.6 },
-            ], //_lower_jaw_chews_mouth_remains_closed                       
-    J03:    [   { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: 1, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.16, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",  amount: 0.9, start: 0,   duration: 0.8 }
-            ], //_mouth_open_jaw_forward_teeth_visible                       
-    J04: { type: "speech", text: "GA GA GA GA GA", sentInt: 0.5, sentT: 1 }, //_mouth_open_jaw_gagaga_at_pharynx                           
-    
-    L01: { type: "speech", text: " S ", sentInt: 1.2 , sentT: 0.7}, //_sh                                                         
-    L02: { type: "speech", text: "p r r r", phT: [0.2, 0.05, 0.05, 0.05],  phInt: [0.2, 0.3, 0.3, 0.3] }, //_prrr                                                       
-    L03: { type: "speech", text: "p r", phT: [0.2, 0.2],  phInt: [0.15, 0.3] }, //_pr                                                         
-    L04: { type: "faceLexeme", lexeme: "LIP_TIGHTENER",  amount: 0.8, start: 0,   duration: 0.8 }, //_pursed_lips                                                
-    L05: { type: "speech", text: " Oo ", sentInt: 1.2, sentT: 0.8 }, //_o_oa_open_o                                                
-    L06: { type: "speech", text: " O ", sentInt: 0.8, sentT: 0.8 }, //_ooo_closed_o                                               
-    L07: { type: "speech", text: " o ", sentInt: 1.2, sentT: 0.8 }, //_oa                                                         
-    L08: { type: "speech", text: "boAm", phInt: [0.1, 0.3, 0.2, 0.3], phT: [0.1, 0.05, 0.05, 0.15] }, //_boam                                                       
-    // L09: { type: "speech", text: "", sentInt: 0.3 }, //_bam                                                        
-    // L10: { type: "speech", text: "", sentInt: 0.3 }, //_boa                                                        
-    // L11: { type: "speech", text: "", sentInt: 0.3 }, //_ba                                                         
-    // L12: { type: "speech", text: "", sentInt: 0.3 }, //_bee                                                        
-    // L13: { type: "speech", text: "", sentInt: 0.3 }, //_pi                                                         
-    // L14: { type: "speech", text: "", sentInt: 0.3 }, //_pch                                                        
+    J01: [  { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0,   duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0,   duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0,   duration: 0.2 },
+            { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.2, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.2, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.2, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",  amount: 0.5, start: 0.4, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0.4, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0.4, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT", amount: 0.5, start: 0.6, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.6, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.6, duration: 0.2 }
+         ], //_lower_jaw_moves_sideways_left_and_right                    
+    J02: [  { type: "faceLexeme", lexeme: "JAW_DROP",           amount: 0.7, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0,   duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0,   duration: 0.6 },
+            { type: "faceLexeme", lexeme: "JAW_DROP",           amount: 0.7, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 0.8, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 0.8, duration: 0.6 },
+            { type: "faceLexeme", lexeme: "JAW_DROP",           amount: 0.7, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 1.6, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 1.6, duration: 0.6 },
+            { type: "faceLexeme", lexeme: "JAW_DROP",           amount: 0.7, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "JAW_THRUST",  amount: -0.3, start: 2.4, duration: 0.6 }, { type: "faceLexeme", lexeme: "MOUTH_OPEN",  amount: -0.35, start: 2.4, duration: 0.6 },
+         ], //_lower_jaw_chews_mouth_remains_closed                       
+    J03: [  { type: "faceLexeme", lexeme: "JAW_THRUST",         amount: 1, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "JAW_DROP",  amount: 0.16, start: 0, duration: 0.8 }, { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",  amount: 0.9, start: 0,   duration: 0.8 }
+         ], //_mouth_open_jaw_forward_teeth_visible                       
+    J04:    { type: "speech", text: "GA GA GA GA GA", sentInt: 0.5, sentT: 1 }, //_mouth_open_jaw_gagaga_at_pharynx                           
+         
+    L01:    { type: "speech", text: " S ", sentInt: 1.2 , sentT: 0.7}, //_sh                                                         
+    L02:    { type: "speech", text: "p r r r", phT: [0.2, 0.05, 0.05, 0.05],  phInt: [0.2, 0.3, 0.3, 0.3] }, //_prrr                                                       
+    L03:    { type: "speech", text: "p r", phT: [0.2, 0.2],  phInt: [0.15, 0.3] }, //_pr                                                         
+    L04:    { type: "faceLexeme", lexeme: "LIP_TIGHTENER",  amount: 0.8, start: 0,   duration: 0.8 }, //_pursed_lips                                                
+    L05:    { type: "speech", text: " Oo ", sentInt: 1.2, sentT: 0.8 }, //_o_oa_open_o                                                
+    L06:    { type: "speech", text: " O ", sentInt: 0.8, sentT: 0.8 }, //_ooo_closed_o                                               
+    L07:    { type: "speech", text: " o ", sentInt: 1.2, sentT: 0.7 }, //_oa                                                         
+    L08:    { type: "speech", text: "boAm ", phInt: [0.1, 0.3, 0.2, 0.3], phT: [0.1, 0.05, 0.05, 0.05] }, //_boam                                                       
+    L09:    { type: "speech", text: "bAm ", phInt: [0.1, 0.5, 0.2],  phT: [0.1, 0.1, 0.05] }, //_bam                                                        
+    L10:    { type: "speech", text: "boA A ", phInt: [0.5, 0.5, 1, 1], phT: [0.1, 0.05, 0.3, 0.1] }, //_boa                                                        
+    L11:    { type: "speech", text: "b A ", sentInt: 0.5, phT: [0.1, 0.2] }, //_ba                                                         
+    L12:    { type: "speech", text: "bii ", phInt: [0.1, 1, 1], phT: [0.1, 0.15, 0.5] }, //_bee                                                        
+    L13:    { type: "speech", text: "pYY ", phInt: [0.1, 0.6, 0.6], phT: [0.05, 0.2, 0.3] }, //_pi                                                         
+    L14:    { type: "speech", text: "pCh",  phInt: [0.1, 1, 0.8], phT: [0.1, 0.2, 0.4] }, //_pch                                                        
     // L15: { type: "speech", text: "", sentInt: 0.3 }, //_bsss_bee                                                   
     // L16: { type: "speech", text: "", sentInt: 0.3 }, //_pf                                                         
     // L17: { type: "speech", text: "", sentInt: 0.3 }, //_p                                                          
@@ -541,19 +541,30 @@ let mouthGestureTable = {
     // L34: { type: "speech", text: "", sentInt: 0.3 }, //_lips_closed_stretched_strongly                             
     // L35: { type: "speech", text: "", sentInt: 0.3 }, //_blow_out_air_through_slightly_open_lips                    
     
-    // C01: { type: "speech", text: "", sentInt: 0.3 }, //_puffed_cheeks                                              
-    // C02: { type: "speech", text: "", sentInt: 0.3 }, //_cheeks_and_lip_area_puffed                                 
-    // C03: { type: "speech", text: "", sentInt: 0.3 }, //_gradually_puffing_cheeks                                   
-    // C04: { type: "speech", text: "", sentInt: 0.3 }, //_one_cheek_puffed                                           
-    // C05: { type: "speech", text: "", sentInt: 0.3 }, //_one_cheek_puffed_while_briefly_blowing_out_air             
-    // C06: { type: "speech", text: "", sentInt: 0.3 }, //_one_cheek_puffed_briefly_blowing_air_cheek_pushed          
-    // C07: { type: "speech", text: "", sentInt: 0.3 }, //_cheeks_sucked_in                                           
-    // C08: { type: "speech", text: "", sentInt: 0.3 }, //_cheeks_sucked_in_sucking_in_air                            
-    // C09: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_pushed_visibly_into_cheek                           
-    // C10: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_repeatedly_pushes_into_cheek                        
-    // C11: { type: "speech", text: "", sentInt: 0.3 }, //_one_cheek_puffed_blow_out_briefly_at_corner_several_times  
-    // C12: { type: "speech", text: "", sentInt: 0.3 }, //_lips_closed_tongue_pushed_behind_lower_lip                 
-    // C13: { type: "speech", text: "", sentInt: 0.3 }, //_cheeks_slightly_in_jaw_down_blow_closed_lips_several_times 
+    C01:    { type: "faceLexeme", lexeme: "CHEEK_BLOW",     amount: 1,   start: 0,   duration: 0.8 }, //_puffed_cheeks                                              
+    C02: [  { type: "faceLexeme", lexeme: "NMF_BLOW_BOTH",  amount: 0.8, start: 0,   duration: 0.8 }, { type: "faceLexeme", lexeme: "LIP_PUCKERER",       amount: 0.2,  start: 0,  duration: 0.8 } 
+         ], //_cheeks_and_lip_area_puffed                                 
+    C03:    { type: "faceLexeme", lexeme: "CHEEK_BLOW",     amount: 0.8, start: 0,   duration: 0.8 }, //_gradually_puffing_cheeks  (???? --> same as C01)                                 
+    C04: [  { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 1,   start: 0,   duration: 0.8 }, { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.2, start: 0,  duration: 0.8 } 
+         ], //_one_cheek_puffed                                           
+    C05: [  { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 0.8, start: 0,   duration: 0.4 }, { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.2, start: 0,  duration: 0.4 } 
+         ], //_one_cheek_puffed_while_briefly_blowing_out_air             
+    C06: [  { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 0.8, start: 0,   duration: 0.4 }, { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.2, start: 0,  duration: 0.4 } 
+         ], //_one_cheek_puffed_briefly_blowing_air_cheek_pushed          (???? --> same as C05)
+    C07:    { type: "faceLexeme", lexeme: "CHEEK_SUCK",     amount: 1,   start: 0,   duration: 0.8 }, //_cheeks_sucked_in                                           
+    C08: [  { type: "faceLexeme", lexeme: "CHEEK_SUCK",     amount: 1,   start: 0,   duration: 0.8 }, { type: "faceLexeme", lexeme: "LIP_FUNNELER",       amount: 1,    start: 0,  duration: 0.8 }
+         ], //_cheeks_sucked_in_sucking_in_air                            
+    // C09: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_pushed_visibly_into_cheek             ----> CAN'T BE DONE (NOT BLENDSHAPES)              
+    // C10: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_repeatedly_pushes_into_cheek          ----> CAN'T BE DONE (NOT BLENDSHAPES)
+    C11: [  { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 1,   start: 0,   duration: 0.2  }, { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT",amount: -0.2, start: 0,  duration: 0.85 },
+            { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 1,   start: 0.2, duration: 0.2  }, 
+            { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 1,   start: 0.4, duration: 0.2  }, 
+            { type: "faceLexeme", lexeme: "NMF_BLOW_RIGHT", amount: 1,   start: 0.6, duration: 0.25 }, 
+         ], //_one_cheek_puffed_blow_out_briefly_at_corner_several_times  
+    C12: [  { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER", amount: 0.8, start: 0,   duration: 0.8  }, { type: "faceLexeme", lexeme: "JAW_THRUST",        amount: 1,    start: 0,  duration: 0.8 }
+         ], //_lips_closed_tongue_pushed_behind_lower_lip                 
+    C13: [  { type: "faceLexeme", lexeme: "JAW_DROP",       amount: 0.3, start: 0,   duration: 0.8 },  { type: "faceLexeme", lexeme: "JAW_THRUST",        amount: 0.1,  start: 0,   duration: 0.8 }, { type: "faceLexeme", lexeme: "NMF_MOUTH_DOWN",  amount: 0.3, start: 0,  duration: 0.8 }, { type: "faceLexeme", lexeme: "NMF_OPEN_WIDE_MOUTH",  amount: -0.15, start: 0,  duration: 0.8 } 
+         ],//_cheeks_slightly_in_jaw_down_blow_closed_lips_several_times 
     
     // T01: { type: "speech", text: "", sentInt: 0.3 }, //_l                                                          
     // T02: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_slightly_protruding                          
