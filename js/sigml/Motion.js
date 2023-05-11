@@ -3,6 +3,9 @@ import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUti
 
 let DEG2RAD = Math.PI / 180;
 
+let _tempVec3_0 = new Vector3(0,0,0);
+let _tempQuat_0 = new Quaternion(0,0,0,1);
+
 let directionTable = {
     'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
     'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
@@ -46,12 +49,8 @@ let curveDirectionTable = {
     'ur'    : 45 * DEG2RAD,  
 }
 
-
-// TODO: check parameters from bml, zig zag attenuation (on update)
 class DirectedMotion {
     constructor(){
-        this.lookAtQuat = new Quaternion();
-        this.baseOffset = new Vector3(0,0,0);
         this.finalOffset = new Vector3(0,0,0);        
         this.bezier = [ new Vector3(), new Vector3(), new Vector3(), new Vector3() ]
 
@@ -74,22 +73,18 @@ class DirectedMotion {
     reset(){
         this.transition = false;
         this.finalOffset.set(0,0,0);
-        this.baseOffset.set(0,0,0);
     }
 
     update( dt ){
         if ( !this.transition ){ return; }
         
         this.time += dt;
-        if ( this.time < this.start ){ 
-            this.finalOffset.copy( this.baseOffset );
-        }
+        if ( this.time < this.start ){ return this.finalOffset; }
 
         else if ( this.time < this.attackPeak ){
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
-            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
+            // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5; // commented because of sigml purposes
             cubicBezierVec3( this.bezier[0], this.bezier[1], this.bezier[2], this.bezier[3], this.finalOffset, t );
-            this.finalOffset.add( this.baseOffset );
 
             let zigzagAttenuation = Math.min( ( this.attackPeak - this.time ) / 0.5, Math.min( 1, ( this.time - this.start ) / 0.5 ) );  // min( outro, full, intro ). 0.5 seconds of intro and 0.5 of outro if possible
             let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * zigzagAttenuation;
@@ -99,13 +94,13 @@ class DirectedMotion {
         }
 
         else if ( this.time < this.relax ){ 
-            this.finalOffset.addVectors( this.bezier[3], this.baseOffset );
+            this.finalOffset.copy( this.bezier[3] );
         }
 
         else if ( this.time < this.end ){ // lerp to origin (0,0,0) 
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
-            t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
-            this.finalOffset.addVectors( this.bezier[3], this.baseOffset );
+            // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5; // commented because of sigml purposes
+            this.finalOffset.copy( this.bezier[3] );
             this.finalOffset.multiplyScalar( 1.0 - t );
         }
 
@@ -126,10 +121,8 @@ class DirectedMotion {
      * zigzagSpeed: (optional) cycles per second. Default 2
      */
     newGestureBML( bml, symmetry ){
-        let tempV = new Vector3(0,0,0);
-                       
-        this.baseOffset.copy( this.finalOffset );
-        
+        this.finalOffset.set(0,0,0);
+          
         this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
         this.steepness = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
         
@@ -161,9 +154,9 @@ class DirectedMotion {
                 
         // rotate default curve direction (+y) to match user's one
         if ( !isNaN( curveDir ) ){
-            tempV.set(0,0,1);        
-            this.bezier[1].applyAxisAngle( tempV, curveDir );
-            this.bezier[2].applyAxisAngle( tempV, curveDir );
+            _tempVec3_0.set(0,0,1);        
+            this.bezier[1].applyAxisAngle( _tempVec3_0, curveDir );
+            this.bezier[2].applyAxisAngle( _tempVec3_0, curveDir );
         }
 
         // fetch direction and secondDirection
@@ -179,7 +172,7 @@ class DirectedMotion {
         secondDirection = directionTable[ secondDirection ];
         if ( !secondDirection ){ secondDirection = direction; }
         
-        let finalDir = tempV;
+        let finalDir = _tempVec3_0;
         finalDir.lerpVectors( direction, secondDirection, 0.5 );
         finalDir.normalize();
         if( finalDir.lengthSq < 0.0001 ){ finalDir.copy( direction ); }
@@ -193,17 +186,18 @@ class DirectedMotion {
         }
         
         // rotate default direction to match the user's one
-        if ( Math.abs(finalDir.dot(this.bezier[3])) > 0.999 ){ this.lookAtQuat.set(0,0,0,1); }
+        let lookAtQuat = _tempQuat_0;
+        if ( Math.abs(finalDir.dot(this.bezier[3])) > 0.999 ){ lookAtQuat.set(0,0,0,1); }
         else{ 
             let angle = finalDir.angleTo( this.bezier[3] );
-            tempV.crossVectors( this.bezier[3], finalDir );
-            tempV.normalize();
-            this.lookAtQuat.setFromAxisAngle( tempV, angle );
+            _tempVec3_0.crossVectors( this.bezier[3], finalDir );
+            _tempVec3_0.normalize();
+            lookAtQuat.setFromAxisAngle( _tempVec3_0, angle );
         }
-        this.bezier[0].applyQuaternion( this.lookAtQuat );
-        this.bezier[1].applyQuaternion( this.lookAtQuat );
-        this.bezier[2].applyQuaternion( this.lookAtQuat );
-        this.bezier[3].applyQuaternion( this.lookAtQuat );
+        this.bezier[0].applyQuaternion( lookAtQuat );
+        this.bezier[1].applyQuaternion( lookAtQuat );
+        this.bezier[2].applyQuaternion( lookAtQuat );
+        this.bezier[3].applyQuaternion( lookAtQuat );
 
         // zig-zag
         let zigzag = directionTable[ bml.zigzag ];
@@ -232,12 +226,11 @@ class DirectedMotion {
 // TODO: check parameters from bml, zig zag attenuation (on update, missing outro ending attenuation)
 class CircularMotion {
     constructor(){
-        this.baseOffset = new Vector3(0,0,0);
         this.finalOffset = new Vector3(0,0,0);
 
         this.startPoint = new Vector3(0,0,0);
         this.easingAngle = 60.0 * Math.PI/180.0; // entry/outro extra angle. Absolute value
-        this.targetDeltaAngle = 0; // entry easing + user specified. Outro will be computed on each update if necessary
+        this.targetDeltaAngle = 0; // entry&outro easing + user specified.
         this.axis = new Vector3(0,0,0);
         
         this.zigzagDir = new Vector3(0,0,1);
@@ -254,20 +247,16 @@ class CircularMotion {
     reset(){
         this.transition = false;
         this.finalOffset.set(0,0,0);
-        this.baseOffset.set(0,0,0);
     }
 
     update( dt ){
         if ( !this.transition ){ return this.finalOffset; }
         
         this.time += dt;
-        if ( this.time < this.start ){ 
-            this.finalOffset.copy( this.baseOffset );
-            return this.finalOffset;
-        }
+        if ( this.time < this.start ){ return this.finalOffset; }
         
         let t = ( this.time - this.start ) / ( this.end - this.start );
-        t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;
+        // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;  // commented because of sigml purposes
         t = ( t > 1 ) ? 1 : t;
         
         // angle to rotate startPoint
@@ -281,7 +270,6 @@ class CircularMotion {
             return this.finalOffset;
         }
         
-        // compute point as if no baseOffset was present
         this.finalOffset.copy( this.startPoint );
         this.finalOffset.applyAxisAngle( this.axis, angle )
 
@@ -291,19 +279,11 @@ class CircularMotion {
             easing = absAngle / this.easingAngle;
             easing = Math.sin( Math.PI * easing - Math.PI*0.5 ) * 0.5 + 0.5;
             this.finalOffset.multiplyScalar( easing );
-            this.finalOffset.add( this.baseOffset );
         }
         else if ( absAngle > ( absTarget - this.easingAngle ) ){ // outro easing
             easing = ( absTarget - absAngle ) / this.easingAngle;
             easing = Math.sin( Math.PI * easing - Math.PI*0.5 ) * 0.5 + 0.5;
             this.finalOffset.multiplyScalar( easing );
-
-            // at the same time go back to 0,0,0, starting from baseOffset
-            this.finalOffset.x = this.finalOffset.x + this.baseOffset.x * easing;
-            this.finalOffset.y = this.finalOffset.y + this.baseOffset.y * easing;
-            this.finalOffset.z = this.finalOffset.z + this.baseOffset.z * easing;
-        }else{
-            this.finalOffset.add( this.baseOffset );
         }
 
         // zigzag 
@@ -328,11 +308,8 @@ class CircularMotion {
      */
     newGestureBML( bml, symmetry ){
         // debug
-        // this.color = Math.floor( Math.random() * 0xffffff );
-        let tempV = new Vector3(0,0,0);
-        let tempQ = new Quaternion(0,0,0,1);
-                
-        this.baseOffset.copy( this.finalOffset );
+        // this.color = Math.floor( Math.random() * 0xffffff );                
+        this.finalOffset.set(0,0,0);
         
         // axis
         let direction = bml.direction;
@@ -364,20 +341,20 @@ class CircularMotion {
 
         
         // rotate starting point from default plane (xy) to the user's specified (given by axis)
-        tempV.set(0,0,1);        // default axis
-        let dot = tempV.dot( direction );
-        if ( dot > 0.999 ){ tempQ.set(0,0,0,1); }
-        else if ( dot < -0.999 ){ tempV.set(0,1,0); tempQ.setFromAxisAngle( tempV, Math.PI ); }
+        _tempVec3_0.set(0,0,1);        // default axis
+        let dot = _tempVec3_0.dot( direction );
+        if ( dot > 0.999 ){ _tempQuat_0.set(0,0,0,1); }
+        else if ( dot < -0.999 ){ _tempVec3_0.set(0,1,0); _tempQuat_0.setFromAxisAngle( _tempVec3_0, Math.PI ); }
         else{
-            let angle = tempV.angleTo( direction );
-            tempV.crossVectors( tempV, direction );
-            tempV.normalize();
-            tempQ.setFromAxisAngle( tempV, angle );
+            let angle = _tempVec3_0.angleTo( direction );
+            _tempVec3_0.crossVectors( _tempVec3_0, direction );
+            _tempVec3_0.normalize();
+            _tempQuat_0.setFromAxisAngle( _tempVec3_0, angle );
         }
 
         let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
         this.startPoint.set(0,1,0).multiplyScalar( distance );
-        this.startPoint.applyQuaternion( tempQ );
+        this.startPoint.applyQuaternion( _tempQuat_0 );
 
         // apply starting angle to startPoint
         this.startPoint.applyAxisAngle( this.axis, startAngle );
@@ -519,15 +496,9 @@ class WristMotion {
     constructor( wristBone ){
         this.wristBone = wristBone;
         
-        // for the EVA model 
-        this.nodAxis = new Vector3(1,0,0);
-        this.swingAxis = new Vector3(0,1,0);
-        this.twistAxis = new Vector3(0,0,1);
-
         this.mode = 0; // FLAGS 0=NONE, 1=TWIST, 2=NOD, 4=SWING 
         this.intensity = 1;
         this.speed = 1;
-        this.tempQ = new Quaternion(0,0,0,1);
 
         this.time = 0;
         this.start = 0;
@@ -557,25 +528,28 @@ class WristMotion {
         intensity *= this.intensity;
 
         if ( this.mode & 0x01 ){ // TWIST
-            this.twistAxis.set(0,0,1);
-            this.twistAxis.applyQuaternion( this.wristBone.quaternion );
+            let twistAxis = _tempVec3_0;
+            twistAxis.set(0,0,1);
+            twistAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
-            this.tempQ.setFromAxisAngle( this.twistAxis, angle );
-            this.wristBone.quaternion.premultiply( this.tempQ );
+            _tempQuat_0.setFromAxisAngle( twistAxis, angle );
+            this.wristBone.quaternion.premultiply( _tempQuat_0 );
         }
         if ( this.mode & 0x02 ){ // NOD
-            this.nodAxis.set(1,0,0);
-            this.nodAxis.applyQuaternion( this.wristBone.quaternion );
+            let nodAxis = _tempVec3_0;
+            nodAxis.set(1,0,0);
+            nodAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
-            this.tempQ.setFromAxisAngle( this.nodAxis, angle );
-            this.wristBone.quaternion.premultiply( this.tempQ );
+            _tempQuat_0.setFromAxisAngle( nodAxis, angle );
+            this.wristBone.quaternion.premultiply( _tempQuat_0 );
         }
         if ( this.mode & 0x04 ){ // SWING
-            this.swingAxis.set(0,1,0);
-            this.swingAxis.applyQuaternion( this.wristBone.quaternion );
+            let swingAxis = _tempVec3_0;
+            swingAxis.set(0,1,0);
+            swingAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.sin( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 ); // PHASE of 90ª with respect to NOD (see newGestureBML)
-            this.tempQ.setFromAxisAngle( this.swingAxis, angle );
-            this.wristBone.quaternion.premultiply( this.tempQ );
+            _tempQuat_0.setFromAxisAngle( swingAxis, angle );
+            this.wristBone.quaternion.premultiply( _tempQuat_0 );
         }
 
     }

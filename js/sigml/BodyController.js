@@ -65,7 +65,7 @@ class BodyController{
             armChain : this.ikSolver.getChain( "RightArm" ),
             locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, false ),
-            locMotions : [ new DirectedMotion(), new CircularMotion() ],
+            locMotions : [],
             extfidir : new Extfidir( boneMap, skeleton, false ),
             palmor : new Palmor( boneMap, skeleton, false ),
             wristMotion : new WristMotion( skeleton.bones[ boneMap["RWrist"] ] ),
@@ -76,7 +76,7 @@ class BodyController{
             armChain : this.ikSolver.getChain( "LeftArm" ),
             locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, true ),
-            locMotions : [ new DirectedMotion(), new CircularMotion() ],
+            locMotions : [],
             extfidir : new Extfidir( boneMap, skeleton, true ),
             palmor : new Palmor( boneMap, skeleton, true ),
             wristMotion : new WristMotion( skeleton.bones[ boneMap["LWrist"] ] ),
@@ -89,8 +89,7 @@ class BodyController{
 
     _resetArm( arm ){
         arm.loc.reset();
-        arm.locMotions[0].reset();
-        arm.locMotions[1].reset();
+        arm.locMotion = [];
         arm.extfidir.reset();
         arm.palmor.reset();
         arm.wristMotion.reset();
@@ -128,6 +127,9 @@ class BodyController{
             if ( motions[i].transition ){
                 computeFlag = true;
                 this.locationUpdateOffset.add( motions[i].update( dt ) );
+            }else{
+                motions.splice(i, 1); // removed motion that has already ended
+                i--;
             }
         }
 
@@ -198,15 +200,14 @@ class BodyController{
     _newGestureArm( bml, arm, symmetry = 0x00 ){
         if ( bml.locationArm ){ // when location change, cut directed and circular motions
             arm.loc.newGestureBML( bml, symmetry, arm.locationLastFrameQuats );
-            arm.locMotions[0].reset();
-            arm.locMotions[1].reset();
+            arm.locMotions = [];
         }
         else if ( bml.motion ){
             let m = null;
             if ( bml.motion == "fingerplay"){ m = arm.fingerplay; }
             else if ( bml.motion == "wrist"){ m = arm.wristMotion; }
-            else if ( bml.motion == "directed"){ m = arm.locMotions[0]; }
-            else if ( bml.motion == "circular"){ m = arm.locMotions[1]; }
+            else if ( bml.motion == "directed"){ m = new DirectedMotion(); arm.locMotions.push(m); }
+            else if ( bml.motion == "circular"){ m = new CircularMotion(); arm.locMotions.push(m); }
             
             if( m ){ 
                 m.newGestureBML( bml, symmetry ); 
