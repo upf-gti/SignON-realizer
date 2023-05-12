@@ -172,6 +172,7 @@ FacialExpr.NMF.LIP_PUCKERER =               [[33,34], [1,1]]; // AU18 mouth narr
 FacialExpr.NMF.LIP_PUCKERER_LEFT =          [[33], [1]]; // AU18L mouth narrow left
 FacialExpr.NMF.LIP_PUCKERER_RIGHT =         [[34], [1]]; // AU18R mouth narrow right
 FacialExpr.NMF.LIP_PRESSOR =                [[25,28,46], [1,1,1]];// AU24
+FacialExpr.NMF.LIPS_PART =                  [[29, 33, 34, 35, 47], [0.2, -0.05, -0.05, 0.1, 0.2]]; //AU25
 FacialExpr.NMF.LIP_SUCK =                   [[28, 46], [1,1]];// AU28
 FacialExpr.NMF.LIP_SUCK_UPPER =             [[46], [1]];// AU28U upper lip in
 FacialExpr.NMF.LIP_SUCK_LOWER =             [[28], [1]];// AU28D lower lip in
@@ -2244,7 +2245,7 @@ let t2lLowerBound = [
   [ 0.0,   0.15,  0,     0.1,   1,     0,     0   ],
   [ 0,     0.5,   0.2,   0.1,   0,     0,     0   ], // 8
   [ 0,     0.0,   0.2,   0.1,   0,     0,     0   ],
-  [ 0.25,  0,     0,     0.13,  0.8,   0,     0   ],
+  [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
   [ 0.0,   0,     0,     0.2,   0.0,   0.3,   0   ],
   [ 0.0,   0,     0,     0.1,   0.0,   1,     0   ], // 12
   [ 0.3,   0,     0,     0.1,   1,     0,     0   ],
@@ -2263,7 +2264,8 @@ let t2lUpperBound = [
   [ 0.0,   0.15,  0,     0.4,   1,     0,     0.5 ],
   [ 0,     1,     1,     0.4,   0,     0,     0   ], // 8
   [ 0,     0.0,   1,     0.4,   0,     0,     0   ],
-  [ 0.25,  0,     0,     0.13,  0.8,   0,     0   ],
+
+  [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
   [ 0.0,   0,     0,     0.4,   0.0,   0.3,   0   ],
   [ 0.1,   0,     0,     0.2,   0.0,   1,     0   ], // 12
   [ 0.3,   0,     0,     0.22,  1,     0,     0   ],
