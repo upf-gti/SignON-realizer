@@ -481,15 +481,55 @@ let noseTable = {
 //     WI: widening nostrils
 };
 let mouthGestureTable = {
-    // D01: { type: "speech", text: "Ess", sentInt: 0.3 }, //_eee_sss                                                     
-    // D02: { type: "speech", text: "ff", sentInt: 0.3 }, //_f         // in jasiging D02 and D03 are mixed                                                 
-    // D03: { type: "speech", text: "Eff", sentInt: 0.3 }, //_ef                                                         
-    // D04: { type: "speech", text: "aff", sentInt: 0.3 }, //_af                                                         
-    // // D05: { type: "speech", text: "", sentInt: 0.3 }, //_clattering_teeth                                           
-    // // D06: { type: "speech", text: "", sentInt: 0.3 }, //_clattering_teeth_with_raised_upper_lip                     
-    // D07: { type: "speech", text: "ap", sentInt: 0.5 }, //_one_bite_resulting_in_closed_teeth                         
-    // D08: { type: "speech", text: "as", sentInt: 0.5 }, //_one_bite_lips_stretched_teeth_visible                      
-    // D09: { type: "speech", text: "tai", sentInt: 0.5 }, //_teeth_on_lower_lip_open_almost_close_tongue_behind_upper_teeth 
+    D01:    { type: "speech",     text: "IIIIs ",                  sentInt: 0.4, sentT: 0.8 }, //_eee_sss                                                     
+    D02:    { type: "speech",     text: "ffff ",                   sentInt: 0.4, sentT: 0.6 }, //_f         // in jasiging D02 and D03 are mixed                                                 
+    D03:    { type: "speech",     text: "Efff ",                   sentInt: 0.4, sentT: 0.6 }, //_ef                                                         
+    D04:    { type: "speech",     text: "afff ",                   sentInt: 0.4, sentT: 0.6 }, //_af                                                         
+    D05: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0,   duration: 0.15 },                                            
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0.15,duration: 0.15 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0.3, duration: 0.15 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0.45,duration: 0.15 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0.6, duration: 0.15 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.05, start: 0.75,duration: 0.15 },
+         ], //_clattering_teeth
+    D06: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0,   duration: 0.3 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0,   duration: 0.3 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0,   duration: 0.3 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0,   duration: 0.3 },                    
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0.2, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0.2, duration: 0.2 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0.2, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0.2, duration: 0.2 },                    
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0.3, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0.3, duration: 0.2 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0.3, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0.3, duration: 0.2 },                    
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0.45,duration: 0.2 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0.45,duration: 0.2 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0.45,duration: 0.2 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0.45,duration: 0.2 },                    
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0.6, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0.6, duration: 0.2 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0.6, duration: 0.2 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0.6, duration: 0.2 },                    
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.02, start: 0.75,duration: 0.2 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount:  0.4, start: 0.75,duration: 0.2 },                                            
+            { type: "faceLexeme", lexeme: "LIP_SUCK_LOWER",        amount: -0.1, start: 0.75,duration: 0.2 },
+            { type: "faceLexeme", lexeme: "LIP_SUCK_UPPER",        amount: -0.2, start: 0.75,duration: 0.2 },                    
+        ],  //_clattering_teeth_with_raised_upper_lip 
+    D07: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.4, start: 0,    duration: 0.3 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount: 0.2, start: 0,    duration: 0.3 },
+            { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",   amount: 0.4, start: 0,    duration: 0.3 },
+            { type: "speech",     text: "mm ",                     start: 0.25, sentInt: 0.5,sentT: 0.5 }
+         ], //_one_bite_resulting_in_closed_teeth                         
+    D08: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.4, start: 0,    duration: 0.3 },
+            { type: "faceLexeme", lexeme: "UPPER_LIP_RAISER",      amount: 0.6, start: 0.1,  duration: 0.8 },
+            { type: "faceLexeme", lexeme: "LOWER_LIP_DEPRESSOR",   amount: 0.8, start: 0,    duration: 0.8 },
+            { type: "faceLexeme", lexeme: "JAW_DROP",              amount: -0.3, start: 0.25,duration: 0.5 },
+         ], //_one_bite_lips_stretched_teeth_visible                      
+    D09: [  { type: "speech",     text: "tAiii ",                    sentInt: 0.8, sentT: 0.5 }, 
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",            amount: 1, start: 0.3,    duration: 0.5 }
+         ],//_teeth_on_lower_lip_open_almost_close_tongue_behind_upper_teeth    --> CAN'T BE DONE (NOT TONGUE BLENDSHAPES)
 
     J01: [  { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_LEFT",     amount: 0.5, start: 0,   duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: -0.3, start: 0,   duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: 0.3, start: 0,   duration: 0.2 },
             { type: "faceLexeme", lexeme: "JAW_SIDEWAYS_RIGHT",    amount: 0.5, start: 0.2, duration: 0.2 }, //{ type: "faceLexeme", lexeme: "LIP_PUCKERER_RIGHT", amount: -0.3, start: 0.2, duration: 0.2} , { type: "faceLexeme", lexeme: "LIP_PUCKERER_LEFT",  amount: 0.3, start: 0.2, duration: 0.2 },
@@ -616,22 +656,43 @@ let mouthGestureTable = {
             { type: "faceLexeme", lexeme: "NMF_OPEN_WIDE_MOUTH",   amount: -0.15,start: 0,   duration: 0.8 } 
          ],//_cheeks_slightly_in_jaw_down_blow_closed_lips_several_times 
     
-    // T01: { type: "speech", text: "", sentInt: 0.3 }, //_l                                                          
-    // T02: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_slightly_protruding                          
-    // T03: { type: "speech", text: "", sentInt: 0.3 }, //_l_l_l                                                      
-    // T04: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_sticks_out_briefly                                  
-    // T05: { type: "speech", text: "", sentInt: 0.3 }, //_a                                                          
-    // T06: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_sticking_out_repeatedly                             
-    // T07: { type: "speech", text: "", sentInt: 0.3 }, //_lalala                                                     
-    // T08: { type: "speech", text: "", sentInt: 0.3 }, //_alalal                                                     
-    // T09: { type: "speech", text: "", sentInt: 0.3 }, //_als                                                        
-    // T10: { type: "speech", text: "", sentInt: 0.3 }, //_lf                                                         
-    // T11: { type: "speech", text: "", sentInt: 0.3 }, //_laf                                                        
-    // T12: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_touches_one_corner_of_the_mouth              
-    // T13: { type: "speech", text: "", sentInt: 0.3 }, //_tongue_tip_between_lower_lip_lower_teeth_middle_tongue_showing 
-    // T14: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_is_protruded_and_moving_sidewards            
-    // T15: { type: "speech", text: "", sentInt: 0.3 }, //_oval_circling_movement_of_tongue_in_open_mouth             
-    // T16: { type: "speech", text: "", sentInt: 0.3 }, //_lips_pursed_with_tip_of_tongue_protruding                  
+    T01:    { type: "speech",     text: "lllll ",                  sentInt: 1,   sentT: 0.5 }, //_l                                                          
+    T02: [  { type: "speech",     text: "lllll ",                  sentInt: 1,   sentT: 0.5 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.3,  start: 0 }
+         ], //_tip_of_tongue_slightly_protruding                          
+    // T03: { type: "speech", text: "", sentInt: 0.3 }, //_l_l_l       ---> CAN'T BE DONE (NOT TONGUE BLENDSHAPES)                                               
+    T04: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.45,  start: 0,   duration: 0.4 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0,   duration: 0.4 }
+         ], //_tongue_sticks_out_briefly                                  
+    T05: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.5,   start: 0,   duration: 1 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.55,  start: 0,   duration: 1 }
+         ], //_a                                                          
+    T06: [  { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.45,  start: 0,   duration: 0.35 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0,   duration: 0.35 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.45,  start: 0.25,duration: 0.35 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0.25,duration: 0.35 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.45,  start: 0.55,duration: 0.35 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0.55,duration: 0.35 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.45,  start: 0.85,duration: 0.35 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0.85,duration: 0.35 }
+         ], //_tongue_sticking_out_repeatedly                             
+    T07:    { type: "speech",     text: "la la la la ",            phInt: [1, 1, 0.1, 1, 1, 0.1,1, 1, 0.1,1, 1, 0.1,],  sentT: 1.2 }, //_lalala                                                     
+    T08:    { type: "speech",     text: "al al al al ",            phInt: [1, 1, 0.1, 1, 1, 0.1,1, 1, 0.1,1, 1, 0.1,],  sentT: 1.2 }, //_alalal                                                     
+    T09:    { type: "speech",     text: "als ",                    sentInt: 0.8,  sentT: 0.6 }, //_als            --> NOT IMPLEMENTED ON JASigning                                            
+    T10:    { type: "speech",     text: "llff ",                   sentInt: 0.8,  sentT: 0.6 }, //_lf                                                         
+    T11:    { type: "speech",     text: "loaf ",                   sentInt: 0.5,  sentT: 0.6 }, //_laf                                                        
+    // T12: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_touches_one_corner_of_the_mouth          --> CAN'T BE DONE (NOT TONGUE BLENDSHAPES)   
+    T13: [  { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 0.5,   start: 0,   duration: 0.8 },
+            { type: "faceLexeme", lexeme: "CHEEK_BLOW",            amount: 0.4,   start: 0,   duration: 0.8 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.2,   start: 0,   duration: 0.8 },
+         ], //_tongue_tip_between_lower_lip_lower_teeth_middle_tongue_showing 
+    // T14: { type: "speech", text: "", sentInt: 0.3 }, //_tip_of_tongue_is_protruded_and_moving_sidewards        --> CAN'T BE DONE (NOT TONGUE BLENDSHAPES)    
+    // T15: { type: "speech", text: "", sentInt: 0.3 }, //_oval_circling_movement_of_tongue_in_open_mouth         --> CAN'T BE DONE (NOT TONGUE BLENDSHAPES)    
+    T16: [  { type: "faceLexeme", lexeme: "LIP_PUCKERER",          amount: 0.8,   start: 0,   duration: 0.8 },
+            { type: "faceLexeme", lexeme: "TONGUE_SHOW",           amount: 1,     start: 0,   duration: 0.8 },
+            { type: "faceLexeme", lexeme: "CHIN_RAISER",           amount: -0.4,  start: 0,   duration: 0.8 },
+            { type: "faceLexeme", lexeme: "MOUTH_OPEN",            amount: 0.2,   start: 0,   duration: 0.8 },
+         ], //_lips_pursed_with_tip_of_tongue_protruding                  
     // T17: { type: "speech", text: "", sentInt: 0.3 }, //_mouth_open_tongue_protrudes_briefly
 }
 
