@@ -116,8 +116,9 @@ BehaviourManager.prototype.update = function (actionCallback, time) {
 		// If it is not active
 		if (!this.stack[i].isActive) {
 			// Block starts
-			if (this.stack[i].startGlobalTime <= this.time) {
-				this.stack.slice(i, 1);
+            if (this.stack[i].startGlobalTime <= this.time) {
+				this.stack.splice(i, 1);
+				i--;
 			}
 		}
 	}
@@ -134,6 +135,7 @@ BehaviourManager.prototype.update = function (actionCallback, time) {
 			if (bml.startGlobalTime <= this.time) {
 				actionCallback(bml.key, bml); // CALL BML INSTRUCTION
 				stack.splice(j, 1);
+				j--;
 			}
 		}
 	}

@@ -165,8 +165,8 @@ class App {
                     handle.document.body.removeChild( handle.document.body.firstChild );
                 }
 
-                let htmlStr = "<p>Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.</p>";
-                htmlStr += "<textarea id=\"sigmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                let htmlStr = "<p>Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress</p>";
+                htmlStr += "<textarea id=\"sigmlInput\" placeholder=\"Write SiGML here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
                 let textarea = handle.document.getElementById( "sigmlInput" );
