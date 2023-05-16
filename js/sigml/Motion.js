@@ -6,7 +6,7 @@ let DEG2RAD = Math.PI / 180;
 let _tempVec3_0 = new Vector3(0,0,0);
 let _tempQuat_0 = new Quaternion(0,0,0,1);
 
-let directionTable = {
+let motionDirectionTable = {
     'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
     'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
     'l'     : (new Vector3(  1,   0,   0 )).normalize(),   
@@ -38,7 +38,7 @@ let directionTable = {
 }
 
 // in x,y plane -> angle with respect to +y axis
-let curveDirectionTable = {
+let motionCurveTable = {
     'u'     : 0 * DEG2RAD,   
     'ul'    : 315 * DEG2RAD,   
     'l'     : 270 * DEG2RAD,   
@@ -112,11 +112,11 @@ class DirectedMotion {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * direction: string from directionTable
+     * direction: string from motionDirectionTable
      * distance: (optional) size in metres of the displacement. Default 0.2 m (20 cm)
-     * curve: (optional) string from curveDirectionTable. Default to none
+     * curve: (optional) string from motionCurveTable. Default to none
      * curveSteepness: (optional) number from [0,1] meaning the sharpness of the curve
-     * zigzag: (optional) string from directionTable
+     * zigzag: (optional) string from motionDirectionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
      */
@@ -129,13 +129,13 @@ class DirectedMotion {
         // fetch curve direction and adjust steepness if not present
         let curveDir = bml.curve;
         if ( curveDir && symmetry ){ curveDir = directionStringSymmetry( curveDir, symmetry ); }
-        curveDir = curveDirectionTable[ curveDir ];
+        curveDir = motionCurveTable[ curveDir ];
         if ( isNaN( curveDir ) ){ this.steepness = 0; }
         else{
             //second curve direction
             let secondCurveDir = bml.secondCurve;
             if ( secondCurveDir && symmetry ){ secondCurveDir = directionStringSymmetry( secondCurveDir, symmetry ); }
-            secondCurveDir = curveDirectionTable[ secondCurveDir ];
+            secondCurveDir = motionCurveTable[ secondCurveDir ];
             if ( isNaN( secondCurveDir ) ){ secondCurveDir = curveDir; }
             else{
                 // find shortest path in circle
@@ -162,14 +162,14 @@ class DirectedMotion {
         // fetch direction and secondDirection
         let direction = bml.direction;
         if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
-        direction = directionTable[ direction ];
+        direction = motionDirectionTable[ direction ];
         if ( !direction ){ 
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
             return;
         }
         let secondDirection = bml.secondDirection;
         if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
-        secondDirection = directionTable[ secondDirection ];
+        secondDirection = motionDirectionTable[ secondDirection ];
         if ( !secondDirection ){ secondDirection = direction; }
         
         let finalDir = _tempVec3_0;
@@ -200,7 +200,7 @@ class DirectedMotion {
         this.bezier[3].applyQuaternion( lookAtQuat );
 
         // zig-zag
-        let zigzag = directionTable[ bml.zigzag ];
+        let zigzag = motionDirectionTable[ bml.zigzag ];
         if ( !zigzag ){
             this.zigzagDir.set(0,0,0);
             this.zigzagSize = 0.0; // metres
@@ -298,11 +298,11 @@ class CircularMotion {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * direction: string from directionTable. Axis of rotation
+     * direction: string from motionDirectionTable. Axis of rotation
      * distance: (optional) radius in metres of the circle. Default 0.05 m (5 cm)
      * startAngle: (optional) where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
      * endAngle: (optional) where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
-     * zigzag: (optional) string from directionTable
+     * zigzag: (optional) string from motionDirectionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
      */
@@ -314,12 +314,12 @@ class CircularMotion {
         // axis
         let direction = bml.direction;
         if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
-        direction = directionTable[ direction ];
-        if ( !direction ) { direction = directionTable['o']; }
+        direction = motionDirectionTable[ direction ];
+        if ( !direction ) { direction = motionDirectionTable['o']; }
         
         let secondDirection = bml.secondDirection;
         if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
-        secondDirection = directionTable[ secondDirection ];
+        secondDirection = motionDirectionTable[ secondDirection ];
         if ( !secondDirection ) { secondDirection = direction; }
 
         this.axis.lerpVectors( direction, secondDirection, 0.5 );
@@ -360,7 +360,7 @@ class CircularMotion {
         this.startPoint.applyAxisAngle( this.axis, startAngle );
 
         // zig-zag
-        let zigzag = directionTable[ bml.zigzag ];
+        let zigzag = motionDirectionTable[ bml.zigzag ];
         if ( !zigzag ){
             this.zigzagDir.set(0,0,0);
             this.zigzagSize = 0.0; // metres

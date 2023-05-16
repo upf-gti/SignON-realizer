@@ -2,68 +2,26 @@ import * as THREE from 'three';
 import { Quaternion, Vector3 } from 'three';
 import { directionStringSymmetry, mirrorQuatSelf } from './sigmlUtils.js';
 
-// Description of sigml points supported. Commented are the original tags (from ngt sigml file specification). The uncommented are our proposal (which tries to simplify and combine the "sides" tag)
-let testPoints = { 
-    // headtop
-    headtop : null,
+// Description of sigml points supported. keys: our proposal (what the realizer uses). Values: list of tags of sigml that are mapped to that key
+// headtop : headtop,
+// forehead : head, forehead,
+// eyeL : eyebrows, eyes, uppereyelid, lowereyelid,
+// eyeR : eyebrows, eyes, uppereyelid, lowereyelid,
+// nose : nose,
+// upperlip : nostrils, upperlip,
+// mouth: lips, lowerlip, tongue, teeth, upperteeth, lowerteeth,
+// chin : chin, underchin,
+// earL : ear, earlobe,
+// earR : ear, earlobe,
+// cheekL : cheek,
+// cheekR : cheek,
+// neck : neck,
+// shoulderL : shoulders, shouldertop,
+// shoulderR : shoulders, shouldertop,
+// chest : chest,
+// stomach : stomach,
+// belowstomach : belowstomach,
 
-    // head,
-    // forehead,
-    forehead : null,
-
-    // eyebrows,
-    // eyes,
-    // uppereyelid,
-    // lowereyelid,
-    eyeL : null,
-    eyeR : null,
-
-    // nose
-    nose : null,
-    
-    // nostrils,
-    // upperlip,
-    upperlip : null,
-
-    // lips,
-    // lowerlip,
-    // tongue,
-    // teeth,
-    // upperteeth,
-    // lowerteeth,
-    mouth: null,
-
-    // chin,
-    // underchin,
-    chin : null,
-   
-    // ear,
-    // earlobe,
-    earL : null,
-    earR : null,
-    
-    // cheek
-    cheekL : null,
-    cheekR : null,
-    
-    // neck
-    neck : null,
-    
-    // shoulders,
-    // shouldertop,
-    shoulderL : null,
-    shoulderR : null,
-
-    // chest
-    chest : null,
-    
-    // stomach
-    stomach : null,
-    
-    // belowstomach
-    belowstomach : null,
-    
-}
 
 // arm quaternions from right arm perspective
 // [ ShoulderBack, Shoulder, Elbow ]

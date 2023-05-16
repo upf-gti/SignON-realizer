@@ -1,15 +1,14 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.136';
 import { OrbitControls } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/controls/OrbitControls.js';
-import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { RGBELoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/RGBELoader.js';
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 import { CharacterController } from './controllers/CharacterController.js'
 
 
-import { rotationTable as extfidirTable } from './sigml/Extfidir.js';
+import { extfidirPointTable } from './sigml/Extfidir.js';
 import { nearArmPosesTable } from './sigml/LocationArmIK.js';
-import { sigmlStringToBML } from './sigml/SigmlToBML.js';
+import { TIMESLOT, sigmlStringToBML } from './sigml/SigmlToBML.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -20,61 +19,90 @@ class App {
 
     constructor() {
         
+        this.fps = 0;
         this.clock = new THREE.Clock();
-        this.loaderBVH = new BVHLoader();
         this.loaderGLB = new GLTFLoader();
         
         this.scene = null;
         this.renderer = null;
         this.camera = null;
         this.controls = null;
-
+        
+        this.model = null;
+        this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
         
-        // current model selected
-        this.model = null;
-        this.ECAcontroller = null;
-        this.mixer = null;
-        this.skeletonHelper = null;
-
         this.msg = {};
 
-        this.fps = 0;
-
-
-        this.glossDictionary = null;
+        this.languageDictionaries = {}; // key = NGT, value = { glosses: {}, word2ARPA: {} }
+        this.selectedLanguage = "NGT";
     }
 
-    // entry point of data from the mobile app
+    // entry point of data from the mobile app. "Synchronous"
     async processMessage( data ){
         // check there is a gloss to file dictionary
-        if ( !this.glossDictionary ){ return; }
+        if ( !this.languageDictionaries[ this.selectedLanguage ] || !this.languageDictionaries[ this.selectedLanguage ].glosses ){ return; }
 
+        let glosses = [];
         // received data is a json in string format
-        json = JSON.parse( data );
+        try{
+            let json = data;
+            if ( typeof( data ) == "string" ){ json = JSON.parse( data ); }
+
+            let intermediateRepresentation = json.IntermediateRepresentation;
+            if ( typeof( intermediateRepresentation ) == "string" ){ intermediateRepresentation = JSON.parse( json.IntermediateRepresentation ); }
+            glosses = intermediateRepresentation.glosses;
+        } catch ( error ){
+            glosses = [];
+        }
 
         // check whether there is something to do
-        if ( !json.glosses || json.glosses.length < 1 ){
+        if ( !glosses || glosses.length < 1 ){
             // TODO DEFAULT SKIPPING SIGN MESSAGE
             return;
         }
 
+
         // for each gloss, fetch its sigml file, convert it into bml
         let orders = [];
         let time = 0;
-        for( let i = 0; i < json.glosses.length; ++i ){
-            let glossFile = this.glossDictionary[ json.glosses[i] ];
+        let glossesDictionary = this.languageDictionaries[ this.selectedLanguage ].glosses;
+        for( let i = 0; i < glosses.length; ++i ){
+            let glossFile = glossesDictionary[ glosses[i] ];
             if ( !glossFile ){ 
                 // TODO DEFAULT SKIPPING SIGN MESSAGE
                 time += 3; continue; 
             }
 
-            await fetch( "data/dictionaries/NGT/Glosses/"+glossFile).then(x=>x.text()).then( (text) =>{ 
-               let result = sigmlStringToBML( text, time );
-               orders = orders.concat(result.data);
-               time += result.duration;
+            await fetch( "data/dictionaries/NGT/Glosses/" + glossFile ).then(x=>x.text()).then( (text) =>{ 
+                let extension = glossFile.split(".");
+                extension = extension[ extension.length - 1 ];
+                if ( extension == "bml" ){
+                    let result = JSON.parse( text );
+                    let maxDuration = 0;
+                    for( let b = 0; b < result.length; ++b ){
+                        let bml = result[b];
+                        if( !isNaN( bml.start ) ){ bml.start += time; }
+                        if( !isNaN( bml.ready ) ){ bml.ready += time; }
+                        if( !isNaN( bml.attackPeak ) ){ bml.attackPeak += time; }
+                        if( !isNaN( bml.relax ) ){ bml.relax += time; }
+                        if( !isNaN( bml.end ) ){ 
+                            if ( maxDuration < bml.end ){ maxDuration = bml.end; } 
+                            bml.end += time; 
+                        }
+                    }
+                    orders = orders.concat( result );
+                    time += maxDuration;
+                }else {
+                    let result = sigmlStringToBML( text, time );
+                    orders = orders.concat(result.data);
+                    time += result.duration; 
+                    if ( i < ( glosses.length - 1 ) ){ 
+                        time = time - TIMESLOT.DEF - 0.85 * TIMESLOT.DEF; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
+                    }
+                }
             } ).catch(e =>{ console.log("failed at loading dictionary file: " + glossFile) } );
         }
 
@@ -143,7 +171,7 @@ class App {
                                 result += strSplit[j]; // everything before are phonemes
                                 j++;
                                 if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                                    result += this.wordsToArpa( strSplit[j] );
+                                    result += this.wordsToArpa( strSplit[j], "NGT" );
                                 }
                                 j++;
                             }
@@ -301,13 +329,13 @@ class App {
                     data: [
                         {   type: "speech",
                             start: 0.4,
-                            text: that.wordsToArpa("vergadering"),
+                            text: that.wordsToArpa("vergadering", "NGT"),
                             speed: 12,
                             sentInt: 0.8
                         },
                         {   type: "speech",
                             start: 1.7,
-                            text: that.wordsToArpa("wanneer") + ".",
+                            text: that.wordsToArpa("wanneer", "NGT") + ".",
                             speed: 12,
                             sentInt: 0.8
                         },
@@ -637,7 +665,7 @@ class App {
            
         }
         let extfidirParams = {};
-        for( let e in extfidirTable ){
+        for( let e in extfidirPointTable ){
             extfidirParams[e] = extfidirSimplifier.bind(that, e);
             extfidirFolder.add(extfidirParams, e).name(e);
         }
@@ -697,7 +725,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
+                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo", "NGT") + ".", sentT: hallo, sentInt: 0.5 },
 
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, handshape: "flat", thumbshape: "touch", hand: "right" },
@@ -716,7 +744,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk") + ".", sentT: leuk, sentInt: 0.8 },
+                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk", "NGT") + ".", sentT: leuk, sentInt: 0.8 },
 
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, handshape: "finger2", thumbshape:"opposed", hand: "right" },
@@ -765,7 +793,7 @@ class App {
                         { type: "faceLexeme", start: 0, attackPeak: 0.5, relax: end + 1, end: end + 2, lexeme: "NMF_SMILE_CLOSED", amount:0.4 },
 
                         // hallo
-                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo") + ".", sentT: hallo, sentInt: 0.5 },
+                        { type: "speech", start: halloStart, end: 100000, text: that.wordsToArpa("hallo", "NGT") + ".", sentT: hallo, sentInt: 0.5 },
 
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, handshape: "flat", thumbshape: "touch", hand: "right" },
@@ -773,7 +801,7 @@ class App {
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, extfidir: "u", hand: "right" },
                         { type: "gesture", start: halloStart + hallo * 0.4, attackPeak: halloStart + hallo, relax:halloStart + hallo, end: halloStart + hallo + 0.5, motion: "directed", direction: "r", distance: 0.05, curve:'u' },
                         // leuk                  
-                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk") + ".", sentT: leuk, sentInt: 0.8 },
+                        { type: "speech", start: leukStart, end: 100000, text: that.wordsToArpa("leuk", "NGT") + ".", sentT: leuk, sentInt: 0.8 },
 
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, handshape: "finger2", thumbshape:"opposed", hand: "right" },
@@ -806,7 +834,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("tweeentwintig") + ".", sentT: sign, sentInt: 0.25 },
+                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("tweeentwintig", "NGT") + ".", sentT: sign, sentInt: 0.25 },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, handshape: "finger23spread", thumbshape: "across", hand: "right",  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, extfidir: "u", hand: "right" },
@@ -835,7 +863,7 @@ class App {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "o", hand: "both" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "both", lrSym: true },
                         
-                        { type: "speech", start:  start + sign * 0.1, end: 100000, text: that.wordsToArpa("bos") + ".", sentInt: 0.5 },
+                        { type: "speech", start:  start + sign * 0.1, end: 100000, text: that.wordsToArpa("bos", "NGT") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'r', distance: 0.05, hand: "right", zigzag: 'u', zigzagSize: 0.1 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'l', distance: 0.05, hand: "left", zigzag: 'd', zigzagSize: 0.1 },
                     ]
@@ -859,7 +887,7 @@ class App {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "uo", hand: "both" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
                         
-                        { type: "speech", start: start + sign * 0.1, end: 100000, text: that.wordsToArpa("aarde") + ".", sentInt: 0.5 },
+                        { type: "speech", start: start + sign * 0.1, end: 100000, text: that.wordsToArpa("aarde", "NGT") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "both"},
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign*0.2, relax: start + sign*0.8, end: start + sign, motion: "fingerplay", hand: 'both', speed: 5, intensity: 0.7 },
                     ]
@@ -875,7 +903,7 @@ class App {
                 that.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("automatisch") + ".", sentInt: 0.5 },
+                        { type: "speech", start: start, end: 100000, text: that.wordsToArpa("automatisch", "NGT") + ".", sentInt: 0.5 },
 
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "right", distance: 0.22, side: 'ir', sideDistance: 0.06 },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "left", distance: 0.22, side: 'l', sideDistance: 0.13},
@@ -911,10 +939,10 @@ class App {
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
-    loadMouthingDictinoary(){
+    loadMouthingDictinoary( language ){
         let that = this;
                
-        fetch("data/dictionaries/NGT/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
+        fetch("data/dictionaries/" + language + "/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
 
             let texts = text.split("\n");
             let IPADict = {}; // keys: plain text word,   value: ipa transcription
@@ -964,22 +992,25 @@ class App {
 
             if ( Object.keys(errorPhonemes).length > 0 ){ console.error( "MOUTHING: loading phonetics: unmapped IPA phonemes to ARPABET: \n", errorPhonemes ); }
 
-            that.PHONETICS = {};
-            that.PHONETICS.word2IPA = IPADict;
-            that.PHONETICS.word2ARPA = ARPADict;
+            that.languageDictionaries[ language ].word2ARPA = ARPADict;
 
         });
     }
 
     // convert plain text into phoneme encoding ARPABet-1-letter. Uses dictionaries previously loaded 
-    wordsToArpa ( phrase ){
+    wordsToArpa ( phrase, language = "NGT" ){
         
+        if ( !this.languageDictionaries[ language ] || !this.languageDictionaries[ language ].word2ARPA ){
+            console.warn( "missing word-ARPABET dictionary for " + language );
+            return "";
+        }
+        let word2ARPA = this.languageDictionaries[ language ].word2ARPA;
         let words = phrase.replace(",", "").replace(".", "").split(" ");
 
         let result = "";
         let unmappedWords = [];
         for ( let i = 0; i < words.length; ++i ){
-            let r = this.PHONETICS.word2ARPA[ words[i] ] ;
+            let r = word2ARPA[ words[i] ] ;
             if ( r ){ result += " " + r; }
             else{ unmappedWords.push( words[i]); }
         }
@@ -988,21 +1019,27 @@ class App {
     
     }
 
-    init() {
+    loadLanguageDictionaries( language ){
+        this.languageDictionaries[ language ] = { glosses: null, wordsToArpa: null };
 
-        this.loadMouthingDictinoary();
+        this.loadMouthingDictinoary( language );
 
-        fetch( "data/dictionaries/NGT/Glosses/glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
-            this.glossDictionary = {};
+        fetch( "data/dictionaries/" + language + "/Glosses/_glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
+            let glossesDictionary = this.languageDictionaries[ language ].glosses = {};
             let lines = file.split("\n");
             for( let i = 0; i < lines.length; ++i ){
                 if ( !lines[i] || lines[i].length < 1 ){ continue; }
                 let map = lines[i].split("\t");
                 if ( map.length < 2 ){ continue; }
-                this.glossDictionary[ map[0] ] = map[1];
+                glossesDictionary[ map[0] ] = map[1].replace("\r", "").replace("\n", "");
             }
         } );
 
+    }
+
+    init() {
+
+        this.loadLanguageDictionaries( "NGT" );
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
@@ -1051,30 +1088,30 @@ class App {
         let keySpotlight = new THREE.SpotLight( 0xffffff, 0.4, 0, 45 * (Math.PI/180), 0.5, 1 );
         keySpotlight.position.set( 0.5, 2, 2 );
         keySpotlight.target.position.set( 0, 1, 0 );
-        keySpotlight.castShadow = true;
-        keySpotlight.shadow.mapSize.width = 1024;
-        keySpotlight.shadow.mapSize.height = 1024;
-        keySpotlight.shadow.bias = 0.00001;
+        // keySpotlight.castShadow = true;
+        // keySpotlight.shadow.mapSize.width = 1024;
+        // keySpotlight.shadow.mapSize.height = 1024;
+        // keySpotlight.shadow.bias = 0.00001;
         this.scene.add( keySpotlight.target );
         this.scene.add( keySpotlight );
 
         let fillSpotlight = new THREE.SpotLight( 0xffffff, 0.2, 0, 45 * (Math.PI/180), 0.5, 1 );
         fillSpotlight.position.set( -0.5, 2, 1.5 );
         fillSpotlight.target.position.set( 0, 1, 0 );
-        fillSpotlight.castShadow = true;
+        // fillSpotlight.castShadow = true;
         this.scene.add( fillSpotlight.target );
         this.scene.add( fillSpotlight );
 
         let dirLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
         dirLight.position.set( 1.5, 5, 2 );
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.left= -1;
-        dirLight.shadow.camera.right= 1;
-        dirLight.shadow.camera.bottom= -1;
-        dirLight.shadow.camera.top= 1;
-        dirLight.shadow.bias = 0.00001;
-        dirLight.castShadow = true;
+        // dirLight.shadow.mapSize.width = 1024;
+        // dirLight.shadow.mapSize.height = 1024;
+        // dirLight.shadow.camera.left= -1;
+        // dirLight.shadow.camera.right= 1;
+        // dirLight.shadow.camera.bottom= -1;
+        // dirLight.shadow.camera.top= 1;
+        // dirLight.shadow.bias = 0.00001;
+        // dirLight.castShadow = true;
         this.scene.add( dirLight );
 
         // add entities
@@ -1089,21 +1126,17 @@ class App {
         backPlane.receiveShadow = true;
         this.scene.add( backPlane );
 
-        // let center = new THREE.Mesh( new THREE.SphereGeometry(0.05, 5, 5), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: true }) );
-        // center.position.set(0,0,0);
-        // this.scene.add( center );
-
         // so the screen is not black while loading
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
-        this.eyesTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
+        this.eyesTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
         this.eyesTarget.name = "eyesTarget";
         this.eyesTarget.position.set(0, 2.5, 15); 
-        this.headTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
+        this.headTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
         this.headTarget.name = "headTarget";
         this.headTarget.position.set(0, 2.5, 15); 
-        this.neckTarget = new THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
+        this.neckTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
         this.neckTarget.name = "neckTarget";
         this.neckTarget.position.set(0, 2.5, 15); 
 
@@ -1111,7 +1144,7 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        this.loaderGLB.load( './data/anim/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( './data/Eva_Y.glb', (glb) => {
             let model = this.model = glb.scene;
             model.rotateOnAxis( new THREE.Vector3(1,0,0), -Math.PI/2 );
             model.castShadow = true;
@@ -1131,9 +1164,6 @@ class App {
                 }
             } );
 
-            let skeletonHelper = this.skeletonHelper = new THREE.SkeletonHelper( model );
-            skeletonHelper.visible = false;
-            this.scene.add(skeletonHelper);
             this.scene.add(model);
 
             model.eyesTarget = this.eyesTarget;
@@ -1144,10 +1174,6 @@ class App {
             ECAcontroller.start();
             ECAcontroller.reset();
             ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
-
-            // load the actual animation to play
-            let mixer = this.mixer = new THREE.AnimationMixer( model );
-            mixer.addEventListener('loop', () => { ECAcontroller.reset(true); ECAcontroller.processMsg(JSON.stringify(this.msg)); } );
         
             this.createPanel();
             this.animate();
@@ -1168,7 +1194,6 @@ class App {
         let et = this.clock.getElapsedTime();
 
         this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
-        // if ( this.mixer ) { this.mixer.update(delta); }
         if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 
         // correct hand's size

@@ -1,26 +1,6 @@
 import { Quaternion } from "three";
 import { mirrorQuatSelf, nlerpQuats } from "./sigmlUtils.js";
 
-/**
- * function printer ( skeleton ){
-let o = {};
-let bones = skeleton.bones;
-o.thumb = bones[53].quaternion.toArray().concat( bones[53 + 1].quaternion.toArray().concat(bones[53 + 2].quaternion.toArray()));
-
-o.index = bones[49].quaternion.toArray().concat( bones[49 + 1].quaternion.toArray().concat(bones[49 + 2].quaternion.toArray()));
-
-o.middle = bones[45].quaternion.toArray().concat( bones[45 + 1].quaternion.toArray().concat(bones[45 + 2].quaternion.toArray()));
-
-o.ring = bones[41].quaternion.toArray().concat( bones[41 + 1].quaternion.toArray().concat(bones[41 + 2].quaternion.toArray()));
-
-o.pinky = bones[37].quaternion.toArray().concat( bones[37 + 1].quaternion.toArray().concat(bones[37 + 2].quaternion.toArray()));
-
-console.log( JSON.stringify(o) );
-}
- */
-
-let E_HANDEDNESS = { RIGHT: 1, LEFT: 2, BOTH: 3 };
-
 // Three bones per finger (0=base, 1=mid, 2=tip). Flat array automatically transformed into array of THREE.Quaternions
 let handShapes = {
     fist: {"thumb":[0.00185,0.19497,-0.06188,0.97885,0,-0.00151,0.00001,1,0.03251,-0.14527,-0.05803,0.98715], "index":[0.69143,0.00299,-0.01208,0.72234,0.86431,-0.00004,-0.05442,0.5,0.70484,-0.00001,0.05661,0.70711], "middle":[0.70704,0.00793,-0.00943,0.70706,0.80828,-0.00006,0.04346,0.58719,0.70558,0.00003,-0.04643,0.70711], "ring":[0.66454,0.01117,0.01906,0.74693,0.74576,-0.00008,-0.03949,0.66504,0.56128,-0.00015,0.00542,0.82761], "pinky":[0.70326,-0.00713,0.02051,0.7106,0.86557,-0.00006,-0.0282,0.5,0.23531,0.0001,-0.00429,0.97191] },

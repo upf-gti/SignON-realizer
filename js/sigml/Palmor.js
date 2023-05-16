@@ -4,7 +4,7 @@ import { directionStringSymmetry, mirrorQuat, nlerpQuats } from "./sigmlUtils.js
 let DEG2RAD = Math.PI / 180;
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
-let rotationTable = {
+let palmorRightTable = {
     'u' : 160 * DEG2RAD, 
     'ul': 135 * DEG2RAD,
     'l' : 90 * DEG2RAD,
@@ -14,7 +14,7 @@ let rotationTable = {
     'r' : -90 * DEG2RAD,
     'ur' : -135 * DEG2RAD,
 }
-let leftRotationTable = {
+let palmorLeftTable = {
     'l' : 90 * DEG2RAD,
     'dl' : 45 * DEG2RAD,
     'd' : 0 * DEG2RAD,
@@ -118,7 +118,7 @@ class Palmor {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * palmor: string from rotationTable
+     * palmor: string from palmorRightTable
      */
     newGestureBML( bml, symmetry = 0x00 ){
         if( !bml.palmor ){ return; }
@@ -128,9 +128,9 @@ class Palmor {
         if ( rotationName && symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
         if ( secondRotName && symmetry ){ secondRotName = directionStringSymmetry( secondRotName, symmetry ); }
         
-        let angle = ( this.mirror ) ? leftRotationTable[ rotationName ] : rotationTable[ rotationName ];
+        let angle = ( this.mirror ) ? palmorLeftTable[ rotationName ] : palmorRightTable[ rotationName ];
         if( isNaN( angle ) ){ return; }
-        let secondAngle = ( this.mirror ) ? leftRotationTable[ secondRotName ] : rotationTable[ secondRotName ];
+        let secondAngle = ( this.mirror ) ? palmorLeftTable[ secondRotName ] : palmorRightTable[ secondRotName ];
         if( !isNaN( secondAngle ) ){ 
             // find shortest path in the circle and adjust secondAngle
             if( Math.abs(angle - secondAngle) > Math.PI ){
@@ -138,8 +138,8 @@ class Palmor {
                 else{ secondAngle += 2 * Math.PI; }
             }
             // avoid impossible angles
-            if( this.mirror ){ secondAngle = Math.max( leftRotationTable['ul'], Math.min( rotationTable['l'], secondAngle ) ); }
-            else{ secondAngle = Math.max( leftRotationTable['ur'], Math.min( rotationTable['u'], secondAngle ) ); }
+            if( this.mirror ){ secondAngle = Math.max( palmorLeftTable['ul'], Math.min( palmorRightTable['l'], secondAngle ) ); }
+            else{ secondAngle = Math.max( palmorLeftTable['ur'], Math.min( palmorRightTable['u'], secondAngle ) ); }
 
             angle = 0.5 * angle + 0.5 * secondAngle; 
         }

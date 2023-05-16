@@ -27,10 +27,16 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
     let parser = new DOMParser();
     let xmlDoc = null;
 
-    xmlDoc = parser.parseFromString( str, "text/xml" ).children[0];
-    
     let msg = [];
-    let time = (isNaN(timeOffset)) ? 0 : timeOffset;
+    timeOffset = (isNaN(timeOffset)) ? 0 : timeOffset;
+    let time = timeOffset;
+
+    try{
+        xmlDoc = parser.parseFromString( str, "text/xml" ).children[0];
+    }catch( error ){
+        return { data: [], duration: 0 };
+    }
+
     // for each hamnosis sign
     for( let i = 0; i < xmlDoc.children.length ; ++i ){
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
@@ -39,7 +45,7 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
         msg = msg.concat( result.data );
     }
 
-    return { data: msg, duration: time };
+    return { data: msg, duration: ( time - timeOffset ) };
 }
 
 
@@ -115,12 +121,12 @@ function signManual( xml, start ){
             motionsStarted = true; // no locations, handconfigs will no longer be accepted for this sign
             let r = motionParser( action, time, bothHands, domHand, symmetry )
             result = result.concat( r.data );
-            time = r.end;
+            if ( time < r.end ) { time = r.end; }
         }
     }
 
-    time += TIMESLOT.DEF;
-    
+    time += TIMESLOT.DEF; // add an extra time for all ending instrunctions' attackPeak-realx stage
+
     // these actions should last for the entirety of the sign. If there is a change mid sign, the new will overwrite the previous, so no problem with conflicting ends 
     for ( let i = 0; i < result.length; ++i ){
         if ( result[i].extfidir || result[i].palmor || result[i].handshape || result[i].locationArm ){ 
@@ -138,6 +144,10 @@ function signManual( xml, start ){
             result[i].relax = result[i].end - ( ( dt < 0.15 ) ? dt : 0.15 ) ;
         }
     }
+
+    time += TIMESLOT.DEF; // add an extra time for all ending instructions relax-end
+
+    
     return { data: result, end: time };
 }
 
@@ -914,4 +924,4 @@ let mouthGestureTable = {
     // T17: { type: "speech", text: "", sentInt: 0.3 }, //_mouth_open_tongue_protrudes_briefly
 }
 
-export{ sigmlStringToBML }
+export{ sigmlStringToBML, TIMESLOT }

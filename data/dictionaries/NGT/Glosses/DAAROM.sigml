@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sigml>
+  <hamgestural_sign gloss="DAAROM">
+    <sign_nonmanual>
+      <mouthing_tier>
+        <mouth_picture picture="da:Ro:m" speed="1.2"/>
+      </mouthing_tier>
+    </sign_nonmanual>
+    <sign_manual>
+      <handconfig handshape="fist" thumbpos="across"/>
+      <handconfig extfidir="uo"/>
+      <handconfig palmor="u"/>
+      <location_bodyarm contact="close" location="neck" side="right_at"/>
+      <rpt_motion repetition="fromstart_several">
+        <circularmotion axis="uo" size="small" />
+      </rpt_motion>
+    </sign_manual>
+  </hamgestural_sign>
+</sigml>

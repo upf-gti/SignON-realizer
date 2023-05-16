@@ -1,9 +1,8 @@
 import { Matrix4, Quaternion, Vector3 } from "three";
-import * as THREE from "three";
 import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./sigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
-let rotationTable = {
+let extfidirPointTable = {
     'u'     : new Vector3(  0,   2,   0 ),   
     'ul'    : new Vector3(  1,   2,   0 ),   
     'l'     : new Vector3(  1,   1,   0 ),   
@@ -87,10 +86,10 @@ class Extfidir {
         // DEBUG render rotation table as spheres
         // if ( !window.checks ){
         //     this.debugPoints = [];
-        //     for ( let e in rotationTable ){
-        //         let color = ( ( Math.max( 0, Math.min( 1, 0.5*(rotationTable[ e ].z + 1) ) ) * 0xff ) & 0xff ) | 0xffff00;
+        //     for ( let e in extfidirPointTable ){
+        //         let color = ( ( Math.max( 0, Math.min( 1, 0.5*(extfidirPointTable[ e ].z + 1) ) ) * 0xff ) & 0xff ) | 0xffff00;
         //         let k = new THREE.Mesh( new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: color , depthWrite: true }) );
-        //         k.position.copy( rotationTable[ e ] );
+        //         k.position.copy( extfidirPointTable[ e ] );
         //         k.name = e;
         //         window.global.app.scene.add( k );
         //         this.debugPoints.push( k ); 
@@ -105,7 +104,7 @@ class Extfidir {
 
     // _debug_pointsUpdate( x,y,z, worldMat = null ){
     //     for ( let i = 0; i < this.debugPoints.length; ++i ){
-    //         this.debugPoints[i].position.copy( rotationTable[ this.debugPoints[i].name ] );
+    //         this.debugPoints[i].position.copy( extfidirPointTable[ this.debugPoints[i].name ] );
     //         this.debugPoints[i].position.x += x;
     //         this.debugPoints[i].position.y += y;
     //         this.debugPoints[i].position.z += z;
@@ -118,9 +117,9 @@ class Extfidir {
     reset() {
         // Force pose update to flat
         this.transition = false;
-        this.defPoint.copy( rotationTable[ 'o' ] );
+        this.defPoint.copy( extfidirPointTable[ 'o' ] );
         this.defmode = EXTFIDIR_MODES.LOCAL;
-        this.curG.copy( rotationTable[ 'o' ] );
+        this.curG.copy( extfidirPointTable[ 'o' ] );
     }
 
     // compute the swing rotation to get the twistAxis to point at a certain location
@@ -134,7 +133,7 @@ class Extfidir {
         let localPoint = this.tempVec3;
         if ( mode == EXTFIDIR_MODES.RELATIVE ){ // center rotation points on wrist (no rotation involved)
             localPoint.setFromMatrixPosition( wristBone.matrixWorld );
-            // this._debug_pointsUpdate( localPoint.x, localPoint.y - rotationTable['o'].y, localPoint.z );
+            // this._debug_pointsUpdate( localPoint.x, localPoint.y - extfidirPointTable['o'].y, localPoint.z );
             localPoint.add( targetPoint );
             localPoint.applyMatrix4( this.tempMat4 );
         } 
@@ -181,7 +180,8 @@ class Extfidir {
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
             this._computeSwingFromCurrentPose( this.trgPoint, this.idx, this.trgG, this.mode );
-            this.curG.slerpQuaternions( this.srcG, this.trgG, t );
+            nlerpQuats( this.curG, this.srcG, this.trgG, t );
+            // this.curG.slerpQuaternions( this.srcG, this.trgG, t ); // slerp performs worse than nlerp for some reason (about appearance, not hardware performance)
             return;
         }
 
@@ -191,7 +191,8 @@ class Extfidir {
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
             this._computeSwingFromCurrentPose( this.defPoint, this.idx, this.srcG, this.defmode ); 
-            this.curG.slerpQuaternions( this.trgG, this.srcG, t ); // reusing srcG as defG
+            nlerpQuats( this.curG, this.trgG, this.srcG, t ); // reusing srcG as defG
+            // this.curG.slerpQuaternions( this.trgG, this.srcG, t ); // slerp performs worse than nlerp for some reason (about appearance, not hardware performance)
             return;
         }
         
@@ -208,8 +209,8 @@ class Extfidir {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * extfidir: string from rotationTable
-     * secondExtfidir: (optional) string from rotationTable. Will compute midpoint between extifidir and secondExtfidir
+     * extfidir: string from extfidirPointTable
+     * secondExtfidir: (optional) string from extfidirPointTable. Will compute midpoint between extifidir and secondExtfidir
      * mode: (optional) number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
      */
     newGestureBML( bml, symmetry = false ){
@@ -221,13 +222,13 @@ class Extfidir {
         if ( extfidir && symmetry ){ extfidir = directionStringSymmetry( extfidir, symmetry ); }
         if ( secondExtfidir && symmetry ){ secondExtfidir = directionStringSymmetry( secondExtfidir, symmetry ); }
 
-        let point = rotationTable[ extfidir ];
+        let point = extfidirPointTable[ extfidir ];
         if( !point ){ 
             console.warn( "Gesture: Extfidir incorrect direction \"" + extfidir + "\"" );
             return; 
         }
         
-        let secondPoint = rotationTable[ secondExtfidir ];
+        let secondPoint = extfidirPointTable[ secondExtfidir ];
         if( !secondPoint ){ 
             secondPoint = point; 
         }
@@ -241,7 +242,7 @@ class Extfidir {
         // absolute positioning (tables) is at 1 meter. Relative & Local should be centered at the wrist
         this.mode = ( EXTFIDIR_MODES[ bml.mode ] ) ? EXTFIDIR_MODES[ bml.mode ] : EXTFIDIR_MODES.RELATIVE; 
         if( this.mode != EXTFIDIR_MODES.ABSOLUTE ){ 
-            this.trgPoint.y -= rotationTable['o'].y; 
+            this.trgPoint.y -= extfidirPointTable['o'].y; 
         }
         
         // set defualt point if necessary
@@ -262,4 +263,4 @@ class Extfidir {
 
 }
 
-export { Extfidir, rotationTable };
+export { Extfidir, extfidirPointTable };
