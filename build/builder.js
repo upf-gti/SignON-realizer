@@ -43,7 +43,8 @@ function build() {
             ["CC", "../js/sigml/BodyController.js"],
         ],
         "IKSolver.js" : [["IK", "../js/sigml/IKSolver.js"]],
-        "SigmlToBML.js": [["ParserSIGML", "../js/sigml/SigmlToBML.js"]]
+        "SigmlToBML.js": [["ParserSIGML", "../js/sigml/SigmlToBML.js"]],
+        "app.js": [["main", "../js/app.js"]]
     };
     
     for(let filename in files) {

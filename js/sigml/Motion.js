@@ -1,8 +1,6 @@
 import { Quaternion, Vector3 } from "three";
 import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUtils.js";
 
-let DEG2RAD = Math.PI / 180;
-
 let _tempVec3_0 = new Vector3(0,0,0);
 let _tempQuat_0 = new Quaternion(0,0,0,1);
 
@@ -39,14 +37,14 @@ let motionDirectionTable = {
 
 // in x,y plane -> angle with respect to +y axis
 let motionCurveTable = {
-    'u'     : 0 * DEG2RAD,   
-    'ul'    : 315 * DEG2RAD,   
-    'l'     : 270 * DEG2RAD,   
-    'dl'    : 225 * DEG2RAD,   
-    'd'     : 180 * DEG2RAD,   
-    'dr'    : 135 * DEG2RAD,  
-    'r'     : 90 * DEG2RAD,  
-    'ur'    : 45 * DEG2RAD,  
+    'u'     : 0 * Math.PI / 180,   
+    'ul'    : 315 * Math.PI / 180,   
+    'l'     : 270 * Math.PI / 180,   
+    'dl'    : 225 * Math.PI / 180,   
+    'd'     : 180 * Math.PI / 180,   
+    'dr'    : 135 * Math.PI / 180,  
+    'r'     : 90 * Math.PI / 180,  
+    'ur'    : 45 * Math.PI / 180,  
 }
 
 class DirectedMotion {

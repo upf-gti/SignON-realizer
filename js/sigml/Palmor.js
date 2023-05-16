@@ -1,28 +1,26 @@
 import { Quaternion, Vector3 } from "three";
 import { directionStringSymmetry, mirrorQuat, nlerpQuats } from "./sigmlUtils.js";
 
-let DEG2RAD = Math.PI / 180;
-
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let palmorRightTable = {
-    'u' : 160 * DEG2RAD, 
-    'ul': 135 * DEG2RAD,
-    'l' : 90 * DEG2RAD,
-    'dl' : 45 * DEG2RAD,
-    'd' : 0 * DEG2RAD,
-    'dr' : -45 * DEG2RAD,
-    'r' : -90 * DEG2RAD,
-    'ur' : -135 * DEG2RAD,
+    'u' : 160 * Math.PI / 180, 
+    'ul': 135 * Math.PI / 180,
+    'l' : 90 * Math.PI / 180,
+    'dl': 45 * Math.PI / 180,
+    'd' : 0 * Math.PI / 180,
+    'dr': -45 * Math.PI / 180,
+    'r' : -90 * Math.PI / 180,
+    'ur': -135 * Math.PI / 180,
 }
 let palmorLeftTable = {
-    'l' : 90 * DEG2RAD,
-    'dl' : 45 * DEG2RAD,
-    'd' : 0 * DEG2RAD,
-    'dr' : -45 * DEG2RAD,
-    'r' : -90 * DEG2RAD,
-    'ur' : -135 * DEG2RAD,
-    'u' : -160 * DEG2RAD, 
-    'ul': -195 * DEG2RAD,
+    'l' : 90 * Math.PI / 180,
+    'dl': 45 * Math.PI / 180,
+    'd' : 0 * Math.PI / 180,
+    'dr': -45 * Math.PI / 180,
+    'r' : -90 * Math.PI / 180,
+    'ur': -135 * Math.PI / 180,
+    'u' : -160 * Math.PI / 180, 
+    'ul': -195 * Math.PI / 180,
 }
 
 // receives bml instructions and animates the hands
