@@ -321,7 +321,7 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        this.loaderGLB.load( './data/Eva_Y.glb', (glb) => {
+        this.loaderGLB.load( './data/EvaHandsEyesFixed.glb', (glb) => {
             let model = this.model = glb.scene;
             model.rotateOnAxis( new THREE.Vector3(1,0,0), -Math.PI/2 );
             model.castShadow = true;
