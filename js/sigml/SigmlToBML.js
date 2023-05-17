@@ -9,14 +9,17 @@
 
 AFPAKKEN
 AANPASSEN
-
+BABYSITTEN
 */
 
 
 let TIMESLOT ={
     DEF: 1,
+
+    POSTURE: 0.5,
     LOC: 0.5,
     HAND: 0.5,
+
     MOTION: 1,
     MOTIONDIR : 0.5,
     MOTIONCIRC : 1.5,
@@ -82,6 +85,54 @@ let simpleMotionAvailable = [ "directedmotion", "circularmotion", "wristmotion",
 let motionsAvailable = simpleMotionAvailable.concat( [ "nonman_motion", "par_motion", "seq_motion", "split_motion", "rpt_motion", "tgt_motion" ] ); // missing tgt, rpt and timing issues
 let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", "split_location", "location_hand", "handconstellation" , "use_locname"]; // missing location_hand, handconstellation, use_locname(????) 
 
+// this function and structure is only needed because rpt_motion needs to know the src pose to witch return during repetitions
+function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
+    let newPosture;
+    if ( !oldPosture ){
+        newPosture = [ // set the bodyController neutral pose as an array [ armR, armL, extfidirR, extfidirL, palmorR, palmorL, handshapeR, handshapeL ]
+            { type: "gesture", start: -1, locationArm: "neutral", hand: "right", distance: 0.065, side: "dl", sideDistance: 0.025 }, 
+            { type: "gesture", start: -1, locationArm: "neutral", hand: "left",  distance: 0.04, side: "r", sideDistance: 0.025 }, 
+            { type: "gesture", start: -1, extfidir: "do", secondExtfidir: "o", hand: "right", mode: "local" }, 
+            { type: "gesture", start: -1, extfidir: "do", secondExtfidir: "o", hand: "left", mode: "local" }, 
+            { type: "gesture", start: -1, palmor: "d", secondPalmor: "dr", hand: "right" }, 
+            { type: "gesture", start: -1, palmor: "dl", hand: "left" }, 
+            { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "right" }, 
+            { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "left" }, 
+        ]
+    }
+    else if ( overwrite ){ newPosture = oldPosture; }
+    else { newPosture = JSON.parse( JSON.stringify( oldPosture ) ); }
+
+    // check all new orders
+    for( let i = 0; i < newOrders.length; ++i ){
+        let o = newOrders[i];
+        let type = -1;
+        if ( o.locationArm ){ type = 0; }
+        else if ( o.extfidir ){ type = 2; }
+        else if ( o.palmor ){ type = 4; }
+        else if ( o.handshape ){ type = 6; }
+
+        // if a new order has a bigger start than the old posture, it becomes the new posture
+        if( type > -1 ){
+            if ( ( o.hand == "right" || o.hand == "both" ) && newPosture[ type ].start < o.start ){
+                newPosture[ type ] = JSON.parse( JSON.stringify( o ) ); // copy object, not reference
+                newPosture[ type ].hand = "right";
+                delete newPosture[ type ].attackPeak; // just in case
+                delete newPosture[ type ].relax;
+                delete newPosture[ type ].end;
+            }
+            if ( ( o.hand == "left" || o.hand == "both" ) && newPosture[ type + 1 ].start < o.start ){
+                newPosture[ type + 1 ] = JSON.parse( JSON.stringify( o ) ); // copy object, not reference
+                newPosture[ type + 1 ].hand = "left";
+                delete newPosture[ type ].attackPeak; // just in case
+                delete newPosture[ type ].relax;
+                delete newPosture[ type ].end;
+            }
+        }
+    }
+
+    return newPosture;
+}
 // missing location_hand (and handconstellation), motions except simpleMotion
 function signManual( xml, start ){
     let result = [];
@@ -105,6 +156,8 @@ function signManual( xml, start ){
 
     result.push( { type: "gesture", dominant: domHand } );
 
+    let currentPosture = currentPostureUpdate( null, [] );
+
     for ( let i = 0; i < actions.length; ++i ){
         let action = actions[i];
         let tagName = actions[i].tagName;
@@ -117,9 +170,12 @@ function signManual( xml, start ){
             }
         }
         if ( motionsAvailable.includes( tagName ) ){
-            if( !motionsStarted && result.length > 1 ){ time += TIMESLOT.LOC; }
-            motionsStarted = true; // no locations, handconfigs will no longer be accepted for this sign
-            let r = motionParser( action, time, bothHands, domHand, symmetry )
+            if( !motionsStarted && result.length > 1 ){ 
+                currentPosture = currentPostureUpdate( currentPosture, result );
+                time += TIMESLOT.LOC; 
+            }
+            motionsStarted = true; // locations and handconfigs will no longer be accepted for this sign
+            let r = motionParser( action, time, bothHands, domHand, symmetry, currentPosture );
             result = result.concat( r.data );
             if ( time < r.end ) { time = r.end; }
         }
@@ -135,8 +191,8 @@ function signManual( xml, start ){
         }
         if ( result[i].motion == "directed" ){ 
             // result[i].attackPeak = result[i].start + TIMESLOT.MOTIONDIR;
-            result[i].relax = time;
-            result[i].end = time + TIMESLOT.DEF; 
+            if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
+            if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.DEF; }
         }
         if ( result[i].motion == "wrist" ){ 
             let dt = 0.15 * ( result[i].end - result[i].start );
@@ -190,8 +246,19 @@ function postureParser( xml, start, bothHands, domHand, symmetry ){
         // if ( xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){ }
         // if ( xml.children.length > 1 && xml.children[1].tagName == "location_hand" ){ }
     }
+    else if ( tagName == "handconstellation" ){ 
+        // <!ELEMENT  handconstellation  (  (location_hand, location_hand)?, location_bodyarm? )>
+        for( let i = 0; ( i < 3 ) && ( i < xml.children.length ); ++i ){
+            if ( i < 2 && xml.children[i].tagName == "location_hand" ){        }
+            else if ( xml.children[i].tagName == "location_bodyarm" ){
+                result = result.concat( locationArmParser( xml.children[i], time, time + TIMESLOT.LOC, "both", 0x00 ) );
+                maxEnd = TIMESLOT.LOC;
+                break;
+            }
+
+        }
+    } 
     // else if ( tagName == "location_hand" ){ }
-    // else if ( tagName == "handconstellation" ){ } 
 
     return { data: result, end: ( maxEnd + start ) };
 }
@@ -203,9 +270,9 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
     }
 
     let result = [];
-    if ( attributes.handshape ){ 
+    if ( attributes.handshape || attributes.thumbpos ){ 
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
-        obj.handshape = attributes.handshape;
+        obj.handshape = attributes.handshape || "flat";
         obj.thumbshape = attributes.thumbpos;
         if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
         result.push( obj );
@@ -310,13 +377,13 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
 
     // jasigning has an offset for each arm 
     result = [ result ];
-    if( hand == "both" || hand == "right" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: TIMESLOT.LOC, motion:"directed", direction: "r", distance:0.05, hand:"right" } ); }
-    if( hand == "both" || hand == "left" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: TIMESLOT.LOC, motion:"directed", direction: "l", distance:0.05, hand:"left" } ); }
+    if( hand == "both" || hand == "right" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "r", distance:0.05, hand:"right" } ); }
+    if( hand == "both" || hand == "left" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "l", distance:0.05, hand:"left" } ); }
     return result;
 }
 
 
-function motionParser( xml, start, bothHands, domHand, symmetry ){
+function motionParser( xml, start, bothHands, domHand, symmetry, currentPosture ){
     let result = [];
     let time = start;
     let tagName = xml.tagName;
@@ -332,12 +399,12 @@ function motionParser( xml, start, bothHands, domHand, symmetry ){
         let maxEnd = time;
         // JaSigning breaks if one motion is missing, but not supporting it now.
         if ( xml.children.length > 0 && motionsAvailable.includes( xml.children[0].tagName ) ){
-            let r = motionParser( xml.children[0], time, false, domHand, 0x00 );
+            let r = motionParser( xml.children[0], time, false, domHand, 0x00, currentPosture );
             result = result.concat( r.data );
             if( maxEnd < r.end ){ maxEnd = r.end; }
         }
         if ( xml.children.length > 1 && motionsAvailable.includes( xml.children[1].tagName ) ){
-            let r = motionParser( xml.children[1], time, false, domHand == "right" ? "left" : "right", 0x00 );
+            let r = motionParser( xml.children[1], time, false, domHand == "right" ? "left" : "right", 0x00, currentPosture );
             result = result.concat( r.data );
             if( maxEnd < r.end ){ maxEnd = r.end; }
         }
@@ -348,7 +415,10 @@ function motionParser( xml, start, bothHands, domHand, symmetry ){
 
         for( let i = 0; i < xml.children.length; ++i ){
             if ( motionsAvailable.includes( xml.children[i].tagName ) ){
-                let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry );
+                if ( xml.children[i].tagName == "rpt_motion" ){
+                    currentPosture = currentPostureUpdate( currentPosture, result );    
+                }
+                let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry, currentPosture );
                 result = result.concat( r.data );
                 time = r.end;
             }
@@ -361,7 +431,7 @@ function motionParser( xml, start, bothHands, domHand, symmetry ){
         let blockResult = []; // block == motion with children 
         for ( let i = 0; i < xml.children.length; ++i ){
             if ( motionsAvailable.includes( xml.children[i].tagName ) ){
-                let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry );
+                let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry, currentPosture );
                 blockResult.push( r );
                 if ( maxEnd < r.end ){ maxEnd = r.end; }
             }
@@ -385,7 +455,7 @@ function motionParser( xml, start, bothHands, domHand, symmetry ){
             if ( motionsAvailable.includes( xml.children[i].tagName ) ){
                 if ( motionDone ) { break; } // if a second motion is present, all subsequent postures are ignored
                 else {
-                    let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry );
+                    let r = motionParser( xml.children[i], time, bothHands, domHand, symmetry, currentPosture );
                     blockResult.push( r );
                     if ( maxEnd < r.end ){ maxEnd = r.end; } 
                     motionDone = true;   
@@ -411,23 +481,56 @@ function motionParser( xml, start, bothHands, domHand, symmetry ){
         // <!ELEMENT rpt_motion ( %motion; ) >
 
         if ( xml.children.length > 0 && motionsAvailable.includes( xml.children[0].tagName ) ){
-            let r = motionParser( xml.children[0], time, bothHands, domHand, symmetry );
+            let r = motionParser( xml.children[0], time, bothHands, domHand, symmetry, currentPosture );
             
-            result = result.concat( r.data );
-            let blockDuration = r.end - time;
-            let end = r.end; 
-
+            
             let repetition = "";
             for( let attr = 0; attr < xml.attributes.length; ++attr ){
                 if ( xml.attributes[attr].name == "repetition" ){ repetition = xml.attributes[attr].value; }
             }
             
+            let blockDuration = r.end - time;
+            let end = time;
+            
             switch ( repetition ){
-                case "fromstart": /* forward. Then go directly to the original pose. Forward. Repeat */ break;
+                case "fromstart":  /* forward. Then go directly to the original pose. Forward. Repeat completed */ 
+                    
+                    // forward
+                    let firstForward = JSON.parse( JSON.stringify( r.data ) ); 
+                    for( let i = 0; i < firstForward.length; ++i ){
+                        if( isNaN( firstForward[i].end ) ){ firstForward[i].end = r.end + TIMESLOT.POSTURE; } 
+                    }
+                    result = result.concat( firstForward );
+
+                    // backward
+                    let p = JSON.parse( JSON.stringify( currentPosture ) );
+                    for( let i = 0; i < p.length; ++i ){
+                        p[i].start = r.end;
+                        p[i].attackPeak = r.end + TIMESLOT.POSTURE;
+                    }
+                    result = result.concat( p );
+                    result.push( { type:"gesture", start:r.end + 0.0001, attackPeak: r.end + TIMESLOT.POSTURE, motion:"directed", direction: "r", distance:0.05, hand:"right" } );
+                    result.push( { type:"gesture", start:r.end + 0.0001, attackPeak: r.end + TIMESLOT.POSTURE, motion:"directed", direction: "l", distance:0.05, hand:"left" } );
+
+                    
+                    // forward
+                    let finalForward = r.data;
+                    for( let i = 0; i < finalForward.length; ++i ){
+                        if( !isNaN( finalForward[i].start ) ){ finalForward[i].start += blockDuration + TIMESLOT.POSTURE; } 
+                        if( !isNaN( finalForward[i].attackPeak ) ){ finalForward[i].attackPeak += blockDuration + TIMESLOT.POSTURE; } 
+                        if( !isNaN( finalForward[i].ready ) ){ finalForward[i].ready += blockDuration + TIMESLOT.POSTURE; } 
+                        if( !isNaN( finalForward[i].relax ) ){ finalForward[i].relax += blockDuration + TIMESLOT.POSTURE; } 
+                        if( !isNaN( finalForward[i].end ) ){ finalForward[i].end += blockDuration + TIMESLOT.POSTURE; } 
+                    }
+                    result = result.concat( finalForward );
+                    
+                    end = r.end + TIMESLOT.POSTURE + blockDuration;
+
+                    break;
                 case "fromstart_several": break;
                 case "tofroto": /* forward. inverse of everything. forward again */ break;
-                case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat */ break;
-                case "continue": /* keeps directed. After each repetition, quickly go to original posture and do everything again. */break;
+                case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat completed*/ break;
+                case "continue": /* keeps directed. After each repetition, quickly go to original posture and do everything again. */ break;
                 case "continue_several": break;
                 case "reverse": /* forward. Then do the inverse motion of everything done in this block, even changes of posture */ break;
                 case "swap": /* no repetition */ break;

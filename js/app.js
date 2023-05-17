@@ -79,27 +79,29 @@ class App {
                 let extension = glossFile.split(".");
                 extension = extension[ extension.length - 1 ];
                 if ( extension == "bml" ){
-                    let result = JSON.parse( text );
-                    let maxDuration = 0;
-                    for( let b = 0; b < result.length; ++b ){
-                        let bml = result[b];
-                        if( !isNaN( bml.start ) ){ bml.start += time; }
-                        if( !isNaN( bml.ready ) ){ bml.ready += time; }
-                        if( !isNaN( bml.attackPeak ) ){ bml.attackPeak += time; }
-                        if( !isNaN( bml.relax ) ){ bml.relax += time; }
-                        if( !isNaN( bml.end ) ){ 
-                            if ( maxDuration < bml.end ){ maxDuration = bml.end; } 
-                            bml.end += time; 
+                    try{ 
+                        let result = JSON.parse( text );
+                        let maxDuration = 0;
+                        for( let b = 0; b < result.length; ++b ){
+                            let bml = result[b];
+                            if( !isNaN( bml.start ) ){ bml.start += time; }
+                            if( !isNaN( bml.ready ) ){ bml.ready += time; }
+                            if( !isNaN( bml.attackPeak ) ){ bml.attackPeak += time; }
+                            if( !isNaN( bml.relax ) ){ bml.relax += time; }
+                            if( !isNaN( bml.end ) ){ 
+                                if ( maxDuration < bml.end ){ maxDuration = bml.end; } 
+                                bml.end += time; 
+                            }
                         }
-                    }
-                    orders = orders.concat( result );
-                    time += maxDuration;
+                        orders = orders.concat( result );
+                        time += maxDuration;
+                    }catch(e){ console.log( "bml parse error in file: " + glossFile ); }
                 }else {
                     let result = sigmlStringToBML( text, time );
                     orders = orders.concat(result.data);
                     time += result.duration; 
                     if ( i < ( glosses.length - 1 ) ){ 
-                        time = time - TIMESLOT.DEF - 0.85 * TIMESLOT.DEF; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
+                        time = time - TIMESLOT.DEF - 0.5 * TIMESLOT.DEF; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
                     }
                 }
             } ).catch(e =>{ console.log("failed at loading dictionary file: " + glossFile) } );
