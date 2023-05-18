@@ -231,9 +231,9 @@ FacialController.prototype.update = function (dt) {
         head.update(dt);
         if(head.lexeme == "FORWARD" || head.lexeme == "BACKWARD") {
             neckQuat.multiply( head.currentStrokeQuat );
-            headQuat.multiply( head.currentStrokeQuat ).inverse();
-        }
-            
+            headQuat.multiply( head.currentStrokeQuat.invert() );
+            head.currentStrokeQuat.invert(); // inverting quats is cheap
+        } 
         else
             headQuat.multiply( head.currentStrokeQuat );
     }

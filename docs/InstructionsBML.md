@@ -67,7 +67,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 
 ---
 
-## Head NOD / SHAKE / TILT
+## Head NOD / SHAKE / TILT / FORWARD / BACKWARD
 ``` javascript
 {
     type: "head",
@@ -79,9 +79,10 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 	relax: 0.6,         // starts returning to neutral position
 	end: 0.7,
     amount: 1,  
-	repetition: 3,       //amount of times to REPEAT stroke repetition cancels stroke attribute. Default 0 (meaning only moves once)
+	repetition: 3,       //amount of times to REPEAT. Default 0 (meaning only moves once)
 
-    lexeme: "NOD" || "SHAKE" || "TILT",
+    lexeme: "NOD" || "SHAKE" || "TILT" || "TILTLEFT" || "TILTRIGHT" || "TILTFORWARD" || "TILTBACKWARD" || "FORWARD" || "BACKWARD"
+
 }
 ```
 

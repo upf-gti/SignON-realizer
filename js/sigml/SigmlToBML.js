@@ -482,61 +482,84 @@ function motionParser( xml, start, bothHands, domHand, symmetry, currentPosture 
 
         if ( xml.children.length > 0 && motionsAvailable.includes( xml.children[0].tagName ) ){
             let r = motionParser( xml.children[0], time, bothHands, domHand, symmetry, currentPosture );
-            
+            let blockDuration = r.end - time;
             
             let repetition = "";
             for( let attr = 0; attr < xml.attributes.length; ++attr ){
                 if ( xml.attributes[attr].name == "repetition" ){ repetition = xml.attributes[attr].value; }
             }
             
-            let blockDuration = r.end - time;
-            let end = time;
-            
             switch ( repetition ){
                 case "fromstart":  /* forward. Then go directly to the original pose. Forward. Repeat completed */ 
-                    
-                    // forward
-                    let firstForward = JSON.parse( JSON.stringify( r.data ) ); 
-                    for( let i = 0; i < firstForward.length; ++i ){
-                        if( isNaN( firstForward[i].end ) ){ firstForward[i].end = r.end + TIMESLOT.POSTURE; } 
-                    }
-                    result = result.concat( firstForward );
+                case "fromstart_several":
+                case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat completed*/
+                    let amountLoops = ( repetition == "fromstart" ) ? 1 : 2;
+                    for( let loop = 0; loop < amountLoops; ++loop ){
+                        
+                        // forward
+                        let forward = JSON.parse( JSON.stringify( r.data ) ); 
+                        for( let i = 0; i < forward.length; ++i ){
+                            if( !isNaN( forward[i].start ) ){ forward[i].start += loop * ( blockDuration + TIMESLOT.POSTURE ); } 
+                            if( !isNaN( forward[i].attackPeak ) ){ forward[i].attackPeak += loop * ( blockDuration + TIMESLOT.POSTURE ); } 
+                            if( !isNaN( forward[i].ready ) ){ forward[i].ready += loop * ( blockDuration + TIMESLOT.POSTURE ); } 
+                            if( !isNaN( forward[i].relax ) ){ forward[i].relax += loop * ( blockDuration + TIMESLOT.POSTURE ); } 
+                            if( !isNaN( forward[i].end ) ){ forward[i].end += loop * ( blockDuration + TIMESLOT.POSTURE ); } 
+                            else{ forward[i].end = time + blockDuration + TIMESLOT.POSTURE; } // if no end, force an end in combination with backward pass
+                        }
+                        result = result.concat( forward );
 
-                    // backward
-                    let p = JSON.parse( JSON.stringify( currentPosture ) );
-                    for( let i = 0; i < p.length; ++i ){
-                        p[i].start = r.end;
-                        p[i].attackPeak = r.end + TIMESLOT.POSTURE;
-                    }
-                    result = result.concat( p );
-                    result.push( { type:"gesture", start:r.end + 0.0001, attackPeak: r.end + TIMESLOT.POSTURE, motion:"directed", direction: "r", distance:0.05, hand:"right" } );
-                    result.push( { type:"gesture", start:r.end + 0.0001, attackPeak: r.end + TIMESLOT.POSTURE, motion:"directed", direction: "l", distance:0.05, hand:"left" } );
+                        time += blockDuration; // add forward time
 
-                    
+                        // backward
+                        let p = JSON.parse( JSON.stringify( currentPosture ) );
+                        for( let i = 0; i < p.length; ++i ){
+                            p[i].start = time;
+                            p[i].attackPeak = time + TIMESLOT.POSTURE;
+                        }
+                        result = result.concat( p );
+                        // location_bodyarm fix to resemble jasigning
+                        result.push( { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "r", distance:0.05, hand:"right" } );
+                        result.push( { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "l", distance:0.05, hand:"left" } );
+                        
+                        time += TIMESLOT.POSTURE; // add backward time
+                    }
+
                     // forward
                     let finalForward = r.data;
+                    let offset = amountLoops * ( blockDuration + TIMESLOT.POSTURE );
                     for( let i = 0; i < finalForward.length; ++i ){
-                        if( !isNaN( finalForward[i].start ) ){ finalForward[i].start += blockDuration + TIMESLOT.POSTURE; } 
-                        if( !isNaN( finalForward[i].attackPeak ) ){ finalForward[i].attackPeak += blockDuration + TIMESLOT.POSTURE; } 
-                        if( !isNaN( finalForward[i].ready ) ){ finalForward[i].ready += blockDuration + TIMESLOT.POSTURE; } 
-                        if( !isNaN( finalForward[i].relax ) ){ finalForward[i].relax += blockDuration + TIMESLOT.POSTURE; } 
-                        if( !isNaN( finalForward[i].end ) ){ finalForward[i].end += blockDuration + TIMESLOT.POSTURE; } 
+                        if( !isNaN( finalForward[i].start ) ){ finalForward[i].start += offset; } 
+                        if( !isNaN( finalForward[i].attackPeak ) ){ finalForward[i].attackPeak += offset; } 
+                        if( !isNaN( finalForward[i].ready ) ){ finalForward[i].ready += offset; } 
+                        if( !isNaN( finalForward[i].relax ) ){ finalForward[i].relax += offset; } 
+                        if( !isNaN( finalForward[i].end ) ){ finalForward[i].end += offset; } 
                     }
                     result = result.concat( finalForward );
                     
-                    end = r.end + TIMESLOT.POSTURE + blockDuration;
+                    time += blockDuration; // add forward time
 
                     break;
-                case "fromstart_several": break;
-                case "tofroto": /* forward. inverse of everything. forward again */ break;
-                case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat completed*/ break;
-                case "continue": /* keeps directed. After each repetition, quickly go to original posture and do everything again. */ break;
-                case "continue_several": break;
-                case "reverse": /* forward. Then do the inverse motion of everything done in this block, even changes of posture */ break;
-                case "swap": /* no repetition */ break;
+                case "tofroto": /* forward. inverse of everything. forward again */ 
+                    // timings during reverse are inverted
+
+                    // circular:  swap endAngle and startAngle
+                    // directed:  use sigmlutils.directionStringSymmetry with all symmetry set to the direction (curve should not be necessary)
+                    // wrist and fingerplay: nothing special
+
+                    // posture: be careful with start and attackpeak timings
+                break;
+                case "reverse": /* tofroto without last forward. So only forward, backward */ break;
+                case "continue": /* forward. keeps directed. After each repetition, quickly go to original posture. Forward. */ 
+                case "continue_several":
+                    // same as fromstart but keeps directedmotion offset. Remember we remove directed and circular after each location_bodyarm on our realizer
+                break;
+                case "swap": /* no repetition, may be deprecated. Use default */
+                default:
+                    result = result.concat( r.data );
+                    time += blockDuration; // add forward time
+                    break;
             }
 
-            time = end;
         }
     }
 
