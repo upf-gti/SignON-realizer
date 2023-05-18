@@ -35,7 +35,7 @@ function build() {
             "../js/sigml/LocationArmIK.js",
             "../js/sigml/Motion.js",
             "../js/sigml/Palmor.js",
-            "../js/sigml/sigmlUtils.js"
+            "../js/sigml/SigmlUtils.js"
         ],
         "CharacterController.js": [
             "../js/controllers/CharacterController.js",
@@ -44,7 +44,7 @@ function build() {
         ],
         "IKSolver.js" : ["../js/sigml/IKSolver.js"],
         "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
-        "app.js": ["../js/app.js"]
+        "App.js": ["../js/App.js"]
     };
     
     //change import files of classes

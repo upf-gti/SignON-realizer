@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { mirrorQuatSelf, nlerpQuats } from "./sigmlUtils.js";
+import { mirrorQuatSelf, nlerpQuats } from "./SigmlUtils.js";
 
 // Three bones per finger (0=base, 1=mid, 2=tip). Flat array automatically transformed into array of THREE.Quaternions
 let handShapes = {

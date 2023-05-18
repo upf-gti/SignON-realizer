@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { directionStringSymmetry, mirrorQuatSelf } from './sigmlUtils.js';
+import { directionStringSymmetry, mirrorQuatSelf } from './SigmlUtils.js';
 
 // Description of sigml points supported. keys: our proposal (what the realizer uses). Values: list of tags of sigml that are mapped to that key
 // headtop : headtop,

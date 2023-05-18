@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./sigmlUtils.js";
+import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./SigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let extfidirPointTable = {

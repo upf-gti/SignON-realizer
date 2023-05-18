@@ -7,7 +7,7 @@ import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 
 import { CCDIKSolver } from "./IKSolver.js";
-import { findIndexOfBone } from "./sigmlUtils.js";
+import { findIndexOfBone } from "./SigmlUtils.js";
 
 
 

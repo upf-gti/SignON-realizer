@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUtils.js";
+import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./SigmlUtils.js";
 
 let _tempVec3_0 = new THREE.Vector3(0,0,0);
 let _tempQuat_0 = new THREE.Quaternion(0,0,0,1);
