@@ -1,36 +1,36 @@
-import { Matrix4, Quaternion, Vector3 } from "three";
+import * as THREE from "three";
 import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./sigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let extfidirPointTable = {
-    'u'     : new Vector3(  0,   2,   0 ),   
-    'ul'    : new Vector3(  1,   2,   0 ),   
-    'l'     : new Vector3(  1,   1,   0 ),   
-    'dl'    : new Vector3(  1,   0,   0 ),   
-    'd'     : new Vector3(  0,   0,   0 ),   
-    'dr'    : new Vector3( -1,   0,   0 ),  
-    'r'     : new Vector3( -1,   1,   0 ),  
-    'ur'    : new Vector3( -1,   2,   0 ),  
+    'u'     : new THREE.Vector3(  0,   2,   0 ),   
+    'ul'    : new THREE.Vector3(  1,   2,   0 ),   
+    'l'     : new THREE.Vector3(  1,   1,   0 ),   
+    'dl'    : new THREE.Vector3(  1,   0,   0 ),   
+    'd'     : new THREE.Vector3(  0,   0,   0 ),   
+    'dr'    : new THREE.Vector3( -1,   0,   0 ),  
+    'r'     : new THREE.Vector3( -1,   1,   0 ),  
+    'ur'    : new THREE.Vector3( -1,   2,   0 ),  
 
-    "uo"    : new Vector3(  0,   2,   1 ),
-    "uol"   : new Vector3(  1,   2,   1 ),
-    "ol"    : new Vector3(  1,   1,   1 ),
-    "dol"   : new Vector3(  1,   0,   1 ),
-    "do"    : new Vector3(  0,   0,   1 ),
-    "dor"   : new Vector3( -1,   0,   1 ),
-    "or"    : new Vector3( -1,   1,   1 ),
-    "uor"   : new Vector3( -1,   2,   1 ),
-    "o"     : new Vector3(  0,   1,   1 ),
+    "uo"    : new THREE.Vector3(  0,   2,   1 ),
+    "uol"   : new THREE.Vector3(  1,   2,   1 ),
+    "ol"    : new THREE.Vector3(  1,   1,   1 ),
+    "dol"   : new THREE.Vector3(  1,   0,   1 ),
+    "do"    : new THREE.Vector3(  0,   0,   1 ),
+    "dor"   : new THREE.Vector3( -1,   0,   1 ),
+    "or"    : new THREE.Vector3( -1,   1,   1 ),
+    "uor"   : new THREE.Vector3( -1,   2,   1 ),
+    "o"     : new THREE.Vector3(  0,   1,   1 ),
     
-    "ui"    : new Vector3(  0,   2,   -1 ),
-    "uil"   : new Vector3(  1,   2,   -1 ),
-    "il"    : new Vector3(  1,   1,   -1 ),
-    "dil"   : new Vector3(  1,   0,   -1 ),
-    "di"    : new Vector3(  0,   0,   -1 ),
-    "dir"   : new Vector3( -1,   0,   -1 ),
-    "ir"    : new Vector3( -1,   1,   -1 ),
-    "uir"   : new Vector3( -1,   2,   -1 ),
-    "i"     : new Vector3(  0,   1,   -1 ),
+    "ui"    : new THREE.Vector3(  0,   2,   -1 ),
+    "uil"   : new THREE.Vector3(  1,   2,   -1 ),
+    "il"    : new THREE.Vector3(  1,   1,   -1 ),
+    "dil"   : new THREE.Vector3(  1,   0,   -1 ),
+    "di"    : new THREE.Vector3(  0,   0,   -1 ),
+    "dir"   : new THREE.Vector3( -1,   0,   -1 ),
+    "ir"    : new THREE.Vector3( -1,   1,   -1 ),
+    "uir"   : new THREE.Vector3( -1,   2,   -1 ),
+    "i"     : new THREE.Vector3(  0,   1,   -1 ),
 }
 
 let EXTFIDIR_MODES = {
@@ -59,15 +59,15 @@ class Extfidir {
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
         this.idx = boneMap[ handName + "Wrist" ]; // wrist index
-        this.twistAxis = ( new Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize();
+        this.twistAxis = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize();
 
         this.defmode = EXTFIDIR_MODES.LOCAL; // is default positioning absolute, relative or local 
-        this.defPoint = new Vector3();
-        this.trgPoint = new Vector3(); 
-        // no defG  = new Quaternion. Will reuse srcG and trgG during relax-end
-        this.trgG = new Quaternion();
-        this.srcG = new Quaternion();
-        this.curG = new Quaternion();
+        this.defPoint = new THREE.Vector3();
+        this.trgPoint = new THREE.Vector3(); 
+        // no defG  = new THREE.Quaternion. Will reuse srcG and trgG during relax-end
+        this.trgG = new THREE.Quaternion();
+        this.srcG = new THREE.Quaternion();
+        this.curG = new THREE.Quaternion();
         
         this.time = 0; // current time of transition
         this.start = 0;
@@ -78,10 +78,10 @@ class Extfidir {
 
         this.mode = EXTFIDIR_MODES.RELATIVE;
 
-        this.tempVec3 = new Vector3(); // swing function
-        this.tempQuat1 = new Quaternion(); // swing function
-        this.tempQuat2 = new Quaternion(); // swing function 
-        this.tempMat4 = new Matrix4(); // swing function 
+        this.tempVec3 = new THREE.Vector3(); // swing function
+        this.tempQuat1 = new THREE.Quaternion(); // swing function
+        this.tempQuat2 = new THREE.Quaternion(); // swing function 
+        this.tempMat4 = new THREE.Matrix4(); // swing function 
         
         // DEBUG render rotation table as spheres
         // if ( !window.checks ){

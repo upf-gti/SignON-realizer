@@ -1,38 +1,38 @@
-import { Quaternion, Vector3 } from "three";
+import * as THREE from "three";
 import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./sigmlUtils.js";
 
-let _tempVec3_0 = new Vector3(0,0,0);
-let _tempQuat_0 = new Quaternion(0,0,0,1);
+let _tempVec3_0 = new THREE.Vector3(0,0,0);
+let _tempQuat_0 = new THREE.Quaternion(0,0,0,1);
 
 let motionDirectionTable = {
-    'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
-    'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
-    'l'     : (new Vector3(  1,   0,   0 )).normalize(),   
-    'dl'    : (new Vector3(  1,  -1,   0 )).normalize(),   
-    'd'     : (new Vector3(  0,  -1,   0 )).normalize(),   
-    'dr'    : (new Vector3( -1,  -1,   0 )).normalize(),  
-    'r'     : (new Vector3( -1,   0,   0 )).normalize(),  
-    'ur'    : (new Vector3( -1,   1,   0 )).normalize(),  
+    'u'     : (new THREE.Vector3(  0,   1,   0 )).normalize(),   
+    'ul'    : (new THREE.Vector3(  1,   1,   0 )).normalize(),   
+    'l'     : (new THREE.Vector3(  1,   0,   0 )).normalize(),   
+    'dl'    : (new THREE.Vector3(  1,  -1,   0 )).normalize(),   
+    'd'     : (new THREE.Vector3(  0,  -1,   0 )).normalize(),   
+    'dr'    : (new THREE.Vector3( -1,  -1,   0 )).normalize(),  
+    'r'     : (new THREE.Vector3( -1,   0,   0 )).normalize(),  
+    'ur'    : (new THREE.Vector3( -1,   1,   0 )).normalize(),  
 
-    "uo"    : (new Vector3(  0,   1,   1 )).normalize(),
-    "uol"   : (new Vector3(  1,   1,   1 )).normalize(),
-    "ol"    : (new Vector3(  1,   0,   1 )).normalize(),
-    "dol"   : (new Vector3(  1,  -1,   1 )).normalize(),
-    "do"    : (new Vector3(  0,  -1,   1 )).normalize(),
-    "dor"   : (new Vector3( -1,  -1,   1 )).normalize(),
-    "or"    : (new Vector3( -1,   0,   1 )).normalize(),
-    "uor"   : (new Vector3( -1,   1,   1 )).normalize(),
-    "o"     : (new Vector3(  0,   0,   1 )).normalize(),
+    "uo"    : (new THREE.Vector3(  0,   1,   1 )).normalize(),
+    "uol"   : (new THREE.Vector3(  1,   1,   1 )).normalize(),
+    "ol"    : (new THREE.Vector3(  1,   0,   1 )).normalize(),
+    "dol"   : (new THREE.Vector3(  1,  -1,   1 )).normalize(),
+    "do"    : (new THREE.Vector3(  0,  -1,   1 )).normalize(),
+    "dor"   : (new THREE.Vector3( -1,  -1,   1 )).normalize(),
+    "or"    : (new THREE.Vector3( -1,   0,   1 )).normalize(),
+    "uor"   : (new THREE.Vector3( -1,   1,   1 )).normalize(),
+    "o"     : (new THREE.Vector3(  0,   0,   1 )).normalize(),
     
-    "ui"    : (new Vector3(  0,   1,  -1 )).normalize(),
-    "uil"   : (new Vector3(  1,   1,  -1 )).normalize(),
-    "il"    : (new Vector3(  1,   0,  -1 )).normalize(),
-    "dil"   : (new Vector3(  1,  -1,  -1 )).normalize(),
-    "di"    : (new Vector3(  0,  -1,  -1 )).normalize(),
-    "dir"   : (new Vector3( -1,  -1,  -1 )).normalize(),
-    "ir"    : (new Vector3( -1,   0,  -1 )).normalize(),
-    "uir"   : (new Vector3( -1,   1,  -1 )).normalize(),
-    "i"     : (new Vector3(  0,   0,  -1 )).normalize(),
+    "ui"    : (new THREE.Vector3(  0,   1,  -1 )).normalize(),
+    "uil"   : (new THREE.Vector3(  1,   1,  -1 )).normalize(),
+    "il"    : (new THREE.Vector3(  1,   0,  -1 )).normalize(),
+    "dil"   : (new THREE.Vector3(  1,  -1,  -1 )).normalize(),
+    "di"    : (new THREE.Vector3(  0,  -1,  -1 )).normalize(),
+    "dir"   : (new THREE.Vector3( -1,  -1,  -1 )).normalize(),
+    "ir"    : (new THREE.Vector3( -1,   0,  -1 )).normalize(),
+    "uir"   : (new THREE.Vector3( -1,   1,  -1 )).normalize(),
+    "i"     : (new THREE.Vector3(  0,   0,  -1 )).normalize(),
 }
 
 // in x,y plane -> angle with respect to +y axis
@@ -49,13 +49,13 @@ let motionCurveTable = {
 
 class DirectedMotion {
     constructor(){
-        this.finalOffset = new Vector3(0,0,0);        
-        this.bezier = [ new Vector3(), new Vector3(), new Vector3(), new Vector3() ]
+        this.finalOffset = new THREE.Vector3(0,0,0);        
+        this.bezier = [ new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3() ]
 
         this.distance = 0.05; // metres
         this.steepness = 0.5; // [0,1] curve steepness
 
-        this.zigzagDir = new Vector3(0,0,1);
+        this.zigzagDir = new THREE.Vector3(0,0,1);
         this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
         this.zigzagSpeed = 2; // loops per second
 
@@ -192,10 +192,10 @@ class DirectedMotion {
             _tempVec3_0.normalize();
             lookAtQuat.setFromAxisAngle( _tempVec3_0, angle );
         }
-        this.bezier[0].applyQuaternion( lookAtQuat );
-        this.bezier[1].applyQuaternion( lookAtQuat );
-        this.bezier[2].applyQuaternion( lookAtQuat );
-        this.bezier[3].applyQuaternion( lookAtQuat );
+        this.bezier[0].applyTHREE.Quaternion( lookAtQuat );
+        this.bezier[1].applyTHREE.Quaternion( lookAtQuat );
+        this.bezier[2].applyTHREE.Quaternion( lookAtQuat );
+        this.bezier[3].applyTHREE.Quaternion( lookAtQuat );
 
         // zig-zag
         let zigzag = motionDirectionTable[ bml.zigzag ];
@@ -224,14 +224,14 @@ class DirectedMotion {
 // TODO: check parameters from bml, zig zag attenuation (on update, missing outro ending attenuation)
 class CircularMotion {
     constructor(){
-        this.finalOffset = new Vector3(0,0,0);
+        this.finalOffset = new THREE.Vector3(0,0,0);
 
-        this.startPoint = new Vector3(0,0,0);
+        this.startPoint = new THREE.Vector3(0,0,0);
         this.easingAngle = 60.0 * Math.PI/180.0; // entry/outro extra angle. Absolute value
         this.targetDeltaAngle = 0; // entry&outro easing + user specified.
-        this.axis = new Vector3(0,0,0);
+        this.axis = new THREE.Vector3(0,0,0);
         
-        this.zigzagDir = new Vector3(0,0,1);
+        this.zigzagDir = new THREE.Vector3(0,0,1);
         this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
         this.zigzagSpeed = 2; // loops per second
 
@@ -352,7 +352,7 @@ class CircularMotion {
 
         let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
         this.startPoint.set(0,1,0).multiplyScalar( distance );
-        this.startPoint.applyQuaternion( _tempQuat_0 );
+        this.startPoint.applyTHREE.Quaternion( _tempQuat_0 );
 
         // apply starting angle to startPoint
         this.startPoint.applyAxisAngle( this.axis, startAngle );
@@ -382,18 +382,18 @@ class CircularMotion {
 
 
 let fingerPlayTable = {
-    index : new Quaternion ( 0.3056621,  0.0039430, -0.0053422, 0.9521169 ),
-    middle: new Quaternion ( 0.3522030,  0.0105015, -0.0046960, 0.9358529 ),
-    ring  : new Quaternion ( 0.2910635,  0.0143004,  0.0083483, 0.9565603 ),
-    pinky : new Quaternion ( 0.2807940, -0.0096333,  0.0081887, 0.9596847 ),
+    index : new THREE.Quaternion ( 0.3056621,  0.0039430, -0.0053422, 0.9521169 ),
+    middle: new THREE.Quaternion ( 0.3522030,  0.0105015, -0.0046960, 0.9358529 ),
+    ring  : new THREE.Quaternion ( 0.2910635,  0.0143004,  0.0083483, 0.9565603 ),
+    pinky : new THREE.Quaternion ( 0.2807940, -0.0096333,  0.0081887, 0.9596847 ),
 }
 
 class FingerPlay {
     constructor(){ 
-        this.index = new Quaternion(0,0,0,1);
-        this.middle = new Quaternion(0,0,0,1);
-        this.ring = new Quaternion(0,0,0,1);
-        this.pinky = new Quaternion(0,0,0,1);
+        this.index = new THREE.Quaternion(0,0,0,1);
+        this.middle = new THREE.Quaternion(0,0,0,1);
+        this.ring = new THREE.Quaternion(0,0,0,1);
+        this.pinky = new THREE.Quaternion(0,0,0,1);
 
         this.fingerEnabler = 0x00; // flags. bit0 = thumb, bit1 = index, bit2 = middle, bit3 = ring, bit4 = pinky
         
@@ -528,7 +528,7 @@ class WristMotion {
         if ( this.mode & 0x01 ){ // TWIST
             let twistAxis = _tempVec3_0;
             twistAxis.set(0,0,1);
-            twistAxis.applyQuaternion( this.wristBone.quaternion );
+            twistAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
             _tempQuat_0.setFromAxisAngle( twistAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );
@@ -536,7 +536,7 @@ class WristMotion {
         if ( this.mode & 0x02 ){ // NOD
             let nodAxis = _tempVec3_0;
             nodAxis.set(1,0,0);
-            nodAxis.applyQuaternion( this.wristBone.quaternion );
+            nodAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
             _tempQuat_0.setFromAxisAngle( nodAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );
@@ -544,7 +544,7 @@ class WristMotion {
         if ( this.mode & 0x04 ){ // SWING
             let swingAxis = _tempVec3_0;
             swingAxis.set(0,1,0);
-            swingAxis.applyQuaternion( this.wristBone.quaternion );
+            swingAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
             let angle = Math.sin( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 ); // PHASE of 90ª with respect to NOD (see newGestureBML)
             _tempQuat_0.setFromAxisAngle( swingAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );

@@ -1,4 +1,4 @@
-import { Quaternion, Vector3 } from "three";
+import * as THREE from "three";
 import { directionStringSymmetry, mirrorQuat, nlerpQuats } from "./sigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
@@ -34,8 +34,8 @@ class Palmor {
         this.idx = boneMap[ handName + "Elbow" ]; // elbow (forearm) joint index. 
 
         // handName = "R";
-        this.twistAxisForeArm = ( new Vector3() ).copy( bones[ boneMap[ handName + "Wrist"] ].position ).normalize(); // position is already local to ForeArm bone
-        this.twistAxisWrist =  ( new Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle"] ].position ).normalize(); // position is already local to Wrist bone
+        this.twistAxisForeArm = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "Wrist"] ].position ).normalize(); // position is already local to ForeArm bone
+        this.twistAxisWrist =  ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle"] ].position ).normalize(); // position is already local to Wrist bone
 
                 
         // store TWIST quaternions for forearm and hand (visally better than just forearm or wrist)
@@ -43,7 +43,7 @@ class Palmor {
         this.trgAngle = 0;
         this.srcAngle = 0;
         this.curAngle = 0;
-        this.curG = [ new Quaternion(), new Quaternion() ];
+        this.curG = [ new THREE.Quaternion(), new THREE.Quaternion() ];
 
         this.time = 0; // current time of transition
         this.start = 0;

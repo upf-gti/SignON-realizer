@@ -1,5 +1,5 @@
-var fs = require('fs');
-
+let fs = require('fs');
+let path = require('path');
 
 /** BML.js includes: 
  * - ./js/bml/BehaviourManager.js
@@ -26,34 +26,36 @@ var fs = require('fs');
 function build() {
     
     let files = {
-        "BML.js": [
-            ["", "../js/bml/BehaviourManager.js"],
-            ["", "../js/bml/BehaviourPlanner.js"], 
-            ["", "../js/bml/BehaviourRealizer.js"], 
-            ["", "../js/sigml/Extfidir.js"],
-            ["", "../js/sigml/HandShapeRealizer.js"],
-            ["", "../js/sigml/LocationArmIK.js"],
-            ["", "../js/sigml/Motion.js"],
-            ["", "../js/sigml/Palmor.js"],
-            ["", "../js/sigml/sigmlUtils.js"]
+        "./js/BML.js": [
+            "../js/bml/BehaviourManager.js",
+            "../js/bml/BehaviourPlanner.js", 
+            "../js/bml/BehaviourRealizer.js", 
+            "../js/sigml/Extfidir.js",
+            "../js/sigml/HandShapeRealizer.js",
+            "../js/sigml/LocationArmIK.js",
+            "../js/sigml/Motion.js",
+            "../js/sigml/Palmor.js",
+            "../js/sigml/sigmlUtils.js"
         ],
-        "CharacterController.js": [
-            ["BML", "../js/controllers/CharacterController.js"],
-            ["BML", "../js/controllers/FacialController.js"],
-            ["BML", "../js/sigml/BodyController.js"],
+        "./js/CharacterController.js": [
+            "../js/controllers/CharacterController.js",
+            "../js/controllers/FacialController.js",
+            "../js/sigml/BodyController.js",
         ],
-        "IKSolver.js" : [["", "../js/sigml/IKSolver.js"]],
-        "SigmlToBML.js": [["", "../js/sigml/SigmlToBML.js"]],
-        "app.js": [["CharacterController", "../js/app.js"]]
+        "./js/IKSolver.js" : ["../js/sigml/IKSolver.js"],
+        "./js/SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
+        "./js/app.js": ["../js/app.js"]
     };
     
     //change import files of classes
     
-    let readedFiles = [];
+    let readedFiles = {};
+    let toImport = {};
+
     for(let filename in files) {
         
         readFiles(files[filename], 
-            (data) => {
+            (data, imports) => {
                 // let imports = "";
                 // if(filename == "app.js") {
                 //     for(let i = 0; i < readedFiles.length; i++) {
@@ -64,11 +66,9 @@ function build() {
                 //     }
                 //     data = imports + data;
                 // }
-                fs.writeFile(filename, data, (err) => {
-                    if (err) console.log(err);
-                    console.log("Successfully Written to ", filename);
-                });
-                readedFiles.push(filename);
+                
+                toImport[filename] = imports;
+                readedFiles[filename] = data;
             },
             (err) => {
                 
@@ -77,35 +77,119 @@ function build() {
             },
         )
     }
+    console.log(toImport)
+    
+    let filenames = Object.values(files);
+    let newFilenames = Object.keys(files);
+
+    for(let filename in files) {
+        let newPaths = {};
+        let imports = toImport[filename];
+
+        for(let oldPath in imports) {
+            let classes = imports[oldPath];
+            let newPath = oldPath;
+            if(!oldPath.includes("three")) 
+            {
+                let p =  oldPath.split("/"); 
+                p = p[p.length-1];
+     
+                let idx = filenames.findIndex(x => {
+                    let a = x.map( f => {
+                        let a = f.split("/");
+                        return a[a.length-1];
+                    })
+    
+                    return a.indexOf(p) > -1 ;       
+                });
+                console.log(idx + ": ", newFilenames[idx] + " -> "+ p);
+                newPath = newFilenames[idx];
+            }
+            if(newPath == undefined)
+                continue;
+            if(newPaths[newPath])
+                newPaths[newPath] = [...newPaths[newPath], ...classes];
+            else
+                newPaths[newPath] = classes;
+        }
+        console.log(newPaths)
+        let data = "";
+        for(let newPath in newPaths) {
+
+            let classes = newPaths[newPath].join(", ");
+            console.log(classes, classes.includes("*"))
+            if(!classes.includes("*"))
+                classes = "{ " + classes + " }";
+                
+           data += "import " + classes + " from '" + newPath + "';\n";
+           
+        }
+        data += readedFiles[filename];
+        
+        function ensureDirectoryExistence(filePath) {
+            var dirname = path.dirname(filePath);
+            if (fs.existsSync(dirname)) {
+              return true;
+            }
+            ensureDirectoryExistence(dirname);
+            fs.mkdirSync(dirname);
+          }
+        ensureDirectoryExistence(filename);
+
+        fs.writeFile(filename, data, (err) => {
+            if (err) console.log(err);
+            console.log("Successfully Written to ", filename);
+        });
+        }
 }
 
 function readFiles(filenames, onFileContent, onError) {
  
     let globals = [];
+    let imports = {};
     let exports = [];
     let contentFile = ""; //"(function(global){\n";
-    let files = filenames.map((x) => {let a = x[1].split("."); return a[a.length-2]});
-    //console.log(files)
+    let files = filenames.map((x) => {let a = x.split("."); return a[a.length-2]});
+
     for(let i = 0; i < filenames.length; i++) {
-        let context = filenames[i][0];
-        let filename = filenames[i][1];
+        let filename = filenames[i];
         let content = fs.readFileSync(filename, 'utf-8');
         let newContent = "";
         content.split(/\r?\n/).forEach(line =>  {
             if(line.includes("import "))
             {
-                let includes = files.map((x) => { return line.includes(x)});
-                if(includes.indexOf(true)>-1) {
-                    
+
+                line = line.replace("import ", "");
+                let oldPath = line.split("from ")[1];
+                line = line.replace("from " + oldPath, "");
+                oldPath = oldPath.replaceAll(/[\'\"\;]/g, "");
+
+                let str = "";
+                if(line.includes("*")) {
+                    str = [line];
                 }
-                else{
-                    newContent += line + "\r";
+                else {
+
+                    str = line.split("{")[1];
+                    str = str.split("}")[0];
+                    str = str.replaceAll(" ", "");
+                    str = str.split(",");
+                }
+                if(imports[oldPath] != undefined) {
+                    
+                    for(let j = 0; j < str.length; j++) {
+                        
+                        if(imports[oldPath].indexOf(str[j]) < 0)
+                            imports[oldPath].push(str[j]);
+                    }
+                }
+                else {
+                    imports[oldPath] = str;
                 }
             }
             else if(line.includes("export ")) {
-                console.log(line)
+               
                 let classes = line.replace("export ", "").replace("{", "").replace("}", "").replace(";", "");
-                console.log(classes)
                 classes = classes.split(",");
                 exports = [...exports, ...classes]
             }
@@ -135,7 +219,7 @@ function readFiles(filenames, onFileContent, onError) {
     // contentFile += "})( typeof(window) != 'undefined' ? window : (typeof(self) != 'undefined' ? self : global ) );\n\n\n";
     console.log(exports)
     contentFile += "export { " + exports.join(", ") + "} \n";
-    onFileContent(contentFile);
+    onFileContent(contentFile, imports);
 
 }
 

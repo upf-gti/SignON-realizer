@@ -1,3 +1,4 @@
+import * as THREE from "three";
 
 import { LocationArmIK } from "./LocationArmIK.js";
 import { Palmor } from "./Palmor.js"
@@ -5,8 +6,7 @@ import { Extfidir } from "./Extfidir.js";
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 
-import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js";
-import { Mesh, MeshPhongMaterial, Quaternion, SphereGeometry, Vector3 } from "three";
+import { CCDIKSolver } from "./IKSolver.js";
 import { findIndexOfBone } from "./sigmlUtils.js";
 
 
@@ -26,7 +26,7 @@ class BodyController{
 
         // ik for arm, shared among all modules
         let ikSolver = this.ikSolver = new CCDIKSolver( this.skeleton );
-        this.ikTarget = { position: new Vector3(0,0,0) }; // worldposition
+        this.ikTarget = { position: new THREE.Vector3(0,0,0) }; // worldposition
         this._ikCreateChain( "LeftHand", "LeftArm", "LeftArm" ); // locationIK
         this._ikCreateChain( "RightHand", "RightArm", "RightArm" );
         this._ikCreateChain( "LeftHand", "LeftShoulder", "LeftShoulder" );
@@ -59,11 +59,11 @@ class BodyController{
 
 
         // -------------- All modules --------------
-        this.locationUpdateOffset = new Vector3(0,0,0);
+        this.locationUpdateOffset = new THREE.Vector3(0,0,0);
 
         this.right = {
             armChain : this.ikSolver.getChain( "RightArm" ),
-            locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
+            locationLastFrameQuats : [ new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, false ),
             locMotions : [],
             extfidir : new Extfidir( boneMap, skeleton, false ),
@@ -74,7 +74,7 @@ class BodyController{
         }
         this.left = {
             armChain : this.ikSolver.getChain( "LeftArm" ),
-            locationLastFrameQuats : [ new Quaternion(0,0,0,1), new Quaternion(0,0,0,1), new Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
+            locationLastFrameQuats : [ new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
             loc : new LocationArmIK( boneMap, skeleton, ikSolver, true ),
             locMotions : [],
             extfidir : new Extfidir( boneMap, skeleton, true ),
@@ -139,7 +139,7 @@ class BodyController{
             this.ikTarget.position.add( this.locationUpdateOffset );
 
             // debug points desired location
-            // let k = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
+            // let k = new THREE.THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
             // k.position.copy(this.ikTarget.position);
             // window.global.app.scene.add( k );
     
@@ -149,7 +149,7 @@ class BodyController{
     
             // debug points position after ik
             // this.skeleton.bones[ ikChain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            // let kk = new Mesh( new SphereGeometry(0.005, 16, 16), new MeshPhongMaterial({ depthTest:false, depthWrite: false }) );
+            // let kk = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ depthTest:false, depthWrite: false }) );
             // kk.position.copy(this.ikTarget.position);
             // window.global.app.scene.add( kk );
         }    

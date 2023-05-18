@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { Quaternion, Vector3 } from 'three';
 import { directionStringSymmetry, mirrorQuatSelf } from './sigmlUtils.js';
 
 // Description of sigml points supported. keys: our proposal (what the realizer uses). Values: list of tags of sigml that are mapped to that key
@@ -26,26 +25,26 @@ import { directionStringSymmetry, mirrorQuatSelf } from './sigmlUtils.js';
 // arm quaternions from right arm perspective
 // [ ShoulderBack, Shoulder, Elbow ]
 let nearPoses = {
-    neutral:        [ new Quaternion(-0.0030244,-0.6014008,0.0175197,0.7987496), new Quaternion(0.5977453,0.1557497,-0.0462050,0.7850526), new Quaternion(0.2523842,0.2125053,0.0112892,0.9439365)  ],
+    neutral:        [ new THREE.Quaternion(-0.0030244,-0.6014008,0.0175197,0.7987496), new THREE.Quaternion(0.5977453,0.1557497,-0.0462050,0.7850526), new THREE.Quaternion(0.2523842,0.2125053,0.0112892,0.9439365)  ],
 
-    headtop:        [ new Quaternion(-0.0506604,-0.7341385,-0.0660531,0.6738776), new Quaternion(-0.4668017,0.0198618,-0.0204699,0.8839019), new Quaternion(-0.6623683,0.1071393,-0.0464818,0.7400194)  ],
-    forehead:       [ new Quaternion(0.0052382,-0.7376279,0.0058476,0.6751617), new Quaternion(-0.0995180,0.7498349,-0.0055130,0.6540743), new Quaternion(-0.6971409,0.3354671,-0.0556369,0.6311582)  ],
-    eyeL:           [ new Quaternion(0.1273960,-0.7585008,0.1566673,0.6195983), new Quaternion(0.0285814,0.8482021,-0.0000513,0.5289008), new Quaternion(-0.4557415,0.5937748,-0.0472286,0.6614382)  ],
-    eyeR:           [ new Quaternion(0.1152192,-0.7544016,0.1422677,0.6303669), new Quaternion(0.0714903,0.8325108,0.0018608,0.5493736), new Quaternion(-0.5646459,0.5390549,-0.0528718,0.6227353)  ],
-    nose:           [ new Quaternion(-0.0252475,-0.7199582,-0.0304132,0.6928908), new Quaternion(0.0454818,0.7106191,0.0009248,0.7021046), new Quaternion(-0.6405263,0.5539174,-0.0584294,0.5286657)  ],
-    upperlip:       [ new Quaternion(-0.0288777,-0.7174093,-0.0346774,0.6951887), new Quaternion(0.0694745,0.6986833,0.0019989,0.7120469), new Quaternion(-0.5996578,0.6148312,-0.0575356,0.5090016)  ],
-    mouth:          [ new Quaternion(-0.0039781,-0.7422616,-0.0068752,0.6700630), new Quaternion(0.1569718,0.7319968,0.0057865,0.6629531), new Quaternion(-0.5367775,0.6554966,-0.0545482,0.5284112)  ],
-    chin:           [ new Quaternion(-0.0144784,-0.7336383,-0.0188906,0.6791231), new Quaternion(0.2120324,0.6909716,0.0082736,0.6910368), new Quaternion(-0.4265878,0.7764973,-0.0508725,0.4609626)  ],
-    cheekL:         [ new Quaternion(0.0352934,-0.7555276,0.0411269,0.6528713), new Quaternion(0.0514777,0.8204809,0.0010022,0.5693505), new Quaternion(-0.4342420,0.7208578,-0.0496679,0.5378949)  ],
-    cheekR:         [ new Quaternion(0.0230982,-0.7083715,0.0339334,0.7046451), new Quaternion(0.1192426,0.7429874,0.0041107,0.6585848), new Quaternion(-0.7864518,0.4759690,-0.0659315,0.3880720)  ],
-    earL:           [ new Quaternion(0.1029711,-0.6166821,0.1499909,0.7659000), new Quaternion(0.0893024,0.8568030,0.0026013,0.5078452), new Quaternion(-0.3381405,0.7009594,-0.0426242,0.6264982)  ],
-    earR:           [ new Quaternion(0.1681397,-0.5996382,0.2337173,0.7466855), new Quaternion(-0.1995244,0.7336113,-0.0098819,0.6495434), new Quaternion(-0.7972906,0.4242612,-0.0650900,0.4243739)  ],
-    neck:           [ new Quaternion(-0.0311668,-0.6967750,-0.0340783,0.7158014), new Quaternion(0.4273569,0.5905589,0.0178945,0.6843142), new Quaternion(-0.2417393,0.8818185,-0.0417702,0.4027573)  ],
-    chest:          [ new Quaternion(-0.0107485,-0.6729800,-0.0036564,0.7395734), new Quaternion(0.6108346,0.2714558,0.0264699,0.7432981), new Quaternion(0.2821601,0.8551173,-0.0061830,0.4348812)  ],
-    stomach:        [ new Quaternion(-0.0125816,-0.6608236,-0.0040435,0.7504248), new Quaternion(0.5685093,0.1448031,0.0248173,0.8094524), new Quaternion(0.5358218,0.5919117,0.0185811,0.6018223)  ],
-    belowstomach:   [ new Quaternion(-0.0134201,-0.6603696,-0.0050532,0.7508037), new Quaternion(0.5879901,0.1971521,0.0255878,0.7840560), new Quaternion(0.4416799,0.2915858,0.0214299,0.8481964)  ],
-    shoulderL:      [ new Quaternion(0.0466722,-0.5776748,0.0846167,0.8105266), new Quaternion(0.4878578,0.5500982,0.0206168,0.6774670), new Quaternion(0.2735958,0.8199461,-0.0056520,0.5027938)  ],
-    shoulderR:      [ new Quaternion(-0.0091726,-0.7450993,-0.0141048,0.6667412), new Quaternion(0.5866297,0.3048243,0.0253537,0.7498699), new Quaternion(-0.3295025,0.9072888,-0.0484754,0.2567200)  ],    
+    headtop:        [ new THREE.Quaternion(-0.0506604,-0.7341385,-0.0660531,0.6738776), new THREE.Quaternion(-0.4668017,0.0198618,-0.0204699,0.8839019), new THREE.Quaternion(-0.6623683,0.1071393,-0.0464818,0.7400194)  ],
+    forehead:       [ new THREE.Quaternion(0.0052382,-0.7376279,0.0058476,0.6751617), new THREE.Quaternion(-0.0995180,0.7498349,-0.0055130,0.6540743), new THREE.Quaternion(-0.6971409,0.3354671,-0.0556369,0.6311582)  ],
+    eyeL:           [ new THREE.Quaternion(0.1273960,-0.7585008,0.1566673,0.6195983), new THREE.Quaternion(0.0285814,0.8482021,-0.0000513,0.5289008), new THREE.Quaternion(-0.4557415,0.5937748,-0.0472286,0.6614382)  ],
+    eyeR:           [ new THREE.Quaternion(0.1152192,-0.7544016,0.1422677,0.6303669), new THREE.Quaternion(0.0714903,0.8325108,0.0018608,0.5493736), new THREE.Quaternion(-0.5646459,0.5390549,-0.0528718,0.6227353)  ],
+    nose:           [ new THREE.Quaternion(-0.0252475,-0.7199582,-0.0304132,0.6928908), new THREE.Quaternion(0.0454818,0.7106191,0.0009248,0.7021046), new THREE.Quaternion(-0.6405263,0.5539174,-0.0584294,0.5286657)  ],
+    upperlip:       [ new THREE.Quaternion(-0.0288777,-0.7174093,-0.0346774,0.6951887), new THREE.Quaternion(0.0694745,0.6986833,0.0019989,0.7120469), new THREE.Quaternion(-0.5996578,0.6148312,-0.0575356,0.5090016)  ],
+    mouth:          [ new THREE.Quaternion(-0.0039781,-0.7422616,-0.0068752,0.6700630), new THREE.Quaternion(0.1569718,0.7319968,0.0057865,0.6629531), new THREE.Quaternion(-0.5367775,0.6554966,-0.0545482,0.5284112)  ],
+    chin:           [ new THREE.Quaternion(-0.0144784,-0.7336383,-0.0188906,0.6791231), new THREE.Quaternion(0.2120324,0.6909716,0.0082736,0.6910368), new THREE.Quaternion(-0.4265878,0.7764973,-0.0508725,0.4609626)  ],
+    cheekL:         [ new THREE.Quaternion(0.0352934,-0.7555276,0.0411269,0.6528713), new THREE.Quaternion(0.0514777,0.8204809,0.0010022,0.5693505), new THREE.Quaternion(-0.4342420,0.7208578,-0.0496679,0.5378949)  ],
+    cheekR:         [ new THREE.Quaternion(0.0230982,-0.7083715,0.0339334,0.7046451), new THREE.Quaternion(0.1192426,0.7429874,0.0041107,0.6585848), new THREE.Quaternion(-0.7864518,0.4759690,-0.0659315,0.3880720)  ],
+    earL:           [ new THREE.Quaternion(0.1029711,-0.6166821,0.1499909,0.7659000), new THREE.Quaternion(0.0893024,0.8568030,0.0026013,0.5078452), new THREE.Quaternion(-0.3381405,0.7009594,-0.0426242,0.6264982)  ],
+    earR:           [ new THREE.Quaternion(0.1681397,-0.5996382,0.2337173,0.7466855), new THREE.Quaternion(-0.1995244,0.7336113,-0.0098819,0.6495434), new THREE.Quaternion(-0.7972906,0.4242612,-0.0650900,0.4243739)  ],
+    neck:           [ new THREE.Quaternion(-0.0311668,-0.6967750,-0.0340783,0.7158014), new THREE.Quaternion(0.4273569,0.5905589,0.0178945,0.6843142), new THREE.Quaternion(-0.2417393,0.8818185,-0.0417702,0.4027573)  ],
+    chest:          [ new THREE.Quaternion(-0.0107485,-0.6729800,-0.0036564,0.7395734), new THREE.Quaternion(0.6108346,0.2714558,0.0264699,0.7432981), new THREE.Quaternion(0.2821601,0.8551173,-0.0061830,0.4348812)  ],
+    stomach:        [ new THREE.Quaternion(-0.0125816,-0.6608236,-0.0040435,0.7504248), new THREE.Quaternion(0.5685093,0.1448031,0.0248173,0.8094524), new THREE.Quaternion(0.5358218,0.5919117,0.0185811,0.6018223)  ],
+    belowstomach:   [ new THREE.Quaternion(-0.0134201,-0.6603696,-0.0050532,0.7508037), new THREE.Quaternion(0.5879901,0.1971521,0.0255878,0.7840560), new THREE.Quaternion(0.4416799,0.2915858,0.0214299,0.8481964)  ],
+    shoulderL:      [ new THREE.Quaternion(0.0466722,-0.5776748,0.0846167,0.8105266), new THREE.Quaternion(0.4878578,0.5500982,0.0206168,0.6774670), new THREE.Quaternion(0.2735958,0.8199461,-0.0056520,0.5027938)  ],
+    shoulderR:      [ new THREE.Quaternion(-0.0091726,-0.7450993,-0.0141048,0.6667412), new THREE.Quaternion(0.5866297,0.3048243,0.0253537,0.7498699), new THREE.Quaternion(-0.3295025,0.9072888,-0.0484754,0.2567200)  ],    
 }
     // 1 = right, 5 = left. Different numbering than "signing space" of Irene's thesis. This is better for symmetry and others
     nearPoses.loctop1 = nearPoses.shoulderR;       
@@ -68,77 +67,77 @@ let nearPoses = {
              
 // positions to be used by ik
 let farPoses = {
-    neutral:      new Vector3( 0,1.8,1),    
-    headtop:      new Vector3( 0,2.5,0.1),  
+    neutral:      new THREE.Vector3( 0,1.8,1),    
+    headtop:      new THREE.Vector3( 0,2.5,0.1),  
       
-    forehead:     new Vector3( 0.0,1.5,0.5 ), 
-    eyeL:         new Vector3( 0.0,1.5,0.5 ),  
-    eyeR:         new Vector3( 0.0,1.5,0.5 ),  
-    nose:         new Vector3( 0.0,1.5,0.5 ),  
-    upperlip:     new Vector3( 0.0,1.5,0.5 ),  
-    mouth:        new Vector3( 0.0,1.5,0.5 ),   
-    chin:         new Vector3( 0.0,1.5,0.5 ), 
-    cheekR:       new Vector3( 0.0,1.5,0.5 ),  
-    cheekL:       new Vector3( 0.0,1.5,0.5 ),   
-    earL:         new Vector3( 0.0,1.5,0.5 ),  
-    earR:         new Vector3( 0.0,1.5,0.5 ),   
+    forehead:     new THREE.Vector3( 0.0,1.5,0.5 ), 
+    eyeL:         new THREE.Vector3( 0.0,1.5,0.5 ),  
+    eyeR:         new THREE.Vector3( 0.0,1.5,0.5 ),  
+    nose:         new THREE.Vector3( 0.0,1.5,0.5 ),  
+    upperlip:     new THREE.Vector3( 0.0,1.5,0.5 ),  
+    mouth:        new THREE.Vector3( 0.0,1.5,0.5 ),   
+    chin:         new THREE.Vector3( 0.0,1.5,0.5 ), 
+    cheekR:       new THREE.Vector3( 0.0,1.5,0.5 ),  
+    cheekL:       new THREE.Vector3( 0.0,1.5,0.5 ),   
+    earL:         new THREE.Vector3( 0.0,1.5,0.5 ),  
+    earR:         new THREE.Vector3( 0.0,1.5,0.5 ),   
 
-    neck:         new Vector3( 0.0,1.40,0.5 ),  
-    chest:        new Vector3( 0.0,1.30,0.5 ),  
-    stomach:      new Vector3( 0.0,1.15,0.5 ),
-    belowstomach: new Vector3( 0.0,1.00,0.5 ), 
-    shoulderL:    new Vector3( 0.0,1.30,0.5 ), 
-    shoulderR:    new Vector3( 0.0,1.30,0.5 ), 
+    neck:         new THREE.Vector3( 0.0,1.40,0.5 ),  
+    chest:        new THREE.Vector3( 0.0,1.30,0.5 ),  
+    stomach:      new THREE.Vector3( 0.0,1.15,0.5 ),
+    belowstomach: new THREE.Vector3( 0.0,1.00,0.5 ), 
+    shoulderL:    new THREE.Vector3( 0.0,1.30,0.5 ), 
+    shoulderR:    new THREE.Vector3( 0.0,1.30,0.5 ), 
 
     // 1 = right, 5 = left. Different numbering than "signing space" of Irene's thesis. This is better for symmetry and others
-    loctop1:      new Vector3(-0.59,2.00,0.23 ),   
-    loctop2:      new Vector3(-0.29,2.00,0.39 ),   
-    loctop3:      new Vector3( 0.00,2.00,0.46 ),   
-    loctop4:      new Vector3( 0.29,2.00,0.39 ),   
-    loctop5:      new Vector3( 0.59,2.00,0.23 ),
+    loctop1:      new THREE.Vector3(-0.59,2.00,0.23 ),   
+    loctop2:      new THREE.Vector3(-0.29,2.00,0.39 ),   
+    loctop3:      new THREE.Vector3( 0.00,2.00,0.46 ),   
+    loctop4:      new THREE.Vector3( 0.29,2.00,0.39 ),   
+    loctop5:      new THREE.Vector3( 0.59,2.00,0.23 ),
    
-    locmid1:      new Vector3(-0.59,1.30,0.23 ),
-    locmid2:      new Vector3(-0.29,1.30,0.39 ),
-    locmid3:      new Vector3( 0.00,1.30,0.46 ),
-    locmid4:      new Vector3( 0.29,1.30,0.39 ),
-    locmid5:      new Vector3( 0.59,1.30,0.23 ),
+    locmid1:      new THREE.Vector3(-0.59,1.30,0.23 ),
+    locmid2:      new THREE.Vector3(-0.29,1.30,0.39 ),
+    locmid3:      new THREE.Vector3( 0.00,1.30,0.46 ),
+    locmid4:      new THREE.Vector3( 0.29,1.30,0.39 ),
+    locmid5:      new THREE.Vector3( 0.59,1.30,0.23 ),
                 
-    locbot1:      new Vector3( -0.59,0.74,0.23 ),
-    locbot2:      new Vector3( -0.29,0.74,0.39 ),
-    locbot3:      new Vector3(  0.00,0.74,0.46 ),
-    locbot4:      new Vector3(  0.29,0.74,0.31 ),
-    locbot5:      new Vector3(  0.59,0.74,0.18 ),
+    locbot1:      new THREE.Vector3( -0.59,0.74,0.23 ),
+    locbot2:      new THREE.Vector3( -0.29,0.74,0.39 ),
+    locbot3:      new THREE.Vector3(  0.00,0.74,0.46 ),
+    locbot4:      new THREE.Vector3(  0.29,0.74,0.31 ),
+    locbot5:      new THREE.Vector3(  0.59,0.74,0.18 ),
 }
 
 let sides = {
-    'u'     : (new Vector3(  0,   1,   0 )).normalize(),   
-    'ul'    : (new Vector3(  1,   1,   0 )).normalize(),   
-    'l'     : (new Vector3(  1,   0,   0 )).normalize(),   
-    'dl'    : (new Vector3(  1,  -1,   0 )).normalize(),   
-    'd'     : (new Vector3(  0,  -1,   0 )).normalize(),   
-    'dr'    : (new Vector3( -1,  -1,   0 )).normalize(),  
-    'r'     : (new Vector3( -1,   0,   0 )).normalize(),  
-    'ur'    : (new Vector3( -1,   1,   0 )).normalize(),  
+    'u'     : (new THREE.Vector3(  0,   1,   0 )).normalize(),   
+    'ul'    : (new THREE.Vector3(  1,   1,   0 )).normalize(),   
+    'l'     : (new THREE.Vector3(  1,   0,   0 )).normalize(),   
+    'dl'    : (new THREE.Vector3(  1,  -1,   0 )).normalize(),   
+    'd'     : (new THREE.Vector3(  0,  -1,   0 )).normalize(),   
+    'dr'    : (new THREE.Vector3( -1,  -1,   0 )).normalize(),  
+    'r'     : (new THREE.Vector3( -1,   0,   0 )).normalize(),  
+    'ur'    : (new THREE.Vector3( -1,   1,   0 )).normalize(),  
 
-    "uo"    : (new Vector3(  0,   1,   1 )).normalize(),
-    "uol"   : (new Vector3(  1,   1,   1 )).normalize(),
-    "ol"    : (new Vector3(  1,   0,   1 )).normalize(),
-    "dol"   : (new Vector3(  1,  -1,   1 )).normalize(),
-    "do"    : (new Vector3(  0,  -1,   1 )).normalize(),
-    "dor"   : (new Vector3( -1,  -1,   1 )).normalize(),
-    "or"    : (new Vector3( -1,   0,   1 )).normalize(),
-    "uor"   : (new Vector3( -1,   1,   1 )).normalize(),
-    "o"     : (new Vector3(  0,   0,   1 )).normalize(),
+    "uo"    : (new THREE.Vector3(  0,   1,   1 )).normalize(),
+    "uol"   : (new THREE.Vector3(  1,   1,   1 )).normalize(),
+    "ol"    : (new THREE.Vector3(  1,   0,   1 )).normalize(),
+    "dol"   : (new THREE.Vector3(  1,  -1,   1 )).normalize(),
+    "do"    : (new THREE.Vector3(  0,  -1,   1 )).normalize(),
+    "dor"   : (new THREE.Vector3( -1,  -1,   1 )).normalize(),
+    "or"    : (new THREE.Vector3( -1,   0,   1 )).normalize(),
+    "uor"   : (new THREE.Vector3( -1,   1,   1 )).normalize(),
+    "o"     : (new THREE.Vector3(  0,   0,   1 )).normalize(),
     
-    "ui"    : (new Vector3(  0,   1,  -1 )).normalize(),
-    "uil"   : (new Vector3(  1,   1,  -1 )).normalize(),
-    "il"    : (new Vector3(  1,   0,  -1 )).normalize(),
-    "dil"   : (new Vector3(  1,  -1,  -1 )).normalize(),
-    "di"    : (new Vector3(  0,  -1,  -1 )).normalize(),
-    "dir"   : (new Vector3( -1,  -1,  -1 )).normalize(),
-    "ir"    : (new Vector3( -1,   0,  -1 )).normalize(),
-    "uir"   : (new Vector3( -1,   1,  -1 )).normalize(),
-    "i"     : (new Vector3(  0,   0,  -1 )).normalize(),
+    "ui"    : (new THREE.Vector3(  0,   1,  -1 )).normalize(),
+    "uil"   : (new THREE.Vector3(  1,   1,  -1 )).normalize(),
+    "il"    : (new THREE.Vector3(  1,   0,  -1 )).normalize(),
+    "dil"   : (new THREE.Vector3(  1,  -1,  -1 )).normalize(),
+    "di"    : (new THREE.Vector3(  0,  -1,  -1 )).normalize(),
+    "dir"   : (new THREE.Vector3( -1,  -1,  -1 )).normalize(),
+    "ir"    : (new THREE.Vector3( -1,   0,  -1 )).normalize(),
+    "uir"   : (new THREE.Vector3( -1,   1,  -1 )).normalize(),
+    "i"     : (new THREE.Vector3(  0,   0,  -1 )).normalize(),
 }
 
 class LocationArmIK {
@@ -152,10 +151,10 @@ class LocationArmIK {
         this.chainInfo = ( isLeftHand ) ? this.ikSolver.getChain( "LeftArm" ) : this.ikSolver.getChain( "RightArm" );
 
         // three bones: shoulder (back), actual shoulder, elbow
-        this.defG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // default gesture
-        this.srcG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // source gesture
-        this.trgG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // target gesture
-        this.curG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // target gesture
+        this.defG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // default gesture
+        this.srcG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // source gesture
+        this.trgG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // target gesture
+        this.curG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // target gesture
 
         this.time = 0; // current time of transition
 
@@ -241,7 +240,7 @@ class LocationArmIK {
      * sideDistance: (optional) how far to move the indicate side. Metres
      */
     newGestureBML( bml, symmetry = 0x00, lastFrameQuaternions = null ) {
-        let tempV = new Vector3(0,0,0);
+        let tempV = new THREE.Vector3(0,0,0);
         // distance: touch vs far
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
 
