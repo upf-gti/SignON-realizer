@@ -353,14 +353,15 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
 
     let result = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
 
+    // jasigning does not have symmetry on this instruction
+    result.lrSym = false; // symmetry & 0x01;  
+    result.udSym = false; // symmetry & 0x02;  
+    result.oiSym = false; // symmetry & 0x04;  
+
     if ( attributes.contact == "touch" ){ result.distance = 0.0; }
     else if ( attributes.contact == "close" ){ result.distance = 0.1; }
     else if ( attributes.contact == "armextended" ){ result.distance = 0.9; }
     else { result.distance = 0.35; } // jasigning has a default unmentioned distance...
-
-    let loc =locationMap[ attributes.location ];
-    if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){ loc += (hand == "right")?'R':'L'; }
-    result.locationArm = loc;
 
     let side = locationSideMap[ attributes.side ];
     if ( side ){
@@ -368,17 +369,38 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
         result.sideDistance = side.sideDistance;    
     }
 
-    // jasigning does not have symmetry on this instruction
-    result.lrSym = false; // symmetry & 0x01;  
-    result.udSym = false; // symmetry & 0x02;  
-    result.oiSym = false; // symmetry & 0x04;  
-    // sides
-    // secondSides
+    let loc =locationMap[ attributes.location ];
 
-    // jasigning has an offset for each arm 
     result = [ result ];
-    if( hand == "both" || hand == "right" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "r", distance:0.05, hand:"right" } ); }
-    if( hand == "both" || hand == "left" ){ result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "l", distance:0.05, hand:"left" } ); }
+
+    if( hand == "both" ){
+        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){     
+            result.push( JSON.parse( JSON.stringify( result[0] ) ) );
+            result[0].hand = "right";
+            result[1].hand = "left";
+            result[0].locationArm = loc + "R";
+            result[1].locationArm = loc + "L";
+
+            if ( loc == "shoulder" ){ // move towards instead of appart
+                result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "l", distance:0.05, hand: "right" } );
+                result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "r", distance:0.05, hand: "left" } ); 
+            }
+        }else{
+            // mov appart. Visually more similar to jasigning
+            result[0].locationArm = loc;
+            result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "r", distance:0.05, hand: "right" } );
+            result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: "l", distance:0.05, hand: "left" } ); 
+        }
+
+    }else{
+        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){ loc += (hand == "right")?'R':'L'; }
+        result[0].locationArm = loc;
+
+        // jasigning has an offset for each arm 
+        result.push( { type:"gesture", start:start + 0.0001, attackPeak: start + TIMESLOT.LOC, motion:"directed", direction: (hand=="right")?"r":"l", distance:0.05, hand: hand } ); 
+    }
+
+
     return result;
 }
 
@@ -518,8 +540,16 @@ function motionParser( xml, start, bothHands, domHand, symmetry, currentPosture 
                         }
                         result = result.concat( p );
                         // location_bodyarm fix to resemble jasigning
-                        result.push( { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "r", distance:0.05, hand:"right" } );
-                        result.push( { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "l", distance:0.05, hand:"left" } );
+                        if ( p[0].locationArm != "neutral" ) { 
+                            let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "r", distance:0.05, hand:"right" }; 
+                            if ( p[0].locationArm == "shoulderR" ){ d.direction = "l"; } // move towards instead of appart
+                            result.push( d );
+                        }
+                        if ( p[1].locationArm != "neutral" ) { 
+                            let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE, motion:"directed", direction: "l", distance:0.05, hand:"left" };
+                            if ( p[1].locationArm == "shoulderL" ){ d.direction ="r"; } // move towards instead of appart
+                            result.push( d );
+                        }
                         
                         time += TIMESLOT.POSTURE; // add backward time
                     }
@@ -599,9 +629,9 @@ function simpleMotionParser( xml, start, hand, symmetry ){
     if( xml.tagName == "directedmotion" ){
         result.motion = "directed";
 
-        if ( attributes.size == "big" ){ result.distance = 0.2; }
+        if ( attributes.size == "big" ){ result.distance = 0.15; }
         else { result.distance = 0.06; }
-        if ( attributes.second_size == "big" ){ result.distance = 0.5 * result.distance + 0.5 * 0.2; }
+        if ( attributes.second_size == "big" ){ result.distance = 0.5 * result.distance + 0.5 * 0.15; }
         else if ( attributes.second_size == "small" ){  result.distance = 0.5 * result.distance + 0.5 * 0.06; }
     
         result.direction = attributes.direction;
