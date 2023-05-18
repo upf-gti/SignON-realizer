@@ -24,7 +24,6 @@ The organisation of folders and files should be as follows:
             - dictionaries/
             - hdrs/
             - imgs/
-            - textures/
             - EvaHandsEyesFixed.glb
 
         - external/ 
