@@ -4,7 +4,7 @@ This code is packed into fewer files for easy integration into other application
 
 To embed all the realizer application into your app, you must include the following files and folders:
 
-- [index.html]('../index.html')
+- [index.html]('./index.html')
 - [build/js/]('./js') --> put this code into a folder named "js"
 - [data/]('./data)
 - [external/]('./external')
