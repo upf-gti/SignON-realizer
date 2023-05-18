@@ -1,9 +1,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { BVHLoader } from 'three/addons/loaders/BVHLoader.js'; 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
 import { TIMESLOT, sigmlStringToBML } from './sigml/SigmlToBML.js';
@@ -75,7 +73,7 @@ class App {
                 time += 3; continue; 
             }
 
-            await fetch( "data/dictionaries/NGT/Glosses/" + glossFile ).then(x=>x.text()).then( (text) =>{ 
+            await fetch( "./data/dictionaries/NGT/Glosses/" + glossFile ).then(x=>x.text()).then( (text) =>{ 
                 let extension = glossFile.split(".");
                 extension = extension[ extension.length - 1 ];
                 if ( extension == "bml" ){
@@ -121,7 +119,7 @@ class App {
     loadMouthingDictinoary( language ){
         let that = this;
                
-        fetch("data/dictionaries/" + language + "/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
+        fetch("./data/dictionaries/" + language + "/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
 
             let texts = text.split("\n");
             let IPADict = {}; // keys: plain text word,   value: ipa transcription
@@ -203,7 +201,7 @@ class App {
 
         this.loadMouthingDictinoary( language );
 
-        fetch( "data/dictionaries/" + language + "/Glosses/_glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
+        fetch( "./data/dictionaries/" + language + "/Glosses/_glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
             let glossesDictionary = this.languageDictionaries[ language ].glosses = {};
             let lines = file.split("\n");
             for( let i = 0; i < lines.length; ++i ){

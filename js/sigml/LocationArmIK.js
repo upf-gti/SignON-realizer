@@ -151,10 +151,10 @@ class LocationArmIK {
         this.chainInfo = ( isLeftHand ) ? this.ikSolver.getChain( "LeftArm" ) : this.ikSolver.getChain( "RightArm" );
 
         // three bones: shoulder (back), actual shoulder, elbow
-        this.defG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // default gesture
-        this.srcG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // source gesture
-        this.trgG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // target gesture
-        this.curG = [new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion(), new THREE.THREE.Quaternion()]; // target gesture
+        this.defG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // default gesture
+        this.srcG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // source gesture
+        this.trgG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // target gesture
+        this.curG = [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()]; // target gesture
 
         this.time = 0; // current time of transition
 

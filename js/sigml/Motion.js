@@ -192,10 +192,10 @@ class DirectedMotion {
             _tempVec3_0.normalize();
             lookAtQuat.setFromAxisAngle( _tempVec3_0, angle );
         }
-        this.bezier[0].applyTHREE.Quaternion( lookAtQuat );
-        this.bezier[1].applyTHREE.Quaternion( lookAtQuat );
-        this.bezier[2].applyTHREE.Quaternion( lookAtQuat );
-        this.bezier[3].applyTHREE.Quaternion( lookAtQuat );
+        this.bezier[0].applyQuaternion( lookAtQuat );
+        this.bezier[1].applyQuaternion( lookAtQuat );
+        this.bezier[2].applyQuaternion( lookAtQuat );
+        this.bezier[3].applyQuaternion( lookAtQuat );
 
         // zig-zag
         let zigzag = motionDirectionTable[ bml.zigzag ];
@@ -352,7 +352,7 @@ class CircularMotion {
 
         let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
         this.startPoint.set(0,1,0).multiplyScalar( distance );
-        this.startPoint.applyTHREE.Quaternion( _tempQuat_0 );
+        this.startPoint.applyQuaternion( _tempQuat_0 );
 
         // apply starting angle to startPoint
         this.startPoint.applyAxisAngle( this.axis, startAngle );
@@ -528,7 +528,7 @@ class WristMotion {
         if ( this.mode & 0x01 ){ // TWIST
             let twistAxis = _tempVec3_0;
             twistAxis.set(0,0,1);
-            twistAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
+            twistAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
             _tempQuat_0.setFromAxisAngle( twistAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );
@@ -536,7 +536,7 @@ class WristMotion {
         if ( this.mode & 0x02 ){ // NOD
             let nodAxis = _tempVec3_0;
             nodAxis.set(1,0,0);
-            nodAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
+            nodAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
             _tempQuat_0.setFromAxisAngle( nodAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );
@@ -544,7 +544,7 @@ class WristMotion {
         if ( this.mode & 0x04 ){ // SWING
             let swingAxis = _tempVec3_0;
             swingAxis.set(0,1,0);
-            swingAxis.applyTHREE.Quaternion( this.wristBone.quaternion );
+            swingAxis.applyQuaternion( this.wristBone.quaternion );
             let angle = Math.sin( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 ); // PHASE of 90ª with respect to NOD (see newGestureBML)
             _tempQuat_0.setFromAxisAngle( swingAxis, angle );
             this.wristBone.quaternion.premultiply( _tempQuat_0 );
