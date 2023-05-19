@@ -352,7 +352,7 @@ class App {
             ECAcontroller.reset();
             ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
         
-            if ( AppGUI ) { this.gui = new AppGUI( this ); }
+            if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
         
