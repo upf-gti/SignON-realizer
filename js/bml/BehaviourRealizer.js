@@ -1077,6 +1077,7 @@ HeadBML.prototype.initHeadData = function (headData) {
     this.phase = 0;
     this.time = 0;
 
+    this.currentAngle = 0;
     // Define initial values
     this.initHeadValues();
 }
@@ -1135,7 +1136,7 @@ HeadBML.prototype.initHeadValues = function () {
         case "TILTLEFT":
             this.strokeAxis.set(0, 0, 1);
             this.strokeDeg = this.amount * this.maxDeg;
-            this.readyDeg = this.strokeDeg * 0.5;
+            this.readyDeg = this.strokeDeg * 0.8;
             if(!this.repetition) {
                 
                 this.strokeStart = this.ready;
@@ -1146,7 +1147,7 @@ HeadBML.prototype.initHeadValues = function () {
         case "TILTRIGHT":
             this.strokeAxis.set(0, 0, -1);
             this.strokeDeg = this.amount * this.maxDeg;
-            this.readyDeg = this.strokeDeg * 0.5;
+            this.readyDeg = this.strokeDeg * 0.8;
             if(!this.repetition) {
                 
                 this.strokeStart = this.ready;
@@ -1157,7 +1158,7 @@ HeadBML.prototype.initHeadValues = function () {
         case "TILTFORWARD":
             this.strokeAxis.set(-1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
-            this.readyDeg = this.strokeDeg * 0.5;
+            this.readyDeg = this.strokeDeg * 0.8;
             if(!this.repetition) {
                 
                 this.strokeStart = this.ready;
@@ -1168,7 +1169,7 @@ HeadBML.prototype.initHeadValues = function () {
         case "TILTBACKWARD":
             this.strokeAxis.set(1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
-            this.readyDeg = this.strokeDeg * 0.5;
+            this.readyDeg = this.strokeDeg * 0.8;
             if(!this.repetition) {
                 
                 this.strokeStart = this.ready;
@@ -1180,29 +1181,28 @@ HeadBML.prototype.initHeadValues = function () {
             // nod will always be downwards
             this.strokeAxis.set(-1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg ;
-            this.readyDeg = this.strokeDeg * 0.5;
-
-            // If the stroke rotation passes the limit, change readyDeg
-            if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
-                this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
-            
+            this.readyDeg = this.strokeDeg * 0.8;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
             break;
 
         case "BACKWARD":
             // nod will always be downwards
             this.strokeAxis.set(1, 0, 0);
             this.strokeDeg = this.amount *  this.maxDeg;
-            this.readyDeg = this.strokeDeg * 0.5;
-
-            // If the stroke rotation passes the limit, change readyDeg
-            if (eulerRot.z * RAD2DEG + this.strokeDeg > this.limVert)
-                this.readyDeg = this.strokeDeg - this.limVert + eulerRot.z * RAD2DEG;
-            
+            this.readyDeg = this.strokeDeg * 0.8;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
             break;
     }
 
     this.currentStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // current state of rotation
-    this.deltaStrokeQuat = new THREE.Quaternion(); this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // temporal variable to store results
 }
 
 
@@ -1223,11 +1223,6 @@ HeadBML.prototype.update = function (dt) {
         this.strokeEnd += timeRep;
         this.stroke = (this.strokeEnd + this.strokeStart) / 2;
 
-        if(this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "TILTFORWARD" || this.lexeme == "TILTBACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD") {
-
-            this.prevDeg = 0;
-        }
-        
         this.phase = 0;
     }
 
@@ -1237,20 +1232,13 @@ HeadBML.prototype.update = function (dt) {
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
 
-        // Should store previous rotation applied, so it is not additive
-        if (!this.prevDeg)
-            this.prevDeg = 0;
-
-        let angle = inter * this.readyDeg - this.prevDeg;
-        this.prevDeg = inter * this.readyDeg;
-        // Apply rotation
-        this.deltaStrokeQuat.setFromAxisAngle(this.strokeAxis, -angle * DEG2RAD);
-        this.currentStrokeQuat.multiplyQuaternions(this.deltaStrokeQuat, this.currentStrokeQuat);
+        this.currentAngle = -this.readyDeg * inter;
+        this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, this.currentAngle * DEG2RAD);
     }
 
     // StrokeStart
     else if (this.time > this.ready && this.time < this.strokeStart) {
-            return;
+        return;
     }
 
     // Stroke (phase 1)
@@ -1259,41 +1247,28 @@ HeadBML.prototype.update = function (dt) {
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
 
-        // Should store previous rotation applied, so it is not additive
         if (this.phase != 1 ) {
-            if(this.lexeme != "TILTLEFT" && this.lexeme != "TILTRIGHT" && this.lexeme != "TILTFORWARD" && this.lexeme != "TILTBACKWARD" && this.lexeme != "FORWARD" && this.lexeme != "BACKWARD")
-                this.prevDeg = 0;
-            else if(this.repeatedIndx >= this.repetition)
+            if(this.repeatedIndx >= this.repetition && this.lexeme != "TILT" && this.lexeme != "NOD" && this.lexeme != "SHAKE" )
                 return;
-      
             this.phase = 1;
         }
 
-        let angle = inter * this.strokeDeg - this.prevDeg;
-        this.prevDeg = inter * this.strokeDeg;
-        // Apply rotation
-        this.deltaStrokeQuat.setFromAxisAngle(this.strokeAxis, angle * DEG2RAD);
-        this.currentStrokeQuat.multiplyQuaternions(this.deltaStrokeQuat, this.currentStrokeQuat);
+        this.currentAngle = -this.readyDeg + inter * this.strokeDeg;
+        this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, this.currentAngle * DEG2RAD);
     }
 
     // Stroke (phase 2)
-    else if (this.time > this.stroke && this.time <= this.strokeEnd && this.repeatedIndx < this.repetition ) {
+    else if (this.time > this.stroke && this.time <= this.strokeEnd && this.repeatedIndx < this.repetition) {
         inter = (this.time - this.stroke) / (this.strokeEnd - this.stroke);
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
 
-        // Should store previous rotation applied, so it is not additive
         if (this.phase != 2) {
-                this.prevDeg = 0;
-            
-             this.phase = 2;
+            this.phase = 2;
         }
 
-        var angle = inter * this.strokeDeg - this.prevDeg;
-        this.prevDeg = inter * this.strokeDeg;
-        // Apply rotation
-        this.deltaStrokeQuat.setFromAxisAngle(this.strokeAxis, -angle * DEG2RAD);
-        this.currentStrokeQuat.multiplyQuaternions(this.deltaStrokeQuat, this.currentStrokeQuat);
+        this.currentAngle = -this.readyDeg + ( 1 - inter ) * this.strokeDeg;
+        this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, this.currentAngle * DEG2RAD);
     }
    
     // StrokeEnd (no repetition)
@@ -1306,14 +1281,12 @@ HeadBML.prototype.update = function (dt) {
         inter = (this.time - this.relax) / (this.end - this.relax);
         // Cosine interpolation
         inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
-
-        this.deltaStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // strokeAxis is unitary already
-        this.currentStrokeQuat.slerp(this.deltaStrokeQuat, inter);
+        this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, (1-inter) * this.currentAngle * DEG2RAD);
     }
 
     // End
     else if (this.time > this.end) {
-        this.currentStrokeQuat.setFromAxisAngle(this.strokeAxis, 0); // strokeAxis is unitary already
+        this.currentStrokeQuat.set(0,0,0,1);
         this.transition = false
         return;
     }

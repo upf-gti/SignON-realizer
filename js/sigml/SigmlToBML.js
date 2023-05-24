@@ -292,7 +292,7 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
     }
 
     let result = [];
-    if ( attributes.handshape || attributes.thumbpos ){ 
+    if ( attributes.handshape || attributes.thumbpos || attributes.bend1 || attributes.bend2 || attributes.bend3 || attributes.bend4 || attributes.bend5 || attributes.mainbend ){ 
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
         obj.handshape = attributes.handshape || "flat";
         obj.thumbshape = attributes.thumbpos;

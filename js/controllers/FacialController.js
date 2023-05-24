@@ -523,10 +523,9 @@ FacialController.prototype.headDirectionShift = function (headData, cmdId) {
 FacialController.prototype.newHeadBML = function (headData) {
     
     let node = headData.lexeme == "FORWARD" || headData.lexeme == "BACKWARD" ? this.neckNode : this.headNode;
-    let lookAt = this.character.getObjectByName(node);
-    if (lookAt) {
-       
-        this.headBML.push(new HeadBML(headData, lookAt, lookAt.quaternion.clone()));
+    let bone = this.character.getObjectByName(node);
+    if (bone) {
+        this.headBML.push(new HeadBML(headData, bone, bone.quaternion.clone()));
     }
 }
 
