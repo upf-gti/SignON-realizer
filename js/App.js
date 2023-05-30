@@ -347,6 +347,10 @@ class App {
                 }
             } );
 
+                    // correct hand's size
+            model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
+            model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
+            
             this.scene.add(model);
 
             model.eyesTarget = this.eyesTarget;
@@ -358,6 +362,9 @@ class App {
             ECAcontroller.reset();
             ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
         
+            // const helper = new THREE.SkeletonHelper( model );
+            // this.scene.add(helper);
+
             if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
@@ -366,7 +373,23 @@ class App {
         });
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+        this.point = new THREE.Mesh( new THREE.SphereGeometry(0.025,8,8), new THREE.MeshStandardMaterial() );
+        this.point.position.set(0,1.5,0.5);
+        this.scene.add( this.point );
+        this.scene.
 
+        this.elbowRaise = 0;
+        window.addEventListener( "keydown", (e)=>{
+            if( e.keyCode == 39 ){ this.point.position.x += 0.01; }
+            if( e.keyCode == 37 ){ this.point.position.x -= 0.01; }
+            if( e.keyCode == 38 ){ this.point.position.y += 0.01; }
+            if( e.keyCode == 40 ){ this.point.position.y -= 0.01; }
+            if( e.keyCode == 88 ){ this.point.position.z += 0.01; } // z
+            if( e.keyCode == 90 ){ this.point.position.z -= 0.01; } // x
+
+            if( e.keyCode == 65 ){ this.elbowRaise += 3 * Math.PI / 180; } // a
+            if( e.keyCode == 83 ){ this.elbowRaise -= 3 * Math.PI / 180; } // s
+        })
     }
 
     animate() {
@@ -379,10 +402,8 @@ class App {
         this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
         if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
 
-        // correct hand's size
-        this.model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
-        this.model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
-
+        // this.geometricArmIK();
+        // this.fingers();
         this.renderer.render( this.scene, this.camera );
 
     }
@@ -395,7 +416,50 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
+    geometricArmIK(){
+        let bonemap = this.ECAcontroller.bodyController.boneMap;
+        let skeleton = this.ECAcontroller.bodyController.skeleton.bones;
+        let armSize = skeleton[bonemap.RElbow].position.length() + skeleton[bonemap.RWrist].position.length();
+        let localPoint = this.point.position.clone();
+        
+        skeleton[bonemap.RArm].quaternion.set(0,0,0,1);
+        skeleton[bonemap.RElbow].quaternion.set(0,0,0,1);
+        skeleton[bonemap.RWrist].quaternion.set(0,0,0,1);
+        skeleton[bonemap.RArm].updateMatrixWorld();
+        skeleton[bonemap.RArm].worldToLocal( localPoint );
+        
+        // law of cosines
+        let elbowLength = skeleton[bonemap.RElbow].position.length();
+        let wristLength = skeleton[bonemap.RWrist].position.length();
+        let c = armSize * Math.max(0.0001, Math.min( 0.9999, ( localPoint.length() / armSize ) ) );
+        let elbowAngle = Math.PI - Math.acos( ( elbowLength * elbowLength + wristLength * wristLength - c * c ) / (2*elbowLength*wristLength ) ); 
+
+        skeleton[bonemap.RElbow].quaternion.setFromAxisAngle( new THREE.Vector3(-1,0,0), elbowAngle );
+
+
+        let movedWrist = new THREE.Vector3();
+        movedWrist.copy( skeleton[bonemap.RWrist].position ).applyQuaternion( skeleton[bonemap.RElbow].quaternion );
+        movedWrist.add( skeleton[bonemap.RElbow].position );
+        movedWrist.normalize();
+
+        // let elbowRaise = Math.PI * 75 / 180 * Math.max( 0, Math.min( 1, elbowAngle / Math.PI ) );
+        skeleton[bonemap.RArm].quaternion.setFromAxisAngle( movedWrist, this.elbowRaise );
+
+
+        let norm = localPoint.clone().normalize();
+
+        let dot = norm.dot( movedWrist );
+        let cross = new THREE.Vector3();
+        cross.crossVectors( movedWrist, norm );
+        cross.normalize();
+        let angle = Math.acos( dot );
+
+        skeleton[bonemap.RArm].quaternion.premultiply( (new THREE.Quaternion()).setFromAxisAngle( cross, angle ) );
+
+    }
+
 }
+
 
 let app = new App();
 app.init();

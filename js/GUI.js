@@ -484,7 +484,7 @@ class AppGUI {
                     type: "behaviours",
                     data: [
                         { type: "gesture", start: 0.0         , attackPeak: duration * 1, end: 1000, handshape: "finger2", hand: "both" },
-                        { type: "gesture", start: duration    , attackPeak: duration * 2, end: 1000, handshape: "finger23spread", thumbshape: "across",  hand: "both" },
+                        { type: "gesture", start: duration    , attackPeak: duration * 2, end: 1000, handshape: "finger23spread", hand: "both" },
                         { type: "gesture", start: duration * 2, attackPeak: duration * 3, end: 1000, handshape: "finger23spread", thumbshape:"out",  hand: "both" },
                         { type: "gesture", start: duration * 3, attackPeak: duration * 4, end: 1000, handshape: "finger2345", thumbshape: "across",  hand: "both" },
                         { type: "gesture", start: duration * 4, attackPeak: duration * 5, relax: duration * 5.5, end: duration * 6, handshape: "finger2345", thumbshape: "out",  hand: "both" },

@@ -1,30 +1,90 @@
 import * as THREE from "three";
-import { mirrorQuatSelf, nlerpQuats } from "./SigmlUtils.js";
 
-// Three bones per finger (0=base, 1=mid, 2=tip). Flat array automatically transformed into array of THREE.Quaternions
+// Array of fingers 0=thumb 1=index 2=middle, 3=ring, 4=pinky
+// Four values per finger (0=splay, 1=base, 2=mid, 3=tip)
 let handShapes = {
-    fist: {"thumb":[new THREE.Quaternion(0.00185,0.19497,-0.06188,0.97885),new THREE.Quaternion(0,-0.00151,0.00001,1),new THREE.Quaternion(0.03251,-0.14527,-0.05803,0.98715)],"index":[new THREE.Quaternion(0.69143,0.00299,-0.01208,0.72234),new THREE.Quaternion(0.86431,-0.00004,-0.05442,0.5),new THREE.Quaternion(0.70484,-0.00001,0.05661,0.70711)],"middle":[new THREE.Quaternion(0.70704,0.00793,-0.00943,0.70706),new THREE.Quaternion(0.80828,-0.00006,0.04346,0.58719),new THREE.Quaternion(0.70558,0.00003,-0.04643,0.70711)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    finger2: {"thumb":[new THREE.Quaternion(0.003,0.12937,-0.10029,0.98651),new THREE.Quaternion(0.04697,-0.1903,-0.06219,0.97863),new THREE.Quaternion(0.04996,-0.22349,-0.08919,0.96933)],"index":[new THREE.Quaternion(0.01704,0.00414,-0.0003,0.99985),new THREE.Quaternion(0,-0.00007,0,1),new THREE.Quaternion(0,-0.00002,0,1)],"middle":[new THREE.Quaternion(0.70704,0.00793,-0.00943,0.70706),new THREE.Quaternion(0.80828,-0.00006,0.04346,0.58719),new THREE.Quaternion(0.70558,0.00003,-0.04643,0.70711)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    finger23: {"thumb":[new THREE.Quaternion(0.00228,0.17073,-0.07621,0.98236),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0,0.00036,0,1)],"index":[new THREE.Quaternion(0.01704,0.00414,-0.0003,0.99985),new THREE.Quaternion(0,-0.00007,0,1),new THREE.Quaternion(0,-0.00002,0,1)],"middle":[new THREE.Quaternion(0,0.01122,0,0.99994),new THREE.Quaternion(0,-0.0001,0,1),new THREE.Quaternion(0,0.00005,0.00001,1)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    finger23spread: {"thumb":[new THREE.Quaternion(0.00228,0.17073,-0.07621,0.98236),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0,0.00036,0,1)],"index":[new THREE.Quaternion(0.02151,0.09247,-0.00079,0.99548),new THREE.Quaternion(0.00051,0.00091,0.00001,1),new THREE.Quaternion(0.0028,0.04001,0.00246,0.99919)],"middle":[new THREE.Quaternion(0,0.01122,0,0.99994),new THREE.Quaternion(0,-0.0001,0,1),new THREE.Quaternion(0,0.00005,0.00001,1)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    finger2345: {"thumb":[new THREE.Quaternion(0.00228,0.17073,-0.07621,0.98236),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0,0.00036,0,1)],"index":[new THREE.Quaternion(0.02151,0.09247,-0.00079,0.99548),new THREE.Quaternion(0.00051,0.00091,0.00001,1),new THREE.Quaternion(0.0028,0.04001,0.00246,0.99919)],"middle":[new THREE.Quaternion(0,0.01122,0,0.99994),new THREE.Quaternion(0,-0.0001,0,1),new THREE.Quaternion(0,0.00005,0.00001,1)],"ring":[new THREE.Quaternion(-0.01952,-0.10147,0.01135,0.99458),new THREE.Quaternion(0,-0.00011,0.00001,1),new THREE.Quaternion(0,-0.00018,0,1)],"pinky":[new THREE.Quaternion(0.02546,-0.24792,0.00767,0.96842),new THREE.Quaternion(0,-0.00011,0,1),new THREE.Quaternion(0.00799,0.0001,-0.00015,0.99997)]},
-    flat: {"thumb":[new THREE.Quaternion(0.00228,0.17073,-0.07621,0.98236),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0,0.00036,0,1)],"index":[new THREE.Quaternion(0.01689,0.00414,-0.0003,0.99985),new THREE.Quaternion(0,-0.00007,0,1),new THREE.Quaternion(0,-0.00002,0,1)],"middle":[new THREE.Quaternion(0,0.01122,0,0.99994),new THREE.Quaternion(0,-0.0001,0,1),new THREE.Quaternion(0,0.00005,0,1)],"ring":[new THREE.Quaternion(0,0.01495,0,0.99989),new THREE.Quaternion(0,-0.00011,0.00001,1),new THREE.Quaternion(0,-0.00018,0.00001,1)],"pinky":[new THREE.Quaternion(0.05224,-0.01002,0.00152,0.99858),new THREE.Quaternion(0,-0.00011,0,1),new THREE.Quaternion(0,0.0001,0.00001,1)]},
+    fist: [ [1,1,0.6,0.5], [0,1,1,1], [0,1,1,1], [0,1,1,1], [0,1,1,1] ],
+    finger2: [ [1,1,0.6,0.5], [0,0,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1] ],
+    finger23: [ [1,1,0.6,0.5], [0,0,0,0], [0,0,0,0], [0,1,1,1], [0,1,1,1] ],
+    finger23spread: [ [1,1,0.6,0.5], [0.8,0,0,0], [-0.2,0,0,0], [0,1,1,1], [0,1,1,1] ],
+    finger2345: [ [0,0,0,0], [0.8,0,0,0], [0,0,0,0], [-0.8,0,0,0], [-0.8,0,0,0] ], 
+    flat: [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ],
 
-    pinch12: {"thumb":[new THREE.Quaternion(0.00122,0.23053,-0.04064,0.97222),new THREE.Quaternion(0.02072,-0.08478,-0.02743,0.99581),new THREE.Quaternion(0.06553,-0.29323,-0.11697,0.94659)],"index":[new THREE.Quaternion(0.1833,0.00407,-0.0032,0.98304),new THREE.Quaternion(0.71393,-0.00005,-0.04495,0.69877),new THREE.Quaternion(0.23492,-0.00002,0.01887,0.97183)],"middle":[new THREE.Quaternion(0.70704,0.00793,-0.00943,0.70706),new THREE.Quaternion(0.80828,-0.00006,0.04346,0.58719),new THREE.Quaternion(0.70558,0.00003,-0.04643,0.70711)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    pinch12open: {"thumb":[new THREE.Quaternion(0.0854,0.15087,-0.1567,0.97231),new THREE.Quaternion(0.18997,-0.06635,-0.08639,0.97573),new THREE.Quaternion(-0.00757,0.01697,-0.0288,0.99941)],"index":[new THREE.Quaternion(0.18156,0.00407,-0.00317,0.98337),new THREE.Quaternion(0.42771,-0.00006,-0.02693,0.90352),new THREE.Quaternion(0.43244,-0.00002,0.03474,0.90099)],"middle":[new THREE.Quaternion(0.70704,0.00793,-0.00943,0.70706),new THREE.Quaternion(0.80828,-0.00006,0.04346,0.58719),new THREE.Quaternion(0.70558,0.00003,-0.04643,0.70711)],"ring":[new THREE.Quaternion(0.66454,0.01117,0.01906,0.74693),new THREE.Quaternion(0.74576,-0.00008,-0.03949,0.66504),new THREE.Quaternion(0.56128,-0.00015,0.00542,0.82761)],"pinky":[new THREE.Quaternion(0.70326,-0.00713,0.02051,0.7106),new THREE.Quaternion(0.86557,-0.00006,-0.0282,0.5),new THREE.Quaternion(0.23531,0.0001,-0.00429,0.97191)]},
-    pinchall: {"thumb":[new THREE.Quaternion(0.21932,0.34326,-0.13396,0.9034),new THREE.Quaternion(0.17493,-0.56944,-0.23419,0.76831),new THREE.Quaternion(0.01089,0.04191,-0.21015,0.97671)],"index":[new THREE.Quaternion(0.57181,0.03433,-0.09992,0.81355),new THREE.Quaternion(0.47256,0.00643,-0.03801,0.88045),new THREE.Quaternion(0.49845,-0.00002,0.04004,0.866)],"middle":[new THREE.Quaternion(0.55157,0.00936,-0.00735,0.83405),new THREE.Quaternion(0.32168,-0.00328,0.02387,0.94654),new THREE.Quaternion(0.68441,0.00003,-0.04503,0.72771)],"ring":[new THREE.Quaternion(0.66645,-0.09334,0.11259,0.73106),new THREE.Quaternion(0.01533,0.0018,-0.01001,0.99983),new THREE.Quaternion(0.70707,-0.00013,0.00682,0.70711)],"pinky":[new THREE.Quaternion(0.68427,-0.1465,0.21753,0.68044),new THREE.Quaternion(0.28951,0.00902,-0.01961,0.95693),new THREE.Quaternion(0.32264,0,-0.00007,0.94652)]},
-    ceeall: {"thumb":[new THREE.Quaternion(0.0854,0.15087,-0.1567,0.97231),new THREE.Quaternion(0.18997,-0.06635,-0.08639,0.97573),new THREE.Quaternion(-0.00757,0.01697,-0.0288,0.99941)],"index":[new THREE.Quaternion(0.39385,0.00381,-0.00688,0.91914),new THREE.Quaternion(0.21597,-0.00007,-0.0136,0.9763),new THREE.Quaternion(0.29096,-0.00002,0.02337,0.95645)],"middle":[new THREE.Quaternion(0.45474,0.00999,-0.00606,0.89055),new THREE.Quaternion(0.08545,-0.0001,0.0046,0.99633),new THREE.Quaternion(0.36673,0.00004,-0.02413,0.93002)],"ring":[new THREE.Quaternion(0.41033,0.01363,0.01178,0.91176),new THREE.Quaternion(0.11034,-0.00011,-0.00584,0.99388),new THREE.Quaternion(0.41724,-0.00016,0.00403,0.90879)],"pinky":[new THREE.Quaternion(0.34174,-0.00944,0.00997,0.93969),new THREE.Quaternion(0.30098,-0.00011,-0.00981,0.95358),new THREE.Quaternion(0.37417,0.00009,-0.00681,0.92733)]},
-    cee12: {"thumb":[new THREE.Quaternion(0.00122,0.23053,-0.04064,0.97222),new THREE.Quaternion(0.02072,-0.08478,-0.02743,0.99581),new THREE.Quaternion(0.06553,-0.29323,-0.11697,0.94659)],"index":[new THREE.Quaternion(0.1833,0.00407,-0.0032,0.98304),new THREE.Quaternion(0.71393,-0.00005,-0.04495,0.69877),new THREE.Quaternion(0.23492,-0.00002,0.01887,0.97183)],"middle":[new THREE.Quaternion(0.25437,0.01085,-0.00339,0.96704),new THREE.Quaternion(0.23698,-0.0001,0.01275,0.97143),new THREE.Quaternion(0.25102,0.00004,-0.01651,0.96784)],"ring":[new THREE.Quaternion(0.08835,0.01489,0.00254,0.99597),new THREE.Quaternion(0.12188,-0.00011,-0.00646,0.99252),new THREE.Quaternion(0.30521,-0.00017,0.00295,0.95228)],"pinky":[new THREE.Quaternion(0.00366,-0.01004,0.00012,0.99994),new THREE.Quaternion(0.0225,-0.00011,-0.00073,0.99975),new THREE.Quaternion(0.48047,0.00009,-0.00875,0.87697)]},
-    cee12open: {"thumb":[new THREE.Quaternion(0.0854,0.15087,-0.1567,0.97231),new THREE.Quaternion(0.18997,-0.06635,-0.08639,0.97573),new THREE.Quaternion(-0.00757,0.01697,-0.0288,0.99941)],"index":[new THREE.Quaternion(0.18156,0.00407,-0.00317,0.98337),new THREE.Quaternion(0.42771,-0.00006,-0.02693,0.90352),new THREE.Quaternion(0.43244,-0.00002,0.03474,0.90099)],"middle":[new THREE.Quaternion(0.25437,0.01085,-0.00339,0.96704),new THREE.Quaternion(0.23698,-0.0001,0.01275,0.97143),new THREE.Quaternion(0.25102,0.00004,-0.01651,0.96784)],"ring":[new THREE.Quaternion(0.08835,0.01489,0.00254,0.99597),new THREE.Quaternion(0.12188,-0.00011,-0.00646,0.99252),new THREE.Quaternion(0.30521,-0.00017,0.00295,0.95228)],"pinky":[new THREE.Quaternion(0.00366,-0.01004,0.00012,0.99994),new THREE.Quaternion(0.0225,-0.00011,-0.00073,0.99975),new THREE.Quaternion(0.48047,0.00009,-0.00875,0.87697)]}
+    pinch12: [ [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0,1,1,1], [0,1,1,1], [0,1,1,1] ],
+    pinch12open: [ [1, 0.5, 0.1, 0.2], [0, 0.15, 0.4, 0.6], [0,1,1,1], [0,1,1,1], [0,1,1,1] ],
+    pinchall: [ [1, 0.8, 0.4, 0.6], [0, 0.6, 0.6, 0.8], [0, 0.4, 0.6, 0.6], [0, 0.4, 0.7, 0.4], [0, 0.7, 0.5, 0.5] ],
+    cee12: [  [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ],
+    cee12open: [ [1, 0.5, 0.1, 0.1], [0, 0.4, 0.5, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ],
+    ceeall: [ [1, 0.7, 0.1, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2] ], 
 };
 
 let thumbShapes = {
-    default:[new THREE.Quaternion(0.00228,0.17073,-0.07621,0.98236),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0,0.00036,0,1)],
-    out:    [new THREE.Quaternion(-0.0326,0.4638,0.11905,0.8773),new THREE.Quaternion(0.08534,0.06233,0.03191,0.99389),new THREE.Quaternion(-0.01002,-0.0688,-0.02804,0.99719)],
-    opposed:[new THREE.Quaternion(0.0854,0.15087,-0.1567,0.97231),new THREE.Quaternion(0.18997,-0.06635,-0.08639,0.97573),new THREE.Quaternion(-0.00757,0.01697,-0.0288,0.99941)],
-    across: [new THREE.Quaternion(0.00234,0.16746,-0.07812,0.98278),new THREE.Quaternion(0.0859,-0.34673,-0.11375,0.92707),new THREE.Quaternion(0.08401,-0.37603,-0.14996,0.91052)],
-    touch:  [new THREE.Quaternion(-0.17789,0.20503,-0.16839,0.94761),new THREE.Quaternion(0,-0.00151,0,1),new THREE.Quaternion(0.01567,-0.06983,-0.02797,0.99704)]
+    default: [0,0,0,0],
+    out:    [0, -0.3, 0, 0],
+    opposed: [1, 1, 0, 0],
+    across: [-0.5,0.7,0.7,1], 
+    touch:  [-1,0.3,0,0]
 }
+
+
+// probably could be computed through skeleton raw positions
+let avatarHandAxes = {
+    "R" : { 
+        "bends": [
+            (new THREE.Vector3(0,-1,-0.3)).normalize(), // thumb base
+            (new THREE.Vector3(0,-1,-0.3)).normalize(),
+            (new THREE.Vector3(0,-1,-0.3)).normalize(),
+            (new THREE.Vector3(1,0, -0.2)).normalize(), // index base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(), // middle base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0, 0.1)).normalize(), // ring base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0, 0.2)).normalize(), // pinky base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+        ],
+        "splays": [
+            (new THREE.Vector3(1,0,0)).normalize(), // thumb
+            (new THREE.Vector3(0,1,0)).normalize(),
+            (new THREE.Vector3(0,1,0)).normalize(),
+            (new THREE.Vector3(0,1,0)).normalize(),
+            (new THREE.Vector3(0,1,0)).normalize(), // pinky
+        ]
+    },
+    "L" : { 
+        "bends": [
+            (new THREE.Vector3(0,1,0.3)).normalize(), // thumb base
+            (new THREE.Vector3(0,1,0.3)).normalize(),
+            (new THREE.Vector3(0,1,0.3)).normalize(),
+            (new THREE.Vector3(1,0, 0.2)).normalize(), // index base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(), // middle base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0, -0.1)).normalize(), // ring base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0, -0.2)).normalize(), // pinky base
+            (new THREE.Vector3(1,0,0)).normalize(),
+            (new THREE.Vector3(1,0,0)).normalize(),
+        ],
+        "splays": [
+            (new THREE.Vector3(1,0,0)).normalize(), // thumb
+            (new THREE.Vector3(0,-1,0)).normalize(),
+            (new THREE.Vector3(0,-1,0)).normalize(),
+            (new THREE.Vector3(0,-1,0)).normalize(),
+            (new THREE.Vector3(0,-1,0)).normalize(), // pinky
+        ]
+    }
+}
+
+let _tempHandQuat = new THREE.Quaternion(0,0,0,1);
+
 
 class HandShapeRealizer {
     constructor( boneMap, skeleton, isLeftHand = false ){
@@ -33,70 +93,39 @@ class HandShapeRealizer {
 
         let handName = ( this.mirror ) ? "L" : "R";
         this.idxs = { // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
-            wrist:  boneMap[ handName + "Wrist" ], 
             thumb:  boneMap[ handName + "HandThumb" ], 
             index:  boneMap[ handName + "HandIndex" ],
             middle: boneMap[ handName + "HandMiddle" ], 
             ring:   boneMap[ handName + "HandRing" ], 
             pinky:  boneMap[ handName + "HandPinky" ] 
         };
-        
-        this.defG = this._createGestureObject();
-        this.srcG = this._createGestureObject();
-        this.trgG = this._createGestureObject();
+        this.thumbTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.idxs.thumb + 1 ].position).normalize();
+
+
+        this.defG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
+        this.srcG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
+        this.trgG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
+        this.curG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
         
         this.time = 0; // current time of transition
         this.start = 0;
         this.attackPeak = 0;
         this.relax = 0; 
         this.end = 0;
+
+        this.transition = false;
         
         this.reset();
     }
-
-    // Cannot directly clone object as all three.quaternion functions will not be present. Thus manually create them
-    _createGestureObject( ){
-        let o = {};
-        o.thumb = [ new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion() ];
-        o.index = [ new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion() ];
-        o.middle = [ new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion() ];
-        o.ring =  [ new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion() ];
-        o.pinky = [ new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion() ];
-        return o;
-    }
-    _fillGestureFromCurrentPose( indexes, destG ){
-        let o = destG;
-        let b = this.skeleton.bones;
-        o.thumb[0].copy( b[ indexes.thumb ].quaternion );   o.thumb[1].copy( b[ indexes.thumb + 1 ].quaternion );   o.thumb[2].copy( b[ indexes.thumb + 2 ].quaternion );
-        o.index[0].copy( b[ indexes.index ].quaternion );   o.index[1].copy( b[ indexes.index + 1 ].quaternion );   o.index[2].copy( b[ indexes.index + 2 ].quaternion );
-        o.middle[0].copy( b[ indexes.middle ].quaternion ); o.middle[1].copy( b[ indexes.middle + 1 ].quaternion ); o.middle[2].copy( b[ indexes.middle + 2 ].quaternion );
-        o.ring[0].copy( b[ indexes.ring ].quaternion );     o.ring[1].copy( b[ indexes.ring + 1 ].quaternion );     o.ring[2].copy( b[ indexes.ring + 2 ].quaternion );
-        o.pinky[0].copy( b[ indexes.pinky ].quaternion );   o.pinky[1].copy( b[ indexes.pinky + 1 ].quaternion );   o.pinky[2].copy( b[ indexes.pinky + 2 ].quaternion );
-        return o;
-    }
-    _fillGestureFromGesture( destG, srcG ){
-        let o = destG;
-        o.thumb[0].copy( srcG.thumb[0] );   o.thumb[1].copy( srcG.thumb[1] );   o.thumb[2].copy( srcG.thumb[2] );
-        o.index[0].copy( srcG.index[0] );   o.index[1].copy( srcG.index[1] );   o.index[2].copy( srcG.index[2] );
-        o.middle[0].copy( srcG.middle[0] ); o.middle[1].copy( srcG.middle[1] ); o.middle[2].copy( srcG.middle[2] );
-        o.ring[0].copy( srcG.ring[0] );     o.ring[1].copy( srcG.ring[1] );     o.ring[2].copy( srcG.ring[2] );
-        o.pinky[0].copy( srcG.pinky[0] );   o.pinky[1].copy( srcG.pinky[1] );   o.pinky[2].copy( srcG.pinky[2] );
-        return o;
-    }
-    _mirrorGesture( g ){
-        // mirror to self
-        mirrorQuatSelf(g.thumb[0]);     mirrorQuatSelf(g.thumb[1]);      mirrorQuatSelf(g.thumb[2]);
-        mirrorQuatSelf(g.index[0]);     mirrorQuatSelf(g.index[1]);      mirrorQuatSelf(g.index[2]);
-        mirrorQuatSelf(g.middle[0]);    mirrorQuatSelf(g.middle[1]);     mirrorQuatSelf(g.middle[2]);
-        mirrorQuatSelf(g.ring[0]);      mirrorQuatSelf(g.ring[1]);       mirrorQuatSelf(g.ring[2]);
-        mirrorQuatSelf(g.pinky[0]);     mirrorQuatSelf(g.pinky[1]);      mirrorQuatSelf(g.pinky[2]);
-        return g;
-    }
     
     reset() {
-        // Force pose update to flat        
-        this._fillGestureFromGesture( this.defG, handShapes[ "flat" ] );
-        if ( this.mirror ) { this._mirrorGesture( this.defG ); }
+
+        for( let i = 0; i < this.defG.length; ++i ){
+            this.defG[i].fill(0);
+            this.srcG[i].fill(0);
+            this.trgG[i].fill(0);
+            this.curG[i].fill(0);
+        }
 
         this.time = 1; this.start = 0; this.attackPeak = 0; this.relax = 0; this.end = 0;
         this.update( 1 ); // force position reset
@@ -105,70 +134,140 @@ class HandShapeRealizer {
     // must always update bones. (this.transition would be useless)
     update( dt ) {
         
-        if ( this.time > this.end ){ // no transition needed
-            let bones = this.skeleton.bones;
-            for( let i = 0; i < 3 ; ++i ){
-                bones[ this.idxs.thumb  + i ].quaternion.copy( this.defG.thumb[i]);
-                bones[ this.idxs.index  + i ].quaternion.copy( this.defG.index[i]);
-                bones[ this.idxs.middle + i ].quaternion.copy( this.defG.middle[i]);
-                bones[ this.idxs.ring   + i ].quaternion.copy( this.defG.ring[i]);
-                bones[ this.idxs.pinky  + i ].quaternion.copy( this.defG.pinky[i]);
+        if ( this.transition ) {
+            this.time += dt;
+            // wait in same pose
+            // if ( this.time <= this.start ){ }
+              
+            // transition from start to peak
+            if ( this.time > this.start && this.time <= this.attackPeak ){
+                let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+                if ( t > 1){ t = 1; }
+                t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+                
+                for( let i = 0; i < this.curG.length; ++i ){
+                    let curFinger = this.curG[i];
+                    let srcFinger = this.srcG[i];
+                    let trgFinger = this.trgG[i];
+                    for( let j = 0; j < curFinger.length; ++j ){
+                        curFinger[j] = srcFinger[j] * (1-t) + trgFinger[j] * t;
+                    }
+                }
             }
-            return;
-        }
-
-        this.time += dt;
-        
-        // wait in same pose
-        if ( this.time < this.start ){ return; }
-        
-        // wait in peak
-        if ( this.time > this.attackPeak && this.time < this.relax ){ 
-            let bones = this.skeleton.bones;   
-            for( let i = 0; i < 3 ; ++i ){
-                bones[ this.idxs.thumb  + i ].quaternion.copy( this.trgG.thumb[i]);
-                bones[ this.idxs.index  + i ].quaternion.copy( this.trgG.index[i]);
-                bones[ this.idxs.middle + i ].quaternion.copy( this.trgG.middle[i]);
-                bones[ this.idxs.ring   + i ].quaternion.copy( this.trgG.ring[i]);
-                bones[ this.idxs.pinky  + i ].quaternion.copy( this.trgG.pinky[i]);
+    
+            // wait in peak
+            else if ( this.time > this.attackPeak && this.time < this.relax ){ 
+                for( let i = 0; i < this.curG.length; ++i ){
+                    let curFinger = this.curG[i];
+                    let trgFinger = this.trgG[i];
+                    for( let j = 0; j < curFinger.length; ++j ){
+                        curFinger[j] = trgFinger[j];
+                    }
+                }
             }
-            return; 
-        }
 
-        // transition from start to peak
-        if ( this.time <= this.attackPeak ){
-            let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
-            if ( t > 1){ t = 1; }
-            t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+            // transition from peak to default position
+            else if ( this.time >= this.relax ){
+                let t = ( this.time - this.relax ) / ( this.end - this.relax );
+                if ( t > 1){ t = 1; }
+                t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+    
+                for( let i = 0; i < this.curG.length; ++i ){
+                    let curFinger = this.curG[i];
+                    let defFinger = this.defG[i];
+                    let trgFinger = this.trgG[i];
+                    for( let j = 0; j < curFinger.length; ++j ){
+                        curFinger[j] = trgFinger[j] * (1-t) + defFinger[j] * t;
+                    }
+                }
+
+                if ( this.time >= this.end ){ this.transition = false; }
+            }
             
-            // shouldar (back), actual shoulder, elbow
-            let bones = this.skeleton.bones;   
-            for( let i = 0; i < 3 ; ++i ){
-                nlerpQuats( bones[ this.idxs.thumb  + i ].quaternion, this.srcG.thumb[i],  this.trgG.thumb[i],  t );
-                nlerpQuats( bones[ this.idxs.index  + i ].quaternion, this.srcG.index[i],  this.trgG.index[i],  t );
-                nlerpQuats( bones[ this.idxs.middle + i ].quaternion, this.srcG.middle[i], this.trgG.middle[i], t );
-                nlerpQuats( bones[ this.idxs.ring   + i ].quaternion, this.srcG.ring[i],   this.trgG.ring[i],   t );
-                nlerpQuats( bones[ this.idxs.pinky  + i ].quaternion, this.srcG.pinky[i],  this.trgG.pinky[i],  t );
-            }     
-            return;
         }
 
-        // transition from peak to default position
-        if ( this.time >= this.relax ){
-            let t = ( this.time - this.relax ) / ( this.end - this.relax );
-            if ( t > 1){ t = 1; }
-            t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            let bones = this.skeleton.bones;   
-            for( let i = 0; i < 3 ; ++i ){
-                nlerpQuats( bones[ this.idxs.thumb  + i ].quaternion, this.trgG.thumb[i],  this.defG.thumb[i],  t );
-                nlerpQuats( bones[ this.idxs.index  + i ].quaternion, this.trgG.index[i],  this.defG.index[i],  t );
-                nlerpQuats( bones[ this.idxs.middle + i ].quaternion, this.trgG.middle[i], this.defG.middle[i], t );
-                nlerpQuats( bones[ this.idxs.ring   + i ].quaternion, this.trgG.ring[i],   this.defG.ring[i],   t );
-                nlerpQuats( bones[ this.idxs.pinky  + i ].quaternion, this.trgG.pinky[i],  this.defG.pinky[i],  t );
-            }     
+        // TODO        
+        let bones = this.skeleton.bones;
+        let bendAxes = (this.mirror) ? avatarHandAxes.L.bends : avatarHandAxes.R.bends;    
+        let splayAxes = (this.mirror) ? avatarHandAxes.L.splays : avatarHandAxes.R.splays; 
+        let c = this.curG;   
+        
+
+        // all finger bends
+        bones[ this.idxs.thumb      ].quaternion.setFromAxisAngle(  bendAxes[0],  ((1-c[0][1])*1.5-0.5) * (-Math.PI*0.2) ); // these maths because of weird thumb position in mesh 
+        bones[ this.idxs.thumb + 1  ].quaternion.setFromAxisAngle(  bendAxes[1],  c[0][2] * Math.PI*0.4 );
+        bones[ this.idxs.thumb + 2  ].quaternion.setFromAxisAngle(  bendAxes[2],  c[0][3] * Math.PI*0.4 );
+        bones[ this.idxs.index      ].quaternion.setFromAxisAngle(  bendAxes[3],  c[1][1] * Math.PI*0.5 );
+        bones[ this.idxs.index + 1  ].quaternion.setFromAxisAngle(  bendAxes[4],  c[1][2] * Math.PI*0.6 );
+        bones[ this.idxs.index + 2  ].quaternion.setFromAxisAngle(  bendAxes[5],  c[1][3] * Math.PI*0.5 );
+        bones[ this.idxs.middle     ].quaternion.setFromAxisAngle(  bendAxes[6],  c[2][1] * Math.PI*0.5 );
+        bones[ this.idxs.middle + 1 ].quaternion.setFromAxisAngle(  bendAxes[7],  c[2][2] * Math.PI*0.6 );
+        bones[ this.idxs.middle + 2 ].quaternion.setFromAxisAngle(  bendAxes[8],  c[2][3] * Math.PI*0.5 );
+        bones[ this.idxs.ring       ].quaternion.setFromAxisAngle(  bendAxes[9],  c[3][1] * Math.PI*0.5 );
+        bones[ this.idxs.ring + 1   ].quaternion.setFromAxisAngle(  bendAxes[10], c[3][2] * Math.PI*0.6 * 0.9 ); // 0.9 because of eva model
+        bones[ this.idxs.ring + 2   ].quaternion.setFromAxisAngle(  bendAxes[11], c[3][3] * Math.PI*0.5 );
+        bones[ this.idxs.pinky      ].quaternion.setFromAxisAngle(  bendAxes[12], c[4][1] * Math.PI*0.5 );
+        bones[ this.idxs.pinky + 1  ].quaternion.setFromAxisAngle(  bendAxes[13], c[4][2] * Math.PI*0.6 );
+        bones[ this.idxs.pinky + 2  ].quaternion.setFromAxisAngle(  bendAxes[14], c[4][3] * Math.PI*0.5 );
+
+        // thumb splay is weird
+        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[0], c[0][0] * Math.PI*0.15 ) );
+        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.mirror?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
+
+        // other fingers splay
+        bones[ this.idxs.index  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
+        bones[ this.idxs.middle ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
+        bones[ this.idxs.ring   ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[3], this._computeSplayAngle( c[3] ) ) );
+        bones[ this.idxs.pinky  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[4], this._computeSplayAngle( c[4] ) + this._computeSplayAngle( c[3] ) ) );
+        
+
+    }
+
+    _computeSplayAngle( fingerInfo ){
+        return fingerInfo[0] * ( 1 - Math.abs( fingerInfo[1] ) ) * 20*Math.PI/180;
+    }
+    _stringToBend( str, outFinger ){
+        if ( typeof str != "string" ){ return; }
+        switch( str ){
+            case "straight": 
+                outFinger[1] = 0; outFinger[2] = 0; outFinger[3] = 0;
+                break;
+            case "bent":
+                outFinger[1] = 1; outFinger[2] = 0; outFinger[3] = 0;
+                break;
+            case "round":
+                outFinger[1] = 0.5; outFinger[2] = 0.3; outFinger[3] = 0.3;
+                break;
+            case "hooked":
+                outFinger[1] = 0; outFinger[2] = 1; outFinger[3] = 1;
+                break;
+            case "dblbent":
+                outFinger[1] = 1; outFinger[2] = 1; outFinger[3] = 0;
+                break;
+            case "dblhooked":
+                outFinger[1] = 1; outFinger[2] = 1; outFinger[3] = 1;
+                break;
+            case "halfbent":
+                outFinger[1] = 0.5; outFinger[2] = 0; outFinger[3] = 0;
+                break;
+            default:
+                // strings of three int values 0-9
+                for( let i = 0; (i < 3) && (i < str.length); ++i ){
+                    let val = parseInt( str[i] );
+                    if ( isNaN(val) ){ continue; }
+                    outFinger[1+i] = val/9;
+                }
+                break;
         }
-
+    }
+    _stringToSplay( str, outFinger ){
+        if ( typeof str != "string" && typeof str != "number" ){ return; }
+        // strings int values 0-8
+        let val = parseInt( str[0] );
+        if ( isNaN(val) ){ return; }
+        val = Math.min( 8, val );
+        outFinger[0] = 2* val/8 - 1;
     }
     
     /** 
@@ -179,7 +278,6 @@ class HandShapeRealizer {
      * thumbshape: (optional) string from thumbshape table. 
      */
     newGestureBML( bml ){
-        let newG = {};
 
         // build the correct gesture. Might be modified by thumb, thus set by reference on each finger
         let g = handShapes[ bml.handshape ];
@@ -187,41 +285,64 @@ class HandShapeRealizer {
             console.warn( "Gesture: HandShape incorrect handshape \"" + bml.handshape + "\"" );
             return;
         }
-        newG.thumb = g.thumb;
-        newG.index = g.index;
-        newG.middle = g.middle;
-        newG.ring = g.ring;
-        newG.pinky = g.pinky;
+        let sg = handShapes[ bml.secondHandshape ];
+        if ( !sg ){ sg = g; }
 
+
+        // copy current state into src
+        for( let i = 0; i < this.trgG.length; ++i ){
+            let srcFinger = this.srcG[i];
+            let curFinger = this.curG[i];
+            for( let j = 0; j < curFinger.length; ++j ){
+                srcFinger[j] = curFinger[j];
+            }
+        }
+
+        // copy blended target
+        for( let i = 0; i < this.curG.length; ++i ){
+            let trgFinger = this.trgG[i];
+            let mainFinger = g[i];
+            let secondFinger = sg[i];
+            for( let j = 0; j < mainFinger.length; ++j ){
+                trgFinger[j] = mainFinger[j] * 0.5 + secondFinger[j] * 0.5;
+            }
+        }
+
+        // modify with thumbshape
         if ( bml.thumbshape ){
             let thumbGest = thumbShapes[bml.thumbshape];
-            if ( !thumbGest ){
-                console.warn( "Gesture: HandShape incorrect thumbshape \"" + bml.thumbshape + "\"" );
-                return;
-            }
-            newG.thumb = thumbGest;
+            let secondThumbGest = thumbShapes[bml.secondThumbshape];
+            if ( !thumbGest ){ console.warn( "Gesture: HandShape incorrect thumbshape \"" + bml.thumbshape + "\"" ); thumbGest = g[0]; }
+            if ( !secondThumbGest ){ secondThumbGest = thumbGest; }
+            
+            for( let j = 0; j < thumbGest.length; ++j ){
+                this.trgG[0][j] = thumbGest[j] * 0.5 + secondThumbGest[j] * 0.5;
+            }        
         }
 
-        if ( handShapes[ bml.f1 ] ){ newG.thumb = handShapes[ bml.f1 ].thumb; } 
-        if ( handShapes[ bml.f2 ] ){ newG.index = handShapes[ bml.f2 ].index; } 
-        if ( handShapes[ bml.f3 ] ){ newG.middle = handShapes[ bml.f3 ].middle; } 
-        if ( handShapes[ bml.f4 ] ){ newG.ring = handShapes[ bml.f4 ].ring; } 
-        if ( handShapes[ bml.f5 ] ){ newG.pinky = handShapes[ bml.f5 ].pinky; } 
+        // TODO mainbend
+        this._stringToBend( bml.bend1, this.trgG[0] ); // thumb
+        this._stringToBend( bml.bend2, this.trgG[1] );
+        this._stringToBend( bml.bend3, this.trgG[2] );
+        this._stringToBend( bml.bend4, this.trgG[3] );
+        this._stringToBend( bml.bend5, this.trgG[4] );
 
-        // set source pose
-        this._fillGestureFromCurrentPose( this.idxs, this.srcG );
-        
-        // set target pose (and mirror)
-        this._fillGestureFromGesture( this.trgG, newG );
-
-        // mirror quaternions for the left. Original quaternions are for right hand
-        if ( this.mirror ){
-            this._mirrorGesture( this.trgG );
-        }
+        // check if any splay attributes is present. ( function already checks if passed argument is valid )           
+        this._stringToSplay( bml.splay1, this.trgG[0] ); // thumb
+        this._stringToSplay( bml.splay2 ? bml.splay2 : bml.mainSplay, this.trgG[1] );
+        this._stringToSplay( bml.splay3 ? bml.splay3 : bml.mainSplay, this.trgG[2] );
+        this._stringToSplay( bml.splay4 ? bml.splay4 : bml.mainSplay, this.trgG[3] );
+        this._stringToSplay( bml.splay5 ? bml.splay5 : bml.mainSplay, this.trgG[4] );
 
         // set defualt pose if necessary
         if ( bml.shift ){
-            this._fillGestureFromGesture( this.defG, this.trgG );
+            for( let i = 0; i < this.trgG.length; ++i ){
+                let trgFinger = this.trgG[i];
+                let defFinger = this.defG[i];
+                for( let j = 0; j < trgFinger.length; ++j ){
+                    defFinger[j] = trgFinger[j];
+                }
+            }
         }
 
         // check and set timings
@@ -231,8 +352,78 @@ class HandShapeRealizer {
         this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
         this.time = 0; 
             
+        this.transition = true;
     }
 }
 
 
+
+// fingers(){
+//     let bonemap = this.ECAcontroller.bodyController.boneMap;
+//     let skeleton = this.ECAcontroller.bodyController.skeleton.bones;
+
+//     let bendBase = Math.PI*0.5 * this.bend;
+//     let bendMid = Math.PI*0.6 * this.bend;
+//     let bendTip = Math.PI*0.5 * this.bend;
+//     let splay = 0.35*(2*this.splay-1) * (1-Math.abs(this.bend)) * Math.PI*0.25;
+
+//     let quat = new THREE.Quaternion(0,0,0,1);
+
+//     skeleton[bonemap.RHandIndex].quaternion.setFromAxisAngle(    (new THREE.Vector3(1,0, -0.2)).normalize(), bendBase );
+//     skeleton[bonemap.RHandIndex+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.RHandIndex+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.RHandMiddle].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendBase );
+//     skeleton[bonemap.RHandMiddle+1].quaternion.setFromAxisAngle( (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.RHandMiddle+2].quaternion.setFromAxisAngle( (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.RHandRing].quaternion.setFromAxisAngle(     (new THREE.Vector3(1,0, 0.1)).normalize(), bendBase );
+//     skeleton[bonemap.RHandRing+1].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendMid*0.9 );
+//     skeleton[bonemap.RHandRing+2].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.RHandPinky].quaternion.setFromAxisAngle(    (new THREE.Vector3(1,0, 0.2)).normalize(), bendBase );
+//     skeleton[bonemap.RHandPinky+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.RHandPinky+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+
+//     skeleton[bonemap.RHandIndex].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(0,1,0)).normalize(), splay ) );
+//     skeleton[bonemap.RHandMiddle].quaternion.multiply( quat.setFromAxisAngle(  (new THREE.Vector3(0,1,0)).normalize(), 0.25*splay ) );
+//     skeleton[bonemap.RHandRing].quaternion.multiply( quat.setFromAxisAngle(    (new THREE.Vector3(0,1,0)).normalize(), -splay ) );
+//     skeleton[bonemap.RHandPinky].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(0,1,0)).normalize(), -2*splay ) );
+   
+
+//     skeleton[bonemap.RHandThumb].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(),  ((1-this.bendThumb)*1.5-0.5) * (-Math.PI*0.2) );
+//     skeleton[bonemap.RHandThumb+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(), this.bendThumb * Math.PI*0.4 );
+//     skeleton[bonemap.RHandThumb+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(), this.bendThumb * Math.PI*0.4 );
+//     skeleton[bonemap.RHandThumb].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), (2*this.splayThumb-1) * Math.PI*0.1 ) );
+//     skeleton[bonemap.RHandThumb].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3()).copy(skeleton[bonemap.RHandThumb+1].position).normalize(), -this.splayThumb * Math.PI*0.3 ) );
+    
+
+
+//     skeleton[bonemap.LHandIndex].quaternion.setFromAxisAngle(    (new THREE.Vector3(1,0, 0.2)).normalize(), bendBase );
+//     skeleton[bonemap.LHandIndex+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.LHandIndex+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.LHandMiddle].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendBase );
+//     skeleton[bonemap.LHandMiddle+1].quaternion.setFromAxisAngle( (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.LHandMiddle+2].quaternion.setFromAxisAngle( (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.LHandRing].quaternion.setFromAxisAngle(     (new THREE.Vector3(1,0, -0.1)).normalize(), bendBase );
+//     skeleton[bonemap.LHandRing+1].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendMid*0.9 );
+//     skeleton[bonemap.LHandRing+2].quaternion.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+//     skeleton[bonemap.LHandPinky].quaternion.setFromAxisAngle(    (new THREE.Vector3(1,0, -0.2)).normalize(), bendBase );
+//     skeleton[bonemap.LHandPinky+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendMid );
+//     skeleton[bonemap.LHandPinky+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(1,0,0)).normalize(), bendTip );
+
+//     skeleton[bonemap.LHandIndex].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(0,1,0)).normalize(), -splay ) );
+//     skeleton[bonemap.LHandMiddle].quaternion.multiply( quat.setFromAxisAngle(  (new THREE.Vector3(0,1,0)).normalize(), -0.25*splay ) );
+//     skeleton[bonemap.LHandRing].quaternion.multiply( quat.setFromAxisAngle(    (new THREE.Vector3(0,1,0)).normalize(), splay ) );
+//     skeleton[bonemap.LHandPinky].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(0,1,0)).normalize(), 2*splay ) );
+   
+
+//     skeleton[bonemap.LHandThumb].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(),  -((1-this.bendThumb)*1.5-0.5) * (-Math.PI*0.2) );
+//     skeleton[bonemap.LHandThumb+1].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(), -this.bendThumb * Math.PI*0.4 );
+//     skeleton[bonemap.LHandThumb+2].quaternion.setFromAxisAngle(  (new THREE.Vector3(0,-1,-0.3)).normalize(), -this.bendThumb * Math.PI*0.4 );
+//     skeleton[bonemap.LHandThumb].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3(1,0,0)).normalize(), (2*this.splayThumb-1) * Math.PI*0.1 ) );
+//     skeleton[bonemap.LHandThumb].quaternion.multiply( quat.setFromAxisAngle(   (new THREE.Vector3()).copy(skeleton[bonemap.LHandThumb+1].position).normalize(), this.splayThumb * Math.PI*0.3 ) );
+    
+// }
+
 export { HandShapeRealizer };
+
+
+

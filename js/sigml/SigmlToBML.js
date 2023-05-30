@@ -15,21 +15,21 @@ BABYSITTEN
 
 
 let TIMESLOT ={
-    DEF: 1,
+    DEF: 0.5,
 
-    NMF: 1,
+    NMF: 0.5,
 
-    POSTURE: 0.5,
-    LOC: 0.5,
-    HAND: 0.5,
+    POSTURE: 0.3,
+    LOC: 0.3,
+    HAND: 0.3,
 
-    MOTION: 1,
-    MOTIONDIR : 0.5,
-    MOTIONCIRC : 1.5,
+    MOTION: 0.5,
+    MOTIONDIR : 0.3,
+    MOTIONCIRC : 1,
 
-    REST: 0.7, // rest attributes of some motions
-    RELAXEND: 1, // after the sign, the time it takes to return to neutral pose
-    PEAKRELAX: 1, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
+    REST: 0.3, // rest attributes of some motions
+    RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
+    PEAKRELAX: 0.2, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
 }
 
 
@@ -40,25 +40,28 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
     let msg = [];
     timeOffset = (isNaN(timeOffset)) ? 0 : timeOffset;
     let time = timeOffset;
-    let relaxEndDuration = 0;
-    let peakRelaxDuration = 0;
     try{
         xmlDoc = parser.parseFromString( str, "text/xml" ).children[0];
     }catch( error ){
         return { data: [], duration: 0, relaxEndDuration: 0 };
     }
 
+    let lastRelaxEndDuration = 0
+    let lastPeakRelaxDuration = 0;
     // for each hamnosis sign
     for( let i = 0; i < xmlDoc.children.length ; ++i ){
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
+        
+
+        time = time - lastRelaxEndDuration - 0.3 * lastPeakRelaxDuration; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
         let result = hnsSignParser( xmlDoc.children[i], time );
         time = result.end;
         msg = msg.concat( result.data );
-        relaxEndDuration = result.relaxEndDuration;
-        peakRelaxDuration = result.peakRelaxDuration;
+        lastRelaxEndDuration = result.relaxEndDuration;
+        lastPeakRelaxDuration = result.peakRelaxDuration;
     }
 
-    return { data: msg, duration: ( time - timeOffset ), relaxEndDuration: relaxEndDuration, peakRelaxDuration: peakRelaxDuration };
+    return { data: msg, duration: ( time - timeOffset ), relaxEndDuration: lastRelaxEndDuration, peakRelaxDuration: lastPeakRelaxDuration };
 }
 
 
@@ -542,7 +545,7 @@ function motionParser( xml, start, bothHands, domHand, symmetry, currentPosture,
                 case "fromstart":  /* forward. Then go directly to the original pose. Forward. Repeat completed */ 
                 case "fromstart_several":
                 case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat completed*/
-                    let amountLoops = ( repetition == "fromstart" ) ? 1 : 2;
+                    let amountLoops = ( attributes.repetition == "fromstart" ) ? 1 : 2;
                     for( let loop = 0; loop < amountLoops; ++loop ){
                         
                         // forward
@@ -760,6 +763,7 @@ function signNonManual( xml, start, signSpeed ){
             for( let a = 0; a < actions.length; ++a ){ // check all actions inside this tier
                 if ( allActionTags.includes( actions[a].tagName ) ){ // simple sequential action ( jasigning )
                     let r = baseNMFActionToJSON( actions[a], time, signSpeed );
+                    if ( !r ){ continue; }
                     result = result.concat( r.data );
                     time = r.end;
                 }
@@ -771,6 +775,7 @@ function signNonManual( xml, start, signSpeed ){
                         if ( allActionTags.includes( subActions[sa].tagName ) ){
                             // sequential actions ( jasigning )
                             let r = baseNMFActionToJSON( subActions[sa], time, signSpeed );
+                            if ( !r ){ continue; }
                             result = result.concat( r.data );
                             if ( r.end > subMaxEnd ){ subMaxEnd = r.end; }
                         }
