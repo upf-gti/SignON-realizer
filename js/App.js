@@ -361,9 +361,6 @@ class App {
             ECAcontroller.start();
             ECAcontroller.reset();
             ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
-        
-            // const helper = new THREE.SkeletonHelper( model );
-            // this.scene.add(helper);
 
             if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
             this.animate();
@@ -373,7 +370,6 @@ class App {
         });
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
-        
     }
 
     animate() {
@@ -397,7 +393,6 @@ class App {
 
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
-
 
 }
 

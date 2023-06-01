@@ -25,11 +25,11 @@ let TIMESLOT ={
 
     MOTION: 0.5,
     MOTIONDIR : 0.3,
-    MOTIONCIRC : 1,
+    MOTIONCIRC : 0.5,
 
     REST: 0.3, // rest attributes of some motions
     RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
-    PEAKRELAX: 0.2, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
+    PEAKRELAX: 1, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
 }
 
 
@@ -53,7 +53,7 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
         
 
-        time = time - lastRelaxEndDuration - 0.3 * lastPeakRelaxDuration; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
+        time = time - lastRelaxEndDuration - lastPeakRelaxDuration + 0.2 ; // if not last, remove relax-end stage and partially remove the peak-relax 
         let result = hnsSignParser( xmlDoc.children[i], time );
         time = result.end;
         msg = msg.concat( result.data );
@@ -298,8 +298,19 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
     if ( attributes.handshape || attributes.thumbpos || attributes.bend1 || attributes.bend2 || attributes.bend3 || attributes.bend4 || attributes.bend5 || attributes.mainbend ){ 
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
         obj.handshape = attributes.handshape || "flat";
+        obj.secondHandshape = attributes.second_handshape;
+        obj.mainBend = attributes.mainbend;
+        obj.secondMainBend = attributes.second_mainbend;
         obj.thumbshape = attributes.thumbpos;
-        if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
+        obj.secondThumbshape = attributes.second_thumbpos;
+        obj.tco = attributes.ceeopening == "slack" ? 0.5 : 1; // "tight" mode not supported 
+        obj.secondtco = attributes.second_ceeopening == "slack" ? 0.5 : 1; // "tight" mode not supported 
+        obj.bend1 = attributes.bend1;
+        obj.bend2 = attributes.bend2;
+        obj.bend3 = attributes.bend3;
+        obj.bend4 = attributes.bend4;
+        obj.bend5 = attributes.bend5;
+        // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
         result.push( obj );
     }
     if ( attributes.extfidir ){

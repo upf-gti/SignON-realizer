@@ -346,9 +346,9 @@ Yaw and Pitch of the wrist joint.
 ```
 ---
 ## Handshape
-Sets the posture of the fingers of a hand.
+Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) to 5 (pinky)
 ``` javascript
-{
+{ 
     type: "gesture",
     start: 0.1,
     attackPeak: 0.2, 
@@ -358,20 +358,33 @@ Sets the posture of the fingers of a hand.
     handshape: "flat", //string from the handshape table
     
     // optionals
-    thumbshape: "touch", //string from thumbshape table. if not present, a predefined thumbshape for the handshape will be used
+    secondHandshape: "flat", //string from the handshape table
+    thumbshape: "touch", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
+    secondThumbshape: "touch", // string from thumbshape table. Applied to secondHandshape
+    tco: 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
+    secondtco: 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
+    
+    mainBend: "hooked", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
+    secondMainBend: "hooked", // mainbend applied to secondHandshape
+    bend1: "099", // overrides any other bend applied for this handshape for this finger. Number indicates which finger. The value is one from the bend table
+    mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,3,4,5. Splay diminishes the more the finger is bent
+    splay1: 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent 
     shift: false,
 }
 
 ```
 <details>
-<summary>Click to view the complete list of available handshapes</summary>
+<summary>Click to view the complete list of available HANDSHAPES</summary>
 
+--- BASIC HANDSHAPES ---                       
 fist               
 finger2               
 finger23               
 finger23spread               
 finger2345               
-flat               
+flat            
+               
+--- THUMB COMBINATION HANDSHAPES ---               
 pinch12               
 pinch12open               
 pinchall               
@@ -381,13 +394,26 @@ cee12open
 </details>
 
 <details>
-<summary>Click to view the complete list of available thumbshapes</summary>
+<summary>Click to view the complete list of available THUMBSHAPES </summary>
 
 default               
 out               
 opposed               
 across               
 touch               
+</details>
+<details>
+<summary>Click to view the complete list of BEND STATES </summary>
+
+straight         
+halfbent         
+bent         
+round         
+hooked         
+dblbent                 
+dblhooked         
+triplets of numbers from 0-9. The first number indicates the base of the finger, the second the middle joint and the third the joint in the tip of the finger.         
+i.e. bent = "900", hooked = "099"
 </details>
 
 ---
