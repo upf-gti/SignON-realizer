@@ -105,7 +105,7 @@ class App {
                     orders = orders.concat(result.data);
                     time += result.duration; 
                     if ( i < ( glosses.length - 1 ) ){ 
-                        time = time - result.relaxEndDuration - 0.5 * result.peakRelaxDuration ; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
+                        time = time - result.relaxEndDuration - result.peakRelaxDuration + 0.05 ; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
                     }
                 }
             } ).catch(e =>{ console.log("failed at loading dictionary file: " + glossFile) } );

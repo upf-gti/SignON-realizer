@@ -17,7 +17,7 @@
       </split_handconfig>
       <split_location>
         <location_bodyarm contact="close" location="neck" side="right_at"/>
-        <location_bodyarm contact="close" location="shoulders" second_location="shoulders" second_side="left_at" side="left_at"/>
+        <location_bodyarm contact="close" location="neck" second_location="shoulders" second_side="left_at" side="left_at"/>
       </split_location>
       <split_motion>
         <par_motion>
@@ -54,7 +54,7 @@
         </split_motion>
         <split_location>
           <location_bodyarm contact="close" location="neck" side="right_at"/>
-          <location_bodyarm contact="close" location="shoulders" second_location="shoulders" second_side="left_at" side="left_at"/>
+          <location_bodyarm contact="close" location="neck" second_location="shoulders" second_side="left_at" side="left_at"/>
         </split_location>
       </tgt_motion>
       <split_motion>
@@ -92,7 +92,7 @@
         </split_motion>
         <split_location>
           <location_bodyarm contact="close" location="neck" side="right_at"/>
-          <location_bodyarm contact="close" location="shoulders" second_location="shoulders" second_side="left_at" side="left_at"/>
+          <location_bodyarm contact="close" location="neck" second_location="shoulders" second_side="left_at" side="left_at"/>
         </split_location>
       </tgt_motion>
     </sign_manual>

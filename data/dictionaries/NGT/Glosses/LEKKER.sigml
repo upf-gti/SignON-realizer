@@ -9,8 +9,8 @@
     <sign_manual>
       <handconfig handshape="flat" second_handshape="finger2345" second_thumbpos="out"/>
       <handconfig extfidir="ui" second_extfidir="ur"/>
-      <handconfig palmor="ul"/>
-      <location_bodyarm contact="close" location="earlobe">
+      <handconfig palmor="dl"/>
+      <location_bodyarm contact="close" location="cheek">
         <location_hand digits="3" location="midjoint" side="palmar"/>
       </location_bodyarm>
       <wristmotion motion="swinging"/>

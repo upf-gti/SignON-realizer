@@ -29,7 +29,7 @@ let TIMESLOT ={
 
     REST: 0.3, // rest attributes of some motions
     RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
-    PEAKRELAX: 1, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
+    PEAKRELAX: 0.5, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
 }
 
 

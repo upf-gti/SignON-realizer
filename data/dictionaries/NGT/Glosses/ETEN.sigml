@@ -8,9 +8,9 @@
     </sign_nonmanual>
     <sign_manual>
       <handconfig handshape="finger2" mainbend="hooked"/>
-      <handconfig extfidir="ul"/>
-      <handconfig palmor="l" second_palmor="ul"/>
-      <location_bodyarm contact="close" location="chin"/>
+      <handconfig extfidir="ul" second_extfidir="u"/>
+      <handconfig palmor="d" second_palmor="ul"/>
+      <location_bodyarm contact="close" location="shoulders" side="left_at"/>
       <wristmotion motion="nodding" size="small"/>
     </sign_manual>
   </hamgestural_sign>
