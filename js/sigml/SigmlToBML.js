@@ -214,7 +214,7 @@ function signManual( xml, start, signSpeed ){
             if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
             if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.RELAXEND / signSpeed; }
         }
-        if ( result[i].motion == "directed" ){ 
+        if ( result[i].motion == "directed" || result[i].motion == "circular" ){ // circular mainly when it is not a 2*PI rotation  
             // result[i].attackPeak = result[i].start + TIMESLOT.MOTIONDIR;
             if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
             if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.RELAXEND / signSpeed; }
@@ -429,11 +429,18 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
         }
 
     }else{
-        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){ loc += (hand == "right")?'R':'L'; }
+        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){
+            if ( loc == "shoulder" ){ // move towards instead of appart. Jasigning has an offset, but for our shoulder it is better to move towards
+                result.push( { type:"gesture", start:start + 0.0001, attackPeak: attackPeak, motion:"directed", direction: (hand=="right")?"l":"r", distance:0.05, hand: "right" } );
+            }
+            loc += (hand == "right")?'R':'L'; 
+        }
+        else{
+            // jasigning has an offset for each arm 
+            result.push( { type:"gesture", start:start + 0.0001, attackPeak: attackPeak, motion:"directed", direction: (hand=="right")?"r":"l", distance:0.05, hand: hand } ); 
+        }
         result[0].locationArm = loc;
 
-        // jasigning has an offset for each arm 
-        result.push( { type:"gesture", start:start + 0.0001, attackPeak: attackPeak, motion:"directed", direction: (hand=="right")?"r":"l", distance:0.05, hand: hand } ); 
     }
 
 
@@ -551,53 +558,63 @@ function motionParser( xml, start, bothHands, domHand, symmetry, currentPosture,
         if ( xml.children.length > 0 && motionsAvailable.includes( xml.children[0].tagName ) ){
             let r = motionParser( xml.children[0], time, bothHands, domHand, symmetry, currentPosture, signSpeed );
             let blockDuration = r.end - time;
+            let isBackwardNecessary = false;
+            for ( let i = 0; i < r.data.length; ++i ){
+                if ( r.data[i].locationArm || r.data[i].handshape || r.data[i].extfidir || r.data[i].palmor || r.data[i].motion == "directed" ){
+                    isBackwardNecessary = true; 
+                    break;
+                }
+            }
             
             switch ( attributes.repetition ){
                 case "fromstart":  /* forward. Then go directly to the original pose. Forward. Repeat completed */ 
                 case "fromstart_several":
                 case "manyrandom": /* forward. Then go directly to the original pose. Forward. Repeat completed*/
                     let amountLoops = ( attributes.repetition == "fromstart" ) ? 1 : 2;
+                    let loopDuration = blockDuration + isBackwardNecessary * TIMESLOT.POSTURE / signSpeed;
                     for( let loop = 0; loop < amountLoops; ++loop ){
                         
                         // forward
                         let forward = JSON.parse( JSON.stringify( r.data ) ); 
                         for( let i = 0; i < forward.length; ++i ){
-                            if( !isNaN( forward[i].start ) ){ forward[i].start += loop * ( blockDuration + TIMESLOT.POSTURE / signSpeed ); } 
-                            if( !isNaN( forward[i].attackPeak ) ){ forward[i].attackPeak += loop * ( blockDuration + TIMESLOT.POSTURE / signSpeed ); } 
-                            if( !isNaN( forward[i].ready ) ){ forward[i].ready += loop * ( blockDuration + TIMESLOT.POSTURE / signSpeed ); } 
-                            if( !isNaN( forward[i].relax ) ){ forward[i].relax += loop * ( blockDuration + TIMESLOT.POSTURE / signSpeed ); } 
-                            if( !isNaN( forward[i].end ) ){ forward[i].end += loop * ( blockDuration + TIMESLOT.POSTURE / signSpeed ); } 
-                            else{ forward[i].end = time + blockDuration + TIMESLOT.POSTURE / signSpeed; } // if no end, force an end in combination with backward pass
+                            if( !isNaN( forward[i].start ) ){ forward[i].start += loop * loopDuration; } 
+                            if( !isNaN( forward[i].attackPeak ) ){ forward[i].attackPeak += loop * loopDuration; } 
+                            if( !isNaN( forward[i].ready ) ){ forward[i].ready += loop * loopDuration; } 
+                            if( !isNaN( forward[i].relax ) ){ forward[i].relax += loop * loopDuration; } 
+                            if( !isNaN( forward[i].end ) ){ forward[i].end += loop * loopDuration; } 
+                            else{ forward[i].end = time + loopDuration; } // if no end, force an end in combination with backward pass
                         }
                         result = result.concat( forward );
 
                         time += blockDuration / signSpeed; // add forward time
 
-                        // backward
-                        let p = JSON.parse( JSON.stringify( currentPosture ) );
-                        for( let i = 0; i < p.length; ++i ){
-                            p[i].start = time;
-                            p[i].attackPeak = time + TIMESLOT.POSTURE / signSpeed;
+                        if ( isBackwardNecessary ){
+                            // backward
+                            let p = JSON.parse( JSON.stringify( currentPosture ) );
+                            for( let i = 0; i < p.length; ++i ){
+                                p[i].start = time;
+                                p[i].attackPeak = time + TIMESLOT.POSTURE / signSpeed;
+                            }
+                            result = result.concat( p );
+                            // location_bodyarm fix to resemble jasigning
+                            if ( p[0].locationArm != "neutral" ) { 
+                                let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE / signSpeed, motion:"directed", direction: "r", distance:0.05, hand:"right" }; 
+                                if ( p[0].locationArm == "shoulderR" ){ d.direction = "l"; } // move towards instead of appart
+                                result.push( d );
+                            }
+                            if ( p[1].locationArm != "neutral" ) { 
+                                let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE / signSpeed, motion:"directed", direction: "l", distance:0.05, hand:"left" };
+                                if ( p[1].locationArm == "shoulderL" ){ d.direction ="r"; } // move towards instead of appart
+                                result.push( d );
+                            }
+                            
+                            time += TIMESLOT.POSTURE / signSpeed; // add backward time
                         }
-                        result = result.concat( p );
-                        // location_bodyarm fix to resemble jasigning
-                        if ( p[0].locationArm != "neutral" ) { 
-                            let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE / signSpeed, motion:"directed", direction: "r", distance:0.05, hand:"right" }; 
-                            if ( p[0].locationArm == "shoulderR" ){ d.direction = "l"; } // move towards instead of appart
-                            result.push( d );
-                        }
-                        if ( p[1].locationArm != "neutral" ) { 
-                            let d = { type:"gesture", start: time + 0.0001, attackPeak: time + TIMESLOT.POSTURE / signSpeed, motion:"directed", direction: "l", distance:0.05, hand:"left" };
-                            if ( p[1].locationArm == "shoulderL" ){ d.direction ="r"; } // move towards instead of appart
-                            result.push( d );
-                        }
-                        
-                        time += TIMESLOT.POSTURE / signSpeed; // add backward time
                     }
 
-                    // forward
+                    // final forward
                     let finalForward = r.data;
-                    let offset = amountLoops * ( blockDuration + TIMESLOT.POSTURE / signSpeed );
+                    let offset = amountLoops * loopDuration;
                     for( let i = 0; i < finalForward.length; ++i ){
                         if( !isNaN( finalForward[i].start ) ){ finalForward[i].start += offset; } 
                         if( !isNaN( finalForward[i].attackPeak ) ){ finalForward[i].attackPeak += offset; } 
@@ -650,7 +667,7 @@ function remapBlockTiming ( srcStart, srcEnd, dstStart, dstEnd, bmlArray ){
             bml.attackPeak = dstStart * ( 1.0 - f ) + dstEnd * f;
         }
         else{ // motions
-            if ( bml.motion == "directed"){
+            if ( bml.motion == "directed" || bml.motion == "circular" ){
                 f = ( bml.attackPeak - srcStart ) / ( srcEnd - srcStart ); 
                 bml.attackPeak = dstStart * ( 1.0 - f ) + dstEnd * f;
             }else{
@@ -710,7 +727,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed ){
             else { result.zigzagSize = 0.1; }
         }
         duration = TIMESLOT.MOTIONCIRC / signSpeed;
-        result.end = start + duration;
+        result.attackPeak = start + duration;
     }
     else if ( xml.tagName == "wristmotion" ){
         result.motion = "wrist";

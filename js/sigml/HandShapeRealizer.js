@@ -9,7 +9,7 @@ let handShapes = {
     finger2:        { selected:[0,1,0,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
     finger23:       { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,0,0,0], [0,1,1,1], [0,1,1,1] ] },
     finger23spread: { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0.8,0,0,0], [-0.2,0,0,0], [0,1,1,1], [0,1,1,1] ] },
-    finger2345:     { selected:[0,1,1,1,1], shape:[ [-1,0.3,0,0], [0.8,0,0,0], [0,0,0,0], [-0.8,0,0,0], [-0.8,0,0,0] ] }, 
+    finger2345:     { selected:[0,1,1,1,1], shape:[ [-1,0.3,0,0], [0.8,0,0,0], [0,0,0,0], [0.8,0,0,0], [0.8,0,0,0] ] }, 
     flat:           { selected:[0,1,1,1,1], shape:[ [-1,0.3,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ] },
 
     // thumb combinations - could be reduced to only pinch. Cee are basically pinch but with selected fingers open
@@ -234,8 +234,8 @@ class HandShapeRealizer {
         // other fingers splay
         bones[ this.idxs.index  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
         bones[ this.idxs.middle ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
-        bones[ this.idxs.ring   ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[3], this._computeSplayAngle( c[3] ) ) );
-        bones[ this.idxs.pinky  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[4], this._computeSplayAngle( c[4] ) + this._computeSplayAngle( c[3] ) ) );
+        bones[ this.idxs.ring   ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[3], -1 * this._computeSplayAngle( c[3] ) ) );
+        bones[ this.idxs.pinky  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[4], -1 * this._computeSplayAngle( c[4] ) - this._computeSplayAngle( c[3] ) ) );
         
 
     }

@@ -221,13 +221,11 @@ class DirectedMotion {
     }
 }
 
-// TODO: check parameters from bml, zig zag attenuation (on update, missing outro ending attenuation)
 class CircularMotion {
     constructor(){
         this.finalOffset = new THREE.Vector3(0,0,0);
 
         this.startPoint = new THREE.Vector3(0,0,0);
-        this.easingAngle = 60.0 * Math.PI/180.0; // entry/outro extra angle. Absolute value
         this.targetDeltaAngle = 0; // entry&outro easing + user specified.
         this.axis = new THREE.Vector3(0,0,0);
         
@@ -252,44 +250,40 @@ class CircularMotion {
         
         this.time += dt;
         if ( this.time < this.start ){ return this.finalOffset; }
-        
-        let t = ( this.time - this.start ) / ( this.end - this.start );
-        // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;  // commented because of sigml purposes
-        t = ( t > 1 ) ? 1 : t;
-        
-        // angle to rotate startPoint
-        let angle = this.targetDeltaAngle * t;
-        let absAngle = Math.abs( angle );
-        let absTarget = Math.abs( this.targetDeltaAngle );
-        
+        if ( this.time > this.attackPeak && this.time < this.relax ){ return this.finalOffset; }
+        if ( this.time >= this.relax && this.time <= this.end ){ 
+            this.finalOffset.copy( this.startPoint );
+            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
+            this.finalOffset.multiplyScalar( ( this.end - this.time ) / ( this.end - this.relax ) );
+            return this.finalOffset;
+        }
         if ( this.time >= this.end ){ 
             this.transition = false; 
             this.finalOffset.set(0,0,0); 
             return this.finalOffset;
         }
+
+        //if ( time > start && time < attackpeak ) start attackpeak
+        let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
+        // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5;  // commented because of sigml purposes
+        t = ( t > 1 ) ? 1 : t;
+        
+        // angle to rotate startPoint
+        let angle = this.targetDeltaAngle * t;
         
         this.finalOffset.copy( this.startPoint );
         this.finalOffset.applyAxisAngle( this.axis, angle )
 
-        let easing = 1;
-
-        if ( absAngle < this.easingAngle ){ // intro easing
-            easing = absAngle / this.easingAngle;
-            easing = Math.sin( Math.PI * easing - Math.PI*0.5 ) * 0.5 + 0.5;
-            this.finalOffset.multiplyScalar( easing );
-        }
-        else if ( absAngle > ( absTarget - this.easingAngle ) ){ // outro easing
-            easing = ( absTarget - absAngle ) / this.easingAngle;
-            easing = Math.sin( Math.PI * easing - Math.PI*0.5 ) * 0.5 + 0.5;
-            this.finalOffset.multiplyScalar( easing );
-        }
-
         // zigzag 
-        let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * easing;
-        this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
-        this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
-        this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
+        if ( Math.abs(this.zigzagSize) > 0.0001 ){
+            let easing = Math.max( 0, Math.min( 1, Math.min( ( this.time - this.start ) / 0.5, ( this.attackPeak - this.time ) / 0.5 ) ) );
+            let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * easing;
+            this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
+            this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
+            this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
+        }
 
+        this.finalOffset.sub( this.startPoint );
         return this.finalOffset;
     }
 
@@ -326,18 +320,12 @@ class CircularMotion {
 
         // angle computations
         let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
-        let endAngle = isNaN( bml.endAngle ) ? ( 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
+        let endAngle = isNaN( bml.endAngle ) ? ( startAngle + 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
         this.targetDeltaAngle = endAngle - startAngle;
         if( symmetry ){ // startAngle does not need to change. EndAngle is no longer used
             this.targetDeltaAngle *= -1;
         }
-
-        // add extra angle for ease-in and ease-out
-        let easing = ( ( this.targetDeltaAngle < 0 ) ? (-1) : 1 ) * this.easingAngle;
-        startAngle -= easing; // add ease-in ( contrary direction of the deltaAnge )
-        this.targetDeltaAngle += 2 * easing;
-
-        
+       
         // rotate starting point from default plane (xy) to the user's specified (given by axis)
         _tempVec3_0.set(0,0,1);        // default axis
         let dot = _tempVec3_0.dot( direction );
@@ -372,6 +360,8 @@ class CircularMotion {
         // check and set timings
         this.start = bml.start || 0;
         this.end = bml.end || (bml.start + 1);
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
         this.time = 0; 
 
         // flag to start 
