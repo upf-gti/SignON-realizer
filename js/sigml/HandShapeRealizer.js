@@ -5,7 +5,7 @@ import * as THREE from "three";
 // Four values per finger (0=splay, 1=base, 2=mid, 3=tip)
 let handShapes = {
     // raw handshapes
-    fist:           { selected:[0,0,0,0,0], shape:[ [1,1,0.6,0.5], [0,1,1,1], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
+    fist:           { selected:[0,0,0,0,0], shape:[ [-1,0.3,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
     finger2:        { selected:[0,1,0,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
     finger23:       { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,0,0,0], [0,1,1,1], [0,1,1,1] ] },
     finger23spread: { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0.8,0,0,0], [-0.2,0,0,0], [0,1,1,1], [0,1,1,1] ] },
@@ -26,8 +26,10 @@ let thumbShapes = {
     touch:  [-1,0.3,0,0],
     out:    [0, -0.3, 0, 0],
     opposed: [1, 1, 0, 0],
-    across: [-0.5,0.7,0.7,1], 
+    across: [1,1,0.6,0.5], 
+    // across: [-0.5,0.7,0.7,1], 
 }
+
 
 /* bending Mode:
     1 - all fingers use the same parameters
