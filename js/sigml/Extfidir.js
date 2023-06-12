@@ -118,6 +118,16 @@ class Extfidir {
         let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
         let bearing = Math.atan2( targetPoint.x, targetPoint.z );
         
+        // this solves ir
+        if ( this.mirror ){ 
+            if ( bearing > 1.58825 ){ bearing -= Math.PI * 2; } 
+        } 
+        else {
+            if ( bearing < -1.58825 ){ bearing += Math.PI * 2; } 
+        }
+
+
+
         let wristBone = this.wristBone;
         wristBone.quaternion.set(0,0,0,1); // swing computation requires it to be with no palmor
         wristBone.updateWorldMatrix( true );
@@ -199,7 +209,7 @@ class Extfidir {
             this._computeSwingFromCurrentPose( this.defPoint, this.srcG ); 
             nlerpQuats( this.curG, this.trgG, this.srcG, t ); // reusing srcG as defG
             // this.curG.slerpQuaternions( this.trgG, this.srcG, t ); // slerp performs worse than nlerp for some reason (about appearance, not hardware performance)
-            this.curPalmorRefactor = this.trgPalmorRefactor * (1-t) + this.srcPalmorRefactor * t;
+            this.curPalmorRefactor = this.trgPalmorRefactor * (1-t) + this.defPalmorRefactor * t;
             return;
         }
         
