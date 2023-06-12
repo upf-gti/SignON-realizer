@@ -624,7 +624,7 @@ class AppGUI {
     
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, handshape: "flat", thumbshape: "touch", hand: "right" },
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, palmor: "dr", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, palmor: "d", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, extfidir: "u", hand: "right" },
                         { type: "gesture", start: halloStart + hallo * 0.4, attackPeak: halloStart + hallo, relax:halloStart + hallo + 1, end: halloStart + hallo + 2, motion: "directed", direction: "r", distance: 0.05, curve:'u' },
     
@@ -643,7 +643,7 @@ class AppGUI {
     
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, handshape: "finger2", thumbshape:"opposed", hand: "right" },
-                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, palmor: "l", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, palmor: "u", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, extfidir: "uo", hand: "right", mode:"relative" },
                         
                         { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, handshape: "pinch12", hand: "right" },
@@ -663,8 +663,8 @@ class AppGUI {
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, handshape: "finger2", hand: "both" },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "dr", hand: "right" },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "d", hand: "left" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "l", hand: "right" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "r", hand: "left" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
                         { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 1, end: end + 2, motion: "directed", direction:"l", hand: "both", lrSym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
                     ]
@@ -692,7 +692,7 @@ class AppGUI {
     
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, locationArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, handshape: "flat", thumbshape: "touch", hand: "right" },
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, palmor: "dr", hand: "right" },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, palmor: "d", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, extfidir: "u", hand: "right" },
                         { type: "gesture", start: halloStart + hallo * 0.4, attackPeak: halloStart + hallo, relax:halloStart + hallo, end: halloStart + hallo + 0.5, motion: "directed", direction: "r", distance: 0.05, curve:'u' },
                         // leuk                  
@@ -700,7 +700,7 @@ class AppGUI {
     
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, handshape: "finger2", thumbshape:"opposed", hand: "right" },
-                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, palmor: "l", hand: "right" },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, palmor: "u", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, extfidir: "uo", hand: "right", mode:"relative" },
                         
                         { type: "gesture", start: leukStart + leuk * 0.4, attackPeak: leukStart + leuk, relax: 100000, end: 100000, handshape: "pinch12", hand: "right" },
@@ -711,8 +711,8 @@ class AppGUI {
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, handshape: "finger2", hand: "both" },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "dr", hand: "right" },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "d", hand: "left" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "l", hand: "right" },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "r", hand: "left" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  extfidir: "u", secondExtfidir: "uo", hand: "both" },
                         { type: "gesture", start: ontStart + ontmoeten * 0.4, attackPeak: ontStart + ontmoeten, relax: end + 0.5, end: end + 1.5, motion: "directed", direction:"l", hand: "both", lrSym: true, distance: 0.025, side:"r", sideDistance: 0.1 },
     
@@ -733,7 +733,7 @@ class AppGUI {
     
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, handshape: "finger23spread", thumbshape: "across", hand: "right",  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, extfidir: "u", hand: "right" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, palmor: "ul", hand: "right" },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, palmor: "ur", hand: "right" },
                         
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, locationArm: "chest", hand: "right", distance: 0.25, side: 'r', sideDistance: 0.05 },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, motion: "wrist", mode:"swing", hand: "right", intensity:0.1 },
@@ -756,7 +756,7 @@ class AppGUI {
                         
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "o", hand: "both" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "both", lrSym: true },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
                         
                         { type: "speech", start:  start + sign * 0.1, end: 100000, text: this.app.wordsToArpa("bos", "NGT") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", direction:'r', distance: 0.05, hand: "right", zigzag: 'u', zigzagSize: 0.1 },
@@ -780,7 +780,7 @@ class AppGUI {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
                         
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "uo", hand: "both" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "l", hand: "both", lrSym: true },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "u", hand: "both", lrSym: true },
                         
                         { type: "speech", start: start + sign * 0.1, end: 100000, text: this.app.wordsToArpa("aarde", "NGT") + ".", sentInt: 0.5 },
                         { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "directed", lrSym:true, direction:'r', distance: 0.05, hand: "both"},
@@ -811,8 +811,8 @@ class AppGUI {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "ol", secondExtfidir: "o", hand: "right"  },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, extfidir: "or",secondExtfidir: "dor", hand: "left", },
     
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dr", hand: "right" },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "r", hand: "left" },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "dl", hand: "right" },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, palmor: "ur", hand: "left" },
                     
                        { type: "gesture", start: start + sign * 0.1, attackPeak: start + sign, relax: end - relax, end: end, motion: "circular", direction: "uir", endAngle:360*3, distance:0.02, hand: "right"},
     

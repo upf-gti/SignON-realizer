@@ -303,8 +303,8 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
         obj.secondMainBend = attributes.second_mainbend;
         obj.thumbshape = attributes.thumbpos;
         obj.secondThumbshape = attributes.second_thumbpos;
-        obj.tco = attributes.ceeopening == "slack" ? 0.5 : 1; // "tight" mode not supported 
-        obj.secondtco = attributes.second_ceeopening == "slack" ? 0.5 : 1; // "tight" mode not supported 
+        obj.tco = attributes.ceeopening == "slack" ? 0.5 : 0; // "tight" mode not supported 
+        obj.secondtco = attributes.second_ceeopening == "slack" ? 0.5 : 0; // "tight" mode not supported 
         obj.bend1 = attributes.bend1;
         obj.bend2 = attributes.bend2;
         obj.bend3 = attributes.bend3;

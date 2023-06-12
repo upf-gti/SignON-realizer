@@ -85,6 +85,8 @@ class BodyController{
         }
 
         this.dominant = this.right;
+
+        this._tempQ_0 = new THREE.Quaternion();
     }
 
     _resetArm( arm ){
@@ -106,10 +108,10 @@ class BodyController{
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "right", distance: 0.065, side: "dl", sideDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationArm: "neutral", hand: "left",  distance: 0.04, side: "r", sideDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "d", secondPalmor: "dr", hand: "right", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "dl", hand: "left", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "right", mode: "local", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "do", secondExtfidir: "o", hand: "left", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "right", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "left", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "right", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "left", mode: "local", shift:true } );
 
     }
 
@@ -137,21 +139,10 @@ class BodyController{
         if( computeFlag ){
             this.skeleton.bones[ ikChain.chain[0] ].getWorldPosition( this.ikTarget.position );
             this.ikTarget.position.add( this.locationUpdateOffset );
-
-            // debug points desired location
-            // let k = new THREE.THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: this.color , depthTest:false, depthWrite: false }) );
-            // k.position.copy(this.ikTarget.position);
-            // window.global.app.scene.add( k );
     
             ikChain.enabler = true;
             this.ikSolver.update();
             ikChain.enabler = false;
-    
-            // debug points position after ik
-            // this.skeleton.bones[ ikChain.chain[0] ].getWorldPosition( this.ikTarget.position );
-            // let kk = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ depthTest:false, depthWrite: false }) );
-            // kk.position.copy(this.ikTarget.position);
-            // window.global.app.scene.add( kk );
         }    
     }
 
@@ -160,29 +151,36 @@ class BodyController{
 
         // overwrite arm posture.
         arm.loc.update( dt );
-         for( let i = 0; i < arm.loc.curG.length ; ++i ){ 
+        for( let i = 0; i < arm.loc.curG.length ; ++i ){ 
             bones[ arm.loc.idx + i ].quaternion.copy( arm.loc.curG[i] );
         }
         this._updateLocationMotions( dt, arm.armChain, arm.locMotions ); // IK
-
+       
         arm.locationLastFrameQuats[0].copy( bones[ arm.loc.idx ].quaternion );
         arm.locationLastFrameQuats[1].copy( bones[ arm.loc.idx + 1 ].quaternion );
         arm.locationLastFrameQuats[2].copy( bones[ arm.loc.idx + 2 ].quaternion );
-     
-        // ADD twist to elbow (twist before swing scheme). Overwrite wrist rotation (put only twist)
-        arm.palmor.update( dt );
-        bones[ arm.palmor.idx ].quaternion.multiply( arm.palmor.curG[0] ); // elbow - add rotation
-        bones[ arm.palmor.idx + 1 ].quaternion.copy( arm.palmor.curG[1] ); // wrist - overwrite
 
-        // extfidir - ADD only swing (twist before swing scheme)
-        arm.extfidir.update(dt);
-        bones[ arm.extfidir.idx ].quaternion.premultiply( arm.extfidir.curG ); // wrist - add rotation
+        // wrist extfidir
+        bones[ arm.extfidir.idx ].quaternion.set(0,0,0,1);
+        arm.extfidir.update( dt );
+        bones[ arm.extfidir.idx ].quaternion.copy( arm.extfidir.curG );
+
+        // wrist (and forearm) twist
+        arm.palmor.update( dt );
+        let q = this._tempQ_0;
+        let palmorAngle = arm.palmor.curAngle * arm.extfidir.curPalmorRefactor
+        q.setFromAxisAngle( arm.palmor.twistAxisWrist, palmorAngle ); // wrist
+        bones[ arm.palmor.idx + 1 ].quaternion.multiply( q );
+        q.setFromAxisAngle( arm.palmor.twistAxisForeArm, 0.65 * palmorAngle + arm.extfidir.foreArmCorrectionAngle ); // forearm twist + correction angle (see extfidir)
+        bones[ arm.palmor.idx ].quaternion.multiply( q );
+        q.invert();
+        bones[ arm.extfidir.idx ].quaternion.premultiply( q ); // this forearm twist is not taken into account in extfidir computation. Adding inverse in wrist counters it 
 
         // wristmotion. ADD rotation to wrist
         arm.wristMotion.update(dt); // wrist - add rotation
 
 
-        // overwrite finger rotations
+        // // overwrite finger rotations
         arm.handshape.update( dt );
         arm.fingerplay.update(dt); // add finger rotations
         bones[ arm.handshape.idxs.index  ].quaternion.premultiply( arm.fingerplay.index );
@@ -291,6 +289,7 @@ class BodyController{
 
         return false;
     }
+
 }
 
 

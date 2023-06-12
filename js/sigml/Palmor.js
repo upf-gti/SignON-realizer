@@ -1,16 +1,16 @@
 import * as THREE from "three";
 import { directionStringSymmetry, mirrorQuat, nlerpQuats } from "./SigmlUtils.js";
 
-// convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
+// convert rotation names into radiants. Using positive/negative angles helps with correct interpolation path
 let palmorRightTable = {
-    'u' : 160 * Math.PI / 180, 
+    'ur': 225 * Math.PI / 180,
+    'u' : 180 * Math.PI / 180, 
     'ul': 135 * Math.PI / 180,
     'l' : 90 * Math.PI / 180,
     'dl': 45 * Math.PI / 180,
     'd' : 0 * Math.PI / 180,
     'dr': -45 * Math.PI / 180,
     'r' : -90 * Math.PI / 180,
-    'ur': -135 * Math.PI / 180,
 }
 let palmorLeftTable = {
     'l' : 90 * Math.PI / 180,
@@ -19,8 +19,8 @@ let palmorLeftTable = {
     'dr': -45 * Math.PI / 180,
     'r' : -90 * Math.PI / 180,
     'ur': -135 * Math.PI / 180,
-    'u' : -160 * Math.PI / 180, 
-    'ul': -195 * Math.PI / 180,
+    'u' : -180 * Math.PI / 180, 
+    'ul': -225 * Math.PI / 180,
 }
 
 // receives bml instructions and animates the hands
@@ -43,7 +43,6 @@ class Palmor {
         this.trgAngle = 0;
         this.srcAngle = 0;
         this.curAngle = 0;
-        this.curG = [ new THREE.Quaternion(), new THREE.Quaternion() ];
 
         this.time = 0; // current time of transition
         this.start = 0;
@@ -61,24 +60,16 @@ class Palmor {
         this.transition = false;
         this.defAngle = 0;
         this.curAngle = 0;
-        this.curG[0].set(0,0,0,1);
-        this.curG[1].set(0,0,0,1);
     }
 
     update( dt ) {
         if ( !this.transition ){ return; } // no animation required
         
         this.time += dt;
-        
-        let foreArmRatio = 0.45;
-        let wristRatio = 0.55;
-
         // wait in same pose
         if ( this.time < this.start ){ return; }
         if ( this.time > this.attackPeak && this.time < this.relax ){ 
             this.curAngle = this.trgAngle;
-            this.curG[0].setFromAxisAngle( this.twistAxisForeArm, this.trgAngle * foreArmRatio );
-            this.curG[1].setFromAxisAngle( this.twistAxisForeArm, this.trgAngle * wristRatio );
             return; 
         }
         
@@ -86,12 +77,7 @@ class Palmor {
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
             if ( t > 1 ){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-
-            let angle = this.srcAngle * ( 1 - t ) + this.trgAngle * t;
-            this.curAngle = angle;
-            this.curG[0].setFromAxisAngle( this.twistAxisForeArm, angle * foreArmRatio );
-            this.curG[1].setFromAxisAngle( this.twistAxisForeArm, angle * wristRatio );
-            
+            this.curAngle = this.srcAngle * ( 1 - t ) + this.trgAngle * t;
             return;
         }
 
@@ -99,11 +85,7 @@ class Palmor {
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
             if ( t > 1 ){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-
-            let angle = this.trgAngle * ( 1 - t ) + this.defAngle * t;
-            this.curAngle = angle;
-            this.curG[0].setFromAxisAngle( this.twistAxisForeArm, angle * foreArmRatio );
-            this.curG[1].setFromAxisAngle( this.twistAxisForeArm, angle * wristRatio );
+            this.curAngle = this.trgAngle * ( 1 - t ) + this.defAngle * t;
         }
         
         if ( this.time > this.end ){ 
@@ -123,6 +105,7 @@ class Palmor {
 
         let rotationName = bml.palmor;
         let secondRotName = bml.secondPalmor;
+
         if ( rotationName && symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
         if ( secondRotName && symmetry ){ secondRotName = directionStringSymmetry( secondRotName, symmetry ); }
         

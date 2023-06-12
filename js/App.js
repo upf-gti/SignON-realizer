@@ -303,7 +303,7 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 6 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 9 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;

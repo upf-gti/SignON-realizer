@@ -338,8 +338,7 @@ Yaw and Pitch of the wrist joint.
     extfidir: "l", // string  26 directions
     
     // optionals
-    secondExtfidir: "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir
-    mode: "local", // number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
+    secondExtfidir: "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
     shift: false, // optional
 }
 

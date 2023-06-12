@@ -3,52 +3,36 @@ import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let extfidirPointTable = {
-    'u'     : new THREE.Vector3(  0,   2,   0 ),   
-    'ul'    : new THREE.Vector3(  1,   2,   0 ),   
-    'l'     : new THREE.Vector3(  1,   1,   0 ),   
-    'dl'    : new THREE.Vector3(  1,   0,   0 ),   
-    'd'     : new THREE.Vector3(  0,   0,   0 ),   
-    'dr'    : new THREE.Vector3( -1,   0,   0 ),  
-    'r'     : new THREE.Vector3( -1,   1,   0 ),  
-    'ur'    : new THREE.Vector3( -1,   2,   0 ),  
+    'u'     : new THREE.Vector3(  0,   1,   0 ),   
+    'ul'    : new THREE.Vector3(  1,   1,   0 ),   
+    'l'     : new THREE.Vector3(  1,   0,   0 ),   
+    'dl'    : new THREE.Vector3(  1,   -1,   0 ),   
+    'd'     : new THREE.Vector3(  0,   -1,   0 ),   
+    'dr'    : new THREE.Vector3( -1,   -1,   0 ),  
+    'r'     : new THREE.Vector3( -1,   0,   0 ),  
+    'ur'    : new THREE.Vector3( -1,   1,   0 ),  
 
-    "uo"    : new THREE.Vector3(  0,   2,   1 ),
-    "uol"   : new THREE.Vector3(  1,   2,   1 ),
-    "ol"    : new THREE.Vector3(  1,   1,   1 ),
-    "dol"   : new THREE.Vector3(  1,   0,   1 ),
-    "do"    : new THREE.Vector3(  0,   0,   1 ),
-    "dor"   : new THREE.Vector3( -1,   0,   1 ),
-    "or"    : new THREE.Vector3( -1,   1,   1 ),
-    "uor"   : new THREE.Vector3( -1,   2,   1 ),
-    "o"     : new THREE.Vector3(  0,   1,   1 ),
+    "uo"    : new THREE.Vector3(  0,   1,   1 ),
+    "uol"   : new THREE.Vector3(  1,   1,   1 ),
+    "ol"    : new THREE.Vector3(  1,   0,   1 ),
+    "dol"   : new THREE.Vector3(  1,   -1,   1 ),
+    "do"    : new THREE.Vector3(  0,   -1,   1 ),
+    "dor"   : new THREE.Vector3( -1,   -1,   1 ),
+    "or"    : new THREE.Vector3( -1,   0,   1 ),
+    "uor"   : new THREE.Vector3( -1,   1,   1 ),
+    "o"     : new THREE.Vector3(  0,   0,   1 ),
     
-    "ui"    : new THREE.Vector3(  0,   2,   -1 ),
-    "uil"   : new THREE.Vector3(  1,   2,   -1 ),
-    "il"    : new THREE.Vector3(  1,   1,   -1 ),
-    "dil"   : new THREE.Vector3(  1,   0,   -1 ),
-    "di"    : new THREE.Vector3(  0,   0,   -1 ),
-    "dir"   : new THREE.Vector3( -1,   0,   -1 ),
-    "ir"    : new THREE.Vector3( -1,   1,   -1 ),
-    "uir"   : new THREE.Vector3( -1,   2,   -1 ),
-    "i"     : new THREE.Vector3(  0,   1,   -1 ),
+    "ui"    : new THREE.Vector3(  0,   1,   -1 ),
+    "uil"   : new THREE.Vector3(  1,   1,   -1 ),
+    "il"    : new THREE.Vector3(  1,   0,   -1 ),
+    "dil"   : new THREE.Vector3(  1,   -1,   -1 ),
+    "di"    : new THREE.Vector3(  0,   -1,   -1 ),
+    "dir"   : new THREE.Vector3( -1,   -1,   -1 ),
+    "ir"    : new THREE.Vector3( -1,   0,   -1 ),
+    "uir"   : new THREE.Vector3( -1,   1,   -1 ),
+    "i"     : new THREE.Vector3(  0,   0,   -1 ),
 }
 
-let EXTFIDIR_MODES = {
-    1 : 1,
-    ABSOLUTE : 1,
-    absolute : 1,
-    A: 1,
-
-    2 : 2,
-    RELATIVE : 2,
-    relative : 2,
-    R: 2,
-
-    3 : 3,
-    LOCAL : 3,
-    local : 3,
-    L: 3,
-}
 
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
@@ -59,15 +43,32 @@ class Extfidir {
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
         this.idx = boneMap[ handName + "Wrist" ]; // wrist index
+        this.wristBone = bones[ this.idx ];
         this.twistAxis = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize();
-
-        this.defmode = EXTFIDIR_MODES.LOCAL; // is default positioning absolute, relative or local 
+        this.leftAxis = ( new THREE.Vector3() ).subVectors( 
+            isLeftHand ? bones[ boneMap[ handName + "HandRing" ] ].position : bones[ boneMap[ handName + "HandIndex" ] ].position, 
+            isLeftHand ? bones[ boneMap[ handName + "HandIndex" ] ].position : bones[ boneMap[ handName + "HandRing" ] ].position ).normalize();
+        this.upAxis = ( new THREE.Vector3() ).crossVectors( this.twistAxis, this.leftAxis ).normalize(); // compute Y
+        this.leftAxis.crossVectors( this.upAxis, this.twistAxis ).normalize(); // compute X
+        
         this.defPoint = new THREE.Vector3();
         this.trgPoint = new THREE.Vector3(); 
         // no defG  = new THREE.Quaternion. Will reuse srcG and trgG during relax-end
         this.trgG = new THREE.Quaternion();
         this.srcG = new THREE.Quaternion();
         this.curG = new THREE.Quaternion();
+        
+        // when extfidir is "inwards", the "l" and "r" are swapped. Make the change gradually
+        this.srcPalmorRefactor = 1;
+        this.trgPalmorRefactor = 1;
+        this.curPalmorRefactor = 1;
+        this.defPalmorRefactor = 1;
+        
+        // when positioning the hand "outwards down", there might be some twist needed for the forearm.
+        this.foreArmCorrectionAngle = 0;
+        
+        
+        this.reset();
         
         this.time = 0; // current time of transition
         this.start = 0;
@@ -76,101 +77,105 @@ class Extfidir {
         this.end = 0;
         this.transition = false;
 
-        this.mode = EXTFIDIR_MODES.RELATIVE;
-
-        this.tempVec3 = new THREE.Vector3(); // swing function
-        this.tempQuat1 = new THREE.Quaternion(); // swing function
-        this.tempQuat2 = new THREE.Quaternion(); // swing function 
-        this.tempMat4 = new THREE.Matrix4(); // swing function 
-        
-        // DEBUG render rotation table as spheres
-        // if ( !window.checks ){
-        //     this.debugPoints = [];
-        //     for ( let e in extfidirPointTable ){
-        //         let color = ( ( Math.max( 0, Math.min( 1, 0.5*(extfidirPointTable[ e ].z + 1) ) ) * 0xff ) & 0xff ) | 0xffff00;
-        //         let k = new THREE.Mesh( new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshPhongMaterial({ color: color , depthWrite: true }) );
-        //         k.position.copy( extfidirPointTable[ e ] );
-        //         k.name = e;
-        //         window.global.app.scene.add( k );
-        //         this.debugPoints.push( k ); 
-        //     }
-        //     window.checks = true;
-        // }
-        // set default pose
-
-        this.reset();
-
+        this._tempMat4_0 = new THREE.Matrix4();
+        this._tempV3_0 = new THREE.Vector3(); // world pos and cross products
+        this._tempV3_1 = new THREE.Vector3(); // z axis
+        this._tempV3_2 = new THREE.Vector3(); // x axis
+        this._tempV3_3 = new THREE.Vector3(); // y axis
+        this._tempQ_0 = new THREE.Quaternion();
     }
-
-    // _debug_pointsUpdate( x,y,z, worldMat = null ){
-    //     for ( let i = 0; i < this.debugPoints.length; ++i ){
-    //         this.debugPoints[i].position.copy( extfidirPointTable[ this.debugPoints[i].name ] );
-    //         this.debugPoints[i].position.x += x;
-    //         this.debugPoints[i].position.y += y;
-    //         this.debugPoints[i].position.z += z;
-    //         if ( worldMat ){
-    //              this.debugPoints[i].position.applyMatrix4( worldMat );
-    //         } 
-    //     }
-    // }
 
     reset() {
         // Force pose update to flat
         this.transition = false;
         this.defPoint.copy( extfidirPointTable[ 'o' ] );
-        this.defmode = EXTFIDIR_MODES.LOCAL;
+        this.defPalmorRefactor = 1;
         this.curG.copy( extfidirPointTable[ 'o' ] );
+        this.curPalmorRefactor = 1;
+        this.foreArmCorrectionAngle = 0;
     }
 
-    // compute the swing rotation to get the twistAxis to point at a certain location
-    _computeSwingFromCurrentPose( targetPoint, wristIdx, resultSwingQuat, mode ){
-        let wristBone = this.skeleton.bones[ wristIdx ];
-        wristBone.updateWorldMatrix( true, true );
-        this.tempMat4.copy( wristBone.matrixWorld );
-        this.tempMat4.invert();
+    
+    _computeSwingFromCurrentPose( targetPoint, resultWristQuat ){
+        //targetPoint must be normalized
+
+        // if ( mode == EXTFIDIR_MODES.RELATIVE ){ // center rotation points on wrist ( wristWorldPos + targetPoint )
+            this._computeRelative( targetPoint, resultWristQuat );
+        // } 
+        // else{ // EXTFIDIR_MODES.LOCAL
+        //     this.foreArmCorrectionAngle = 0;
+        //     let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
+        //     let bearing = Math.atan2( targetPoint.x, targetPoint.z );
+
+        //     resultWristQuat.setFromAxisAngle( this.leftAxis, -elevation );
+        //     this._tempQ_0.setFromAxisAngle( this.upAxis, bearing );
+        //     resultWristQuat.premultiply( this._tempQ_0 );
+        // }
+    }
+
+      // compute the swing rotation so as to get the twistAxis to point at a certain location. It finds the forearm twist correction
+      _computeRelative( targetPoint, resultWristQuat ){
+        let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
+        let bearing = Math.atan2( targetPoint.x, targetPoint.z );
         
-        // compute targetPoint into local wrist coordinates
-        let localPoint = this.tempVec3;
-        if ( mode == EXTFIDIR_MODES.RELATIVE ){ // center rotation points on wrist (no rotation involved)
-            localPoint.setFromMatrixPosition( wristBone.matrixWorld );
-            // this._debug_pointsUpdate( localPoint.x, localPoint.y - extfidirPointTable['o'].y, localPoint.z );
-            localPoint.add( targetPoint );
-            localPoint.applyMatrix4( this.tempMat4 );
-        } 
-        else if ( mode == EXTFIDIR_MODES.ABSOLUTE ) { // center rotation points to 0,0,0
-            // this._debug_pointsUpdate( 0,0,0 );
-            localPoint.copy( targetPoint );
-            localPoint.applyMatrix4( this.tempMat4 );
-        }
-        else{ // EXTFIDIR_MODES.LOCAL
-            // this._debug_pointsUpdate( 0,0,0, wristBone.matrixWorld );
-            localPoint.copy( targetPoint );    
-        }
-        localPoint.normalize();
-
-        // compute rotation
-        let angle = this.twistAxis.angleTo( localPoint );
-
-        let rotAx = this.tempVec3;
-        rotAx.crossVectors( this.twistAxis, localPoint ); // localPoint & rotAx are this.tempVec3
+        let wristBone = this.wristBone;
+        wristBone.quaternion.set(0,0,0,1); // swing computation requires it to be with no palmor
+        wristBone.updateWorldMatrix( true );
+        let invWorld = this._tempMat4_0;
+        invWorld.copy( wristBone.matrixWorld );
+        invWorld.invert();
+        let wristWorldPos = this._tempV3_0;
+        wristWorldPos.setFromMatrixPosition( wristBone.matrixWorld );
+        
+        let worldZAxisToLocal = this._tempV3_1.set(0,0,10000);
+        worldZAxisToLocal.add(wristWorldPos);
+        worldZAxisToLocal.applyMatrix4( invWorld );
+        worldZAxisToLocal.normalize();
+        
+        let worldXAxisToLocal = this._tempV3_2.set(10000,0,0);
+        worldXAxisToLocal.add( wristWorldPos );
+        worldXAxisToLocal.applyMatrix4( invWorld );
+        worldXAxisToLocal.normalize();
+        
+        let worldYAxisToLocal = this._tempV3_3.crossVectors( worldZAxisToLocal, worldXAxisToLocal ).normalize();
+        
+        // make hand point out in world coordinates ( +Z )
+        let angle = Math.acos( this.twistAxis.dot( worldZAxisToLocal ) );
+        let rotAx = this._tempV3_0;
+        rotAx.crossVectors( this.twistAxis, worldZAxisToLocal );
         rotAx.normalize();
+        resultWristQuat.setFromAxisAngle( rotAx, angle );
+
+        // adjust hand orientation so it is facing down in world coordinates
+        let newLeftAxis = this._tempV3_0.copy( this.leftAxis ).applyQuaternion( resultWristQuat );
+        angle = Math.acos( newLeftAxis.dot( worldXAxisToLocal ) );
+        rotAx.crossVectors( newLeftAxis, worldXAxisToLocal ); // should be worldZAxis, but sign might differ
+        rotAx.normalize();
+        this._tempQ_0.setFromAxisAngle( rotAx, angle );
+        resultWristQuat.premultiply( this._tempQ_0 );
+
+        this.foreArmCorrectionAngle = angle * ( worldZAxisToLocal.dot( rotAx ) < 0 ? -1 : 1 );
         
-        this.tempQuat1.setFromAxisAngle( rotAx, angle ); // delta rotation for this frame
-        this.tempQuat1.premultiply( wristBone.quaternion ); // target rotation
-        
-        twistSwingQuats( this.tempQuat1, this.twistAxis, this.tempQuat2, resultSwingQuat ); // take only swing
+        // now, add extfidir        
+        let elevationRot = this._tempQ_0.setFromAxisAngle( worldXAxisToLocal, -elevation ); // -elevation because of the axis vs atan
+        resultWristQuat.premultiply( elevationRot );
+        let bearingRot = this._tempQ_0.setFromAxisAngle( worldYAxisToLocal, bearing );
+        resultWristQuat.premultiply( bearingRot );
+
     }
 
     update( dt ) {
+
         if ( !this.transition ){ return; } // no animation required
         
         this.time += dt;
-        
+
         // wait in same pose
-        if ( this.time < this.start ){ return; }
+        if ( this.time < this.start ){ this.curPalmorRefactor = this.srcPalmorRefactor; return; }
         if ( this.time > this.attackPeak && this.time < this.relax ){ 
-            this._computeSwingFromCurrentPose( this.trgPoint, this.idx, this.trgG, this.mode ); // trgG update needed for relax-end
+            this._computeSwingFromCurrentPose( this.trgPoint, this.trgG ); // trgG update needed for relax-end
             this.curG.copy( this.trgG );
+            this.curPalmorRefactor = this.trgPalmorRefactor;
             return; 
         }
         
@@ -179,9 +184,10 @@ class Extfidir {
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            this._computeSwingFromCurrentPose( this.trgPoint, this.idx, this.trgG, this.mode );
+            this._computeSwingFromCurrentPose( this.trgPoint, this.trgG );
             nlerpQuats( this.curG, this.srcG, this.trgG, t );
             // this.curG.slerpQuaternions( this.srcG, this.trgG, t ); // slerp performs worse than nlerp for some reason (about appearance, not hardware performance)
+            this.curPalmorRefactor = this.srcPalmorRefactor * (1-t) + this.trgPalmorRefactor * t;
             return;
         }
 
@@ -190,18 +196,17 @@ class Extfidir {
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
 
-            this._computeSwingFromCurrentPose( this.defPoint, this.idx, this.srcG, this.defmode ); 
+            this._computeSwingFromCurrentPose( this.defPoint, this.srcG ); 
             nlerpQuats( this.curG, this.trgG, this.srcG, t ); // reusing srcG as defG
             // this.curG.slerpQuaternions( this.trgG, this.srcG, t ); // slerp performs worse than nlerp for some reason (about appearance, not hardware performance)
+            this.curPalmorRefactor = this.trgPalmorRefactor * (1-t) + this.srcPalmorRefactor * t;
             return;
         }
         
         // local extfidir does not require constant update
         if ( this.time >= this.end ){ 
-            this._computeSwingFromCurrentPose( this.defPoint, this.idx, this.curG, this.defmode );
-            if( this.defmode == EXTFIDIR_MODES.LOCAL ){ 
-                this.transition = false; 
-            } 
+            this._computeSwingFromCurrentPose( this.defPoint, this.curG );
+            this.curPalmorRefactor = this.defPalmorRefactor;
         }
 
     }
@@ -238,17 +243,14 @@ class Extfidir {
 
         // compute midpoint between primary and secondary extfidir
         this.trgPoint.lerpVectors( point, secondPoint, 0.5 );
-        
-        // absolute positioning (tables) is at 1 meter. Relative & Local should be centered at the wrist
-        this.mode = ( EXTFIDIR_MODES[ bml.mode ] ) ? EXTFIDIR_MODES[ bml.mode ] : EXTFIDIR_MODES.RELATIVE; 
-        if( this.mode != EXTFIDIR_MODES.ABSOLUTE ){ 
-            this.trgPoint.y -= extfidirPointTable['o'].y; 
-        }
-        
+
+
+        this.trgPalmorRefactor = this.trgPoint.z < 0 ? -1 : 1;
+        this.srcPalmorRefactor = this.curPalmorRefactor;
         // set defualt point if necessary
         if( bml.shift ){
             this.defPoint.copy( this.trgPoint );
-            this.defmode = this.mode;
+            this.defPalmorRefactor = this.trgPalmorRefactor;
         }
         
         // check and set timings
@@ -259,6 +261,8 @@ class Extfidir {
         this.time = 0; 
         
         this.transition = true;
+
+
     }
 
 }
