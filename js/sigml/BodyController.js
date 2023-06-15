@@ -180,13 +180,9 @@ class BodyController{
         arm.wristMotion.update(dt); // wrist - add rotation
 
 
-        // // overwrite finger rotations
-        arm.handshape.update( dt );
-        arm.fingerplay.update(dt); // add finger rotations
-        bones[ arm.handshape.idxs.index  ].quaternion.premultiply( arm.fingerplay.index );
-        bones[ arm.handshape.idxs.middle ].quaternion.premultiply( arm.fingerplay.middle );
-        bones[ arm.handshape.idxs.ring   ].quaternion.premultiply( arm.fingerplay.ring );
-        bones[ arm.handshape.idxs.pinky  ].quaternion.premultiply( arm.fingerplay.pinky );
+        // overwrite finger rotations
+        arm.fingerplay.update(dt); // motion, prepare offsets
+        arm.handshape.update( dt, arm.fingerplay.curBends );
         
     }
 

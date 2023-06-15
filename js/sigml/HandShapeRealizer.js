@@ -150,7 +150,7 @@ class HandShapeRealizer {
     }
        
     // must always update bones. (this.transition would be useless)
-    update( dt ) {
+    update( dt, fingerplayResult ) {
         
         if ( this.transition ) {
             this.time += dt;
@@ -205,7 +205,6 @@ class HandShapeRealizer {
         }
 
 
-        // TODO        
         let bones = this.skeleton.bones;
         let bendAxes = (this.mirror) ? avatarHandAxes.L.bends : avatarHandAxes.R.bends;    
         let splayAxes = (this.mirror) ? avatarHandAxes.L.splays : avatarHandAxes.R.splays; 
@@ -213,19 +212,24 @@ class HandShapeRealizer {
         
 
         // all finger bends
-        bones[ this.idxs.thumb      ].quaternion.setFromAxisAngle(  bendAxes[0],  ((1-c[0][1])*1.5-0.5) * (-Math.PI*0.2) ); // these maths because of weird thumb position in mesh 
+        let baseBend = Math.min( 1, Math.max( -0.2, c[0][1] + ( fingerplayResult ? fingerplayResult[0] : 0 ) ) );
+        bones[ this.idxs.thumb      ].quaternion.setFromAxisAngle(  bendAxes[0],  ((1-baseBend)*1.5-0.5) * (-Math.PI*0.2) ); // these maths because of weird thumb position in mesh 
         bones[ this.idxs.thumb + 1  ].quaternion.setFromAxisAngle(  bendAxes[1],  c[0][2] * Math.PI*0.4 );
         bones[ this.idxs.thumb + 2  ].quaternion.setFromAxisAngle(  bendAxes[2],  c[0][3] * Math.PI*0.4 );
-        bones[ this.idxs.index      ].quaternion.setFromAxisAngle(  bendAxes[3],  c[1][1] * Math.PI*0.5 );
+        baseBend = Math.min( 1, Math.max( -0.2, c[1][1] +  ( fingerplayResult ? fingerplayResult[1] : 0 ) ) );
+        bones[ this.idxs.index      ].quaternion.setFromAxisAngle(  bendAxes[3],  ( baseBend ) * Math.PI*0.5 );
         bones[ this.idxs.index + 1  ].quaternion.setFromAxisAngle(  bendAxes[4],  c[1][2] * Math.PI*0.6 );
         bones[ this.idxs.index + 2  ].quaternion.setFromAxisAngle(  bendAxes[5],  c[1][3] * Math.PI*0.5 );
-        bones[ this.idxs.middle     ].quaternion.setFromAxisAngle(  bendAxes[6],  c[2][1] * Math.PI*0.5 );
+        baseBend = Math.min( 1, Math.max( -0.2, c[2][1] +  ( fingerplayResult ? fingerplayResult[2] : 0 ) ) );
+        bones[ this.idxs.middle     ].quaternion.setFromAxisAngle(  bendAxes[6],  baseBend * Math.PI*0.5 );
         bones[ this.idxs.middle + 1 ].quaternion.setFromAxisAngle(  bendAxes[7],  c[2][2] * Math.PI*0.6 );
         bones[ this.idxs.middle + 2 ].quaternion.setFromAxisAngle(  bendAxes[8],  c[2][3] * Math.PI*0.5 );
-        bones[ this.idxs.ring       ].quaternion.setFromAxisAngle(  bendAxes[9],  c[3][1] * Math.PI*0.5 );
+        baseBend = Math.min( 1, Math.max( -0.2, c[3][1] +  ( fingerplayResult ? fingerplayResult[3] : 0 ) ) );
+        bones[ this.idxs.ring       ].quaternion.setFromAxisAngle(  bendAxes[9],  baseBend * Math.PI*0.5 );
         bones[ this.idxs.ring + 1   ].quaternion.setFromAxisAngle(  bendAxes[10], c[3][2] * Math.PI*0.6 * 0.9 ); // 0.9 because of eva model
         bones[ this.idxs.ring + 2   ].quaternion.setFromAxisAngle(  bendAxes[11], c[3][3] * Math.PI*0.5 );
-        bones[ this.idxs.pinky      ].quaternion.setFromAxisAngle(  bendAxes[12], c[4][1] * Math.PI*0.5 );
+        baseBend = Math.min( 1, Math.max( -0.2, c[4][1] +  ( fingerplayResult ? fingerplayResult[4] : 0 ) ) );
+        bones[ this.idxs.pinky      ].quaternion.setFromAxisAngle(  bendAxes[12], baseBend * Math.PI*0.5 );
         bones[ this.idxs.pinky + 1  ].quaternion.setFromAxisAngle(  bendAxes[13], c[4][2] * Math.PI*0.6 );
         bones[ this.idxs.pinky + 2  ].quaternion.setFromAxisAngle(  bendAxes[14], c[4][3] * Math.PI*0.5 );
 

@@ -371,20 +371,10 @@ class CircularMotion {
 
 
 
-let fingerPlayTable = {
-    index : new THREE.Quaternion ( 0.3056621,  0.0039430, -0.0053422, 0.9521169 ),
-    middle: new THREE.Quaternion ( 0.3522030,  0.0105015, -0.0046960, 0.9358529 ),
-    ring  : new THREE.Quaternion ( 0.2910635,  0.0143004,  0.0083483, 0.9565603 ),
-    pinky : new THREE.Quaternion ( 0.2807940, -0.0096333,  0.0081887, 0.9596847 ),
-}
 
 class FingerPlay {
     constructor(){ 
-        this.index = new THREE.Quaternion(0,0,0,1);
-        this.middle = new THREE.Quaternion(0,0,0,1);
-        this.ring = new THREE.Quaternion(0,0,0,1);
-        this.pinky = new THREE.Quaternion(0,0,0,1);
-
+        this.curBends = [ 0, 0, 0, 0, 0 ]; // thumb, index, middle, ring, pinky
         this.fingerEnabler = 0x00; // flags. bit0 = thumb, bit1 = index, bit2 = middle, bit3 = ring, bit4 = pinky
         
         this.transition = false;
@@ -400,10 +390,7 @@ class FingerPlay {
 
     reset(){
         this.transition = false;
-        this.index.set(0,0,0,1);
-        this.middle.set(0,0,0,1);
-        this.ring.set(0,0,0,1);
-        this.pinky.set(0,0,0,1);
+        this.curBends.fill( 0 );
     }
 
     update( dt ){
@@ -420,25 +407,23 @@ class FingerPlay {
             this.transition = false;
         }
 
-        intensity *= this.intensity;
+        intensity *= this.intensity * 0.5; // intensity = amplitude
 
-        // 2 t: entry T, interpolation t 
-        // interpolatino -- cos(t + X) where is different for each finger
+        // interpolation -- cos(t + X) where X is different for each finger
+        if ( this.fingerEnabler & 0x01 ) { 
+            this.curBends[0] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.25 ) ) * intensity;
+        }
         if ( this.fingerEnabler & 0x02 ) { 
-            this.index.identity();
-            nlerpQuats( this.index, this.index, fingerPlayTable.index,    ( Math.cos( Math.PI * 2 * this.speed * this.time ) * 0.5 + 0.5 ) * intensity );
+            this.curBends[1] = ( Math.cos( Math.PI * 2 * this.speed * this.time ) ) * intensity;
         }
         if ( this.fingerEnabler & 0x04 ) { 
-            this.middle.identity();
-            nlerpQuats( this.middle, this.middle, fingerPlayTable.middle, ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) * 0.5 + 0.5 ) * intensity * 0.9);
+            this.curBends[2] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) ) * intensity;
         }
         if ( this.fingerEnabler & 0x08 ) { 
-            this.ring.identity();
-            nlerpQuats( this.ring, this.ring, fingerPlayTable.ring,       ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) * 0.5 + 0.5 ) * intensity * 0.7 );
+            this.curBends[3] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) ) * intensity;
         }
         if ( this.fingerEnabler & 0x10 ) { 
-            this.pinky.identity();
-            nlerpQuats( this.pinky, this.pinky, fingerPlayTable.pinky,    ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) * 0.5 + 0.5 ) * intensity * 0.5 );
+            this.curBends[4] =  ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) ) * intensity;
         }
     }
 
@@ -447,7 +432,8 @@ class FingerPlay {
      * start, attackPeak, relax, end
      * speed = (optional) oscillations per second. Default 3
      * intensity = (optional) [0,1]. Default 0.3
-     * fingers = (optional) string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled
+     * fingers = (optional) string with numbers. Each number present activates a finger. 0=thumb, 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled
+     * exemptedFingers = (optional) string with numbers. Blocks a finger from doing the finger play. Default all fingers move
      */
     newGestureBML( bml ){
 
@@ -464,6 +450,14 @@ class FingerPlay {
             for( let i = 0; i < bml.fingers.length; ++i ){
                 let val = parseInt( bml.fingers[i] );
                 if ( !isNaN( val ) ){ this.fingerEnabler |= 0x01 << val; }
+            }
+            this.fingerEnabler &= 0x1f; // mask unused bits
+        }
+        if ( typeof( bml.exemptedFingers ) == 'string' ){
+            // enable only the specified fingers (bits)
+            for( let i = 0; i < bml.exemptedFingers.length; ++i ){
+                let val = parseInt( bml.exemptedFingers[i] );
+                if ( !isNaN( val ) ){ this.fingerEnabler &= ~(0x01 << val); }
             }
             this.fingerEnabler &= 0x1f; // mask unused bits
         }
