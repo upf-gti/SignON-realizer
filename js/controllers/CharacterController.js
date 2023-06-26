@@ -75,7 +75,9 @@ CharacterController.prototype.update = function (dt, et) {
         this.facialController.update(dt);
     }
 
-
+    if (this.bodyController){
+        this.bodyController.update(dt)
+    }
 
     if (this.BehaviourPlanner){
         newBlock = this.BehaviourPlanner.update(dt);
@@ -88,13 +90,6 @@ CharacterController.prototype.update = function (dt, et) {
     if (newBlock) {
         this.BehaviourManager.newBlock(newBlock, et);
     }
-
-
-
-    if (this.bodyController){
-        this.bodyController.update(dt)
-    }
-
 
     // lipsync stuff????
     if (this.BehaviourManager.lgStack.length && this.BehaviourManager.time <= this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime) {

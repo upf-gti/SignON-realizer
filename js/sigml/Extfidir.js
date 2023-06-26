@@ -176,7 +176,7 @@ class Extfidir {
 
     update( dt ) {
 
-        if ( !this.transition ){ return; } // no animation required
+        // if ( !this.transition ){ return; } // no animation required
         
         this.time += dt;
 
@@ -217,6 +217,7 @@ class Extfidir {
         if ( this.time >= this.end ){ 
             this._computeSwingFromCurrentPose( this.defPoint, this.curG );
             this.curPalmorRefactor = this.defPalmorRefactor;
+            this.transition = false;
         }
 
     }
@@ -226,7 +227,6 @@ class Extfidir {
      * start, attackPeak, relax, end
      * extfidir: string from extfidirPointTable
      * secondExtfidir: (optional) string from extfidirPointTable. Will compute midpoint between extifidir and secondExtfidir
-     * mode: (optional) number or string - whether the pointing is to "absolute" (1), "relative" (2) or "local" (3) positions to the wrist  
      */
     newGestureBML( bml, symmetry = false ){
         if( !bml.extfidir ){ return; }

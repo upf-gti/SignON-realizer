@@ -99,6 +99,7 @@ class Palmor {
      * bml info
      * start, attackPeak, relax, end
      * palmor: string from palmorRightTable
+     * secondPalmor: (optional)
      */
     newGestureBML( bml, symmetry = 0x00 ){
         if( !bml.palmor ){ return; }

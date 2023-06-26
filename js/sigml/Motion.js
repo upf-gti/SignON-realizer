@@ -111,8 +111,10 @@ class DirectedMotion {
      * bml info
      * start, attackPeak, relax, end
      * direction: string from motionDirectionTable
+     * secondDirection: (optional)
      * distance: (optional) size in metres of the displacement. Default 0.2 m (20 cm)
      * curve: (optional) string from motionCurveTable. Default to none
+     * secondCurve: (optional)
      * curveSteepness: (optional) number from [0,1] meaning the sharpness of the curve
      * zigzag: (optional) string from motionDirectionTable
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
@@ -226,7 +228,7 @@ class CircularMotion {
         this.finalOffset = new THREE.Vector3(0,0,0);
 
         this.startPoint = new THREE.Vector3(0,0,0);
-        this.targetDeltaAngle = 0; // entry&outro easing + user specified.
+        this.targetDeltaAngle = 0;
         this.axis = new THREE.Vector3(0,0,0);
         
         this.zigzagDir = new THREE.Vector3(0,0,1);
@@ -250,10 +252,11 @@ class CircularMotion {
         
         this.time += dt;
         if ( this.time < this.start ){ return this.finalOffset; }
-        if ( this.time > this.attackPeak && this.time < this.relax ){ return this.finalOffset; }
+        if ( this.time >= this.attackPeak && this.time <= this.relax ){ return this.finalOffset; }
         if ( this.time >= this.relax && this.time <= this.end ){ 
             this.finalOffset.copy( this.startPoint );
             this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
+            this.finalOffset.sub( this.startPoint );
             this.finalOffset.multiplyScalar( ( this.end - this.time ) / ( this.end - this.relax ) );
             return this.finalOffset;
         }
@@ -291,6 +294,7 @@ class CircularMotion {
      * bml info
      * start, attackPeak, relax, end
      * direction: string from motionDirectionTable. Axis of rotation
+     * secondDirection: (optional)
      * distance: (optional) radius in metres of the circle. Default 0.05 m (5 cm)
      * startAngle: (optional) where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
      * endAngle: (optional) where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
@@ -328,12 +332,12 @@ class CircularMotion {
        
         // rotate starting point from default plane (xy) to the user's specified (given by axis)
         _tempVec3_0.set(0,0,1);        // default axis
-        let dot = _tempVec3_0.dot( direction );
+        let dot = _tempVec3_0.dot( this.axis );
         if ( dot > 0.999 ){ _tempQuat_0.set(0,0,0,1); }
         else if ( dot < -0.999 ){ _tempVec3_0.set(0,1,0); _tempQuat_0.setFromAxisAngle( _tempVec3_0, Math.PI ); }
         else{
-            let angle = _tempVec3_0.angleTo( direction );
-            _tempVec3_0.crossVectors( _tempVec3_0, direction );
+            let angle = _tempVec3_0.angleTo( this.axis );
+            _tempVec3_0.crossVectors( _tempVec3_0, this.axis );
             _tempVec3_0.normalize();
             _tempQuat_0.setFromAxisAngle( _tempVec3_0, angle );
         }
@@ -487,15 +491,17 @@ class WristMotion {
         this.attackPeak = 0;
         this.relax = 0;
         this.end = 0;
+        this.transition = false;
     }
 
     reset(){
         this.time = 0;
         this.mode = 0;
+        this.transition = false;
     }
 
     update( dt ){
-        if ( !this.mode ){ return; }
+        if ( !this.transition ){ return; }
 
         this.time += dt;
         let intensity = 0;
@@ -505,7 +511,8 @@ class WristMotion {
         else if ( this.time < this.end ){ intensity = ( this.time - this.relax ) / ( this.end - this.relax ); intensity = 1.0-intensity; }
         else {
             intensity = 0; 
-            this.mode = 0x00; // tansition = false
+            this.mode = 0x00;
+            this.transition = false;
         }
         intensity *= this.intensity;
 
@@ -580,6 +587,8 @@ class WristMotion {
         this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
         this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
         this.time = 0; 
+
+        this.transition = true;
     }
 };
     

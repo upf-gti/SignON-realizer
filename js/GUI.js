@@ -2,7 +2,6 @@ import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 import * as THREE from 'three';
 
 import { extfidirPointTable } from './sigml/Extfidir.js';
-import { nearArmPosesTable } from './sigml/LocationArmIK.js';
 import { TIMESLOT, sigmlStringToBML } from './sigml/SigmlToBML.js';
 
  
@@ -446,7 +445,7 @@ class AppGUI {
            }
         }
       
-        for( let e in nearArmPosesTable ){
+        for( let e in this.app.ECAcontroller.bodyController.bodyLocations ){
             armParams[e] = armSimplifier.bind(this.app, e);
             armFolder.add(armParams, e).name(e);
         }

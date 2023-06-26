@@ -347,11 +347,13 @@ class App {
                 }
             } );
 
-                    // correct hand's size
+            // correct hand's size
             model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
             model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
             
             this.scene.add(model);
+
+            // this.scene.add( new THREE.SkeletonHelper( model ) );
 
             model.eyesTarget = this.eyesTarget;
             model.headTarget = this.headTarget;

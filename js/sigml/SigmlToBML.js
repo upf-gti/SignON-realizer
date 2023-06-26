@@ -363,15 +363,15 @@ let locationMap ={
     stomach: "stomach",
     belowstomach: "belowstomach",
     ear: "ear",
-    earlobe: "ear",
+    earlobe: "earlobe",
     cheek: "cheek"
 }
 
 let locationSideMap = {
-    left_beside: { side: "l", sideDistance: 0.1 },
-    left_at: { side: "l", sideDistance: 0.05 },
-    right_at: { side: "r", sideDistance: 0.05 },
-    right_beside: { side: "r", sideDistance: 0.1 },
+    left_beside: { side: "l", sideDistance: 0.21 },
+    left_at: { side: "l", sideDistance: 0.1 },
+    right_at: { side: "r", sideDistance: 0.1 },
+    right_beside: { side: "r", sideDistance: 0.21 },
     front: { side: "o", sideDistance: 0.05 },
     back: { side: "i", sideDistance: 0.05 },
     dorsal: null,
@@ -395,22 +395,28 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
     result.oiSym = false; // symmetry & 0x04;  
 
     if ( attributes.contact == "touch" ){ result.distance = 0.0; }
-    else if ( attributes.contact == "close" ){ result.distance = 0.1; }
+    else if ( attributes.contact == "close" ){ result.distance = 0.2; }
     else if ( attributes.contact == "armextended" ){ result.distance = 0.9; }
-    else { result.distance = 0.35; } // jasigning has a default unmentioned distance...
+    else { result.distance = 0.4; } // jasigning has a default unmentioned distance...
 
     let side = locationSideMap[ attributes.side ];
     if ( side ){
         result.side = side.side;
         result.sideDistance = side.sideDistance;    
     }
+    let secondSide = locationSideMap[ attributes.second_side ];
+    if ( secondSide ){
+        result.secondSide = secondSide.side;
+        result.secondSideDistance = secondSide.sideDistance;    
+    }
 
-    let loc =locationMap[ attributes.location ];
+    result.secondLocationArm = locationMap[ attributes.second_location ];
+    let loc = locationMap[ attributes.location ];
 
     result = [ result ];
 
     if( hand == "both" ){
-        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){     
+        if( loc == "cheek" || loc == "ear" || loc == "earlobe" || loc == "eye" || loc== "shoulder" ){     
             result.push( JSON.parse( JSON.stringify( result[0] ) ) );
             result[0].hand = "right";
             result[1].hand = "left";
@@ -429,7 +435,7 @@ function locationArmParser( xml, start, attackPeak, hand, symmetry ){
         }
 
     }else{
-        if( loc == "cheek" || loc == "ear" || loc == "eye" || loc== "shoulder" ){
+        if( loc == "cheek" || loc == "ear" || loc == "earlobe" || loc == "eye" || loc== "shoulder" ){
             if ( loc == "shoulder" ){ // move towards instead of appart. Jasigning has an offset, but for our shoulder it is better to move towards
                 result.push( { type:"gesture", start:start + 0.0001, attackPeak: attackPeak, motion:"directed", direction: (hand=="right")?"l":"r", distance:0.05, hand: "right" } );
             }

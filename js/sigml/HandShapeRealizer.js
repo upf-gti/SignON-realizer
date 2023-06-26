@@ -351,7 +351,7 @@ class HandShapeRealizer {
             for( let i = 0; i < thumbGest.length; ++i ){ outHand[0][i] = thumbGest[i]; }        
         }
 
-        // thumb combination opening. Applicable to cee and pinch (select mode 2). 1=keep original, 0=open fingers
+        // tco (thumb combination opening). Applicable to cee and pinch (select mode 2). 1=keep original, 0=open fingers
         let thumbCombinationOpening = parseFloat( isSecond ? bml.secondtco : bml.tco );
         thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(0, Math.min(1, thumbCombinationOpening ) );
         for( let i = 0; i < outHand.length; ++i ){
@@ -368,8 +368,16 @@ class HandShapeRealizer {
      * bml info
      * start, attackPeak, relax, end
      * handshape: string from the handshape tables
-     * f1, f2, f3, f4, f5: string from the handshape tables. Overrides handshape and thumbshape for that specific finger. 1=thumb, 5=pinky
+     * secondHandshape (optional)
      * thumbshape: (optional) string from thumbshape table. 
+     * secondThumbshape (optional)
+     * mainBend: (optional) string from bend table. The 6 basic handshape are affected differently than the 6 thumb combination handshapes
+     * secondMainBend (optional)
+     * tco: (optional) "Thumb Combination Opening", from 0 (same aperture as default) to 1 (completely open hand). Only affects the 6 thumb combination handshapes
+     * secondtco: (optional)
+     * bend1, bend2, bend3, bend4, bend5: (optional) string from bend table or string of numbers from 0-9. Overwrites any bend applied before
+     * splay1, splay2, splay3, splay4, splay5: (optional) string of numbers from 0-9 
+     * mainSplay: (optional) affects all fingers
     */
     newGestureBML( bml ){
               
