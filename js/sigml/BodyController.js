@@ -9,6 +9,7 @@ import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motio
 import { CCDIKSolver } from "./IKSolver.js";
 import { findIndexOfBone } from "./SigmlUtils.js";
 import { GeometricArmIK } from "./GeometricArmIK.js";
+import { HandConstellation } from "./HandConstellation.js";
 
 let bodyLocations = {
 
@@ -44,6 +45,14 @@ let bodyLocations = {
     // hips
     belowstomach: [ "mixamorig_Hips", new THREE.Vector3( -0.0351382, 7.2248580, 12.5822406 ) ],
     neutral:      [ "mixamorig_Hips", new THREE.Vector3(  0.0158257, 0.0000000, 13.6831055 ) ],
+
+}
+
+let handLocationsR = {
+    tip: [ "mixamorig_RightHandIndex4", new THREE.Vector3( 0, 0, 0 ) ],
+}
+let handLocationsL = {
+    tip: [ "mixamorig_LeftHandIndex4", new THREE.Vector3( 0, 0, 0 ) ],
 
 }
 
@@ -97,42 +106,41 @@ class BodyController{
             this.skeleton.bones[ idx ].add( o );
             this.bodyLocations[ keys[i] ] = o;
         }
+        // create location point objects and attach them to bones
+        this.handLocationsR = {}
+        keys = Object.keys( handLocationsR );
+        for( let i = 0; i < keys.length; ++i ){
+            let l = handLocationsR[ keys[i] ];
+            let idx = findIndexOfBone( this.skeleton, l[0] );
+            if ( idx < 0 ){ continue; }
+
+            let o = new THREE.Object3D();
+            o.position.copy( l[1] );
+            o.name = keys[i];
+            this.skeleton.bones[ idx ].add( o );
+            this.handLocationsR[ keys[i] ] = o;
+        }        
+        // create location point objects and attach them to bones
+        this.handLocationsL = {}
+        keys = Object.keys( handLocationsL );
+        for( let i = 0; i < keys.length; ++i ){
+            let l = handLocationsL[ keys[i] ];
+            let idx = findIndexOfBone( this.skeleton, l[0] );
+            if ( idx < 0 ){ continue; }
+
+            let o = new THREE.Object3D();
+            o.position.copy( l[1] );
+            o.name = keys[i];
+            this.skeleton.bones[ idx ].add( o );
+            this.handLocationsL[ keys[i] ] = o;
+        }
 
 
         // -------------- All modules --------------
-        let ikright = new GeometricArmIK( skeleton, boneMap["RShoulder"], boneMap["ShouldersUnion"], false );
-        let ikleft = new GeometricArmIK( skeleton, boneMap["LShoulder"], boneMap["ShouldersUnion"], true );
-        this.right = {
-            locationLastFrameQuats : [ new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
-            // loc : new LocationArmIK( boneMap, skeleton, ikSolver, false ),
-            loc : new LocationArmIK( boneMap, this.bodyLocations, skeleton, ikright, false ),
-            locMotions : [],
-            extfidir : new Extfidir( boneMap, skeleton, false ),
-            palmor : new Palmor( boneMap, skeleton, false ),
-            wristMotion : new WristMotion( skeleton.bones[ boneMap["RWrist"] ] ),
-            handshape : new HandShapeRealizer( boneMap, skeleton, false ),
-            fingerplay : new FingerPlay(),
+        this.right = this._createArm( false );
+        this.left = this._createArm( true );
+        this.handConstellation = new HandConstellation( this.boneMap, this.skeleton, this.handLocationsR, this.handLocationsL, this.right.ikSolver, this.left.ikSolver );
 
-            geometricIK: ikright, 
-            locUpdatePoint: new THREE.Vector3(0,0,0),
-            needsUpdate: false,
-        }
-        this.left = {
-            locationLastFrameQuats : [ new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1), new THREE.Quaternion(0,0,0,1) ], // Shoulder, arm, elbow
-            // loc : new LocationArmIK( boneMap, skeleton, ikSolver, true ),
-            loc : new LocationArmIK( boneMap, this.bodyLocations, skeleton, ikleft, true ),
-            locMotions : [],
-            extfidir : new Extfidir( boneMap, skeleton, true ),
-            palmor : new Palmor( boneMap, skeleton, true ),
-            wristMotion : new WristMotion( skeleton.bones[ boneMap["LWrist"] ] ),
-            handshape : new HandShapeRealizer( boneMap, skeleton, true ),
-            fingerplay : new FingerPlay(),
-
-            geometricIK : ikleft,
-            locUpdatePoint : new THREE.Vector3(0,0,0),
-            needsUpdate: false,
-
-        }
 
         this.dominant = this.right;
         this.nonDominant = this.left;
@@ -143,23 +151,41 @@ class BodyController{
 
 
         // DEBUG
-        this.point = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthTest:true, depthWrite: false }) );
-        this.point.position.set(0,1.5,0.5);
-        window.global.app.scene.add(this.point);
-        this.elbowRaise = 0;
-        window.addEventListener( "keydown", e =>{
-            switch( e.which ){
-                case 37: this.point.position.x -= 0.005; break; // left
-                case 39: this.point.position.x += 0.005; break; // right
-                case 38: this.point.position.y += 0.005; break; // up
-                case 40: this.point.position.y -= 0.005; break; // down
-                case 90: this.point.position.z += 0.005; break; //z
-                case 88: this.point.position.z -= 0.005; break; //x
-                case 65: this.elbowRaise += 1 * Math.PI / 180; break; //a
-                case 83: this.elbowRaise -= 1 * Math.PI / 180; break; //s
-                default: break;
-            }
-        } );
+        // this.point = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthTest:true, depthWrite: false }) );
+        // this.point.position.set(0,1.5,0.5);
+        // window.global.app.scene.add(this.point);
+        // this.elbowRaise = 0;
+        // window.addEventListener( "keydown", e =>{
+        //     switch( e.which ){
+        //         case 37: this.point.position.x -= 0.005; break; // left
+        //         case 39: this.point.position.x += 0.005; break; // right
+        //         case 38: this.point.position.y += 0.005; break; // up
+        //         case 40: this.point.position.y -= 0.005; break; // down
+        //         case 90: this.point.position.z += 0.005; break; //z
+        //         case 88: this.point.position.z -= 0.005; break; //x
+        //         case 65: this.elbowRaise += 1 * Math.PI / 180; break; //a
+        //         case 83: this.elbowRaise -= 1 * Math.PI / 180; break; //s
+        //         default: break;
+        //     }
+        // } );
+    }
+    _createArm( isLeftHand = false ){
+        let handName = isLeftHand ? "L" : "R";
+        let ik =  new GeometricArmIK( this.skeleton, this.boneMap[ handName  + "Shoulder" ], this.boneMap[ "ShouldersUnion" ], isLeftHand );
+        return {
+            loc : new LocationArmIK( this.boneMap, this.bodyLocations, this.skeleton, ik, isLeftHand ),
+            locMotions : [],
+            extfidir : new Extfidir( this.boneMap, this.skeleton, isLeftHand ),
+            palmor : new Palmor( this.boneMap, this.skeleton, isLeftHand ),
+            wristMotion : new WristMotion( this.skeleton.bones[ this.boneMap[ handName + "Wrist"] ] ),
+            handshape : new HandShapeRealizer( this.boneMap, this.skeleton, isLeftHand ),
+            fingerplay : new FingerPlay(),
+
+            ikSolver : ik,
+            locUpdatePoint : new THREE.Vector3(0,0,0),
+            needsUpdate: false,
+            _tempWristQuat: new THREE.Quaternion(0,0,0,1), // stores computed extfidir + palmor before any arm movement applied. Necessary for locBody + handConstellation
+        };
     }
 
     _resetArm( arm ){
@@ -175,9 +201,10 @@ class BodyController{
     }
     
     reset(){
-        this.point.position.set(0,1.5,0.5);
-        this.elbowRaise = 0;
+        // this.point.position.set(0,1.5,0.5);
+        // this.elbowRaise = 0;
 
+        this.handConstellation.reset();
         this._resetArm( this.right );
         this._resetArm( this.left );
 
@@ -217,7 +244,6 @@ class BodyController{
     }
 
     _updateArm( dt, arm ){
-        if( !arm.needsUpdate ){ return; }
         let bones = this.skeleton.bones;
 
         // reset shoulder, arm, elbow. This way location body, motion and location hand can be safely computed
@@ -245,93 +271,90 @@ class BodyController{
         // wristmotion. ADD rotation to wrist
         arm.wristMotion.update(dt); // wrist - add rotation
 
-        // overwrite arm posture.
+        // backup the current wrist quaternion, before any arm rotation is applied
+        arm._tempWristQuat.copy( bones[ arm.extfidir.idx ].quaternion );
+
+        // update arm posture world positions but do not commit results to the bones, yet.
         arm.loc.update( dt );
         let motionsRequireUpdated = this._updateLocationMotions( dt, arm );
+        
 
-        arm.locUpdatePoint.add( arm.loc.cur.p );
-        arm.geometricIK.reachTarget( arm.locUpdatePoint, arm.loc.cur.e, true );
+        arm.needsUpdate = motionsRequireUpdated | arm.fingerplay.transition | arm.handshape.transition | arm.wristMotion.transition | arm.palmor.transition | arm.extfidir.transition | arm.loc.transition;
+    }
 
+    update( dt ){
+        // if( this.right.needsUpdate ){ this._updateArm( dt, this.right ); }
+        // if( this.left.needsUpdate ){ this._updateArm( dt, this.left ); }
+        
+        this._updateArm( dt, this.right );
+        this._updateArm( dt, this.left );
+        
+        if ( this.handConstellation.transition ){ // 2 iks, one for body positioning and a second for hand constellation + motion
+
+            // compute locBody and fix wrist quaternion (forearm twist correction should not be required. Disable it and do less computations)
+            this.right.ikSolver.reachTarget( this.right.loc.cur.p, this.right.loc.cur.e, true );
+            this.left.ikSolver.reachTarget( this.left.loc.cur.p, this.left.loc.cur.e, true );
+            this._fixWristForearmQuaternions( this.right, true );
+            this._fixWristForearmQuaternions( this.left, true );
+
+            // handconstellation update, add motions and ik
+            this.handConstellation.update( dt, this.right.loc.cur.p, this.left.loc.cur.p, this.right.loc.cur.e, this.left.loc.cur.e );
+            this.right.locUpdatePoint.add( this.handConstellation.resultPosR ); // HandConstellation + motions
+            this.left.locUpdatePoint.add( this.handConstellation.resultPosL ); // HandConstellation + motions
+            this.right.ikSolver.reachTarget( this.right.locUpdatePoint, this.right.loc.cur.e, true );
+            this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.loc.cur.e, true );
+
+            this._fixWristForearmQuaternions( this.right, false );
+            this._fixWristForearmQuaternions( this.left, false );
+
+            this.right.needsUpdate |= this.handConstellation.transition;
+            this.left.needsUpdate |= this.handConstellation.transition;
+        } 
+        else { // only location body and motions. Do only 1 ik per arm
+            this.right.locUpdatePoint.add( this.right.loc.cur.p );
+            this.right.ikSolver.reachTarget( this.right.locUpdatePoint, this.right.loc.cur.e, true );
+
+            this.left.locUpdatePoint.add( this.left.loc.cur.p );
+            this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.loc.cur.e, true );
+        
+            this._fixWristForearmQuaternions( this.right, false );   
+            this._fixWristForearmQuaternions( this.left, false );  
+        }
+        
+    }
+
+    _fixWristForearmQuaternions( arm, fixWristOnly = false ){
+        let q = this._tempQ_0;
+        let bones = this.skeleton.bones;
+
+        // copy back the original wrist quaternion, when no arm rotations were applied
+        bones[ arm.extfidir.idx ].quaternion.copy( arm._tempWristQuat );  
 
         // wrist did not know about arm quaternions. Compensate them
         q.copy( bones[ arm.loc.idx ].quaternion );
         q.multiply( bones[ arm.loc.idx + 1 ].quaternion );
         q.multiply( bones[ arm.loc.idx + 2 ].quaternion );
         q.invert();
-        bones[ arm.extfidir.idx ].quaternion.premultiply( q );    
-
+        bones[ arm.extfidir.idx ].quaternion.premultiply( q );  
+        
+        if ( fixWristOnly ){ return } // whether to correct forearm twisting also
+        
         // Doing the previous wrist fix introduces some extra twist correction. Forearm twist should adjust to palmor + twist correction. The following operations combine both
-        q.copy(bones[ arm.extfidir.idx ].quaternion);
-        let twistAxis = this._tempV3_0.copy(arm.palmor.twistAxisWrist);
+        // get wrist twist quaternion
+        q.copy( bones[ arm.extfidir.idx ].quaternion );
+        let twistAxis = this._tempV3_0.copy( arm.palmor.twistAxisWrist );
         let dot = q.x * twistAxis.x + q.y * twistAxis.y + q.z * twistAxis.z;
         q.set( dot * twistAxis.x, dot * twistAxis.y, dot * twistAxis.z, q.w );
         q.normalize();
-        
+
+        // from wrist twist quaternion, compute twist angle and apply it to the forearm. Correct this extra quaternion for the wrist also
         let angle = Math.acos( q.w ) * 2;
-        angle *= ( arm.palmor.twistAxisForeArm.x * q.x + arm.palmor.twistAxisForeArm.y * q.y + arm.palmor.twistAxisForeArm.z * q.z ) < 0 ? -1 : 1;
+        // angle = Math.max( 0, Math.min( Math.PI * 0.6, angle ) );
+        angle = ( Math.sin( angle - Math.PI * 0.5 ) * 0.35 + 0.35 ) * angle; // limit angle to avoid overtwisting of elbow
+        angle *= ( arm.palmor.twistAxisForeArm.x * q.x + arm.palmor.twistAxisForeArm.y * q.y + arm.palmor.twistAxisForeArm.z * q.z ) < 0 ? -1 : 1; // is the axis of rotation inverted ?
         q.setFromAxisAngle( arm.palmor.twistAxisForeArm, angle);
         bones[ arm.palmor.idx ].quaternion.multiply( q );
         bones[ arm.extfidir.idx ].quaternion.premultiply( q.invert() ); // wrist did not know about this twist, undo it
-     
-        arm.needsUpdate = motionsRequireUpdated | arm.fingerplay.transition | arm.handshape.transition | arm.wristMotion.transition | arm.palmor.transition | arm.extfidir.transition | arm.loc.transition;
-    }
-
-    update( dt ){
-        this._updateArm( dt, this.right );
-        this._updateArm( dt, this.left );
-
-        // let bones = this.skeleton.bones;
-        // // tmeporarily fix the wrist rotation with the arm posture
-        // let qL = new THREE.Quaternion();
-        // let qR = new THREE.Quaternion();
-        // // hand does not know about arm rotation.
-        // qL.set(0,0,0,1);
-        // qR.set(0,0,0,1);
-        // for( let i = 0; i < 3; ++i ){ 
-        //     qR.multiply( bones[ this.right.loc.idx + i ].quaternion );
-        //     qL.multiply( bones[ this.left.loc.idx + i ].quaternion );
-        // }
-        // bones[ this.right.extfidir.idx ].quaternion.premultiply( qR.invert() );
-        // bones[ this.left.extfidir.idx ].quaternion.premultiply( qL.invert() );
-
-        // // compute world positions
-        // let indexTipRight = this.skeleton.bones[ this.boneMap.RHandIndex + 3 ];
-        // let targetLeft = this.skeleton.bones[ this.boneMap.LHandIndex + 3 ];
-        // let wristL = this.skeleton.bones[ this.boneMap.LWrist ];
-        // let wristR = this.skeleton.bones[ this.boneMap.RWrist ];
-        // indexTipRight.updateWorldMatrix( true );
-        // targetLeft.updateWorldMatrix( true );
-        // wristL.updateWorldMatrix( true );
-        // wristR.updateWorldMatrix( true );
-
-        // let worldWristR = (new THREE.Vector3()).setFromMatrixPosition( wristR.matrixWorld );
-        // let worldWristL = (new THREE.Vector3()).setFromMatrixPosition( wristL.matrixWorld );
-
-        // let worldPosR = (new THREE.Vector3()).setFromMatrixPosition( indexTipRight.matrixWorld );
-        // let worldPosL = (new THREE.Vector3()).setFromMatrixPosition( targetLeft.matrixWorld );
-
-        // if( !window.time ) { window.time = 0; }
-        // window.time += dt;
-        // let t =  Math.sin( window.time * Math.PI )*0.5 + 0.5;
-        // let finalPositionL = worldPosL.clone().multiplyScalar( 1 - t );
-        // let finalPositionR = worldPosR.clone().multiplyScalar( t );
-
-        // let rightOffset = worldPosR.clone().sub( worldWristR ); // vector from index to wrist
-        // let finalPosition = finalPositionL.clone().add( finalPositionR );
-        // finalPosition.sub(rightOffset);
-
-        // this.right.geometricIK.reachTarget( finalPosition );
-        // // remove old arm rotation from the wrist and include the new arm rotation
-        // bones[ this.right.extfidir.idx ].quaternion.premultiply( qR.invert() );
-        // bones[ this.left.extfidir.idx ].quaternion.premultiply( qL.invert() );
-        // qL.set(0,0,0,1);
-        // qR.set(0,0,0,1);
-        // for( let i = 0; i < 3; ++i ){ 
-        //     qR.multiply( bones[ this.right.loc.idx + i ].quaternion );
-        //     qL.multiply( bones[ this.left.loc.idx + i ].quaternion );
-        // }
-        // bones[ this.right.extfidir.idx ].quaternion.premultiply( qR.invert() );
-        // bones[ this.left.extfidir.idx ].quaternion.premultiply( qL.invert() );
 
     }
 
@@ -339,6 +362,7 @@ class BodyController{
         if ( bml.locationArm ){ // when location change, cut directed and circular motions
             arm.loc.newGestureBML( bml, symmetry, arm.locUpdatePoint );
             arm.locMotions = [];
+            this.handConstellation.reset();
         }
         else if ( bml.motion ){
             let m = null;
@@ -379,6 +403,12 @@ class BodyController{
 
         if ( bml.dominant ){
             this.setDominantHand( bml.dominant == "right" );
+        }
+
+        if ( bml.handConstellation ){
+            this.handConstellation.newGestureBML( bml, this.dominant == this.right ? 'R' : 'L' );
+            this.right.needsUpdate = true;
+            this.left.needsUpdate = true;
         }
 
         switch ( bml.hand ){

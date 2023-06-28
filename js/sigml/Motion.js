@@ -252,7 +252,12 @@ class CircularMotion {
         
         this.time += dt;
         if ( this.time < this.start ){ return this.finalOffset; }
-        if ( this.time >= this.attackPeak && this.time <= this.relax ){ return this.finalOffset; }
+        if ( this.time >= this.attackPeak && this.time <= this.relax ){ // necessary to update (at least once) or there might be a jump
+            this.finalOffset.copy( this.startPoint );
+            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
+            this.finalOffset.sub( this.startPoint );
+            return this.finalOffset; 
+        }
         if ( this.time >= this.relax && this.time <= this.end ){ 
             this.finalOffset.copy( this.startPoint );
             this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
