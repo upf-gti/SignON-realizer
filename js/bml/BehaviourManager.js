@@ -369,7 +369,7 @@ BehaviourManager.prototype.addToStack = function (block) {
 		if ( this.stack.length > 1 ){
 			for ( let i = this.stack.length-2; i >= 0; --i ){
 				let prev = this.stack[i];
-				if ( prev.endGlobalTime > block.endGlobalTime ){
+				if ( prev.startGlobalTime > block.startGlobalTime ){
 					this.stack[i] = block;
 					this.stack[i+1] = prev;
 				}
@@ -543,7 +543,7 @@ BehaviourManager.prototype.mergeBML = function(bml, stack, globalStart, composit
 		stack.push( bml );
 		// bubble sort the stack by endGlobalTime. First the lowest 
 		for( let i = stack.length-2; i > 0; --i){
-			if ( stack[i].endGlobalTime > bml.endGlobalTime ){
+			if ( stack[i].startGlobalTime > bml.startGlobalTime ){
 				stack[i+1] = stack[i];
 				stack[i] = bml;
 			}

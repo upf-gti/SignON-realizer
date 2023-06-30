@@ -75,7 +75,7 @@ class GeometricArmIK{
         _tempM4_0.copy( armBone.matrixWorld ).invert();
         let localTarget = _tempV3_0.copy(targetWorldPoint).applyMatrix4( _tempM4_0 );
         let localTargetNorm = _tempV3_1.copy(localTarget).normalize();
-        let targetDistance = Math.max( 0.00001, Math.min( armSize, localTarget.length() ) ); // ensure there is a solution
+        let targetDistance = Math.max( 0.000001, Math.min( armSize, localTarget.length() ) ); // ensure there is a solution
         localTarget.copy( localTargetNorm ).multiplyScalar( targetDistance );
 
         // shoulder correction - Aesthetics. TODO: clean, a bit convoluted
@@ -102,13 +102,13 @@ class GeometricArmIK{
         localTarget = _tempV3_0.copy( targetWorldPoint ).applyMatrix4( _tempM4_0 );
         armProjection = _tempV3_2.set( xAxis.dot( localTarget ), yAxis.dot( localTarget ), zAxis.dot( localTarget ) );
         localTargetNorm = _tempV3_1.copy(localTarget).normalize();
-        targetDistance = Math.max( 0.00001, Math.min( armSize, localTarget.length() ) ); // ensure there is a solution
+        targetDistance = Math.max( 0.000001, Math.min( armSize, localTarget.length() ) ); // ensure there is a solution
         localTarget.copy( localTargetNorm ).multiplyScalar( targetDistance );
 
         // elbow
         // c*c = a*a + b*b + 2ab*cos(C)
         let value = ( elbowSize*elbowSize + wristSize*wristSize - targetDistance*targetDistance ) / ( 2 * wristSize * elbowSize ); // law of cosines before arcos
-        let elbowAngle = Math.PI - Math.acos( Math.max( -0.999999, Math.min( 0.999999, value ) ) ); // ensure there is a solution
+        let elbowAngle = Math.PI - Math.acos( Math.max( -0.999999999, Math.min( 0.999999999, value ) ) ); // ensure there is a solution
         elbowBone.quaternion.setFromAxisAngle( this.elbowRotAxis, -elbowAngle );
 
         // new wrist position normalized

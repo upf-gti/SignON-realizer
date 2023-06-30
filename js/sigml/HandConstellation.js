@@ -22,7 +22,7 @@ import { directionStringSymmetry } from './SigmlUtils.js';
 */
 
 class HandConstellation {
-    constructor( boneMap, skeleton, rightHandLocations, leftHandLocations, ikSolverR, ikSolverL ) {
+    constructor( boneMap, skeleton, rightHandLocations, leftHandLocations ) {
         this.skeleton = skeleton;
         
         this.boneMap = boneMap;
@@ -47,48 +47,97 @@ class HandConstellation {
         this.worldArmSize = v.sub(u).length() + u.sub(w).length();
 
 
-        this.ikSolverL = ikSolverL;
-        this.ikSolverR = ikSolverR;
         this.handLocationsR = rightHandLocations;
         this.handLocationsL = leftHandLocations;
-        this.resultPosL = new THREE.Vector3(); // wrist position resulting from update
-        this.resultPosR = new THREE.Vector3(); // wrist position resulting form update
 
-        this.srcResultPos = null; // pointer to resultPos L or R
+        this.prevOffsetL = new THREE.Vector3();
+        this.prevOffsetR = new THREE.Vector3();
+        this.curOffsetL = new THREE.Vector3(); // wrist position resulting from update
+        this.curOffsetR = new THREE.Vector3(); // wrist position resulting form update
+
+        this.srcCurOffset = null; // pointer to curOffset L or R
         this.srcPoint = null;
-        this.dstResultPos = null; // pointer to resultPos L or R
+        this.dstCurOffset = null; // pointer to curOffset L or R
         this.dstPoint = null;
 
         this.distance = 0;
         this.isBothHands = false; // whether to move only src hand to dst point or move both hands to their respective destination points 
 
+        this.cancelledArmsFlag = 0x00; // 0x01 source cancelled, 0x02 destination cancelled (if both hands enabled)
         // set default poses
         this.reset();
     }
 
     reset(){
         this.transition = false;
- 
+        this.prevOffsetL.set(0,0,0);
+        this.prevOffsetR.set(0,0,0);
+        this.curOffsetL.set(0,0,0);
+        this.curOffsetR.set(0,0,0);
+        this.distance = 0;
+        this.isBothHands = false;
+        this.cancelledArmsFlag = 0x00;
     }
 
-    update( dt, posR, posL, elbowR, elbowL ){
+    update( dt, posr, posl ){
         // nothing to do
         if ( !this.transition ){ return; } 
-        
-        this.time += dt;
-        
-        let t = 0;
+
         // wait in same pose
         if ( this.time < this.start ){ 
             return;
         }
-        else if ( this.time <= this.attackPeak ){
+
+
+        this.srcPoint.updateWorldMatrix( true ); // self and parents
+        this.dstPoint.updateWorldMatrix( true ); // self and parents
+        let srcWorldPoint = (new THREE.Vector3()).setFromMatrixPosition( this.srcPoint.matrixWorld );
+        let dstWorldPoint = (new THREE.Vector3()).setFromMatrixPosition( this.dstPoint.matrixWorld );
+
+
+        let distanceOffsetVector = (new THREE.Vector3(this.worldArmSize * this.distance,0,0))
+        if ( this.srcCurOffset == this.curOffsetR ) { distanceOffsetVector.multiplyScalar( -1 ); }
+
+        
+        if ( this.isBothHands ){
+            distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
+
+            if ( this.cancelledArmsFlag & 0x02 ){ this.srcCurOffset.set(0,0,0); }
+            else{
+                this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
+                this.srcCurOffset.sub( srcWorldPoint );
+                this.srcCurOffset.add( distanceOffsetVector );
+            }
+            
+            if ( this.cancelledArmsFlag & 0x02 ){ this.dstCurOffset.set(0,0,0); }
+            else{
+                this.dstCurOffset.lerpVectors( dstWorldPoint, srcWorldPoint, 0.5 );
+                this.dstCurOffset.sub( dstWorldPoint );
+                this.dstCurOffset.sub( distanceOffsetVector );
+            }
+        }else{
+            this.srcCurOffset.copy( dstWorldPoint );
+            this.srcCurOffset.sub( srcWorldPoint );
+            this.srcCurOffset.add( distanceOffsetVector );
+            this.dstCurOffset.set(0,0,0);
+        }
+
+
+        this.time += dt;
+        
+        let t = 0;
+        if ( this.time <= this.attackPeak ){
             t = ( this.time - this.start ) / ( this.attackPeak - this.start );
             if ( t > 1){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
+
+            this.curOffsetL.lerpVectors( this.prevOffsetL, this.curOffsetL, t );
+            this.curOffsetR.lerpVectors( this.prevOffsetR, this.curOffsetR, t );
+
         }    
         else if ( this.time > this.attackPeak && this.time < this.relax ){ 
-            t = 1;
+            // t = 1;
+            // nothing else to update
         }            
         else if ( this.time >= this.relax){
             t = ( this.end - this.time ) / ( this.end - this.relax );
@@ -100,44 +149,31 @@ class HandConstellation {
                 t = 0;
                 this.transition = false;
             }
+            this.curOffsetL.multiplyScalar( t );
+            this.curOffsetR.multiplyScalar( t );
+
         }
-
-        let srcWristPos = posR;
-        let dstWristPos = posL;
-        if ( this.srcResultPos == this.resultPosL ){
-            srcWristPos = posL;
-            dstWristPos = posR;
-        }
-
-        this.srcPoint.updateWorldMatrix( true ); // self and parents
-        this.dstPoint.updateWorldMatrix( true ); // self and parents
-        let srcWorldPoint = (new THREE.Vector3()).setFromMatrixPosition( this.srcPoint.matrixWorld );
-        let dstWorldPoint = (new THREE.Vector3()).setFromMatrixPosition( this.dstPoint.matrixWorld );
-
-        let srcDir = (new THREE.Vector3()).subVectors( srcWorldPoint, srcWristPos );
-        let dstDir = (new THREE.Vector3()).subVectors( dstWorldPoint, dstWristPos );
-
-        let distanceOffsetVector = (new THREE.Vector3(this.worldArmSize * this.distance * t))
-        if ( this.srcResultPos == this.resultPosR ) { distanceOffsetVector.multiplyScalar( -1 ); }
-
         
+    }
+
+    cancelArm( arm = "R" ){
+        if ( arm == "B" ){ this.reset(); }
         if ( this.isBothHands ){
-            distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
-            this.srcResultPos.lerpVectors( srcWorldPoint, dstWorldPoint, t * 0.5 );
-            this.srcResultPos.add( distanceOffsetVector );
-            this.srcResultPos.sub( srcDir );
-            this.dstResultPos.lerpVectors( dstWorldPoint, srcWorldPoint, t * 0.5 );
-            this.dstResultPos.sub( distanceOffsetVector );
-            this.dstResultPos.sub( dstDir );
-        }else{
-            this.srcResultPos.lerpVectors( srcWorldPoint, dstWorldPoint, t );
-            this.srcResultPos.add( distanceOffsetVector );
-            this.srcResultPos.sub( srcDir );
-            this.dstResultPos.copy( dstWristPos );
+            if ( arm == "R"){ 
+                this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetR ) ? 0x01 : 0x02; 
+                this.prevOffsetR.set(0,0,0); 
+                this.curOffsetR.set(0,0,0); 
+            }
+            else if ( arm == "L"){ 
+                this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetL ) ? 0x01 : 0x02; 
+                this.prevOffsetL.set(0,0,0); 
+                this.curOffsetL.set(0,0,0); 
+            }
         }
-        
-        // this.ikSolverL.reachTarget( this.resultPosL, elbowL, true );
-        // this.ikSolverR.reachTarget( this.resultPosR, elbowR, true );
+        else{ // only one arm is working. Cancel only if it is the selected arm
+            if ( arm == "R" && this.srcCurOffset == this.curOffsetR ){ this.reset(); }
+            else if ( arm == "L" && this.srcCurOffset == this.curOffsetL ){ this.reset(); }
+        }
     }
 
 
@@ -159,7 +195,7 @@ class HandConstellation {
      * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints
      */
     newGestureBML( bml, domHand = "R"  ) {
-
+        this.cancelledArmsFlag = 0x00;
         let srcLocations = null;
         let dstLocations = null;
         let srcHand = "R";
@@ -175,16 +211,20 @@ class HandConstellation {
             else{ srcHand = domHand == "L" ? "L" : "R"; }
         }
 
+        // save current state as previous state. curOffset changes on each update
+        this.prevOffsetL.copy( this.curOffsetL );
+        this.prevOffsetR.copy( this.curOffsetR );
+
 
         // set pointers
         if ( srcHand == "L" ){
-            this.srcResultPos = this.resultPosL;
-            this.dstResultPos = this.resultPosR;
+            this.srcCurOffset = this.curOffsetL;
+            this.dstCurOffset = this.curOffsetR;
             srcLocations = this.handLocationsL; 
             dstLocations = this.handLocationsR;
         }else{
-            this.srcResultPos = this.resultPosR;
-            this.dstResultPos = this.resultPosL;
+            this.srcCurOffset = this.curOffsetR;
+            this.dstCurOffset = this.curOffsetL;
             srcLocations = this.handLocationsR;
             dstLocations = this.handLocationsL
         }

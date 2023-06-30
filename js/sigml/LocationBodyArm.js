@@ -52,18 +52,18 @@ let sides = {
     "i"     : (new THREE.Vector3(  0,   0,  -1 )).normalize(),
 }
 
-class LocationArmIK {
-    constructor( boneMap, bodyLocations, skeleton, ikSolver, isLeftHand = false ) {
+class LocationBodyArm {
+    constructor( boneMap, skeleton, bodyLocations, isLeftHand = false ) {
         this.skeleton = skeleton;
         this.bodyLocations = bodyLocations;
         this.mirror = !!isLeftHand;
-        this.ikSolver = ikSolver;
 
         let handName = isLeftHand ? "L" : "R";
         this.idx = boneMap[ handName + "Shoulder" ]// shoulder (back) index 
         
-        this.cur = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
-        this.src = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
+        // p : without offset. Raw location interpolation
+        this.cur = { p: new THREE.Vector3(), e: 0, offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
+        this.src = { p: new THREE.Vector3(), e: 0, offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
         this.trg = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
         this.def = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
 
@@ -109,11 +109,12 @@ class LocationArmIK {
         
         // wait in same pose
         if ( this.time < this.start ){ 
-            this.cur.p.copy( this.src.p ); 
-            this.cur.e = this.src.e;
+            // this.cur.p.copy( this.src.p ); 
+            // this.cur.e = this.src.e;
         }
         else if ( this.time >= this.end ){
             this.cur.p.copy( this.def.p );
+            this.cur.offset.set(0,0,0); // just in case
             this.cur.e = this.def.e;
             this.transition = false; // flag as "nothing to do"
         }
@@ -136,6 +137,7 @@ class LocationArmIK {
             // interpolations
             if ( this.time > this.attackPeak && this.time < this.relax ){ 
                 this.cur.p.copy( newTarget );
+                this.cur.offset.set(0,0,0);
                 this.cur.e = this.trg.e;
 
             }            
@@ -145,8 +147,8 @@ class LocationArmIK {
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
                 this.cur.p.lerpVectors( this.src.p, newTarget, t );
+                this.cur.offset.copy( this.src.offset ).multiplyScalar( 1 - t );
                 this.cur.e = this.src.e * ( 1 - t ) + this.trg.e * t;
-
             }    
             else if ( this.time >= this.relax ){
                 let t = ( this.time - this.relax ) / ( this.end - this.relax );
@@ -154,14 +156,11 @@ class LocationArmIK {
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
                 this.cur.p.lerpVectors( newTarget, this.def.p, t );
+                this.cur.offset.set(0,0,0);
                 this.cur.e = this.trg.e * ( 1 - t ) + this.def.e * t;
-
             }
         }
 
-
-        // do geometric ik
-        // this.ikSolver.reachTarget( this.cur.p, this.cur.e );
     }
 
 
@@ -170,10 +169,8 @@ class LocationArmIK {
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
         let location = isSecond ? bml.secondLocationArm : bml.locationArm;
 
-        // for mirror - with left arm, to point right shoulder the "shoulderL" is needed, and then quaternions must be mirrored
         // for symmetry - the left and right must be swapped
-        // not only quaternions are mirrored. The left/right actions need to be swapped. All actions in table are from right arm's perspective
-        if ( (this.mirror ^ ( symmetry & 0x01 ) ) && location ){ 
+        if ( ( symmetry & 0x01 ) && location ){ 
             if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
             else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
         }
@@ -235,7 +232,14 @@ class LocationArmIK {
         this.trg.e = elbowRaise * Math.PI / 180;
 
         // source: Copy current arm state
-        this.src.p.copy( lastFrameWorldPosition ? lastFrameWorldPosition : this.cur.p );
+        if ( lastFrameWorldPosition ){
+            this.src.offset.subVectors( lastFrameWorldPosition, this.cur.p );
+            this.src.p.copy( this.cur.p );
+        }
+        else{
+            this.src.offset.copy( this.cur.offset );
+            this.src.p.copy( this.cur.p );
+        }
         this.src.e = this.cur.e;
         
         // change arm's default pose if necesary
@@ -272,4 +276,4 @@ class LocationArmIK {
 }
 
 
-export { LocationArmIK };
+export { LocationBodyArm };

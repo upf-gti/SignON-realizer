@@ -1,12 +1,11 @@
 import * as THREE from "three";
 
-import { LocationArmIK } from "./LocationArmIK.js";
+import { LocationBodyArm } from "./LocationBodyArm.js";
 import { Palmor } from "./Palmor.js"
 import { Extfidir } from "./Extfidir.js";
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 
-import { CCDIKSolver } from "./IKSolver.js";
 import { findIndexOfBone } from "./SigmlUtils.js";
 import { GeometricArmIK } from "./GeometricArmIK.js";
 import { HandConstellation } from "./HandConstellation.js";
@@ -139,7 +138,7 @@ class BodyController{
         // -------------- All modules --------------
         this.right = this._createArm( false );
         this.left = this._createArm( true );
-        this.handConstellation = new HandConstellation( this.boneMap, this.skeleton, this.handLocationsR, this.handLocationsL, this.right.ikSolver, this.left.ikSolver );
+        this.handConstellation = new HandConstellation( this.boneMap, this.skeleton, this.handLocationsR, this.handLocationsL );
 
 
         this.dominant = this.right;
@@ -171,9 +170,8 @@ class BodyController{
     }
     _createArm( isLeftHand = false ){
         let handName = isLeftHand ? "L" : "R";
-        let ik =  new GeometricArmIK( this.skeleton, this.boneMap[ handName  + "Shoulder" ], this.boneMap[ "ShouldersUnion" ], isLeftHand );
         return {
-            loc : new LocationArmIK( this.boneMap, this.bodyLocations, this.skeleton, ik, isLeftHand ),
+            loc : new LocationBodyArm( this.boneMap, this.skeleton, this.bodyLocations, isLeftHand ),
             locMotions : [],
             extfidir : new Extfidir( this.boneMap, this.skeleton, isLeftHand ),
             palmor : new Palmor( this.boneMap, this.skeleton, isLeftHand ),
@@ -181,7 +179,7 @@ class BodyController{
             handshape : new HandShapeRealizer( this.boneMap, this.skeleton, isLeftHand ),
             fingerplay : new FingerPlay(),
 
-            ikSolver : ik,
+            ikSolver : new GeometricArmIK( this.skeleton, this.boneMap[ handName  + "Shoulder" ], this.boneMap[ "ShouldersUnion" ], isLeftHand ),
             locUpdatePoint : new THREE.Vector3(0,0,0),
             needsUpdate: false,
             _tempWristQuat: new THREE.Quaternion(0,0,0,1), // stores computed extfidir + palmor before any arm movement applied. Necessary for locBody + handConstellation
@@ -289,9 +287,12 @@ class BodyController{
         this._updateArm( dt, this.right );
         this._updateArm( dt, this.left );
         
-        if ( this.handConstellation.transition ){ // 2 iks, one for body positioning and a second for hand constellation + motion
+        if ( this.handConstellation.transition ){ 
+            // 2 iks, one for body positioning and a second for hand constellation + motion
+            // if only points in hand were used in handConstellation, the first ik could be removed. But forearm-elbow-upperarm locations require 2 iks
 
             // compute locBody and fix wrist quaternion (forearm twist correction should not be required. Disable it and do less computations)
+            // using loc.cur.p, without the loc.cur.offset. Compute handConstellation with raw locBody
             this.right.ikSolver.reachTarget( this.right.loc.cur.p, this.right.loc.cur.e, true );
             this.left.ikSolver.reachTarget( this.left.loc.cur.p, this.left.loc.cur.e, true );
             this._fixWristForearmQuaternions( this.right, true );
@@ -299,27 +300,24 @@ class BodyController{
 
             // handconstellation update, add motions and ik
             this.handConstellation.update( dt, this.right.loc.cur.p, this.left.loc.cur.p, this.right.loc.cur.e, this.left.loc.cur.e );
-            this.right.locUpdatePoint.add( this.handConstellation.resultPosR ); // HandConstellation + motions
-            this.left.locUpdatePoint.add( this.handConstellation.resultPosL ); // HandConstellation + motions
-            this.right.ikSolver.reachTarget( this.right.locUpdatePoint, this.right.loc.cur.e, true );
-            this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.loc.cur.e, true );
-
-            this._fixWristForearmQuaternions( this.right, false );
-            this._fixWristForearmQuaternions( this.left, false );
-
+            this.right.locUpdatePoint.add( this.handConstellation.curOffsetR ); // HandConstellation + motions
+            this.left.locUpdatePoint.add( this.handConstellation.curOffsetL ); // HandConstellation + motions
+            
             this.right.needsUpdate |= this.handConstellation.transition;
             this.left.needsUpdate |= this.handConstellation.transition;
-        } 
-        else { // only location body and motions. Do only 1 ik per arm
-            this.right.locUpdatePoint.add( this.right.loc.cur.p );
-            this.right.ikSolver.reachTarget( this.right.locUpdatePoint, this.right.loc.cur.e, true );
-
-            this.left.locUpdatePoint.add( this.left.loc.cur.p );
-            this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.loc.cur.e, true );
-        
-            this._fixWristForearmQuaternions( this.right, false );   
-            this._fixWristForearmQuaternions( this.left, false );  
         }
+
+        // if only location body and motions. Do only 1 ik per arm
+        this.right.locUpdatePoint.add( this.right.loc.cur.p );
+        this.right.locUpdatePoint.add( this.right.loc.cur.offset );
+        this.right.ikSolver.reachTarget( this.right.locUpdatePoint, this.right.loc.cur.e, true );
+
+        this.left.locUpdatePoint.add( this.left.loc.cur.p );
+        this.left.locUpdatePoint.add( this.left.loc.cur.offset );
+        this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.loc.cur.e, true );
+    
+        this._fixWristForearmQuaternions( this.right, false );   
+        this._fixWristForearmQuaternions( this.left, false );  
         
     }
 
@@ -362,7 +360,7 @@ class BodyController{
         if ( bml.locationArm ){ // when location change, cut directed and circular motions
             arm.loc.newGestureBML( bml, symmetry, arm.locUpdatePoint );
             arm.locMotions = [];
-            this.handConstellation.reset();
+            this.handConstellation.cancelArm( arm == this.right ? 'R' : 'L' );
         }
         else if ( bml.motion ){
             let m = null;
