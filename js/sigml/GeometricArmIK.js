@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { getTwistQuaternion } from "./SigmlUtils.js";
 
 class GeometricArmIK{
     constructor( skeleton, shoulderIndex, shouldeUnionSpineIndex, isLeftHand = false ){
@@ -81,17 +82,16 @@ class GeometricArmIK{
         // shoulder correction - Aesthetics. TODO: clean, a bit convoluted
         let armProjection = _tempV3_2.set( xAxis.dot( localTarget ), yAxis.dot( localTarget ), zAxis.dot( localTarget ) );
         armProjection.x *= this.isLeftHand ? -1 : 1;
-        let factor = Math.sin( -Math.PI*0.5 + Math.PI * Math.max( 0, Math.min( 1, armProjection.x / armSize ) ) ) * 0.5 + 0.5; // how forward it is --> radians * factor; factor = sin( -90 + 180 * targetRatio )
-        factor = ( factor*factor*factor ) * 1.2 - 0.2; // sin^3 and remap from [0,1]->[-0.2,1]
-        let forwardCorrection = Math.PI*0.20 * factor; 
-        factor = Math.sin( -Math.PI*0.5 + Math.PI * Math.max( 0, Math.min( 1, -armProjection.z / armSize ) ) ) * 0.5 + 0.5;  // how lateral it is --> radians * factor; factor = sin( -90 + 180 * targetRatio )
-        forwardCorrection += Math.PI*0.30 * factor; //  how lateral it is
+        let forwardCorrection = Math.sin( -Math.PI*0.5 + Math.PI * Math.max( 0, Math.min( 1, -armProjection.z / armSize ) ) ) * 0.5 + 0.5;  // how lateral it is --> radians * factor; factor = sin( -90 + 180 * targetRatio )
+        forwardCorrection = Math.PI*0.30 * forwardCorrection; //  how lateral it is
         forwardCorrection = Math.max( - Math.PI*0.1, Math.min( Math.PI*0.3, forwardCorrection ) );
         forwardCorrection *= this.isLeftHand ? -1 : 1;  
         let forwardCorrectionQuat = _tempQ_0.setFromAxisAngle( yAxis, forwardCorrection );
         shoulderBone.quaternion.multiply( forwardCorrectionQuat )
         
-        let upwardsCorrection = Math.PI*0.20 * (Math.sin( -Math.PI*0.5 + Math.PI * Math.max( -0.1, Math.min( 1, (armProjection.y / armSize ) ) ) ) * 0.5 + 0.5 );
+        let upwardsCorrection = Math.max(0, Math.min( 1, (armProjection.y + armSize*0.25) / (armSize) ));
+        upwardsCorrection = Math.sin( upwardsCorrection * Math.PI - Math.PI*0.5) *0.5 + 0.5;
+        upwardsCorrection = Math.PI * 0.2 * upwardsCorrection;
         let upwardsCorrectionQuat = _tempQ_0.setFromAxisAngle( xAxis, -upwardsCorrection );
         shoulderBone.quaternion.multiply( upwardsCorrectionQuat );
 
@@ -188,26 +188,17 @@ class GeometricArmIK{
         let elbowBone = this.elbowBone;
         let armBone = this.armBone;
 
-
-        let _tempQ_0 = this._tempQ_0;
-        let _tempV3_4 = this._tempV3_4;
-        
         // remove arm twisting and insert it into elbow
         // (quaternions) R = S * T ---> T = normalize( [ Wr, proj(Vr) ] ) where proj(Vr) projection into some arbitrary twist axis
-        let twistq = _tempQ_0.copy(armBone.quaternion);
-        let twistAxis = _tempV3_4.copy(elbowBone.position).normalize();
-        let dot = twistq.x * twistAxis.x + twistq.y * twistAxis.y + twistq.z * twistAxis.z;
-        twistq.set( dot * twistAxis.x, dot * twistAxis.y, dot * twistAxis.z, twistq.w );
-        twistq.normalize();
+        let twistq = this._tempQ_0;
+        let twistAxis = this._tempV3_4.copy(elbowBone.position).normalize();
+        getTwistQuaternion( armBone.quaternion, twistAxis, twistq );
         elbowBone.quaternion.premultiply( twistq );
         armBone.quaternion.multiply( twistq.invert() );
 
         // previous fix might induce some twisting in forearm. remove forearm twisting. Keep only swing rotation
-        twistq = _tempQ_0.copy(elbowBone.quaternion);
-        twistAxis = _tempV3_4.copy(wristBone.position).normalize();
-        dot = twistq.x * twistAxis.x + twistq.y * twistAxis.y + twistq.z * twistAxis.z;
-        twistq.set( dot * twistAxis.x, dot * twistAxis.y, dot * twistAxis.z, twistq.w );
-        twistq.normalize();
+        twistAxis = this._tempV3_4.copy(wristBone.position).normalize();
+        getTwistQuaternion( elbowBone.quaternion, twistAxis, twistq );
         elbowBone.quaternion.multiply( twistq.invert() );
     }
 }

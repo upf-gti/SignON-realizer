@@ -51,7 +51,7 @@ function nlerpQuats( destQuat, qa, qb, t ){
 }
 
 // decompose a quaternion into twist and swing quaternions. (Twist before swing decomposition). Arguments cannot be the same instance of quaternion
-function twistSwingQuats( q, normAxis, outTwist, outSwing ){
+function getTwistSwingQuaternions( q, normAxis, outTwist, outSwing ){
     //  R = [ Wr, Vr ] = S * T  source rotation
     // T = norm( [ Wr, proj(Vr) ] ) twist 
     // S = R * inv(T)
@@ -63,6 +63,13 @@ function twistSwingQuats( q, normAxis, outTwist, outSwing ){
     outSwing.invert(); // actually computes the conjugate so quite cheap
     outSwing.premultiply( q );
     outSwing.normalize();
+}
+
+function getTwistQuaternion( q, normAxis, outTwist ){
+    let dot =  q.x * normAxis.x + q.y * normAxis.y + q.z * normAxis.z;
+    outTwist.set( dot * normAxis.x, dot * normAxis.y, dot * normAxis.z, q.w )
+    outTwist.normalize(); // already manages (0,0,0,0) quaternions by setting identity
+    return outTwist;
 }
 
 // symmetry string
@@ -99,4 +106,4 @@ function findIndexOfBone( skeleton, name ){
     return -1;
 }
 
-export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, twistSwingQuats,  directionStringSymmetry,  findIndexOfBone }
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion,  directionStringSymmetry,  findIndexOfBone }

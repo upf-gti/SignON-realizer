@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { directionStringSymmetry, mirrorQuat, nlerpQuats, twistSwingQuats } from "./SigmlUtils.js";
+import { directionStringSymmetry, nlerpQuats } from "./SigmlUtils.js";
 
 // convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
 let extfidirPointTable = {
@@ -38,7 +38,7 @@ let extfidirPointTable = {
 class Extfidir {
     constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
-        this.mirror = !!isLeftHand;
+        this.isLeftHand = !!isLeftHand;
 
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
@@ -119,7 +119,7 @@ class Extfidir {
         let bearing = Math.atan2( targetPoint.x, targetPoint.z );
         
         // this solves ir
-        if ( this.mirror ){ 
+        if ( this.isLeftHand ){ 
             if ( bearing > 1.58825 ){ bearing -= Math.PI * 2; } 
         } 
         else {

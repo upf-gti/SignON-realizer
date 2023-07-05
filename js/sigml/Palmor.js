@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { directionStringSymmetry, mirrorQuat, nlerpQuats } from "./SigmlUtils.js";
+import { directionStringSymmetry } from "./SigmlUtils.js";
 
 // convert rotation names into radiants. Using positive/negative angles helps with correct interpolation path
 let palmorRightTable = {
@@ -27,7 +27,7 @@ let palmorLeftTable = {
 class Palmor {
     constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
-        this.mirror = !!isLeftHand;
+        this.isLeftHand = !!isLeftHand;
         
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
@@ -110,9 +110,9 @@ class Palmor {
         if ( rotationName && symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
         if ( secondRotName && symmetry ){ secondRotName = directionStringSymmetry( secondRotName, symmetry ); }
         
-        let angle = ( this.mirror ) ? palmorLeftTable[ rotationName ] : palmorRightTable[ rotationName ];
+        let angle = ( this.isLeftHand ) ? palmorLeftTable[ rotationName ] : palmorRightTable[ rotationName ];
         if( isNaN( angle ) ){ return; }
-        let secondAngle = ( this.mirror ) ? palmorLeftTable[ secondRotName ] : palmorRightTable[ secondRotName ];
+        let secondAngle = ( this.isLeftHand ) ? palmorLeftTable[ secondRotName ] : palmorRightTable[ secondRotName ];
         if( !isNaN( secondAngle ) ){ 
             // find shortest path in the circle and adjust secondAngle
             if( Math.abs(angle - secondAngle) > Math.PI ){
@@ -120,7 +120,7 @@ class Palmor {
                 else{ secondAngle += 2 * Math.PI; }
             }
             // avoid impossible angles
-            if( this.mirror ){ secondAngle = Math.max( palmorLeftTable['ul'], Math.min( palmorRightTable['l'], secondAngle ) ); }
+            if( this.isLeftHand ){ secondAngle = Math.max( palmorLeftTable['ul'], Math.min( palmorRightTable['l'], secondAngle ) ); }
             else{ secondAngle = Math.max( palmorLeftTable['ur'], Math.min( palmorRightTable['u'], secondAngle ) ); }
 
             angle = 0.5 * angle + 0.5 * secondAngle; 

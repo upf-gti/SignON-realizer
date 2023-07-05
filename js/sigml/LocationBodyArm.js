@@ -53,10 +53,11 @@ let sides = {
 }
 
 class LocationBodyArm {
-    constructor( boneMap, skeleton, bodyLocations, isLeftHand = false ) {
+    constructor( boneMap, skeleton, bodyLocations, handLocations, isLeftHand = false ) {
         this.skeleton = skeleton;
         this.bodyLocations = bodyLocations;
-        this.mirror = !!isLeftHand;
+        this.handLocations = handLocations;
+        this.isLeftHand = !!isLeftHand;
 
         let handName = isLeftHand ? "L" : "R";
         this.idx = boneMap[ handName + "Shoulder" ]// shoulder (back) index 
@@ -69,7 +70,6 @@ class LocationBodyArm {
 
         // if not null, this will be de point that tries to reach the target. Otherwise, the wrist is assumed
         this.contactFinger = null;
-        this.contactFingerMap = [ boneMap[ handName + "HandThumb" ], boneMap[ handName + "HandIndex" ], boneMap[ handName + "HandMiddle" ], boneMap[ handName + "HandRing" ], boneMap[ handName + "HandPinky" ] ];
 
         this.time = 0; // current time of transition
         this.start = 0; 
@@ -79,14 +79,15 @@ class LocationBodyArm {
         
         this.transition = false;
 
+        this._tempV3_0 = new THREE.Vector3();
+        this._tempV3_1 = new THREE.Vector3();
+        this._tempV3_2 = new THREE.Vector3();
+        
         this.worldArmSize = 0;
-        let v = new THREE.Vector3();
-        let u = v.clone();
-        let w = v.clone();
-        this.skeleton.bones[ boneMap[ handName + "Arm" ] ].getWorldPosition( v );
-        this.skeleton.bones[ boneMap[ handName + "Elbow" ] ].getWorldPosition( u );
-        this.skeleton.bones[ boneMap[ handName + "Wrist" ] ].getWorldPosition( w );
-        this.worldArmSize = v.sub(u).length() + u.sub(w).length();
+        this.skeleton.bones[ boneMap[ handName + "Arm" ] ].getWorldPosition( this._tempV3_0 );
+        this.skeleton.bones[ boneMap[ handName + "Elbow" ] ].getWorldPosition( this._tempV3_1 );
+        this.skeleton.bones[ boneMap[ handName + "Wrist" ] ].getWorldPosition( this._tempV3_2 );
+        this.worldArmSize = this._tempV3_0.sub( this._tempV3_1 ).length() + this._tempV3_1.sub( this._tempV3_2 ).length();
 
         // set default poses
         this.reset();
@@ -119,18 +120,16 @@ class LocationBodyArm {
             this.transition = false; // flag as "nothing to do"
         }
         else{
-            let newTarget = this.trg.p.clone();
+            let newTarget = this._tempV3_0.copy( this.trg.p );
 
             if ( this.contactFinger ){ // use some finger instead of the wrist
                 this.contactFinger.updateWorldMatrix( true ); // self and parents
                 
-                let a = new THREE.Vector3();
-                let b = new THREE.Vector3();
-                a.setFromMatrixPosition( this.contactFinger.matrixWorld );
-                b.setFromMatrixPosition( this.skeleton.bones[ this.idx + 3 ].matrixWorld );
+                this._tempV3_1.setFromMatrixPosition( this.contactFinger.matrixWorld );
+                this._tempV3_2.setFromMatrixPosition( this.skeleton.bones[ this.idx + 3 ].matrixWorld );
 
-                a.sub(b);
-                newTarget.sub( a );
+                let dir = this._tempV3_1.sub( this._tempV3_2 );
+                newTarget.sub( dir );
             }
             
             
@@ -167,15 +166,15 @@ class LocationBodyArm {
     // all second and main attributes do not get mixed until the end (jasigning)
     _newGestureLocationComposer( bml, symmetry, resultPos, isSecond = false ){
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
-        let location = isSecond ? bml.secondLocationArm : bml.locationArm;
+        let location = isSecond ? bml.secondLocationBodyArm : bml.locationBodyArm;
 
         // for symmetry - the left and right must be swapped
         if ( ( symmetry & 0x01 ) && location ){ 
             if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
             else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
         }
-        if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "shoulder" ){
-            location += this.mirror ? "L" : "R";
+        if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "eyebrow" || location == "shoulder" ){
+            location += this.isLeftHand ? "L" : "R";
         }
        
         
@@ -207,8 +206,8 @@ class LocationBodyArm {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * locationArm: string from bodyLocations
-     * secondLocationArm
+     * locationBodyArm: string from bodyLocations
+     * secondLocationBodyArm
      * distance: (optional) [0,1] how far from the body to locate the hand. 0 = touch, 1 = arm extended (distance == arm size). 
      * side: (optional) string from sides table. Location will offset into that direction
      * secondSide: (optional)
@@ -218,7 +217,7 @@ class LocationBodyArm {
     newGestureBML( bml, symmetry = 0x00, lastFrameWorldPosition = null ) {
 
         if ( !this._newGestureLocationComposer( bml, symmetry, this.trg.p, false ) ){
-            console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationArm + "\"" );
+            console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationBodyArm + "\"" );
             return;
         };
         if( this._newGestureLocationComposer( bml, symmetry, this.src.p, true ) ){ // use src as temporal buffer
@@ -248,20 +247,33 @@ class LocationBodyArm {
             this.def.e = this.trg.e;
         }
 
-        // in case the user selects a specific finger bone as end effector. Not affected by shifg
+        // in case the user selects a specific finger bone as end effector. Not affected by shift
         this.contactFinger = null;
-        if ( bml.contactFinger ){
-            let digit = parseInt( bml.contactFinger );
-            if ( digit > 0 && digit < 6){ // form 1 to 5
-                let contactBoneIdx = this.contactFingerMap[ digit - 1 ];
-                switch( bml.contactFingerZone ){
-                    case "base": break;
-                    case "mid": contactBoneIdx += 1; break;
-                    case "high": contactBoneIdx += 2;  break;
-                    case "tip": 
-                    default: contactBoneIdx += 3; break;
+        let srcFinger = parseInt( bml.srcFinger );
+        let srcSide = bml.srcSide; 
+        let srcLocation = bml.srcLocation;
+        if ( srcFinger || srcSide || srcLocation ){ 
+
+            if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
+            if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
+            else{ 
+                srcLocation = srcLocation.toLowerCase(); 
+                srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
+            }
+            if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
+            else{ 
+                srcSide = srcSide.toLowerCase();
+                srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
+                if ( !isNaN( finger ) ){ // jasigning...
+                    if ( srcSide == "Right" ){ srcSide = hand == "R" ? "Ulnar" : "Radial"; }
+                    else if ( srcSide == "Left" ){ srcSide = hand == "R" ? "Radial" : "Ulnar"; }
                 }
-                this.contactFinger = this.skeleton.bones[ contactBoneIdx ];
+            }
+            let srcName = srcFinger + srcLocation + srcSide; 
+         
+            // only hand locations allowed as contact
+            if ( !srcName.includes( "Arm" ) && !srcName.includes( "Elbow" ) ){
+                this.contactFinger = this.handLocations[ srcName ];
             }
         }
 

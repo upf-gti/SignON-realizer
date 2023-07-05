@@ -107,9 +107,9 @@ let _tempHandQuat = new THREE.Quaternion(0,0,0,1);
 class HandShapeRealizer {
     constructor( boneMap, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
-        this.mirror = !!isLeftHand;
+        this.isLeftHand = !!isLeftHand;
 
-        let handName = ( this.mirror ) ? "L" : "R";
+        let handName = ( this.isLeftHand ) ? "L" : "R";
         this.idxs = { // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
             thumb:  boneMap[ handName + "HandThumb" ], 
             index:  boneMap[ handName + "HandIndex" ],
@@ -206,8 +206,8 @@ class HandShapeRealizer {
 
 
         let bones = this.skeleton.bones;
-        let bendAxes = (this.mirror) ? avatarHandAxes.L.bends : avatarHandAxes.R.bends;    
-        let splayAxes = (this.mirror) ? avatarHandAxes.L.splays : avatarHandAxes.R.splays; 
+        let bendAxes = (this.isLeftHand) ? avatarHandAxes.L.bends : avatarHandAxes.R.bends;    
+        let splayAxes = (this.isLeftHand) ? avatarHandAxes.L.splays : avatarHandAxes.R.splays; 
         let c = this.curG;   
         
 
@@ -235,7 +235,7 @@ class HandShapeRealizer {
 
         // thumb splay is weird
         bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[0], c[0][0] * Math.PI*0.15 ) );
-        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.mirror?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
+        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.isLeftHand?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
 
         // other fingers splay
         bones[ this.idxs.index  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
@@ -401,7 +401,7 @@ class HandShapeRealizer {
         // check if any splay attributes is present. ( function already checks if passed argument is valid )           
         this._stringToSplay( bml.splay1, this.trgG[0] ); // thumb
         this._stringToSplay( bml.splay2 ? bml.splay2 : bml.mainSplay, this.trgG[1] );
-        this._stringToSplay( bml.splay3 ? bml.splay3 : bml.mainSplay, this.trgG[2] );
+        this._stringToSplay( bml.splay3, this.trgG[2] ); // not affected by mainsplay, otherwise it feels weird
         this._stringToSplay( bml.splay4 ? bml.splay4 : bml.mainSplay, this.trgG[3] );
         this._stringToSplay( bml.splay5 ? bml.splay5 : bml.mainSplay, this.trgG[4] );
 

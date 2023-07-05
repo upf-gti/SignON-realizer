@@ -36,7 +36,7 @@ class AppGUI {
                 htmlStr += "<a href=\"https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md\" target=\"_blank\">Click here to see BML instructions and attributes</a>";
                 htmlStr += "<p>Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed. </p>";
                 htmlStr += "<p>Note: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one. </p>";
-                htmlStr += '<p>An example: <br>{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, <br> { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationArm": "shoulderR", "lrSym": true, "hand": "both", "distance": 0.1 }</p>';
+                htmlStr += '<p>An example: <br>{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, <br> { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulderR", "lrSym": true, "hand": "both", "distance": 0.1 }</p>';
                 htmlStr += "<textarea id=\"bmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
@@ -384,7 +384,7 @@ class AppGUI {
             this.msg = {
                 type: "behaviours",
                 data: [
-                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationArm: armshape, hand: 'both', distance: window.armDist },
+                    {   type: "gesture", start: 0.0, attackPeak: 0.5, relax : 5, end: 5.3, locationBodyArm: armshape, hand: 'both', distance: window.armDist },
             ]};
             this.ECAcontroller.processMsg(JSON.stringify(this.msg));
         }
@@ -394,25 +394,25 @@ class AppGUI {
                this.app.msg = {
                    type: "behaviours",
                    data: [
-                       { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "right" },
-                       { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "right" },
-                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyeL", hand: "right" },
-                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyeR", hand: "right" },
-                       { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "right" },
-                       { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "right" },
-                       { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "right" },
-                       { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "right" },
-                       { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "right" },
-                       { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "right" },
-                       { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "right" },
-                       { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "right" },
-                       { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "right" },
-                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shoulderL", hand: "right" },
-                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shoulderR", hand: "right" },
-                       { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "right" },
-                       { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "right" },
-                       { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "right" },
-                       { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "right" },
+                       { type: "gesture", start: duration, end: duration * 2, locationBodyArm: "headtop", hand: "right" },
+                       { type: "gesture", start: duration * 2, end: duration * 3, locationBodyArm: "forehead", hand: "right" },
+                       { type: "gesture", start: duration * 3, end: duration * 4, locationBodyArm: "eyeL", hand: "right" },
+                       { type: "gesture", start: duration * 4, end: duration * 5, locationBodyArm: "eyeR", hand: "right" },
+                       { type: "gesture", start: duration * 5, end: duration * 6, locationBodyArm: "nose", hand: "right" },
+                       { type: "gesture", start: duration * 6, end: duration * 7, locationBodyArm: "upperlip", hand: "right" },
+                       { type: "gesture", start: duration * 7, end: duration * 8, locationBodyArm: "mouth", hand: "right" },
+                       { type: "gesture", start: duration * 8, end: duration * 9, locationBodyArm: "chin", hand: "right" },
+                       { type: "gesture", start: duration * 9, end: duration * 10, locationBodyArm: "earL", hand: "right" },
+                       { type: "gesture", start: duration * 10, end: duration * 11, locationBodyArm: "earR", hand: "right" },
+                       { type: "gesture", start: duration * 11, end: duration * 12, locationBodyArm: "cheekL", hand: "right" },
+                       { type: "gesture", start: duration * 12, end: duration * 13, locationBodyArm: "cheekR", hand: "right" },
+                       { type: "gesture", start: duration * 13, end: duration * 14, locationBodyArm: "neck", hand: "right" },
+                       { type: "gesture", start: duration * 14, end: duration * 15, locationBodyArm: "shoulderL", hand: "right" },
+                       { type: "gesture", start: duration * 15, end: duration * 16, locationBodyArm: "shoulderR", hand: "right" },
+                       { type: "gesture", start: duration * 16, end: duration * 17, locationBodyArm: "chest", hand: "right" },
+                       { type: "gesture", start: duration * 17, end: duration * 18, locationBodyArm: "stomach", hand: "right" },
+                       { type: "gesture", start: duration * 18, end: duration * 19, locationBodyArm: "belowstomach", hand: "right" },
+                       { type: "gesture", start: duration * 19, end: duration * 20, locationBodyArm: "neutral", hand: "right" },
                ]};
                this.app.ECAcontroller.processMsg(JSON.stringify(this.app.msg));
            },
@@ -421,25 +421,25 @@ class AppGUI {
                this.app.msg = {
                    type: "behaviours",
                    data: [
-                       { type: "gesture", start: duration, end: duration * 2, locationArm: "headtop", hand: "left"},
-                       { type: "gesture", start: duration * 2, end: duration * 3, locationArm: "forehead", hand: "left" },
-                       { type: "gesture", start: duration * 3, end: duration * 4, locationArm: "eyeL", hand: "left" },
-                       { type: "gesture", start: duration * 4, end: duration * 5, locationArm: "eyeR", hand: "left" },
-                       { type: "gesture", start: duration * 5, end: duration * 6, locationArm: "nose", hand: "left" },
-                       { type: "gesture", start: duration * 6, end: duration * 7, locationArm: "upperlip", hand: "left" },
-                       { type: "gesture", start: duration * 7, end: duration * 8, locationArm: "mouth", hand: "left" },
-                       { type: "gesture", start: duration * 8, end: duration * 9, locationArm: "chin", hand: "left" },
-                       { type: "gesture", start: duration * 9, end: duration * 10, locationArm: "earL", hand: "left" },
-                       { type: "gesture", start: duration * 10, end: duration * 11, locationArm: "earR", hand: "left" },
-                       { type: "gesture", start: duration * 11, end: duration * 12, locationArm: "cheekL", hand: "left" },
-                       { type: "gesture", start: duration * 12, end: duration * 13, locationArm: "cheekR", hand: "left" },
-                       { type: "gesture", start: duration * 13, end: duration * 14, locationArm: "neck", hand: "left" },
-                       { type: "gesture", start: duration * 14, end: duration * 15, locationArm: "shoulderL", hand: "left" },
-                       { type: "gesture", start: duration * 15, end: duration * 16, locationArm: "shoulderR", hand: "left" },
-                       { type: "gesture", start: duration * 16, end: duration * 17, locationArm: "chest", hand: "left" },
-                       { type: "gesture", start: duration * 17, end: duration * 18, locationArm: "stomach", hand: "left" },
-                       { type: "gesture", start: duration * 18, end: duration * 19, locationArm: "belowstomach", hand: "left" },
-                       { type: "gesture", start: duration * 19, end: duration * 20, locationArm: "neutral", hand: "left" },
+                       { type: "gesture", start: duration, end: duration * 2, locationBodyArm: "headtop", hand: "left"},
+                       { type: "gesture", start: duration * 2, end: duration * 3, locationBodyArm: "forehead", hand: "left" },
+                       { type: "gesture", start: duration * 3, end: duration * 4, locationBodyArm: "eyeL", hand: "left" },
+                       { type: "gesture", start: duration * 4, end: duration * 5, locationBodyArm: "eyeR", hand: "left" },
+                       { type: "gesture", start: duration * 5, end: duration * 6, locationBodyArm: "nose", hand: "left" },
+                       { type: "gesture", start: duration * 6, end: duration * 7, locationBodyArm: "upperlip", hand: "left" },
+                       { type: "gesture", start: duration * 7, end: duration * 8, locationBodyArm: "mouth", hand: "left" },
+                       { type: "gesture", start: duration * 8, end: duration * 9, locationBodyArm: "chin", hand: "left" },
+                       { type: "gesture", start: duration * 9, end: duration * 10, locationBodyArm: "earL", hand: "left" },
+                       { type: "gesture", start: duration * 10, end: duration * 11, locationBodyArm: "earR", hand: "left" },
+                       { type: "gesture", start: duration * 11, end: duration * 12, locationBodyArm: "cheekL", hand: "left" },
+                       { type: "gesture", start: duration * 12, end: duration * 13, locationBodyArm: "cheekR", hand: "left" },
+                       { type: "gesture", start: duration * 13, end: duration * 14, locationBodyArm: "neck", hand: "left" },
+                       { type: "gesture", start: duration * 14, end: duration * 15, locationBodyArm: "shoulderL", hand: "left" },
+                       { type: "gesture", start: duration * 15, end: duration * 16, locationBodyArm: "shoulderR", hand: "left" },
+                       { type: "gesture", start: duration * 16, end: duration * 17, locationBodyArm: "chest", hand: "left" },
+                       { type: "gesture", start: duration * 17, end: duration * 18, locationBodyArm: "stomach", hand: "left" },
+                       { type: "gesture", start: duration * 18, end: duration * 19, locationBodyArm: "belowstomach", hand: "left" },
+                       { type: "gesture", start: duration * 19, end: duration * 20, locationBodyArm: "neutral", hand: "left" },
                    ]};
                this.app.ECAcontroller.processMsg(JSON.stringify(this.app.msg));
            }
@@ -514,8 +514,8 @@ class AppGUI {
             this.msg = {
                 type: "behaviours",
                 data: [
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 0.75 },
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationBodyArm: "chest", hand: "right", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationBodyArm: "chest", hand: "left", distance: 0.75 },
                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, handshape: "flat", hand: "both"},
                     { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, palmor: rotname, hand: "both"}, 
                 ]
@@ -549,8 +549,8 @@ class AppGUI {
             this.msg = {
                 type: "behaviours",
                 data: [
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationArm: "chest", hand: "right", distance: 0.75 },
-                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationArm: "chest", hand: "left", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 4000000, locationBodyArm: "chest", hand: "right", distance: 0.75 },
+                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, locationBodyArm: "chest", hand: "left", distance: 0.75 },
                     { type: "gesture", start: 0, attackPeak: 0.2, relax: 2000000, end: 3000000, handshape: "flat", hand: "both"},
                     { type: "gesture", start: 0, attackPeak: 0.8, relax: 2000000, end: 3000000, extfidir: rotname, hand: "both", mode: 2 }, 
                 ]
@@ -621,7 +621,7 @@ class AppGUI {
                     data: [
                         { type: "speech", start: halloStart, end: 100000, text: this.app.wordsToArpa("hallo", "NGT") + ".", sentT: hallo, sentInt: 0.5 },
     
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, locationArm: "shoulderR", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, locationBodyArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, handshape: "flat", thumbshape: "touch", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, palmor: "d", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo + 1, end: halloStart + hallo + 2, extfidir: "u", hand: "right" },
@@ -640,7 +640,7 @@ class AppGUI {
                     data: [
                         { type: "speech", start: leukStart, end: 100000, text: this.app.wordsToArpa("leuk", "NGT") + ".", sentT: leuk, sentInt: 0.8 },
     
-                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, locationBodyArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, handshape: "finger2", thumbshape:"opposed", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, palmor: "u", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: leukStart + leuk + 1, end: leukStart + leuk + 2, extfidir: "uo", hand: "right", mode:"relative" },
@@ -659,8 +659,8 @@ class AppGUI {
                 this.app.msg = {
                     type: "behaviours",
                     data: [
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationBodyArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, locationBodyArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2, handshape: "finger2", hand: "both" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "l", hand: "right" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 1, end: end + 2,  palmor: "r", hand: "left" },
@@ -689,7 +689,7 @@ class AppGUI {
                         // hallo
                         { type: "speech", start: halloStart, end: 100000, text: this.app.wordsToArpa("hallo", "NGT") + ".", sentT: hallo, sentInt: 0.5 },
     
-                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, locationArm: "shoulderR", hand: "right", distance: 0.1 },
+                        { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, locationBodyArm: "shoulderR", hand: "right", distance: 0.1 },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, handshape: "flat", thumbshape: "touch", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, palmor: "d", hand: "right" },
                         { type: "gesture", start: halloStart, attackPeak: halloStart + hallo * 0.5, relax: halloStart + hallo, end: halloStart + hallo + 0.5, extfidir: "u", hand: "right" },
@@ -697,7 +697,7 @@ class AppGUI {
                         // leuk                  
                         { type: "speech", start: leukStart, end: 100000, text: this.app.wordsToArpa("leuk", "NGT") + ".", sentT: leuk, sentInt: 0.8 },
     
-                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, locationBodyArm: "chest", hand: "right", distance: 0.1, side:"r", sideDistance: 0.1 },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, handshape: "finger2", thumbshape:"opposed", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, palmor: "u", hand: "right" },
                         { type: "gesture", start: leukStart, attackPeak: leukStart + leuk * 0.4, relax: 100000, end: 100000, extfidir: "uo", hand: "right", mode:"relative" },
@@ -707,8 +707,8 @@ class AppGUI {
     
                                                
                         // ontmoeten
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
-                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationBodyArm: "stomach", hand: "right", distance: 0.025, side:"r", sideDistance: 0.1 },
+                        { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, locationBodyArm: "stomach", hand: "left", distance: 0.075, side:"l", sideDistance: 0.1 },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5, handshape: "finger2", hand: "both" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "l", hand: "right" },
                         { type: "gesture", start: ontStart, attackPeak: ontStart + ontmoeten * 0.4, relax: end + 0.5, end: end + 1.5,  palmor: "r", hand: "left" },
@@ -734,7 +734,7 @@ class AppGUI {
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, extfidir: "u", hand: "right" },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, palmor: "ur", hand: "right" },
                         
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, locationArm: "chest", hand: "right", distance: 0.25, side: 'r', sideDistance: 0.05 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, locationBodyArm: "chest", hand: "right", distance: 0.25, side: 'r', sideDistance: 0.05 },
                         { type: "gesture", start: start, attackPeak: start + sign * 0.4, relax: end - relax, end: end, motion: "wrist", mode:"swing", hand: "right", intensity:0.1 },
                     ]
                 };
@@ -750,7 +750,7 @@ class AppGUI {
                     type: "behaviours",
                     data: [
                         
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.25, side: 'r', sideDistance: 0.08 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationBodyArm: "chest", hand: "both", lrSym: true, distance: 0.25, side: 'r', sideDistance: 0.08 },
                         
                         
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
@@ -774,7 +774,7 @@ class AppGUI {
                     type: "behaviours",
                     data: [
                         
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "chest", hand: "both", lrSym: true, distance: 0.2, side: 'r', sideDistance: 0.04 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationBodyArm: "chest", hand: "both", lrSym: true, distance: 0.2, side: 'r', sideDistance: 0.04 },
                         
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "ceeall", thumbshape: "opposed", hand: "both"  },
                         
@@ -799,8 +799,8 @@ class AppGUI {
                     data: [
                         { type: "speech", start: start, end: 100000, text: this.app.wordsToArpa("automatisch", "NGT") + ".", sentInt: 0.5 },
     
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "right", distance: 0.22, side: 'ir', sideDistance: 0.06 },
-                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationArm: "stomach", hand: "left", distance: 0.22, side: 'l', sideDistance: 0.13},
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationBodyArm: "stomach", hand: "right", distance: 0.22, side: 'ir', sideDistance: 0.06 },
+                        { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, locationBodyArm: "stomach", hand: "left", distance: 0.22, side: 'l', sideDistance: 0.13},
     
                         { type: "gesture", start: start, attackPeak: start + sign * 0.1, relax: end - relax, end: end, handshape: "flat", thumbshape: "touch", hand: "both"  },
     
