@@ -264,7 +264,7 @@ class LocationBodyArm {
             else{ 
                 srcSide = srcSide.toLowerCase();
                 srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
-                if ( !isNaN( finger ) ){ // jasigning...
+                if ( !isNaN( srcFinger ) ){ // jasigning...
                     if ( srcSide == "Right" ){ srcSide = hand == "R" ? "Ulnar" : "Radial"; }
                     else if ( srcSide == "Left" ){ srcSide = hand == "R" ? "Radial" : "Ulnar"; }
                 }

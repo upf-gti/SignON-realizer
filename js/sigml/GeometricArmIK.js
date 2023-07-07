@@ -109,6 +109,7 @@ class GeometricArmIK{
         // c*c = a*a + b*b + 2ab*cos(C)
         let value = ( elbowSize*elbowSize + wristSize*wristSize - targetDistance*targetDistance ) / ( 2 * wristSize * elbowSize ); // law of cosines before arcos
         let elbowAngle = Math.PI - Math.acos( Math.max( -0.999999999, Math.min( 0.999999999, value ) ) ); // ensure there is a solution
+        elbowAngle = ( elbowAngle > 2.8 ) ? 2.8 : elbowAngle; // avoid edge cases. If forearm is too large it can go over the shoulder point and corrupt the bearing
         elbowBone.quaternion.setFromAxisAngle( this.elbowRotAxis, -elbowAngle );
 
         // new wrist position normalized

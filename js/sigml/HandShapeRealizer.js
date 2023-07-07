@@ -16,9 +16,9 @@ let handShapes = {
     pinch12:     { selected:[2,2,0,0,0], shape:[ [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
     pinch12open: { selected:[2,2,0,0,0], shape:[ [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ] },
     pinchall:    { selected:[2,2,2,2,2], shape:[ [1, 0.8, 0.4, 0.6], [0, 0.6, 0.6, 0.8], [0, 0.4, 0.6, 0.6], [0, 0.4, 0.7, 0.4], [0, 0.7, 0.5, 0.5] ] },
-    cee12:       { selected:[2,2,0,0,0], shape:[ [1, 0.5, 0.1, 0.2], [0, 0.15, 0.4, 0.6], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
-    cee12open:   { selected:[2,2,0,0,0], shape:[ [1, 0.5, 0.1, 0.1], [0, 0.4, 0.5, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ] },
-    ceeall:      { selected:[2,2,2,2,2], shape:[ [1, 0.7, 0.1, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2] ], } 
+    cee12:       { selected:[3,3,0,0,0], shape:[ [1, 0.5, 0.1, 0.2], [0, 0.15, 0.4, 0.6], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
+    cee12open:   { selected:[3,3,0,0,0], shape:[ [1, 0.5, 0.1, 0.1], [0, 0.4, 0.5, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ] },
+    ceeall:      { selected:[3,3,3,3,3], shape:[ [1, 0.7, 0.1, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2] ], } 
 };
 
 let thumbShapes = {
@@ -262,7 +262,7 @@ class HandShapeRealizer {
         if ( !b ){ return; }
 
         // thumb combinations
-        if ( selectedFingers[0] == 2 ){
+        if ( selectedFingers[0] >= 2 ){
             let bt = b[2].t;
             handArray[0][1] = bt[0]; 
             handArray[0][2] = bt[1]; 
@@ -277,9 +277,9 @@ class HandShapeRealizer {
                 handArray[i][2] = f[1]; 
                 handArray[i][3] = f[2]; 
             }
-            if ( selectedFingers[i] == 2 ){ 
+            if ( selectedFingers[i] >= 2 ){ 
                 let bf = b[2].f;
-                handArray[i][1] = bf[0]; 
+                handArray[i][1] = selectedFingers[i] == 3 ? ( bf[0] * 0.8 ) : bf[0]; 
                 handArray[i][2] = bf[1]; 
                 handArray[i][3] = bf[2]; 
             }
@@ -351,12 +351,12 @@ class HandShapeRealizer {
             for( let i = 0; i < thumbGest.length; ++i ){ outHand[0][i] = thumbGest[i]; }        
         }
 
-        // tco (thumb combination opening). Applicable to cee and pinch (select mode 2). 1=keep original, 0=open fingers
+        // tco (thumb combination opening). Applicable to cee and pinch (select mode 2 and 3). 1=keep original, 0=open fingers
         let thumbCombinationOpening = parseFloat( isSecond ? bml.secondtco : bml.tco );
         thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(0, Math.min(1, thumbCombinationOpening ) );
         for( let i = 0; i < outHand.length; ++i ){
             let finger = outHand[i];
-            let fingerOpeningFactor = ( g.selected[i] == 2 ) ? thumbCombinationOpening : 0;
+            let fingerOpeningFactor = ( g.selected[i] >= 2 ) ? thumbCombinationOpening : 0;
             fingerOpeningFactor *= ( i == 0 ) ? 0.25 : 1;
             for( let j = 0; j < finger.length; ++j ){ finger[j] = finger[j] * ( 1 - fingerOpeningFactor ); }
         }

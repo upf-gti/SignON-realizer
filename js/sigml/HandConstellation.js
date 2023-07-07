@@ -106,7 +106,7 @@ class HandConstellation {
         if ( this.isBothHands ){
             distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
 
-            if ( this.cancelledArmsFlag & 0x02 ){ this.srcCurOffset.set(0,0,0); }
+            if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
             else{
                 this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
                 this.srcCurOffset.sub( srcWorldPoint );
@@ -205,7 +205,7 @@ class HandConstellation {
         let name = finger + location + side; 
 
         let result = handLocations[ name ];
-        if ( !result ){ result = handLocations[ "HandPalmar" ]; }
+        if ( !result ){ result = handLocations[ "2Tip" ]; }
         return result;
     }
     /**

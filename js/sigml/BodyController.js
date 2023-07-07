@@ -13,37 +13,38 @@ import { GeometricArmIK } from "./GeometricArmIK.js";
 let bodyLocations = {
 
     // mixamorig_head
-    head:       [ "mixamorig_Head", { x: 0.3959169, y: 3.6079083, z:16.0622060 } ],
-    headtop:    [ "mixamorig_Head", { x:-0.0036508, y:17.0158691, z: 5.2952675 } ],
-    forehead:   [ "mixamorig_Head", { x:-0.0038966, y: 8.9544818, z:11.4152387 } ],
-    nose:       [ "mixamorig_Head", { x:-0.0039482, y: 3.0418197, z:12.6563797 } ],
-    belownose:  [ "mixamorig_Head", { x:-0.0038966, y: 1.4548538, z:11.3404999 } ],
-    chin:       [ "mixamorig_Head", { x:-0.1038570, y:-3.1349527, z:10.2947058 } ],
-    underchin:  [ "mixamorig_Head", { x:-0.1038094, y:-5.4228805, z: 9.0718455 } ],
-    mouth:      [ "mixamorig_Head", { x:-0.1039085, y:-0.4480414, z:11.6215473 } ],
-    earlobeR:   [ "mixamorig_Head", { x:-7.1035518, y: 1.1415734, z: 2.6366639 } ],
-    earlobeL:   [ "mixamorig_Head", { x: 7.1035518, y: 1.1415734, z: 2.6366639 } ],
-    earR:       [ "mixamorig_Head", { x:-7.3965079, y: 4.1563666, z: 1.1672087 } ],
-    earL:       [ "mixamorig_Head", { x: 7.3965079, y: 4.1563666, z: 1.1672087 } ],
-    cheekR:     [ "mixamorig_Head", { x:-5.8962303, y: 1.0867598, z: 8.1369065 } ],
-    cheekL:     [ "mixamorig_Head", { x: 5.8962303, y: 1.0867598, z: 8.1369065 } ],
-    eyeR:       [ "mixamorig_Head", { x:-2.6038887, y: 6.0566197, z:11.1862465 } ],
-    eyeL:       [ "mixamorig_Head", { x: 2.6038887, y: 6.0566197, z:11.1862465 } ],
+    head:         [ "mixamorig_Head", { x: 0.3959169, y: 3.6079083, z:16.0622060 } ],
+    headtop:      [ "mixamorig_Head", { x:-0.0036508, y:17.0158691, z: 5.2952675 } ],
+    forehead:     [ "mixamorig_Head", { x:-0.0038966, y: 8.9544818, z:11.4152387 } ],
+    nose:         [ "mixamorig_Head", { x:-0.0039482, y: 3.0418197, z:12.6563797 } ],
+    belownose:    [ "mixamorig_Head", { x:-0.0038966, y: 1.4548538, z:11.3404999 } ],
+    chin:         [ "mixamorig_Head", { x:-0.1038570, y:-3.1349527, z:10.2947058 } ],
+    underchin:    [ "mixamorig_Head", { x:-0.1038094, y:-5.4228805, z: 9.0718455 } ],
+    mouth:        [ "mixamorig_Head", { x:-0.1039085, y:-0.4480414, z:11.6215473 } ],
+    earlobeR:     [ "mixamorig_Head", { x:-7.1035518, y: 1.1415734, z: 2.6366639 } ],
+    earlobeL:     [ "mixamorig_Head", { x: 7.1035518, y: 1.1415734, z: 2.6366639 } ],
+    earR:         [ "mixamorig_Head", { x:-7.3965079, y: 4.1563666, z: 1.1672087 } ],
+    earL:         [ "mixamorig_Head", { x: 7.3965079, y: 4.1563666, z: 1.1672087 } ],
+    cheekR:       [ "mixamorig_Head", { x:-5.8962303, y: 1.0867598, z: 8.1369065 } ],
+    cheekL:       [ "mixamorig_Head", { x: 5.8962303, y: 1.0867598, z: 8.1369065 } ],
+    eyeR:         [ "mixamorig_Head", { x:-2.6038887, y: 6.0566197, z:11.1862465 } ],
+    eyeL:         [ "mixamorig_Head", { x: 2.6038887, y: 6.0566197, z:11.1862465 } ],
 
-    eyebrowL:   [ "mixamorig_Head", { x: 3.1557796, y: 8.1589540, z: 11.1047004 } ],
-    eyebrowR:   [ "mixamorig_Head", { x:-2.8442204, y: 8.1589574, z: 11.1043666 } ],
-    mouth:      [ "mixamorig_Head", { x:-0.0442315, y:-0.3426179, z: 11.2198073 } ],
+    eyebrowL:     [ "mixamorig_Head", { x: 3.1557796, y: 8.1589540, z: 11.1047004 } ],
+    eyebrowR:     [ "mixamorig_Head", { x:-2.8442204, y: 8.1589574, z: 11.1043666 } ],
+    mouth:        [ "mixamorig_Head", { x:-0.0442315, y:-0.3426179, z: 11.2198073 } ],
 
     // mixamorig_neck
-    neck:       [ "mixamorig_Neck", { x: 0.3777671, y: 1.6747052, z: 6.0055403 } ],
+    neck:         [ "mixamorig_Neck", { x: 0.3777671, y: 1.6747052, z: 6.0055403 } ],
 
     // mixamorig_spine2
-    chest:      [ "mixamorig_Spine2", { x: -0.5054647, y: 5.4415624, z:14.5946054 } ],
-    shoulderR:  [ "mixamorig_Spine2", { x:-12.8036077, y:13.8415594, z: 3.5925257 } ],
-    shoulderL:  [ "mixamorig_Spine2", { x: 12.8036077, y:13.8415467, z: 3.5969393 } ],
+    chest:        [ "mixamorig_Spine2", { x: -0.5054647, y: 5.4415624, z:14.5946054 } ],
+    shoulderLine: [ "mixamorig_Spine2", { x: -0.2040958, y:14.6415558, z: 6.4946477 } ],
+    shoulderR:    [ "mixamorig_Spine2", { x:-12.8036077, y:13.8415594, z: 3.5925257 } ],
+    shoulderL:    [ "mixamorig_Spine2", { x: 12.8036077, y:13.8415467, z: 3.5969393 } ],
     
     // mixamorig_spine ( not spine1 )
-    stomach:    [ "mixamorig_Spine", { x: -0.0144779, y: 7.9643509, z: 12.4294767 } ],
+    stomach:      [ "mixamorig_Spine", { x: -0.0144779, y: 7.9643509, z: 12.4294767 } ],
 
     // hips
     belowstomach: [ "mixamorig_Hips", { x:-0.0351382, y: 7.2248580, z:12.5822406 } ],
@@ -194,7 +195,8 @@ class BodyController{
                 let idx = findIndexOfBone( skeleton, symmetry ? l[0].replace( "Right", "Left" ) : l[0] );
                 if ( idx < 0 ){ continue; }
     
-                let o = new THREE.Object3D(); //new THREE.Mesh( new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial( { color: Math.random()*0xffffff }) );
+                let o = new THREE.Object3D();
+                // let o = new THREE.Mesh( new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial( { color: Math.random()*0xffffff }) );
                 o.position.copy( l[1] );
                 if ( symmetry ){ o.position.x *= -1; }
                 o.name = keys[i];
@@ -223,25 +225,27 @@ class BodyController{
 
 
 
-        // DEBUG
-        this.point = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthTest:true, depthWrite: false }) );
-        this.point.position.set(0,1.5,0.5);
-        window.global.app.scene.add(this.point);
-        this.elbowRaise = 0;
-        window.s = 1;
-        window.addEventListener( "keydown", e =>{
-            switch( e.which ){
-                case 37: this.point.position.x -= 0.001 * window.s; break; // left
-                case 39: this.point.position.x += 0.001 * window.s; break; // right
-                case 38: this.point.position.y += 0.001 * window.s; break; // up
-                case 40: this.point.position.y -= 0.001 * window.s; break; // down
-                case 90: this.point.position.z += 0.001 * window.s; break; //z
-                case 88: this.point.position.z -= 0.001 * window.s; break; //x
-                case 65: this.elbowRaise += 1 * Math.PI / 180; break; //a
-                case 83: this.elbowRaise -= 1 * Math.PI / 180; break; //s
-                default: break;
-            }
-        } );
+        // // DEBUG
+        // this.point = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthTest:false, depthWrite: false }) );
+        // this.point2 = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthTest:false, depthWrite: false }) );
+        // this.point.position.set(0,1.5,0.5);
+        // window.global.app.scene.add(this.point);
+        // window.global.app.scene.add(this.point2);
+        // this.elbowRaise = 0;
+        // window.s = 1;
+        // window.addEventListener( "keydown", e =>{
+        //     switch( e.which ){
+        //         case 37: this.point.position.x -= 0.001 * window.s; break; // left
+        //         case 39: this.point.position.x += 0.001 * window.s; break; // right
+        //         case 38: this.point.position.y += 0.001 * window.s; break; // up
+        //         case 40: this.point.position.y -= 0.001 * window.s; break; // down
+        //         case 90: this.point.position.z += 0.001 * window.s; break; //z
+        //         case 88: this.point.position.z -= 0.001 * window.s; break; //x
+        //         case 65: this.elbowRaise += 1 * Math.PI / 180; break; //a
+        //         case 83: this.elbowRaise -= 1 * Math.PI / 180; break; //s
+        //         default: break;
+        //     }
+        // } );
     }
     _createArm( isLeftHand = false ){
         let handName = isLeftHand ? "L" : "R";

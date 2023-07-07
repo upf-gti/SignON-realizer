@@ -96,25 +96,8 @@ class Extfidir {
     }
 
     
+    // compute the swing rotation so as to get the twistAxis to point at a certain location. It finds the forearm twist correction
     _computeSwingFromCurrentPose( targetPoint, resultWristQuat ){
-        //targetPoint must be normalized
-
-        // if ( mode == EXTFIDIR_MODES.RELATIVE ){ // center rotation points on wrist ( wristWorldPos + targetPoint )
-            this._computeRelative( targetPoint, resultWristQuat );
-        // } 
-        // else{ // EXTFIDIR_MODES.LOCAL
-        //     this.foreArmCorrectionAngle = 0;
-        //     let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
-        //     let bearing = Math.atan2( targetPoint.x, targetPoint.z );
-
-        //     resultWristQuat.setFromAxisAngle( this.leftAxis, -elevation );
-        //     this._tempQ_0.setFromAxisAngle( this.upAxis, bearing );
-        //     resultWristQuat.premultiply( this._tempQ_0 );
-        // }
-    }
-
-      // compute the swing rotation so as to get the twistAxis to point at a certain location. It finds the forearm twist correction
-      _computeRelative( targetPoint, resultWristQuat ){
         let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
         let bearing = Math.atan2( targetPoint.x, targetPoint.z );
         
