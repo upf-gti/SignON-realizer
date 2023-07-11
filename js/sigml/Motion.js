@@ -330,9 +330,10 @@ class CircularMotion {
         // angle computations
         let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
         let endAngle = isNaN( bml.endAngle ) ? ( startAngle + 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
-        this.targetDeltaAngle = endAngle - startAngle;
-        if( symmetry ){ // startAngle does not need to change. EndAngle is no longer used
+        this.targetDeltaAngle = endAngle - startAngle; //variable endAngle is no longer used
+        if( symmetry ){ // all symmetries mirror the same
             this.targetDeltaAngle *= -1;
+            startAngle = -startAngle;
         }
        
         // rotate starting point from default plane (xy) to the user's specified (given by axis)

@@ -1,25 +1,4 @@
 import * as THREE from 'three';
-import { directionStringSymmetry } from './SigmlUtils.js';
-
-
-// finger: (optional) if present, it indicates the contact finger. The location will specify the zone of the finger
-// location: generic hand location
-// side: back, palm, ulnar, radial
-
-/*
-  location:
-    - (f) tip
-    - (f) pad
-    - (f) middle
-    - (f) base
-    - (f) metacarpal
-    - ball of thumb 
-    - wrist
-    - forearm
-    - elbow
-    - upper arm
-    - (not specified) shoulder
-*/
 
 class HandConstellation {
     constructor( boneMap, skeleton, rightHandLocations, leftHandLocations ) {
@@ -50,10 +29,17 @@ class HandConstellation {
         this.handLocationsR = rightHandLocations;
         this.handLocationsL = leftHandLocations;
 
-        this.prevOffsetL = new THREE.Vector3();
+        this.prevOffsetL = new THREE.Vector3(); // in case a handconstellation enters before the previous one ends. Keep the old current offset
         this.prevOffsetR = new THREE.Vector3();
         this.curOffsetL = new THREE.Vector3(); // wrist position resulting from update
         this.curOffsetR = new THREE.Vector3(); // wrist position resulting form update
+
+        // after reaching peak, user might choose to keep updating with real position or keep the peak value reached 
+        this.keepUpdatingContact = false;
+        this.peakOffsetL = new THREE.Vector3(0,0,0);
+        this.peakOffsetR = new THREE.Vector3(0,0,0);
+        this.peakUpdated = false;
+
 
         this.srcCurOffset = null; // pointer to curOffset L or R
         this.srcPoint = null;
@@ -81,9 +67,14 @@ class HandConstellation {
         this.distance = 0;
         this.isBothHands = false;
         this.cancelledArmsFlag = 0x00;
+
+        this.keepUpdatingContact = false;
+        this.peakUpdated = false;
+        this.peakOffsetL.set(0,0,0);
+        this.peakOffsetR.set(0,0,0);
     }
 
-    update( dt, posr, posl ){
+    update( dt ){
         // nothing to do
         if ( !this.transition ){ return; } 
 
@@ -92,40 +83,46 @@ class HandConstellation {
             return;
         }
 
+        if ( this.keepUpdatingContact || !this.peakUpdated ){ 
 
-        this.srcPoint.updateWorldMatrix( true ); // self and parents
-        this.dstPoint.updateWorldMatrix( true ); // self and parents
-        let srcWorldPoint = this._tempV3_0.setFromMatrixPosition( this.srcPoint.matrixWorld );
-        let dstWorldPoint = this._tempV3_1.setFromMatrixPosition( this.dstPoint.matrixWorld );
+            this.srcPoint.updateWorldMatrix( true ); // self and parents
+            this.dstPoint.updateWorldMatrix( true ); // self and parents
+            let srcWorldPoint = this._tempV3_0.setFromMatrixPosition( this.srcPoint.matrixWorld );
+            let dstWorldPoint = this._tempV3_1.setFromMatrixPosition( this.dstPoint.matrixWorld );
 
+            let distanceOffsetVector = this._tempV3_2.set(this.worldArmSize * this.distance,0,0);
+            if ( this.srcCurOffset == this.curOffsetR ) { distanceOffsetVector.multiplyScalar( -1 ); }
+            
+            if ( this.isBothHands ){
+                distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
 
-        let distanceOffsetVector = this._tempV3_2.set(this.worldArmSize * this.distance,0,0);
-        if ( this.srcCurOffset == this.curOffsetR ) { distanceOffsetVector.multiplyScalar( -1 ); }
-
-        
-        if ( this.isBothHands ){
-            distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
-
-            if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
-            else{
-                this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
+                if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
+                else{
+                    this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
+                    this.srcCurOffset.sub( srcWorldPoint );
+                    this.srcCurOffset.add( distanceOffsetVector );
+                }
+                
+                if ( this.cancelledArmsFlag & 0x02 ){ this.dstCurOffset.set(0,0,0); }
+                else{
+                    this.dstCurOffset.lerpVectors( dstWorldPoint, srcWorldPoint, 0.5 );
+                    this.dstCurOffset.sub( dstWorldPoint );
+                    this.dstCurOffset.sub( distanceOffsetVector );
+                }
+            }else{
+                this.srcCurOffset.copy( dstWorldPoint );
                 this.srcCurOffset.sub( srcWorldPoint );
                 this.srcCurOffset.add( distanceOffsetVector );
+                this.dstCurOffset.set(0,0,0);
             }
-            
-            if ( this.cancelledArmsFlag & 0x02 ){ this.dstCurOffset.set(0,0,0); }
-            else{
-                this.dstCurOffset.lerpVectors( dstWorldPoint, srcWorldPoint, 0.5 );
-                this.dstCurOffset.sub( dstWorldPoint );
-                this.dstCurOffset.sub( distanceOffsetVector );
-            }
-        }else{
-            this.srcCurOffset.copy( dstWorldPoint );
-            this.srcCurOffset.sub( srcWorldPoint );
-            this.srcCurOffset.add( distanceOffsetVector );
-            this.dstCurOffset.set(0,0,0);
-        }
 
+            // keep updating check
+            if ( this.time > this.attackPeak && !this.keepUpdatingContact && !this.peakUpdated ){
+                this.peakOffsetL.copy( this.curOffsetL );
+                this.peakOffsetR.copy( this.curOffsetR );
+                this.peakUpdated = true;
+            }
+        }
 
         this.time += dt;
         
@@ -149,9 +146,11 @@ class HandConstellation {
             if ( t < 0 ){ t = 0; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
             
-            if ( this.time >= this.end ){
-                t = 0;
-                this.transition = false;
+            if ( this.time >= this.end ){ this.transition = false; }
+
+            if ( !this.keepUpdatingContact ){
+                this.curOffsetL.copy( this.peakOffsetL );
+                this.curOffsetR.copy( this.peakOffsetR );
             }
             this.curOffsetL.multiplyScalar( t );
             this.curOffsetR.multiplyScalar( t );
@@ -211,9 +210,26 @@ class HandConstellation {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints
+     * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
+     * 
+     * Location of the hand in the specified hand (or dominant hand)
+     * srcFinger: (optional) 1,2,3,4,5
+     * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
+     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * 
+     * Location of the hand in the unspecified hand (or non dominant hand)
+     * dstFinger: (optional) 1,2,3,4,5
+     * dstLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
+     * dstSide: (optional) Ulnar, Radial, Palmar, Back 
+     * 
+     * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. 
+     *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
+     *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
+
      */
     newGestureBML( bml, domHand = "R"  ) {
+        this.keepUpdatingContact = !!bml.keepUpdatingContact;
+        this.peakUpdated = false;
         this.cancelledArmsFlag = 0x00;
         let srcLocations = null;
         let dstLocations = null;

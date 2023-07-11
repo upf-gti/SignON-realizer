@@ -70,6 +70,8 @@ class LocationBodyArm {
 
         // if not null, this will be de point that tries to reach the target. Otherwise, the wrist is assumed
         this.contactFinger = null;
+        this.keepUpdatingContact = false; // flag to enable constant update of target position. If disabled, contact is only updated during start-peak 
+        this.contactUpdateDone = false; // internal flag to indicate final contact update into this.trg has been done. Always false when keepUpdatingContact == true
 
         this.time = 0; // current time of transition
         this.start = 0; 
@@ -100,6 +102,9 @@ class LocationBodyArm {
         this.cur.e = 0;
         this.def.p.set(0,0,0);
         this.def.e = 0;
+
+        this.keepUpdatingContact = false;
+        this.contactUpdateDone = false;
     }
 
     update( dt ){
@@ -122,7 +127,7 @@ class LocationBodyArm {
         else{
             let newTarget = this._tempV3_0.copy( this.trg.p );
 
-            if ( this.contactFinger ){ // use some finger instead of the wrist
+            if ( this.contactFinger && !this.contactUpdateDone ){ // use some finger instead of the wrist
                 this.contactFinger.updateWorldMatrix( true ); // self and parents
                 
                 this._tempV3_1.setFromMatrixPosition( this.contactFinger.matrixWorld );
@@ -130,6 +135,12 @@ class LocationBodyArm {
 
                 let dir = this._tempV3_1.sub( this._tempV3_2 );
                 newTarget.sub( dir );
+
+                // stop updating after peak, if keepUpdating is disabled. Hold last newTarget value as target
+                if ( !this.keepUpdatingContact && this.time >= this.attackPeak ){
+                    this.contactUpdateDone = true;
+                    this.trg.p.copy( newTarget );
+                }
             }
             
             
@@ -168,11 +179,12 @@ class LocationBodyArm {
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
         let location = isSecond ? bml.secondLocationBodyArm : bml.locationBodyArm;
 
+        // Symmetry should be only for sides
         // for symmetry - the left and right must be swapped
-        if ( ( symmetry & 0x01 ) && location ){ 
-            if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
-            else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
-        }
+        // if ( ( symmetry & 0x01 ) && location ){ 
+        //     if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
+        //     else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
+        // }
         if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "eyebrow" || location == "shoulder" ){
             location += this.isLeftHand ? "L" : "R";
         }
@@ -207,14 +219,27 @@ class LocationBodyArm {
      * bml info
      * start, attackPeak, relax, end
      * locationBodyArm: string from bodyLocations
-     * secondLocationBodyArm
+     * secondLocationBodyArm: (optional)
      * distance: (optional) [0,1] how far from the body to locate the hand. 0 = touch, 1 = arm extended (distance == arm size). 
      * side: (optional) string from sides table. Location will offset into that direction
      * secondSide: (optional)
      * sideDistance: (optional) how far to move the indicated side. Metres
      * secondSideDistance: (optional)
+     * 
+     * elbowRaise: (optional) in degrees. Positive values raise the elbow.
+     * 
+     * Following attributes describe which part of the hand will try to reach the locationBodyArm location 
+     * srcFinger: (optional) 1,2,3,4,5
+     * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
+     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. 
+     *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
+     *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
+     * shift does not use contact locations
      */
     newGestureBML( bml, symmetry = 0x00, lastFrameWorldPosition = null ) {
+        this.keepUpdatingContact = !!bml.keepUpdatingContact;
+        this.contactUpdateDone = false;
 
         if ( !this._newGestureLocationComposer( bml, symmetry, this.trg.p, false ) ){
             console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationBodyArm + "\"" );
@@ -265,8 +290,8 @@ class LocationBodyArm {
                 srcSide = srcSide.toLowerCase();
                 srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "Right" ){ srcSide = hand == "R" ? "Ulnar" : "Radial"; }
-                    else if ( srcSide == "Left" ){ srcSide = hand == "R" ? "Radial" : "Ulnar"; }
+                    if ( srcSide == "Right" ){ srcSide = this.isLeftHand ? "Radial" : "Ulnar"; }
+                    else if ( srcSide == "Left" ){ srcSide = this.isLeftHand ? "Ulnar" : "Radial"; }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 

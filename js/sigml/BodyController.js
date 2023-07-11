@@ -375,7 +375,7 @@ class BodyController{
             this._fixWristForearmQuaternions( this.left, true );
 
             // handconstellation update, add motions and ik
-            this.handConstellation.update( dt, this.right.loc.cur.p, this.left.loc.cur.p, this.right.loc.cur.e, this.left.loc.cur.e );
+            this.handConstellation.update( dt );
             this.right.locUpdatePoint.add( this.handConstellation.curOffsetR ); // HandConstellation + motions
             this.left.locUpdatePoint.add( this.handConstellation.curOffsetL ); // HandConstellation + motions
         }

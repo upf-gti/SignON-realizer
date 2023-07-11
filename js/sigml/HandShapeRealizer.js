@@ -377,7 +377,7 @@ class HandShapeRealizer {
      * secondtco: (optional)
      * bend1, bend2, bend3, bend4, bend5: (optional) string from bend table or string of numbers from 0-9. Overwrites any bend applied before
      * splay1, splay2, splay3, splay4, splay5: (optional) string of numbers from 0-9 
-     * mainSplay: (optional) affects all fingers
+     * mainSplay: (optional) affects all fingers except middle finger
     */
     newGestureBML( bml ){
               

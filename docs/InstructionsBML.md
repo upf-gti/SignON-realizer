@@ -242,8 +242,8 @@ All gestures share some optional attributes
 }
 ```
 
-## Arm Location
-Moves the arm (wrist) to a location.
+## Body Location
+Moves the arm (wrist) to a location of the body (face + trunk).
 ``` javascript
 {
     type: "gesture",
@@ -252,54 +252,66 @@ Moves the arm (wrist) to a location.
     relax: 0.3,  
     end: 0.4,
     
-    locationArm: "chest", // string
+    locationBodyArm: "chest", // string
    
     // optionals
+    secondLocationBodyArm: "chest", // string
+
     distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
     side: "u", // string, 26 directions. Location will be offseted into that direction
     secondSide: "l", // string, 26 directions. Will compute the midpoint between side and secondSide
     sideDistance: 0.05, // number how far to move to the indicated side. Metres 
-    shift: false
+    secondSideDistance: 0.05
+
+    elbowRaise: 10, // in degrees. Positive values raise the elbow.
+
+    //Following attributes describe which part of the hand will try to reach the locationBodyArm location 
+    srcFinger: "1", //(optional) 1,2,3,4,5, see handconstellation for more information
+    srcLocation: "Pad", // see handconstellation hand locations
+    srcSide: "Palmar", // see handconstellation sides
+    keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
+                // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
+                // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
+
+    shift: false, // contact information ( srcFinger, srcLocation, srcSide ) is not kept for shift
 }
 
 ```
 <details>
 <summary>Click to view the complete list of available locations</summary>
 
-neutral               
+head               
 headtop               
 forehead               
-eyeL               
-eyeR               
 nose               
-upperlip               
-mouth               
+belownose               
 chin               
-cheekL               
-cheekR               
-earL               
+underchin               
+mouth               
+earlobe ``` // automatically assigns right or left from the incoming hand ```                    
+earlobeR               
+earlobeL               
+ear  ``` // automatically assigns right or left from the incoming hand ```                    
 earR               
-neck               
+earL               
+cheek  ``` // automatically assigns right or left from the incoming hand ```                    
+cheekR               
+cheekL               
+eye ``` // automatically assigns right or left from the incoming hand ```                    
+eyeR               
+eyeL               
+eyebrow ``` // automatically assigns right or left from the incoming hand ```                    
+eyebrowL               
+eyebrowR               
+mouth               
 chest               
+shoulderLine          
+shoulder ``` // automatically assigns right or left from the incoming hand ```                    
+shoulderR               
+shoulderL               
 stomach               
 belowstomach               
-shoulderL               
-shoulderR               
-loctop1               
-loctop2               
-loctop3               
-loctop4               
-loctop5               
-locmid1               
-locmid2               
-locmid3               
-locmid4               
-locmid5                   
-locbot1               
-locbot2               
-locbot3               
-locbot4               
-locbot5               
+neutral               
 </details>
 
 ---
@@ -365,9 +377,9 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     
     mainBend: "hooked", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
     secondMainBend: "hooked", // mainbend applied to secondHandshape
-    bend1: "099", // overrides any other bend applied for this handshape for this finger. Number indicates which finger. The value is one from the bend table
-    mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,3,4,5. Splay diminishes the more the finger is bent
-    splay1: 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent 
+    bend1: "099", // overrides any other bend applied for this handshape for this finger. bend1=thumb, bend2=index, and so on. The value is one from the bend table
+    mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
+    splay1: 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent. splay1=thumb, splay2=index, and so on
     shift: false,
 }
 
@@ -416,10 +428,76 @@ i.e. bent = "900", hooked = "099"
 </details>
 
 ---
+
+## Hand Constellation
+Moves the hand position with respect to each other.
+
+The motion is stopped if an arm location is executed afterwards.
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+
+    handConstellation: true,
+    //Location of the hand in the specified hand (or dominant hand)
+    srcFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
+    srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
+    srcSide: "Back", // Ulnar, Radial, Palmar, Back
+     
+    //Location of the hand in the unspecified hand (or non dominant hand)
+    dstFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
+    dstLocation: "Base", // string from hand locations or arm locations
+    dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
+    
+    hand: "dom", // if hand=="both", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
+
+    // optionals
+    distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
+    
+    keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
+                    // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
+                    // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
+}
+
+```
+<details>
+<summary>Click to view the complete list of HAND CONSTELLATION SIDES </summary>
+
+Right         
+Left         
+Ulnar         
+Radial         
+Front  ``` // only for Elbow and Upperarm ```      
+Back         
+Palmar         
+</details>
+<details>
+<summary>Click to view the complete list of HAND LOCATIONS </summary>
+
+Tip  ``` // need a finger specification and does not have sides ```        
+Pad ``` // need a finger specification ```        
+Mid ``` // need a finger specification ```         
+Base ``` // need a finger specification ```         
+Thumbball         
+Hand         
+Wrist         
+</details>
+<details>
+<summary>Click to view the complete list of ARM LOCATIONS </summary>
+
+Forearm        
+Elbow        
+Upperarm         
+</details>
+
+---
 ## Directed Motion
 Moves the arm (wrist) in a linear direction. Not suited for large displacements.
 
-The motion is cut if an arm location is executed afterwards.
+The motion is stopped if an arm location is executed afterwards.
 ``` javascript
 {
     type: "gesture",
@@ -448,7 +526,7 @@ The motion is cut if an arm location is executed afterwards.
 ## Circular Motion
 Moves the arm (wrist) in a circular motion.
 
-The motion is cut if an arm location is executed afterwards.
+The motion is stopped if an arm location is executed afterwards.
 ``` javascript
 {
     type: "gesture",
@@ -487,6 +565,8 @@ Wiggle fingers of the hand.
     speed: 2, // oscillations per second. Default 3
     intensity: 0.5, //[0,1]. Default 0.3
     fingers: "13", // string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled. Thumb is not moved
+    exemptedFingers: "2", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
+
 }
 
 ```
@@ -506,7 +586,7 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
     motion: "wrist",
     mode: "nod",
     /* either a: 
-        - string from [ "nod", "swing", "twist", "stirCW", "stirCCW", "all" ]
+        - string from [ "nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all" ]
         - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
     Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
     Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
