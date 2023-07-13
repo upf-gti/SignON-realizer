@@ -1,64 +1,14 @@
 import * as THREE from 'three';
-import { directionStringSymmetry } from './SigmlUtils.js';
-
-// Description of sigml points supported. keys: our proposal (what the realizer uses). Values: list of tags of sigml that are mapped to that key
-// headtop : headtop,
-// forehead : head, forehead,
-// eyeL : eyebrows, eyes, uppereyelid, lowereyelid,
-// eyeR : eyebrows, eyes, uppereyelid, lowereyelid,
-// nose : nose,
-// upperlip : nostrils, upperlip,
-// mouth: lips, lowerlip, tongue, teeth, upperteeth, lowerteeth,
-// chin : chin, underchin,
-// earL : ear, earlobe,
-// earR : ear, earlobe,
-// cheekL : cheek,
-// cheekR : cheek,
-// neck : neck,
-// shoulderL : shoulders, shouldertop,
-// shoulderR : shoulders, shouldertop,
-// chest : chest,
-// stomach : stomach,
-// belowstomach : belowstomach,
-
-let sides = {
-    'u'     : (new THREE.Vector3(  0,   1,   0 )).normalize(),   
-    'ul'    : (new THREE.Vector3(  1,   1,   0 )).normalize(),   
-    'l'     : (new THREE.Vector3(  1,   0,   0 )).normalize(),   
-    'dl'    : (new THREE.Vector3(  1,  -1,   0 )).normalize(),   
-    'd'     : (new THREE.Vector3(  0,  -1,   0 )).normalize(),   
-    'dr'    : (new THREE.Vector3( -1,  -1,   0 )).normalize(),  
-    'r'     : (new THREE.Vector3( -1,   0,   0 )).normalize(),  
-    'ur'    : (new THREE.Vector3( -1,   1,   0 )).normalize(),  
-
-    "uo"    : (new THREE.Vector3(  0,   1,   1 )).normalize(),
-    "uol"   : (new THREE.Vector3(  1,   1,   1 )).normalize(),
-    "ol"    : (new THREE.Vector3(  1,   0,   1 )).normalize(),
-    "dol"   : (new THREE.Vector3(  1,  -1,   1 )).normalize(),
-    "do"    : (new THREE.Vector3(  0,  -1,   1 )).normalize(),
-    "dor"   : (new THREE.Vector3( -1,  -1,   1 )).normalize(),
-    "or"    : (new THREE.Vector3( -1,   0,   1 )).normalize(),
-    "uor"   : (new THREE.Vector3( -1,   1,   1 )).normalize(),
-    "o"     : (new THREE.Vector3(  0,   0,   1 )).normalize(),
-    
-    "ui"    : (new THREE.Vector3(  0,   1,  -1 )).normalize(),
-    "uil"   : (new THREE.Vector3(  1,   1,  -1 )).normalize(),
-    "il"    : (new THREE.Vector3(  1,   0,  -1 )).normalize(),
-    "dil"   : (new THREE.Vector3(  1,  -1,  -1 )).normalize(),
-    "di"    : (new THREE.Vector3(  0,  -1,  -1 )).normalize(),
-    "dir"   : (new THREE.Vector3( -1,  -1,  -1 )).normalize(),
-    "ir"    : (new THREE.Vector3( -1,   0,  -1 )).normalize(),
-    "uir"   : (new THREE.Vector3( -1,   1,  -1 )).normalize(),
-    "i"     : (new THREE.Vector3(  0,   0,  -1 )).normalize(),
-}
+import { stringToDirection } from './SigmlUtils.js';
 
 class LocationBodyArm {
-    constructor( boneMap, skeleton, bodyLocations, handLocations, isLeftHand = false ) {
+    constructor( config, skeleton, isLeftHand = false ) {
         this.skeleton = skeleton;
-        this.bodyLocations = bodyLocations;
-        this.handLocations = handLocations;
+        this.bodyLocations = config.bodyLocations;
+        this.handLocations = isLeftHand ? config.handLocationsL : config.handLocationsR;
         this.isLeftHand = !!isLeftHand;
-
+        
+        let boneMap = config.boneMap;
         let handName = isLeftHand ? "L" : "R";
         this.idx = boneMap[ handName + "Shoulder" ]// shoulder (back) index 
         
@@ -156,18 +106,29 @@ class LocationBodyArm {
                 if ( t > 1){ t = 1; }
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
-                this.cur.p.lerpVectors( this.src.p, newTarget, t );
                 this.cur.offset.copy( this.src.offset ).multiplyScalar( 1 - t );
                 this.cur.e = this.src.e * ( 1 - t ) + this.trg.e * t;
+                this.cur.p.lerpVectors( this.src.p, newTarget, t );
+                
+                // overwriting newTarget ( aka this._tempV3_0 ). Add curve on the z axis (slightly better visually)
+                let extraZSizeFactor = Math.min( 1, newTarget.sub( this.src.p ).lengthSq() / (this.worldArmSize * this.worldArmSize * 0.5) );
+                let extraZsize = this.worldArmSize * 0.3 * extraZSizeFactor; // depending on how far the next objective
+                this.cur.p.z += 2 * extraZsize * t * (1-t); // bezier simplified     [ 0 | size | 0 ]
             }    
             else if ( this.time >= this.relax ){
                 let t = ( this.time - this.relax ) / ( this.end - this.relax );
                 if ( t > 1){ t = 1; }
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
-                this.cur.p.lerpVectors( newTarget, this.def.p, t );
                 this.cur.offset.set(0,0,0);
                 this.cur.e = this.trg.e * ( 1 - t ) + this.def.e * t;
+                this.cur.p.lerpVectors( newTarget, this.def.p, t );
+
+                // overwriting newTarget ( aka this._tempV3_0 ). Add curve on the z axis (slightly better visually)
+                let extraZSizeFactor = Math.min( 1, newTarget.sub( this.def.p ).lengthSq() / (this.worldArmSize * this.worldArmSize * 0.5) );
+                let extraZsize = this.worldArmSize * 0.3 * extraZSizeFactor; // depending on how far the next objective
+                let extra =  2 * extraZsize * t * (1-t); // bezier simplified    [ 0 | size | 0 ]
+                this.cur.p.z += extra;
             }
         }
 
@@ -201,10 +162,8 @@ class LocationBodyArm {
 
         // same as in location
         let side = isSecond ? bml.secondSide : bml.side;
-        if ( side && symmetry ){ side = directionStringSymmetry( side, symmetry ); }
-        side = sides[ side ];
-        if ( side ){
-
+        if ( stringToDirection( side, this._tempV3_0, symmetry ) ){
+            side = this._tempV3_0;
             let sideDist = isSecond ? bml.secondSideDistance : bml.sideDistance;
             sideDist = isNaN( sideDist ) ? 0 : sideDist;
             

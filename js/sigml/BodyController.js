@@ -149,9 +149,10 @@ let handLocationsR = {
     "UpperarmLeft":     [ "mixamorig_RightArm"         , { x: 2.7144465 , y:-0.7598953 , z:15.7834119 } ],
 }
 
-// EVERY MODULE WILL WORK WITH THE RIGHT HAND AS DOMINANT 
+// characterConfig is modified by bodyController
 class BodyController{
-    constructor( character ){
+    
+    constructor( character, characterConfig ){
         this.character = character;
 
         // get skeleton
@@ -161,31 +162,17 @@ class BodyController{
                 skeleton = this.skeleton = o.skeleton;
             }
         } );
-       
+
+
+        // reference, not a copy. All changes also affect the incoming characterConfig
+        this.config = characterConfig.bodyController; 
+
         // name to index map. If model changes, only this map (and ik) names need to be changed
-        let boneMap = this.boneMap ={
-            ShouldersUnion: findIndexOfBone( this.skeleton, "mixamorig_Spine2" ),
-            RShoulder:      findIndexOfBone( this.skeleton, "mixamorig_RightShoulder" ),  
-            RArm:           findIndexOfBone( this.skeleton, "mixamorig_RightArm" ),  
-            RElbow:         findIndexOfBone( this.skeleton, "mixamorig_RightForeArm" ),
-            RWrist:         findIndexOfBone( this.skeleton, "mixamorig_RightHand" ),
-            RHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_RightHandThumb1" ),
-            RHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_RightHandIndex1" ),
-            RHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_RightHandMiddle1" ),
-            RHandRing:      findIndexOfBone( this.skeleton, "mixamorig_RightHandRing1" ),
-            RHandPinky:     findIndexOfBone( this.skeleton, "mixamorig_RightHandPinky1" ),
-            LShoulder:      findIndexOfBone( this.skeleton, "mixamorig_LeftShoulder" ),
-            LArm:           findIndexOfBone( this.skeleton, "mixamorig_LeftArm" ),
-            LElbow:         findIndexOfBone( this.skeleton, "mixamorig_LeftForeArm" ),
-            LWrist:         findIndexOfBone( this.skeleton, "mixamorig_LeftHand" ),
-            LHandThumb:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandThumb1" ),
-            LHandIndex:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandIndex1" ),
-            LHandMiddle:    findIndexOfBone( this.skeleton, "mixamorig_LeftHandMiddle1" ),
-            LHandRing:      findIndexOfBone( this.skeleton, "mixamorig_LeftHandRing1" ),
-            LHandPinky:     findIndexOfBone( this.skeleton, "mixamorig_LeftHandPinky1" ),
+        for ( let p in this.config.boneMap ){
+            this.config.boneMap[ p ] = findIndexOfBone( this.skeleton, this.config.boneMap[ p ] );            
         }
 
-
+        // create location point objects and attach them to bones
         function locationToObjects( table, skeleton, symmetry = false ){
             let keys = Object.keys( table );
             let result = {};
@@ -202,19 +189,19 @@ class BodyController{
                 o.name = keys[i];
                 skeleton.bones[ idx ].add( o );
                 result[ keys[i] ] = o;
-
             }         
             return result;   
         }
-        // create location point objects and attach them to bones
-        this.bodyLocations = locationToObjects( bodyLocations, this.skeleton, false );
-        this.handLocationsR = locationToObjects( handLocationsR, this.skeleton, false );
-        this.handLocationsL = locationToObjects( handLocationsR, this.skeleton, true ); // assume symmetric mesh/skeleton
+        this.config.bodyLocations = locationToObjects( this.config.bodyLocations, this.skeleton, false );
+        this.config.handLocationsL = locationToObjects( this.config.handLocationsR, this.skeleton, true ); // assume symmetric mesh/skeleton
+        this.config.handLocationsR = locationToObjects( this.config.handLocationsR, this.skeleton, false ); // since this.config is being overwrite, generate left before right
+
+        // finger axes do no need any change
 
         // -------------- All modules --------------
         this.right = this._createArm( false );
         this.left = this._createArm( true );
-        this.handConstellation = new HandConstellation( this.boneMap, this.skeleton, this.handLocationsR, this.handLocationsL );
+        this.handConstellation = new HandConstellation( this.config.boneMap, this.skeleton, this.config.handLocationsR, this.config.handLocationsL );
 
 
         this.dominant = this.right;
@@ -250,15 +237,15 @@ class BodyController{
     _createArm( isLeftHand = false ){
         let handName = isLeftHand ? "L" : "R";
         return {
-            loc : new LocationBodyArm( this.boneMap, this.skeleton, this.bodyLocations, isLeftHand ? this.handLocationsL : this.handLocationsR, isLeftHand ),
+            loc : new LocationBodyArm( this.config, this.skeleton, isLeftHand ),
             locMotions : [],
-            extfidir : new Extfidir( this.boneMap, this.skeleton, isLeftHand ),
-            palmor : new Palmor( this.boneMap, this.skeleton, isLeftHand ),
-            wristMotion : new WristMotion( this.skeleton.bones[ this.boneMap[ handName + "Wrist"] ] ),
-            handshape : new HandShapeRealizer( this.boneMap, this.skeleton, isLeftHand ),
+            extfidir : new Extfidir( this.config, this.skeleton, isLeftHand ),
+            palmor : new Palmor( this.config, this.skeleton, isLeftHand ),
+            wristMotion : new WristMotion( this.skeleton.bones[ this.config.boneMap[ handName + "Wrist"] ] ),
+            handshape : new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
             fingerplay : new FingerPlay(),
 
-            ikSolver : new GeometricArmIK( this.skeleton, this.boneMap[ handName  + "Shoulder" ], this.boneMap[ "ShouldersUnion" ], isLeftHand ),
+            ikSolver : new GeometricArmIK( this.skeleton, this.config.boneMap[ handName  + "Shoulder" ], this.config.boneMap[ "ShouldersUnion" ], isLeftHand ),
             locUpdatePoint : new THREE.Vector3(0,0,0),
             needsUpdate: false,
             _tempWristQuat: new THREE.Quaternion(0,0,0,1), // stores computed extfidir + palmor before any arm movement applied. Necessary for locBody + handConstellation

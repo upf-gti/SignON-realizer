@@ -1,7 +1,6 @@
 import { GUI } from 'https://cdn.skypack.dev/lil-gui'
 import * as THREE from 'three';
 
-import { extfidirPointTable } from './sigml/Extfidir.js';
 import { TIMESLOT, sigmlStringToBML } from './sigml/SigmlToBML.js';
 
  
@@ -558,9 +557,36 @@ class AppGUI {
             this.ECAcontroller.processMsg(JSON.stringify(this.msg));
            
         }
-        let extfidirParams = {};
-        for( let e in extfidirPointTable ){
-            extfidirParams[e] = extfidirSimplifier.bind(this.app, e);
+
+
+        let extfidirParams = {
+            u   : extfidirSimplifier.bind(this.app, 'u'),
+            ul  : extfidirSimplifier.bind(this.app, 'ul'),
+            l   : extfidirSimplifier.bind(this.app, 'l'),
+            dl  : extfidirSimplifier.bind(this.app, 'dl'),
+            d   : extfidirSimplifier.bind(this.app, 'd'),
+            dr  : extfidirSimplifier.bind(this.app, 'dr'),
+            r   : extfidirSimplifier.bind(this.app, 'r'),
+            ur  : extfidirSimplifier.bind(this.app, 'ur'),
+            ui  : extfidirSimplifier.bind(this.app, 'ui'),
+            uil : extfidirSimplifier.bind(this.app, 'uil'),
+            il  : extfidirSimplifier.bind(this.app, 'il'),
+            dil : extfidirSimplifier.bind(this.app, 'dil'),
+            di  : extfidirSimplifier.bind(this.app, 'di'),
+            dir : extfidirSimplifier.bind(this.app, 'dir'),
+            ir  : extfidirSimplifier.bind(this.app, 'ir'),
+            uir : extfidirSimplifier.bind(this.app, 'uir'),
+            uo  : extfidirSimplifier.bind(this.app, 'uo'),
+            uol : extfidirSimplifier.bind(this.app, 'uol'),
+            ol  : extfidirSimplifier.bind(this.app, 'ol'),
+            dol : extfidirSimplifier.bind(this.app, 'dol'),
+            do  : extfidirSimplifier.bind(this.app, 'do'),
+            dor : extfidirSimplifier.bind(this.app, 'dor'),
+            or  : extfidirSimplifier.bind(this.app, 'or'),
+            uor : extfidirSimplifier.bind(this.app, 'uor'),
+
+        };
+        for( let e in extfidirParams ){
             extfidirFolder.add(extfidirParams, e).name(e);
         }
     

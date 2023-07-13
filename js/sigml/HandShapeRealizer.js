@@ -45,70 +45,13 @@ let handBendings = {
     dblhooked:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
 }
 
-// probably could be computed through skeleton raw positions
-let avatarHandAxes = {
-    "R" : { 
-        "bends": [
-            (new THREE.Vector3(0,-1,-0.3)).normalize(), // thumb base
-            (new THREE.Vector3(0,-1,-0.3)).normalize(),
-            (new THREE.Vector3(0,-1,-0.3)).normalize(),
-            (new THREE.Vector3(1,0, -0.2)).normalize(), // index base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(), // middle base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0, 0.1)).normalize(), // ring base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0, 0.2)).normalize(), // pinky base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-        ],
-        "splays": [
-            (new THREE.Vector3(1,0,0)).normalize(), // thumb
-            (new THREE.Vector3(0,1,0)).normalize(),
-            (new THREE.Vector3(0,1,0)).normalize(),
-            (new THREE.Vector3(0,1,0)).normalize(),
-            (new THREE.Vector3(0,1,0)).normalize(), // pinky
-        ]
-    },
-    "L" : { 
-        "bends": [
-            (new THREE.Vector3(0,1,0.3)).normalize(), // thumb base
-            (new THREE.Vector3(0,1,0.3)).normalize(),
-            (new THREE.Vector3(0,1,0.3)).normalize(),
-            (new THREE.Vector3(1,0, 0.2)).normalize(), // index base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(), // middle base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0, -0.1)).normalize(), // ring base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0, -0.2)).normalize(), // pinky base
-            (new THREE.Vector3(1,0,0)).normalize(),
-            (new THREE.Vector3(1,0,0)).normalize(),
-        ],
-        "splays": [
-            (new THREE.Vector3(1,0,0)).normalize(), // thumb
-            (new THREE.Vector3(0,-1,0)).normalize(),
-            (new THREE.Vector3(0,-1,0)).normalize(),
-            (new THREE.Vector3(0,-1,0)).normalize(),
-            (new THREE.Vector3(0,-1,0)).normalize(), // pinky
-        ]
-    }
-}
-
-let _tempHandQuat = new THREE.Quaternion(0,0,0,1);
-
 
 class HandShapeRealizer {
-    constructor( boneMap, skeleton, isLeftHand = false ){
+    constructor( config, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
 
+        let boneMap = config.boneMap;
         let handName = ( this.isLeftHand ) ? "L" : "R";
         this.idxs = { // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
             thumb:  boneMap[ handName + "HandThumb" ], 
@@ -119,6 +62,7 @@ class HandShapeRealizer {
         };
         this.thumbTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.idxs.thumb + 1 ].position).normalize();
 
+        this.fingerAxes = isLeftHand ? config.fingerAxes.L : config.fingerAxes.R;
 
         this.defG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
         this.srcG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
@@ -133,6 +77,8 @@ class HandShapeRealizer {
 
         this.transition = false;
         
+        this._tempHandQuat = new THREE.Quaternion(0,0,0,1);
+
         this.reset();
     }
     
@@ -206,8 +152,8 @@ class HandShapeRealizer {
 
 
         let bones = this.skeleton.bones;
-        let bendAxes = (this.isLeftHand) ? avatarHandAxes.L.bends : avatarHandAxes.R.bends;    
-        let splayAxes = (this.isLeftHand) ? avatarHandAxes.L.splays : avatarHandAxes.R.splays; 
+        let bendAxes = this.fingerAxes.bends;    
+        let splayAxes = this.fingerAxes.splays; 
         let c = this.curG;   
         
 
@@ -234,14 +180,14 @@ class HandShapeRealizer {
         bones[ this.idxs.pinky + 2  ].quaternion.setFromAxisAngle(  bendAxes[14], c[4][3] * Math.PI*0.5 );
 
         // thumb splay is weird
-        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[0], c[0][0] * Math.PI*0.15 ) );
-        bones[ this.idxs.thumb ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.isLeftHand?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
+        bones[ this.idxs.thumb ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[0], c[0][0] * Math.PI*0.15 ) );
+        bones[ this.idxs.thumb ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.isLeftHand?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
 
         // other fingers splay
-        bones[ this.idxs.index  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
-        bones[ this.idxs.middle ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
-        bones[ this.idxs.ring   ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[3], -1 * this._computeSplayAngle( c[3] ) ) );
-        bones[ this.idxs.pinky  ].quaternion.multiply( _tempHandQuat.setFromAxisAngle(  splayAxes[4], -1 * this._computeSplayAngle( c[4] ) - this._computeSplayAngle( c[3] ) ) );
+        bones[ this.idxs.index  ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
+        bones[ this.idxs.middle ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
+        bones[ this.idxs.ring   ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[3], -1 * this._computeSplayAngle( c[3] ) ) );
+        bones[ this.idxs.pinky  ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[4], -1 * this._computeSplayAngle( c[4] ) - this._computeSplayAngle( c[3] ) ) );
         
 
     }

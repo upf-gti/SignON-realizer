@@ -1,39 +1,9 @@
 import * as THREE from "three";
-import { cubicBezierVec3, directionStringSymmetry, nlerpQuats } from "./SigmlUtils.js";
+import { cubicBezierVec3, directionStringSymmetry, nlerpQuats, stringToDirection } from "./SigmlUtils.js";
 
 let _tempVec3_0 = new THREE.Vector3(0,0,0);
+let _tempVec3_1 = new THREE.Vector3(0,0,0);
 let _tempQuat_0 = new THREE.Quaternion(0,0,0,1);
-
-let motionDirectionTable = {
-    'u'     : (new THREE.Vector3(  0,   1,   0 )).normalize(),   
-    'ul'    : (new THREE.Vector3(  1,   1,   0 )).normalize(),   
-    'l'     : (new THREE.Vector3(  1,   0,   0 )).normalize(),   
-    'dl'    : (new THREE.Vector3(  1,  -1,   0 )).normalize(),   
-    'd'     : (new THREE.Vector3(  0,  -1,   0 )).normalize(),   
-    'dr'    : (new THREE.Vector3( -1,  -1,   0 )).normalize(),  
-    'r'     : (new THREE.Vector3( -1,   0,   0 )).normalize(),  
-    'ur'    : (new THREE.Vector3( -1,   1,   0 )).normalize(),  
-
-    "uo"    : (new THREE.Vector3(  0,   1,   1 )).normalize(),
-    "uol"   : (new THREE.Vector3(  1,   1,   1 )).normalize(),
-    "ol"    : (new THREE.Vector3(  1,   0,   1 )).normalize(),
-    "dol"   : (new THREE.Vector3(  1,  -1,   1 )).normalize(),
-    "do"    : (new THREE.Vector3(  0,  -1,   1 )).normalize(),
-    "dor"   : (new THREE.Vector3( -1,  -1,   1 )).normalize(),
-    "or"    : (new THREE.Vector3( -1,   0,   1 )).normalize(),
-    "uor"   : (new THREE.Vector3( -1,   1,   1 )).normalize(),
-    "o"     : (new THREE.Vector3(  0,   0,   1 )).normalize(),
-    
-    "ui"    : (new THREE.Vector3(  0,   1,  -1 )).normalize(),
-    "uil"   : (new THREE.Vector3(  1,   1,  -1 )).normalize(),
-    "il"    : (new THREE.Vector3(  1,   0,  -1 )).normalize(),
-    "dil"   : (new THREE.Vector3(  1,  -1,  -1 )).normalize(),
-    "di"    : (new THREE.Vector3(  0,  -1,  -1 )).normalize(),
-    "dir"   : (new THREE.Vector3( -1,  -1,  -1 )).normalize(),
-    "ir"    : (new THREE.Vector3( -1,   0,  -1 )).normalize(),
-    "uir"   : (new THREE.Vector3( -1,   1,  -1 )).normalize(),
-    "i"     : (new THREE.Vector3(  0,   0,  -1 )).normalize(),
-}
 
 // in x,y plane -> angle with respect to +y axis
 let motionCurveTable = {
@@ -110,13 +80,13 @@ class DirectedMotion {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * direction: string from motionDirectionTable
+     * direction: string from 26 directions
      * secondDirection: (optional)
      * distance: (optional) size in metres of the displacement. Default 0.2 m (20 cm)
      * curve: (optional) string from motionCurveTable. Default to none
      * secondCurve: (optional)
      * curveSteepness: (optional) number from [0,1] meaning the sharpness of the curve
-     * zigzag: (optional) string from motionDirectionTable
+     * zigzag: (optional) string from 26 directions
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
      */
@@ -160,22 +130,16 @@ class DirectedMotion {
         }
 
         // fetch direction and secondDirection
-        let direction = bml.direction;
-        if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
-        direction = motionDirectionTable[ direction ];
-        if ( !direction ){ 
+        let finalDir = _tempVec3_0;
+        if ( !stringToDirection( bml.direction, finalDir, symmetry ) ){
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
             return;
         }
-        let secondDirection = bml.secondDirection;
-        if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
-        secondDirection = motionDirectionTable[ secondDirection ];
-        if ( !secondDirection ){ secondDirection = direction; }
-        
-        let finalDir = _tempVec3_0;
-        finalDir.lerpVectors( direction, secondDirection, 0.5 );
-        finalDir.normalize();
-        if( finalDir.lengthSq < 0.0001 ){ finalDir.copy( direction ); }
+        if ( stringToDirection( bml.secondDirection, _tempVec3_1, symmetry ) ){
+            finalDir.lerpVectors( finalDir, _tempVec3_1, 0.5 );
+            if( finalDir.lengthSq() < 0.0001 ){ finalDir.set( 1,0,0 ); }
+            finalDir.normalize();
+        }
 
         // default looks at +z. If direction falls in -z, change default to -z to avoid accidental left-right, up-down mirror
         if ( finalDir.z < 0 ){
@@ -200,15 +164,13 @@ class DirectedMotion {
         this.bezier[3].applyQuaternion( lookAtQuat );
 
         // zig-zag
-        let zigzag = motionDirectionTable[ bml.zigzag ];
-        if ( !zigzag ){
+        if ( stringToDirection( bml.zigzag, this.zigzagDir ) ){
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
+            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
+        }else{
             this.zigzagDir.set(0,0,0);
             this.zigzagSize = 0.0; // metres
             this.zigzagSpeed = 0; // rps
-        }else{
-            this.zigzagDir.copy( zigzag );
-            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
-            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
 
         // check and set timings
@@ -298,34 +260,29 @@ class CircularMotion {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * direction: string from motionDirectionTable. Axis of rotation
+     * direction: string from 26 directions. Axis of rotation
      * secondDirection: (optional)
      * distance: (optional) radius in metres of the circle. Default 0.05 m (5 cm)
      * startAngle: (optional) where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
      * endAngle: (optional) where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
-     * zigzag: (optional) string from motionDirectionTable
+     * zigzag: (optional) string from 26 directions
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
      */
     newGestureBML( bml, symmetry ){
-        // debug
-        // this.color = Math.floor( Math.random() * 0xffffff );                
         this.finalOffset.set(0,0,0);
         
         // axis
-        let direction = bml.direction;
-        if ( direction && symmetry ){ direction = directionStringSymmetry( direction, symmetry ); }
-        direction = motionDirectionTable[ direction ];
-        if ( !direction ) { direction = motionDirectionTable['o']; }
-        
-        let secondDirection = bml.secondDirection;
-        if ( secondDirection && symmetry ){ secondDirection = directionStringSymmetry( secondDirection, symmetry ); }
-        secondDirection = motionDirectionTable[ secondDirection ];
-        if ( !secondDirection ) { secondDirection = direction; }
-
-        this.axis.lerpVectors( direction, secondDirection, 0.5 );
+        if ( !stringToDirection( bml.direction, _tempVec3_0, symmetry ) ){
+            console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
+            return;
+        }
+        if ( !stringToDirection( bml.secondDirection, _tempVec3_1, symmetry ) ){
+            _tempVec3_1.copy( _tempVec3_0 );
+        }
+        this.axis.lerpVectors( _tempVec3_0, _tempVec3_1, 0.5 );
+        if( this.axis.lengthSq() < 0.0001 ){ this.axis.copy( _tempVec3_0 ); }
         this.axis.normalize();
-        if( this.axis.lengthSq() < 0.0001 ){ this.axis.copy( direction ); }
 
         // angle computations
         let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
@@ -356,15 +313,13 @@ class CircularMotion {
         this.startPoint.applyAxisAngle( this.axis, startAngle );
 
         // zig-zag
-        let zigzag = motionDirectionTable[ bml.zigzag ];
-        if ( !zigzag ){
+        if ( stringToDirection( bml.zigzag, this.zigzagDir ) ){
+            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
+            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
+        }else{
             this.zigzagDir.set(0,0,0);
             this.zigzagSize = 0.0; // metres
             this.zigzagSpeed = 0; // rps
-        }else{
-            this.zigzagDir.copy( zigzag );
-            this.zigzagSize = isNaN( bml.zigzagSize ) ? 0.01 : bml.zigzagSize; // metres
-            this.zigzagSpeed = isNaN( bml.zigzagSpeed ) ? 2 : bml.zigzagSpeed; // rps
         }
 
         // check and set timings

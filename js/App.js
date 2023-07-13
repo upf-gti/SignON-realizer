@@ -359,16 +359,17 @@ class App {
             model.headTarget = this.headTarget;
             model.neckTarget = this.neckTarget;
 
-            let ECAcontroller = this.ECAcontroller = new CharacterController( {character: model} );
-            ECAcontroller.start();
-            ECAcontroller.reset();
-            ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking
-
-            if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
-            this.animate();
-            $('#loading').fadeOut(); //hide();
-        
+            fetch('./data/EVAconfig.json').then(response => response.text()).then( (text) =>{
+                let config = JSON.parse( text );
+                let ECAcontroller = this.ECAcontroller = new CharacterController( {character: this.model, characterConfig: config} );
+                ECAcontroller.start();
+                ECAcontroller.reset();
+                ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking mode
     
+                if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
+                this.animate();
+                $('#loading').fadeOut(); //hide();
+            })
         });
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );

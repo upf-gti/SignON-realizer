@@ -25,10 +25,11 @@ let palmorLeftTable = {
 
 // receives bml instructions and animates the hands
 class Palmor {
-    constructor( boneMap, skeleton, isLeftHand = false ){
+    constructor( config, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
         
+        let boneMap = config.boneMap;
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
         this.idx = boneMap[ handName + "Elbow" ]; // elbow (forearm) joint index. 

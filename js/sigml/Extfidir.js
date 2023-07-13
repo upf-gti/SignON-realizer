@@ -1,44 +1,13 @@
 import * as THREE from "three";
-import { directionStringSymmetry, nlerpQuats } from "./SigmlUtils.js";
-
-// convert rotation names into radiants. 'u' and 'ur' are extremes. By setting them to 160 and -135, the interpolation of quaternion choses the correct interpolation path. Otherwise it rotates on the wrong direction
-let extfidirPointTable = {
-    'u'     : new THREE.Vector3(  0,   1,   0 ),   
-    'ul'    : new THREE.Vector3(  1,   1,   0 ),   
-    'l'     : new THREE.Vector3(  1,   0,   0 ),   
-    'dl'    : new THREE.Vector3(  1,   -1,   0 ),   
-    'd'     : new THREE.Vector3(  0,   -1,   0 ),   
-    'dr'    : new THREE.Vector3( -1,   -1,   0 ),  
-    'r'     : new THREE.Vector3( -1,   0,   0 ),  
-    'ur'    : new THREE.Vector3( -1,   1,   0 ),  
-
-    "uo"    : new THREE.Vector3(  0,   1,   1 ),
-    "uol"   : new THREE.Vector3(  1,   1,   1 ),
-    "ol"    : new THREE.Vector3(  1,   0,   1 ),
-    "dol"   : new THREE.Vector3(  1,   -1,   1 ),
-    "do"    : new THREE.Vector3(  0,   -1,   1 ),
-    "dor"   : new THREE.Vector3( -1,   -1,   1 ),
-    "or"    : new THREE.Vector3( -1,   0,   1 ),
-    "uor"   : new THREE.Vector3( -1,   1,   1 ),
-    "o"     : new THREE.Vector3(  0,   0,   1 ),
-    
-    "ui"    : new THREE.Vector3(  0,   1,   -1 ),
-    "uil"   : new THREE.Vector3(  1,   1,   -1 ),
-    "il"    : new THREE.Vector3(  1,   0,   -1 ),
-    "dil"   : new THREE.Vector3(  1,   -1,   -1 ),
-    "di"    : new THREE.Vector3(  0,   -1,   -1 ),
-    "dir"   : new THREE.Vector3( -1,   -1,   -1 ),
-    "ir"    : new THREE.Vector3( -1,   0,   -1 ),
-    "uir"   : new THREE.Vector3( -1,   1,   -1 ),
-    "i"     : new THREE.Vector3(  0,   0,   -1 ),
-}
-
+import { stringToDirection, nlerpQuats } from "./SigmlUtils.js";
 
 // receives bml instructions and animates the wrists. Swing rotation only 
 class Extfidir {
-    constructor( boneMap, skeleton, isLeftHand = false ){
+    constructor( config, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
+
+        let boneMap = config.boneMap;
 
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
@@ -88,9 +57,9 @@ class Extfidir {
     reset() {
         // Force pose update to flat
         this.transition = false;
-        this.defPoint.copy( extfidirPointTable[ 'o' ] );
+
+        stringToDirection( "o", this.defPoint );
         this.defPalmorRefactor = 1;
-        this.curG.copy( extfidirPointTable[ 'o' ] );
         this.curPalmorRefactor = 1;
         this.foreArmCorrectionAngle = 0;
     }
@@ -108,7 +77,6 @@ class Extfidir {
         else {
             if ( bearing < -1.58825 ){ bearing += Math.PI * 2; } 
         }
-
 
 
         let wristBone = this.wristBone;
@@ -208,36 +176,21 @@ class Extfidir {
     /**
      * bml info
      * start, attackPeak, relax, end
-     * extfidir: string from extfidirPointTable
-     * secondExtfidir: (optional) string from extfidirPointTable. Will compute midpoint between extifidir and secondExtfidir
+     * extfidir: string from sides
+     * secondExtfidir: (optional) string from sides. Will compute midpoint between extifidir and secondExtfidir
      */
     newGestureBML( bml, symmetry = false ){
         if( !bml.extfidir ){ return; }
       
-        let extfidir = bml.extfidir;
-        let secondExtfidir = bml.secondExtfidir;
-
-        if ( extfidir && symmetry ){ extfidir = directionStringSymmetry( extfidir, symmetry ); }
-        if ( secondExtfidir && symmetry ){ secondExtfidir = directionStringSymmetry( secondExtfidir, symmetry ); }
-
-        let point = extfidirPointTable[ extfidir ];
-        if( !point ){ 
-            console.warn( "Gesture: Extfidir incorrect direction \"" + extfidir + "\"" );
+        if( !stringToDirection( bml.extfidir, this.trgPoint, symmetry ) ){ 
+            console.warn( "Gesture: Extfidir incorrect direction \"" + bml.extfidir + "\"" );
             return; 
         }
-        
-        let secondPoint = extfidirPointTable[ secondExtfidir ];
-        if( !secondPoint ){ 
-            secondPoint = point; 
+        if( stringToDirection( bml.secondExtfidir, this._tempV3_0, symmetry ) ){
+            this.trgPoint.lerpVectors( this.trgPoint, this._tempV3_0, 0.5 );
+            this.trgPoint.normalize();
         }
         
-        // set source pose swing quaternions
-        this.srcG.copy( this.curG );
-
-        // compute midpoint between primary and secondary extfidir
-        this.trgPoint.lerpVectors( point, secondPoint, 0.5 );
-
-
         this.trgPalmorRefactor = this.trgPoint.z < 0 ? -1 : 1;
         this.srcPalmorRefactor = this.curPalmorRefactor;
         // set defualt point if necessary
@@ -246,6 +199,9 @@ class Extfidir {
             this.defPalmorRefactor = this.trgPalmorRefactor;
         }
         
+        // set source pose swing quaternions
+        this.srcG.copy( this.curG );
+
         // check and set timings
         this.start = bml.start || 0;
         this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
@@ -260,4 +216,4 @@ class Extfidir {
 
 }
 
-export { Extfidir, extfidirPointTable };
+export { Extfidir };

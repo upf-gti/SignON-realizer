@@ -17,6 +17,7 @@ function CharacterController(o) {
 
     this.time = 0;
     this.character = o.character;
+    this.characterConfig = o.characterConfig;
 
     if (typeof BehaviourManager !== 'undefined') {
         this.BehaviourManager = new BehaviourManager();
@@ -38,7 +39,7 @@ function CharacterController(o) {
     }
 
     if ( typeof(BodyController) !== 'undefined'){ 
-        this.bodyController = new BodyController( this.character );
+        this.bodyController = new BodyController( this.character, this.characterConfig );
     } 
 }
 
