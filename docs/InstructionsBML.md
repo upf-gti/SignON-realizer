@@ -144,7 +144,6 @@ Mouthing.
     // optionals
     amount: 1,
 }
-
 ```
 <details>
 <summary>Click to view the complete list of available lexemes</summary>
@@ -235,13 +234,66 @@ All gestures share some optional attributes
 ``` javascript
 {
     hand: "right" || "left" || "both", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "right"
-    dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right".
     lrSym: true,  // bool, only applied to the non-dominant hand
     udSym: false, // bool, only applied to the non-dominant hand
     ioSym: false, // bool, only applied to the non-dominant hand
 }
 ```
+The dominant hand can be set through the following attribute.
+``` javascript
+{
+    dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+}
+```
 
+All gesture intructions can be packed into a single BML instruction. Caution must be taken as attributes may overlap between different gesture types. This can be useful to to reuse the same timing for several gestures  
+The following example using a single BML, instructs the avatar the handshape, palmor, extfidir and the shoulder raise with the same timing variables
+``` javascript
+{ 
+    type: "gesture",
+    start: 0,   attackPeak: 0.5,   relax: 1,   end: 2, 
+    shoulderRaise: "1",
+    extfidir: "u", 
+    palmor: "l",  
+    handshape: "finger2",
+    hand: "left" 
+}
+```
+## Shoulder Raise
+Raises the shoulder
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    shoulderRaise: 0.8, // value [0,1]
+    
+    //optional
+    shift: false, 
+}
+```
+
+---
+## Shoulder Hunch
+Moves the shoulder forward
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    shoulderHunch: 0.8, // value [0,1]
+    
+    //optional
+    shift: false, 
+}
+```
+---
 ## Body Location
 Moves the arm (wrist) to a location of the body (face + trunk).
 ``` javascript
@@ -275,7 +327,6 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 
     shift: false, // contact information ( srcFinger, srcLocation, srcSide ) is not kept for shift
 }
-
 ```
 <details>
 <summary>Click to view the complete list of available locations</summary>
@@ -332,7 +383,6 @@ Roll of the wrist joint.
     secondPalmor: "l", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
     shift: false 
 }
-
 ```
 
 ---
@@ -353,7 +403,6 @@ Yaw and Pitch of the wrist joint.
     secondExtfidir: "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
     shift: false, // optional
 }
-
 ```
 ---
 ## Handshape
@@ -382,7 +431,6 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     splay1: 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent. splay1=thumb, splay2=index, and so on
     shift: false,
 }
-
 ```
 <details>
 <summary>Click to view the complete list of available HANDSHAPES</summary>
@@ -461,7 +509,6 @@ The motion is stopped if an arm location is executed afterwards.
                     // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
                     // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
 }
-
 ```
 <details>
 <summary>Click to view the complete list of HAND CONSTELLATION SIDES </summary>
@@ -519,7 +566,6 @@ The motion is stopped if an arm location is executed afterwards.
     zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     zigzagSpeed: 3, // oscillations per second. Default 2
 }
-
 ```
 
 ---
@@ -545,7 +591,6 @@ The motion is stopped if an arm location is executed afterwards.
     zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     zigzagSpeed: 3, // oscillations per second. Default 2
 }
-
 ```
 
 ---
@@ -568,7 +613,6 @@ Wiggle fingers of the hand.
     exemptedFingers: "2", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
 
 }
-
 ```
 
 
@@ -596,7 +640,6 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
     speed: 3, // oscillations per second. Negative values accepted. Default 3. 
     intensity: 0.3, // [0,1]. Default 0.3
 }
-
 ```
 
 

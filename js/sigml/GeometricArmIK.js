@@ -43,7 +43,7 @@ class GeometricArmIK{
         this._tempV3_4 = new THREE.Vector3();
     }
 
-    reachTarget( targetWorldPoint, forcedElbowRaiseDelta = 0, armTwistCorrection = true ){
+    reachTarget( targetWorldPoint, forcedElbowRaiseDelta = 0, forcedShoulderRaise = 0, forcedShoulderHunch = 0, armTwistCorrection = true ){
         let wristBone = this.wristBone;
         let elbowBone = this.elbowBone;
         let armBone = this.armBone;
@@ -84,6 +84,7 @@ class GeometricArmIK{
         armProjection.x *= this.isLeftHand ? -1 : 1;
         let forwardCorrection = Math.sin( -Math.PI*0.5 + Math.PI * Math.max( 0, Math.min( 1, -armProjection.z / armSize ) ) ) * 0.5 + 0.5;  // how lateral it is --> radians * factor; factor = sin( -90 + 180 * targetRatio )
         forwardCorrection = Math.PI*0.30 * forwardCorrection; //  how lateral it is
+        forwardCorrection += forcedShoulderHunch;
         forwardCorrection = Math.max( - Math.PI*0.1, Math.min( Math.PI*0.3, forwardCorrection ) );
         forwardCorrection *= this.isLeftHand ? -1 : 1;  
         let forwardCorrectionQuat = _tempQ_0.setFromAxisAngle( yAxis, forwardCorrection );
@@ -92,6 +93,7 @@ class GeometricArmIK{
         let upwardsCorrection = Math.max(0, Math.min( 1, (armProjection.y + armSize*0.25) / (armSize) ));
         upwardsCorrection = Math.sin( upwardsCorrection * Math.PI - Math.PI*0.5) *0.5 + 0.5;
         upwardsCorrection = Math.PI * 0.2 * upwardsCorrection;
+        upwardsCorrection += forcedShoulderRaise;
         let upwardsCorrectionQuat = _tempQ_0.setFromAxisAngle( xAxis, -upwardsCorrection );
         shoulderBone.quaternion.multiply( upwardsCorrectionQuat );
 

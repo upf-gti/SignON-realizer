@@ -94,10 +94,11 @@ function hnsSignParser( xml, start ){
             result = result.concat( r.data );
             if (end < r.end ){ end = r.end; }
             manualDone = true;
-            relaxEndDuration = TIMESLOT.RELAXEND / signSpeed;
             peakRelaxDuration = TIMESLOT.PEAKRELAX / signSpeed;
+            relaxEndDuration = TIMESLOT.RELAXEND / signSpeed;
         }
     }
+
     return { data: result, end: end, relaxEndDuration: relaxEndDuration, peakRelaxDuration: peakRelaxDuration }; 
 }
 
@@ -153,15 +154,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     if ( !oldPosture ){
         newPosture = {
             right: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12 },
-                // { type: "gesture", start: -1, locationBodyArm: "neutral", hand: "right", distance: 0.065, side: "r", sideDistance: 0.025 }, 
+                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12, srcLocation: "Tip",  srcFinger: 2},
                 { type: "gesture", start: -1, extfidir: "dl", hand: "right" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "right" }, 
                 { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "right" }, 
             ],
             left: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12 },
-                // { type: "gesture", start: -1, locationBodyArm: "neutral", hand: "left",  distance: 0.04, side: "l", sideDistance: 0.025 }, 
+                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12, srcLocation: "Tip",  srcFinger: 2 },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "left" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "left" }, 
                 { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "left" }, 
@@ -262,7 +261,7 @@ function signManual( xml, start, signSpeed ){
 
         if ( !motionsStarted ){
             if ( posturesAvailable.includes( tagName ) ){
-                let r = postureParser( action, time, signGeneralInfo.bothHands ? "both" : signGeneralInfo.domHand, signSpeed, signGeneralInfo, null );
+                let r = postureParser( action, time, signGeneralInfo.bothHands ? "both" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, null );
                 result = result.concat( r.data );
                 // do not advance time. All postures should happen at the same time
             }
@@ -287,12 +286,12 @@ function signManual( xml, start, signSpeed ){
     let checkHandsResult = checkHandsUsage( result );
     if ( checkHandsResult.right.isHandUsed ){
         if ( checkHandsResult.right.firstHandUsage + 0.05 < checkHandsResult.right.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest",secondLocationBodyArm:"stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12, srcLocation:"Tip", srcFinger:"2" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12, srcLocation: "Tip", srcFinger:"2" } );
         }
     }
     if ( checkHandsResult.left.isHandUsed ){
         if ( checkHandsResult.left.firstHandUsage + 0.05 < checkHandsResult.left.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest",secondLocationBodyArm:"stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12, srcLocation:"Tip", srcFinger:"2" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12, srcLocation: "Tip", srcFinger:"2" } );
         }
     }
 
@@ -326,8 +325,7 @@ function signManual( xml, start, signSpeed ){
 }
 
 
-// function postureParser( xml, start, bothHands, domHand, symmetry, signSpeed, currentPosture = null ){
-function postureParser( xml, start, hand, signSpeed, signGeneralInfo, currentPosture = null ){
+function postureParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, currentPosture = null ){
     // shape of pose until the end of the sign or a tgt motion
     let result = [];
     let tagName = xml.tagName;
@@ -335,7 +333,7 @@ function postureParser( xml, start, hand, signSpeed, signGeneralInfo, currentPos
     let time = start;
 
     if ( tagName == "handconfig" ){
-        result = result.concat( handconfigParser( xml, time, time + TIMESLOT.HAND / signSpeed, hand, signGeneralInfo.symmetry ) );
+        result = result.concat( handconfigParser( xml, time, time + TIMESLOT.HAND / signSpeed, hand, symmetry ) );
         maxEnd = TIMESLOT.HAND / signSpeed;
     }  
     else if ( tagName == "split_handconfig" ){ // split instruction removes any symmetry. Both_hands attribute does not matter
@@ -350,7 +348,7 @@ function postureParser( xml, start, hand, signSpeed, signGeneralInfo, currentPos
     }
     
     else if ( tagName == "location_bodyarm" ){ 
-        result = result.concat( locationBodyArmParser( xml, time, time + TIMESLOT.LOC / signSpeed, hand, signGeneralInfo.symmetry, signGeneralInfo ) );
+        result = result.concat( locationBodyArmParser( xml, time, time + TIMESLOT.LOC / signSpeed, hand, symmetry, signGeneralInfo ) );
         maxEnd = TIMESLOT.LOC / signSpeed;
     }
     else if ( tagName == "split_location" ){ // can be location_hand or location_bodyarm. // split instruction removes any symmetry.  Both_hands attribute does not matter
@@ -457,7 +455,7 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
 }
 
 
-let locationMap ={
+let locationMapHead = {
     head: "forehead", 
     headtop: "headtop",
     forehead: "forehead",
@@ -480,12 +478,17 @@ let locationMap ={
     chin: "chin",
     underchin: "underchin",
     neck: "neck",
+}
+let locationMapBody = {
     shoulders: "shoulderLine",
-    shouldertop: "shoulder",
+    shouldertop: "shoulderTop",
     chest: "chest",
     stomach: "stomach",
     belowstomach: "belowstomach",
 }
+let locationMap ={};
+for( let l in locationMapHead ){ locationMap[l] = locationMapHead[l]; }
+for( let l in locationMapBody ){ locationMap[l] = locationMapBody[l]; }
 
 let locationSideMap = {
     left_beside: { side: "l", sideDistance: 0.1 },
@@ -538,17 +541,23 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         result.srcSide = locationHand.side;
         result.srcFinger = locationHand.finger;
     }else{
-        if ( signGeneralInfo.bothHands ){ // only if sign_manual has the attribute both_hands enabled, the 
-            result.srcLocation = "Hand";
-            result.srcSide = "Palmar";
-            // result.srcLocation = "Wrist";
-            // result.srcSide = "Radial";
-        }
-        else{
+        if ( attributes.contact == "touch" ){ // does not matter which mode, if touching, defaults to 2tip 
             result.srcFinger = "2";
             result.srcLocation = "Tip";
         }
-
+        else if ( hand != "both" && signGeneralInfo.bothHands ){ // sign with both hands but somewhere there was a split (does not matter which contact) 
+            result.srcFinger = "2";
+            result.srcLocation = "Tip";
+        }
+        else { // other contacts
+            if ( locationMapHead.includes( attributes.location ) && !signGeneralInfo.bothHands ){ // only on single hand, face locations default to 2tip
+                result.srcFinger = "2";
+                result.srcLocation = "Tip";
+            }else{
+                result.srcFinger = "Hand";
+                result.srcLocation = "Palmar";
+            }
+        }
     }
 
     return [ result ];
@@ -881,7 +890,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
             }
             else if ( posturesAvailable.includes( xml.children[i].tagName ) ){
                 motionDone = true;   
-                let r = postureParser( xml.children[i], time, hand, signSpeed, signGeneralInfo, currentPosture );
+                let r = postureParser( xml.children[i], time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
                 blockResult.push( r );
                 if ( maxEnd < r.end ){ maxEnd = r.end; } 
             }
@@ -1171,7 +1180,7 @@ function signNonManual( xml, start, signSpeed ){
                     }
                     time = subMaxEnd;
                 }
-            }// end of for actions in tier
+            } // end of for actions in tier
             if ( end < time ){ end = time; }
         }        
     } // end of of for tier
@@ -1191,8 +1200,9 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     signSpeed = isNaN( signSpeed ) ? 1 : signSpeed;
 
     let result = null;
+    let resultEndsAtPeak = true;  // TODO
     switch( xml.tagName ){
-        case "shoulder_movement": break;  // - movement   
+        case "shoulder_movement": result = shoulderMovementTable[ obj.movement ]; resultEndsAtPeak = !!result._endsAtPeak; break;  // - movement   
         case "body_movement": break; // - movement
         case "head_movement": result = headMovementTable[ obj.movement ]; break; // - movement
         case "eye_gaze": result = eyeGazeTable[ obj.direction ]; break;
@@ -1231,14 +1241,37 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
         } 
         else {
             let duration = result[i].duration ? result[i].duration : TIMESLOT.NMF; 
-            duration = result[i].end ? ( (startTime + result[i].end) - result[i].start) : duration;
-            result[i].end = result[i].start + duration / signSpeed; 
-            if ( result[i].end > maxEnd ){ maxEnd = result[i].end; }
+
+            // shoulder movement keeps the position until the end of the sign
+            if ( resultEndsAtPeak ){
+                result[i].attackPeak = result[i].start + duration;
+                if ( result[i].end > maxEnd ){ maxEnd = result[i].attackPeak; }
+            }
+            else{ // Others do their thing with a timing and stops, regardless of the sign
+                duration = result[i].end ? ( (startTime + result[i].end) - result[i].start) : duration;
+                result[i].end = result[i].start + duration / signSpeed; 
+                if ( result[i].end > maxEnd ){ maxEnd = result[i].end; }
+            }
         }
     }
     return { data: result, end: maxEnd };
 }
 
+
+let shoulderMovementTable = {
+    // keeps that position until it changes or the sign ends
+    UL: { type: "gesture", shoulderRaise: 0.8, hand: "left", _endsAtPeak:true}, //_left_shoulder_raised                
+    UR: { type: "gesture", shoulderRaise: 0.8, hand: "right", _endsAtPeak:true }, //_right_shoulder_raised               
+    UB: { type: "gesture", shoulderRaise: 0.8, hand: "both", _endsAtPeak:true }, //_both_shoulders_raised               
+    HL: { type: "gesture", shoulderHunch: 0.8, hand: "left", _endsAtPeak:true }, //_left_shoulder_hunched_forward       
+    HR: { type: "gesture", shoulderHunch: 0.8, hand: "right", _endsAtPeak:true }, //_right_shoulder_hunched_forward      
+    HB: { type: "gesture", shoulderHunch: 0.8, hand: "both", _endsAtPeak:true }, //_both_shoulders_hunched_forward     
+    
+    // up and down once
+    SL: { type: "gesture", shoulderRaise: 0.8, hand: "left" }, //_left_shoulder_shrugging_up_and_down 
+    SR: { type: "gesture", shoulderRaise: 0.8, hand: "right" }, //_right_shoulder_shrugging_up_and_down
+    SB: { type: "gesture", shoulderRaise: 0.8, hand: "both" }, //_both_shoulders_shrugging_up_and_down
+};
 
 let headMovementTable = {
     NO: { type: "head", lexeme: "NOD", repetition: 1 }, //_nodding_up_and_down     
