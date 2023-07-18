@@ -1,9 +1,10 @@
 [ { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "handshape": "finger2" },
-{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "extfidir": "do", "secondExtfidir":"d", "mode":"local"},
+{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "extfidir": "dol", "secondExtfidir":"d", "mode":"local"},
 { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "palmor": "d", "secondPalmor": "dl", "hand":"right" }, 
 { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "palmor": "d", "hand":"left" }, 
-{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "locationBodyArm": "locbot3", "distance": 0.5 },
-{ "type": "gesture", "start": 0.5, "attackPeak": 1, "relax": 2, "end": 2.5, "motion": "directed", "direction": "uil", "distance": 0.2 },
-{ "type": "gesture", "start": 0.5, "attackPeak": 1, "relax": 2, "end": 2.5, "extfidir": "dol" },
-{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "locationBodyArm": "locbot3", "distance": 0.6, "hand": "left" },
-{ "type": "gesture", "start": 0.5, "attackPeak": 1, "relax": 2, "end": 2.5, "motion": "directed", "direction": "l", "distance": 0.03, "hand": "left" }  ]
+{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "locationBodyArm": "stomach", "distance": 0.3 },
+{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "handConstellation": "true", "hand":"right", "srcLocation":"Tip", "srcFinger":2, "dstLocation":"Wrist", "dstSide":"Back" },
+{ "type": "gesture", "start": 0.5, "attackPeak": 0.81, "relax": 2, "end": 2.5, "handConstellation": "true", "hand":"right", "srcLocation":"Tip", "srcFinger":2, "dstLocation":"Elbow", "dstSide":"Front" },
+{ "type": "gesture", "start": 0.5, "attackPeak": 0.8, "relax": 2, "end": 2.5, "extfidir": "dol", "secondExtfidir":"dl" },
+{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 2, "end": 2.5, "locationBodyArm": "stomach", "distance": 0.5, "hand": "left" },
+{ "type": "gesture", "start": 0.5, "attackPeak": 1, "relax": 2, "end": 2.5, "motion": "directed", "direction": "l", "distance": 0.02, "hand": "left" } ]

@@ -325,6 +325,12 @@ class BodyController{
     * shift: (optional) bool - make this the default position. Motions not affected
     */
     newGesture( bml ){
+
+        this.start = start || 0;
+        this.end = end || relax || attackPeak || (start + 1);
+        this.attackPeak = attackPeak || ( (this.end - this.start) * 0.25 + this.start );
+        this.relax = relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+
         // symmetry: bit0 = lr, bit1 = ud, bit2 = io
         let symmetryFlags = ( !!bml.lrSym );
         symmetryFlags |= ( ( !!bml.udSym ) << 1 );

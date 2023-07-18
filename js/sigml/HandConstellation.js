@@ -270,10 +270,10 @@ class HandConstellation {
         this.distance = isNaN( this.distance ) ? 0 : this.distance;
 
         // check and set timings
-        this.start = bml.start || 0;
-        this.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
-        this.attackPeak = bml.attackPeak || ( (this.end - this.start) * 0.25 + this.start );
-        this.relax = bml.relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.start = bml.start;
+        this.attackPeak = bml.attackPeak;
+        this.relax = bml.relax;
+        this.end = bml.end;
         this.time = 0;
         this.transition = true;
     }   

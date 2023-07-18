@@ -82,10 +82,10 @@ class BasicBMLValueInterpolator {
         }
 
         // check and set timings
-        this.start = start || 0;
-        this.end = end || relax || attackPeak || (start + 1);
-        this.attackPeak = attackPeak || ( (this.end - this.start) * 0.25 + this.start );
-        this.relax = relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        this.start = start;
+        this.attackPeak = attackPeak;
+        this.relax = relax;
+        this.end = end;
         this.time = 0; 
         
         this.transition = true;
@@ -107,5 +107,6 @@ class ShoulderHunch extends BasicBMLValueInterpolator {
         super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
+
 
 export { ShoulderRaise, ShoulderHunch }

@@ -115,6 +115,43 @@ class AppGUI {
                 
                 });
     
+            },
+
+            openGlossesInput: () => {
+                // open window and set all html elements (copy previous state)
+                let handle = window.open("", "Glosses NGT Input", "width=700, height=700");
+                let previousText = "";
+                while( handle.document.body.firstChild ){
+                    if ( handle.document.body.firstChild.id == "input" ){ previousText = handle.document.body.firstChild.value; }
+                    handle.document.body.removeChild( handle.document.body.firstChild );
+                }
+    
+                let htmlStr = "<p>Write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress </p>";
+                htmlStr += "<textarea id=\"input\" placeholder=\"Write glosses here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
+                handle.document.write(htmlStr);
+                let textarea = handle.document.getElementById( "input" );
+                textarea.value = previousText;
+                let button = handle.document.getElementById( "sendButton" );
+                
+                // generate msg and send it to ECAController
+                button.addEventListener( "click", () => { 
+                    // parse glosses array and remove undesired characters
+                    let glosses = textarea.value;
+                    glosses = glosses.replace( "\n", " ").split( " " );
+                    for ( let i = 0; i < glosses.length; ++i ){
+                        if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
+                            glosses.splice( i, 1 ); 
+                            --i; 
+                            continue; 
+                        }
+                        glosses[i] = glosses[i].toUpperCase();
+                    }
+
+                    this.app.processMessage( { IntermediateRepresentation: { glosses: glosses } } );    
+                
+                });
+    
             }
         } 
         
@@ -141,6 +178,7 @@ class AppGUI {
         gui.add( params, "reset").name("reset Pose");
         gui.add( params, "openBMLInput").name("bml input");
         gui.add( params, "openSiGMLInput").name("SiGML input");
+        gui.add( params, "openGlossesInput").name("Glosses NGT input");
     
         let moodFolder = gui.addFolder( "Moods" ).close();
         let armFolder = gui.addFolder( 'Arm Gestures' ).close();

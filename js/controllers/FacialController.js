@@ -418,6 +418,8 @@ FacialController.prototype.newTextToLip = function (bml) {
         }
     }
 
+    let text = bml.text;
+    if ( text[ text.length - 1 ] != "." ){ text += "."; } 
     this.textToLip.cleanQueueSentences();
     this.textToLip.pushSentence(bml.text, bml); // use info object as options container also  
 }

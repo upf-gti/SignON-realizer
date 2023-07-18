@@ -550,12 +550,12 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
             result.srcLocation = "Tip";
         }
         else { // other contacts
-            if ( locationMapHead.includes( attributes.location ) && !signGeneralInfo.bothHands ){ // only on single hand, face locations default to 2tip
+            if ( locationMapHead[ attributes.location ] && !signGeneralInfo.bothHands ){ // only on single hand, face locations default to 2tip
                 result.srcFinger = "2";
                 result.srcLocation = "Tip";
             }else{
-                result.srcFinger = "Hand";
-                result.srcLocation = "Palmar";
+                result.srcLocation = "Hand";
+                result.srcSide = "Palmar";
             }
         }
     }
@@ -1200,7 +1200,7 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     signSpeed = isNaN( signSpeed ) ? 1 : signSpeed;
 
     let result = null;
-    let resultEndsAtPeak = true;  // TODO
+    let resultEndsAtPeak = false;  // TODO
     switch( xml.tagName ){
         case "shoulder_movement": result = shoulderMovementTable[ obj.movement ]; resultEndsAtPeak = !!result._endsAtPeak; break;  // - movement   
         case "body_movement": break; // - movement
@@ -1257,6 +1257,18 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     return { data: result, end: maxEnd };
 }
 
+let bodyMovementTable = {
+    // RL_rotated_left
+    // RR_rotated_right
+    // TL_tilted_left
+    // TR_tilted_right
+    // TF_tilted_forwards
+    // TB_tilted_backwards
+    // SI_sigh  slightly tilted backwards
+    // HE_heave   does not work
+    // ST_straight 
+    // RD_round  sligthly tilted forwards
+}
 
 let shoulderMovementTable = {
     // keeps that position until it changes or the sign ends
