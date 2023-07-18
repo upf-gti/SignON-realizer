@@ -17,7 +17,9 @@ class App {
     constructor() {
         
         this.fps = 0;
+        this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
+        this.signingSpeed = 1;
         this.loaderGLB = new GLTFLoader();
         
         this.scene = null;
@@ -379,11 +381,12 @@ class App {
 
         requestAnimationFrame( this.animate.bind(this) );
 
-        let delta = this.clock.getDelta();
-        let et = this.clock.getElapsedTime();
-
+        let delta = this.clock.getDelta() 
         this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
-        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
+        
+        delta *= this.signingSpeed;
+        this.elapsedTime += delta;
+        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
 

@@ -6,7 +6,7 @@ import { Extfidir } from "./Extfidir.js";
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 import { HandConstellation } from "./HandConstellation.js";
-import { ShoulderRaise, ShoulderHunch } from "./ShouldersNMF.js";
+import { ShoulderRaise, ShoulderHunch, BodyMovement } from "./ShouldersBodyNMF.js";
 
 import { findIndexOfBone, getTwistQuaternion } from "./SigmlUtils.js";
 import { GeometricArmIK } from "./GeometricArmIK.js";
@@ -64,7 +64,7 @@ class BodyController{
         this.right = this._createArm( false );
         this.left = this._createArm( true );
         this.handConstellation = new HandConstellation( this.config.boneMap, this.skeleton, this.config.handLocationsR, this.config.handLocationsL );
-
+        this.bodyMovement = new BodyMovement( this.config, this.skeleton );
 
         this.dominant = this.right;
         this.nonDominant = this.left;
@@ -214,8 +214,10 @@ class BodyController{
     }
 
     update( dt ){
-        if ( !this.right.needsUpdate && !this.left.needsUpdate && !this.handConstellation.transition ){ return; }
-            
+        if ( !this.bodyMovement.transition && !this.right.needsUpdate && !this.left.needsUpdate && !this.handConstellation.transition ){ return; }
+        
+        this.bodyMovement.update( dt );
+
         this._updateArm( dt, this.right );
         this._updateArm( dt, this.left );
         
@@ -342,6 +344,10 @@ class BodyController{
 
         if ( bml.handConstellation ){
             this.handConstellation.newGestureBML( bml, this.dominant == this.right ? 'R' : 'L' );
+        }
+
+        if ( bml.bodyMovement ){
+            this.bodyMovement.newGestureBML( bml );
         }
 
         switch ( bml.hand ){

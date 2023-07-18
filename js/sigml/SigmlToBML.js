@@ -1198,12 +1198,14 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     // Incoming signSpeed is ignored. Only speeds inside the basic instruction are taken into account. 
     signSpeed = parseFloat( obj.speed );
     signSpeed = isNaN( signSpeed ) ? 1 : signSpeed;
+    let signAmount = parseFloat( obj.amount );
+    signAmount = isNaN( signAmount ) ? 1 : signAmount; 
 
     let result = null;
     let resultEndsAtPeak = false;  // TODO
     switch( xml.tagName ){
         case "shoulder_movement": result = shoulderMovementTable[ obj.movement ]; resultEndsAtPeak = !!result._endsAtPeak; break;  // - movement   
-        case "body_movement": break; // - movement
+        case "body_movement": result = bodyMovementTable[ obj.movement ]; break; // - movement
         case "head_movement": result = headMovementTable[ obj.movement ]; break; // - movement
         case "eye_gaze": result = eyeGazeTable[ obj.direction ]; break;
         case "eye_brows": result = eyebrowsTable[ obj.movement ]; break;
@@ -1231,26 +1233,34 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     }
     let maxEnd = startTime;
     for( let i = 0; i < result.length; ++i ){
-        result[i].start = result[i].start ? ( startTime + result[i].start / signSpeed ) : startTime;
-        if ( result[i].type == "speech" ) { 
-            if(result[i].speed) {
-                result[i].sentT = result[i].text.length * result[i].speed;
+        let o = result[i];
+
+        // modify amount/intensity depending of sign's amount
+        if ( o.hasOwnProperty( "amount" ) ){ o.amount *= signAmount; }
+        else if ( o.hasOwnProperty( "shoulderRaise" ) ){ o.shoulderRaise *= signAmount; }
+        else if ( o.hasOwnProperty( "shoulderHunch" ) ){ o.shoulderHunch *= signAmount; }
+
+        // adust timing
+        o.start = o.start ? ( startTime + o.start / signSpeed ) : startTime;
+        if ( o.type == "speech" ) { 
+            if(o.speed) {
+                o.sentT = o.text.length * o.speed;
             }
-            result[i].sentT = ( result[i].sentT / signSpeed ) || ( result[i].text.length / ( 6.66 * signSpeed ) ); // default to 6.66 phonemes per second
-            if ( result[i].start + result[i].sentT > maxEnd ){ maxEnd = result[i].start + result[i].sentT; }
+            o.sentT = ( o.sentT / signSpeed ) || ( o.text.length / ( 6.66 * signSpeed ) ); // default to 6.66 phonemes per second
+            if ( o.start + o.sentT > maxEnd ){ maxEnd = o.start + o.sentT; }
         } 
         else {
-            let duration = result[i].duration ? result[i].duration : TIMESLOT.NMF; 
+            let duration = o.duration ? o.duration : TIMESLOT.NMF; 
 
             // shoulder movement keeps the position until the end of the sign
             if ( resultEndsAtPeak ){
-                result[i].attackPeak = result[i].start + duration;
-                if ( result[i].end > maxEnd ){ maxEnd = result[i].attackPeak; }
+                o.attackPeak = o.start + duration;
+                if ( o.end > maxEnd ){ maxEnd = o.attackPeak; }
             }
             else{ // Others do their thing with a timing and stops, regardless of the sign
-                duration = result[i].end ? ( (startTime + result[i].end) - result[i].start) : duration;
-                result[i].end = result[i].start + duration / signSpeed; 
-                if ( result[i].end > maxEnd ){ maxEnd = result[i].end; }
+                duration = o.end ? ( (startTime + o.end) - o.start) : duration;
+                o.end = o.start + duration / signSpeed; 
+                if ( o.end > maxEnd ){ maxEnd = o.end; }
             }
         }
     }
@@ -1258,16 +1268,16 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
 }
 
 let bodyMovementTable = {
-    // RL_rotated_left
-    // RR_rotated_right
-    // TL_tilted_left
-    // TR_tilted_right
-    // TF_tilted_forwards
-    // TB_tilted_backwards
-    // SI_sigh  slightly tilted backwards
-    // HE_heave   does not work
-    // ST_straight 
-    // RD_round  sligthly tilted forwards
+    RL: { type: "gesture", bodyMovement: "RL", amount: 1 }, // _rotated_left
+    RR: { type: "gesture", bodyMovement: "RR", amount: 1 }, // _rotated_right
+    TL: { type: "gesture", bodyMovement: "TL", amount: 1 }, // _tilted_left
+    TR: { type: "gesture", bodyMovement: "TR", amount: 1 }, // _tilted_right
+    TF: { type: "gesture", bodyMovement: "TF", amount: 1 }, // _tilted_forwards
+    TB: { type: "gesture", bodyMovement: "TB", amount: 1 }, // _tilted_backwards
+    SI: { type: "gesture", bodyMovement: "TB", amount: 0.5 }, // _sigh  slightly tilted backwards
+    // HE: { type: "gesture", bodyMovement: "HE", amount: 1 }, // _heave   does not work
+    // ST: { type: "gesture", bodyMovement: "ST", amount: 1 }, // _straight 
+    RD: { type: "gesture", bodyMovement: "TF", amount: 0.5 }, // _round  sligthly tilted forwards
 }
 
 let shoulderMovementTable = {

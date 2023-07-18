@@ -175,6 +175,7 @@ class AppGUI {
             color.copySRGBToLinear(color); // material.color needs to be in linearSpace
         });
     
+        gui.add( this.app, "signingSpeed", 0, 2 ).name( "signing speed" );
         gui.add( params, "reset").name("reset Pose");
         gui.add( params, "openBMLInput").name("bml input");
         gui.add( params, "openSiGMLInput").name("SiGML input");
