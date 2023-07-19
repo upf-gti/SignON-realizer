@@ -293,6 +293,25 @@ Moves the shoulder forward
     shift: false, 
 }
 ```
+
+---
+## Body Movement
+Moves the body (trunk). Tilt forward-backward, tilt left-right and rotate left-right. New gestures are added to the previuos one, they are not replaced.
+``` javascript
+{
+    type: "gesture",
+    start: 0.1,
+    attackPeak: 0.2, 
+    relax: 0.3,  
+    end: 0.4,
+    
+    bodyMovement: "TF" || "TB" || "TL" || "TR" || "RL" || "RR",
+    
+    //optional
+    amount: 0.5, // default to 1 
+}
+```
+
 ---
 ## Body Location
 Moves the arm (wrist) to a location of the body (face + trunk).

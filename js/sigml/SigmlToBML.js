@@ -430,6 +430,8 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
         obj.bend4 = attributes.bend4;
         obj.bend5 = attributes.bend5;
         // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
+
+        obj._bendRange = 4;
         result.push( obj );
     }
     if ( attributes.extfidir ){
