@@ -80,11 +80,11 @@
             // this.root = document.createElement('div');
             // this.root.className = 'lextimeline';
 
-            this.header_offset = 36;
+            this.header_offset = 38;
             
             let width = options.width ? options.width : null;
             let height = options.height ? options.height - this.header_offset : null;
-            let area = new LX.Area( {width: width || "100%", height: height || "100%"});
+            let area = new LX.Area( {id: "bottom-timeline-area", width: width || "calc(100% - 7px)", height: height || "100%"});
             area.split({ type: "horizontal", sizes: ["20%", "80%"]});
             this.content_area = area;
             let [left, right] = area.sections;
@@ -105,7 +105,7 @@
             this.canvas.addEventListener("mousedown", this.processMouse.bind(this));
             this.canvas.addEventListener("mouseup", this.processMouse.bind(this));
             this.canvas.addEventListener("mousemove", this.processMouse.bind(this));
-            this.canvas.addEventListener("wheel", this.processMouse.bind(this));
+            this.canvas.addEventListener("wheel", this.processMouse.bind(this), {passive:false});
             this.canvas.addEventListener("dblclick", this.processMouse.bind(this));
             this.canvas.addEventListener("contextmenu", this.processMouse.bind(this));
 
@@ -126,7 +126,7 @@
             if(this.header)
                 this.header.clear();
             else {
-                this.header = new LX.Panel({id:'lextimelineheader', height: "36px"});
+                this.header = new LX.Panel({id:'lextimelineheader', height: this.header_offset+"px"});
                 this.root.root.appendChild(this.header.root);
             }
 
@@ -138,6 +138,9 @@
             header.addNumber("Duration", this.duration, (value, event) => this.setDuration(value), {step: 0.01, min: 0});        
             header.addNumber("Current Time", this.currentTime, (value, event) => {
                 this.currentTime = value;
+                if(this.onSetTime)
+                    this.onSetTime(this.currentTime);
+                this.draw();
             }, {signal: "@on_current_time_" + this.constructor.name, step: 0.01, min: 0, max: this.duration, precision: 3,});        
 
             for(let i = 0; i < this.buttonsDrawn.length; i++) {
@@ -203,6 +206,7 @@
                                     if(tracks[i].name == node.parent.id && type.includes(tracks[i].type))
                                         tracks[i].lock = !value;
                                 }
+                                this.draw();
                             }
                              
                         }]})
@@ -231,7 +235,7 @@
             // }
             if(this.leftPanel.parent.root.classList.contains("hidden"))
                 return;
-            this.#resizecanvas([ this.root.root.clientWidth - this.leftPanel.root.clientWidth, this.size[1]]);
+            this.#resizecanvas([ this.root.root.clientWidth - this.leftPanel.root.clientWidth  - 8, this.size[1]]);
         }
 
         /**
@@ -441,13 +445,14 @@
             if(!rect)
                 rect = [0, ctx.canvas.height - ctx.canvas.height , ctx.canvas.width, ctx.canvas.height ];
 
-            this.canvas = ctx.canvas;
+            // this.canvas = ctx.canvas;
             this.position[0] = rect[0];
             this.position[1] = rect[1];
             let w = rect[2];
             let h = rect[3];
             let timelineHeight = this.size[1];
             this.currentTime = currentTime;
+            this.updateHeader();
             this.currentScrollInPixels = this.scrollableHeight <= h ? 0 : (this.currentScroll * (this.scrollableHeight - timelineHeight));
 
             //zoom
@@ -638,6 +643,7 @@
             var x = this.xToTime( centerx );
             this.secondsToPixels *= v;
             this.session.start_time += x - this.xToTime( centerx );
+            this.draw();
         }
         
         /**
@@ -773,7 +779,8 @@
                         let time = this.xToTime( localX );
                         time = Math.max(0, time);
                         this.currentTime = Math.min(this.duration, time);
-                        LX.emit( "@on_current_time_" + this.constructor.name, time );
+                        this.draw();
+                        // LX.emit( "@on_current_time_" + this.constructor.name, time );
                     }
                     else
                     {
@@ -1043,7 +1050,7 @@
             }
             this.draw();
             if(this.onChangeTrackVisibility)
-                this.onChangeTrackVisibility(trackInfo, visible)
+                this.onChangeTrackVisibility(trackInfo, visible);
         }
 
         /**
@@ -1088,7 +1095,7 @@
             this.size = size; 
             this.content_area.setSize([size[0], size[1] - this.header_offset]);
             
-            let w = size[0] - this.leftPanel.root.clientWidth - 10;
+            let w = size[0] - this.leftPanel.root.clientWidth - 8;
             this.#resizecanvas([w , size[1]]);
         }
 
@@ -1394,6 +1401,13 @@
             }
             else{
                 
+                actions.push(
+                    {
+                        title: "Add",
+                        callback: () => this.addKeyFrame( e.track )
+                    }
+                )
+
                 if(this.clipboard && this.clipboard.keyframes)
                 {
                     actions.push(
@@ -1473,7 +1487,7 @@
                 track.selected[newIdx] = true;
     
             }
-            
+            LX.emit( "@on_current_time_" + this.constructor.name, this.currentTime );
             // Update time
             if(this.onSetTime)
                 this.onSetTime(this.currentTime);
@@ -1724,7 +1738,19 @@
         addKeyFrame( track, value ) {
 
             // Update animationClip information
-            const clipIdx = track.clipIdx;
+            let clipIdx = track.clipIdx;
+
+            if(clipIdx == undefined) {
+                let [name, keyType] = this.getTrackName(track.name)
+                let tracks = this.tracksPerItem[name];
+                if(!tracks) return;
+    
+                // Get current track
+                const selectedTrackIdx = tracks.findIndex( t => t.type === keyType );
+                if(selectedTrackIdx < 0)
+                    return;
+                    clipIdx = tracks[ selectedTrackIdx ].clipIdx;
+            }
 
             // Time slot with other key?
             const keyInCurrentSlot = this.animationClip.tracks[clipIdx].times.find( t => { return !LX.UTILS.compareThreshold(this.currentTime, t, t, 0.001 ); });
@@ -1814,7 +1840,7 @@
 
             if(this.onSetTime)
                 this.onSetTime(this.currentTime);
-
+            this.draw();
             return newIdx;
         }
 

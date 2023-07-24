@@ -10,7 +10,7 @@
     */
 
     var LX = global.LX = {
-        version: 1.1,
+        version: "1.0.0",
         ready: false,
         components: [], // specific pre-build components
         signals: {} // events and triggers
@@ -406,12 +406,18 @@
 
     LX.TreeEvent = TreeEvent;
 
-    function emit( signal_name, value )
+    function emit( signal_name, value, target )
     {
         const data = LX.signals[ signal_name ];
 
         if( !data )
         return;
+
+        if( target )
+        {
+            target[signal_name].call(target, value);
+            return;
+        }
 
         for( let obj of data )
         {
@@ -420,7 +426,7 @@
                 obj.set( value );
             }else
             {
-                obj[signal_name].call(obj);
+                obj[signal_name].call(obj, value);
             }
         }
     }
@@ -433,6 +439,9 @@
 
         if( !LX.signals[ name ] )
             LX.signals[ name ] = [];
+        
+        if( LX.signals[ name ].indexOf( obj ) > -1 )
+            return;
 
         LX.signals[ name ].push( obj );
     }
@@ -751,7 +760,10 @@
             this.#update();
 
             if(!resize)
-            return;
+            {
+                return this.sections;
+            }
+            
 
             // from litegui.js @jagenjo
 
@@ -773,18 +785,17 @@
             function inner_mousemove(e)
             {
                 if(that.type == "horizontal") {
-                    that.moveSplit(last_pos[0] - e.x);
+                    that._moveSplit(last_pos[0] - e.x);
                         
                 }
                 else {
-                    that.moveSplit(last_pos[1] - e.y);
+                    that._moveSplit(last_pos[1] - e.y);
                 }
                 
                 last_pos[0] = e.x;
                 last_pos[1] = e.y;
                 e.stopPropagation();
                 e.preventDefault();
-                            
             }
 
             function inner_mouseup(e)
@@ -795,6 +806,8 @@
                 document.body.classList.remove("nocursor");
                 that.split_bar.classList.remove("nocursor");
             }
+
+            return this.sections;
         }
 
         /**
@@ -840,14 +853,14 @@
          * @method propagateEvent
          */
 
-        propagateEvent( type ) {
+        propagateEvent( eventName ) {
 
             for(var i = 0; i < this.sections.length; i++)
             {
                 const area = this.sections[i];
-                if(area[ type ])
-                    area[ type ].call( this, area.root.getBoundingClientRect() );
-                area.propagateEvent( type );
+                if(area[ eventName ])
+                    area[ eventName ].call( this, area.root.getBoundingClientRect() );
+                area.propagateEvent( eventName );
             }
         }
 
@@ -889,6 +902,7 @@
             this.split({type: 'vertical', sizes:[height,null], resize: false});
             this.sections[0].attach( menubar );
             this.sections[0].is_menubar = true;
+
             return menubar;
         }
 
@@ -1048,7 +1062,7 @@
             return tabs;
         }
 
-        moveSplit( dt ) {
+        _moveSplit( dt ) {
 
             if(!this.type)
                 throw("No split area");
@@ -1164,23 +1178,23 @@
             this.tabs = {};
         }
 
-        add( name, content, selected, callback ) {
+        add( name, content, isSelected, callback ) {
 
-            if( selected )
+            if( isSelected )
                 this.root.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
             
-            selected = !Object.keys( this.tabs ).length ? true : selected;
+            isSelected = !Object.keys( this.tabs ).length ? true : isSelected;
 
             content = content.root ? content.root : content;
-            content.style.display = selected ? "block" : "none";
+            content.style.display = isSelected ? "block" : "none";
 
             // Create tab
             let tabEl = document.createElement('span');
             tabEl.dataset["name"] = name;
-            tabEl.className = "lexareatab" + (selected ? " selected" : "");
+            tabEl.className = "lexareatab" + (isSelected ? " selected" : "");
             tabEl.innerHTML = name;
             tabEl.id = name.replace(/\s/g, '') + Tabs.TAB_ID++;
-            tabEl.selected = selected;
+            tabEl.selected = isSelected;
             tabEl.instance = this;
             content.id = tabEl.id + "_content";
 
@@ -1283,6 +1297,7 @@
                     if(!next_token) {
                         item[ 'callback' ] = options.callback;
                         item[ 'type' ] = options.type;
+                        item[ 'checked' ] = options.checked;
                     }
                     list.push( item );
                     insert( next_token, item[ token ] ); 
@@ -1296,14 +1311,15 @@
             for( let item of this.items )
             {
                 let key = Object.keys(item)[0];
+                let pKey = key.replace(/\s/g, '').replaceAll('.', '');
 
                 // Item already created
-                if( this.root.querySelector("#" + key.replace(/\s/g, '')) )
+                if( this.root.querySelector("#" + pKey) )
                     continue;   
 
                 let entry = document.createElement('div');
                 entry.className = "lexmenuentry";
-                entry.id = key.replace(/\s/g, '');
+                entry.id = pKey;
                 entry.innerText = key;
                 if(options.position == "left") {	
                     this.root.prepend( entry );	
@@ -2713,6 +2729,8 @@
                 element.className += " noname";
                 container.style.width = "100%";
             }
+
+            return widget;
         }
 
         /**
@@ -2802,6 +2820,8 @@
                 element.className += " noname";
                 container.style.width = "100%";
             }
+
+            return widget;
         }
 
         /**
@@ -2811,7 +2831,7 @@
 
         addLabel( value ) {
 
-            this.addText( null, value, null, { disabled: true, className: "auto" } );
+            return this.addText( null, value, null, { disabled: true, className: "auto" } );
         }
         
         /**
@@ -2923,6 +2943,8 @@
             }
 
             element.appendChild(container);
+
+            return widget;
         }
 
         /**
@@ -2932,6 +2954,7 @@
          * title: title if any
          * text: card text if any
          * src: url of the image if any
+         * callback (Function): function to call on click
          */
 
         addCard( name, options = {} ) {
@@ -2975,22 +2998,16 @@
 
             container.appendChild(name_el);
             
-            // cardEl.addEventListener("click", function(e) {
-            //     if(should_select) {
-            //         container.querySelectorAll('button').forEach( s => s.classList.remove('selected'));
-            //         this.classList.add('selected');
-            //     }
-            //     that._trigger( new IEvent(name, b.value, e), b.callback );   
-            // });
-
-
-            // Remove branch padding and margins
-            // if(!widget.name) {
-            //     element.className += " noname";
-            //     container.style.width = "100%";
-            // }
+            if( options.callback ) {
+                container.style.cursor = "pointer";
+                container.addEventListener("click", (e) => {
+                    this._trigger( new IEvent(name, null, e), options.callback );   
+                });
+            }
 
             element.appendChild(container);
+
+            return widget;
         }
 
         /**
@@ -3079,7 +3096,10 @@
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 this.toggleAttribute('hidden', true);
-                this.unfocus_event = e.relatedTarget === selectedOption.querySelector("button");
+                if(e.relatedTarget === selectedOption.querySelector("button")) {
+                    this.unfocus_event = true;
+                    setTimeout(() => delete this.unfocus_event, 200);
+                }
             });
 
             // Add filter options
@@ -3165,6 +3185,8 @@
                 element.className += " noname";
                 container.style.width = "100%";
             }
+
+            return widget;
         }
 
         /**
@@ -3225,6 +3247,8 @@
             curve_instance.canvas.width = container.offsetWidth;
             curve_instance.redraw();
             widget.onresize = curve_instance.redraw.bind(curve_instance);
+
+            return widget;
         }
 
         /**
@@ -3317,6 +3341,8 @@
             setLayers();
             
             element.appendChild(container);
+
+            return widget;
         }
 
         /**
@@ -3431,18 +3457,20 @@
             };
 
             updateItems();
+
+            return widget;
         }
 
         /**
          * @method addList
          * @param {String} name Widget name
-         * @param {String} value Selected list value
          * @param {Array} values List values
+         * @param {String} value Selected list value
          * @param {Function} callback Callback function on change
          * @param {*} options:
          */
 
-        addList( name, value, values, callback, options = {} ) {
+        addList( name, values, value, callback, options = {} ) {
 
             let widget = this.create_widget(name, Widget.LIST, options);
             let element = widget.domEl;
@@ -3484,6 +3512,8 @@
             }
 
             element.appendChild(list_container);
+
+            return widget;
         }
 
         /**
@@ -3584,6 +3614,8 @@
             }
 
             element.appendChild(tags_container);
+
+            return widget;
         }
 
         /**
@@ -3684,6 +3716,8 @@
 
                 element.appendChild(suboptions);
             }
+
+            return widget;
         }
 
         /**
@@ -3711,6 +3745,7 @@
                 Panel.#dispatch_event(color, "input");
             };
             let element = widget.domEl;
+            let change_from_input = false;
 
             // Add reset functionality
             Panel.#add_reset_property(element.domName, function() {
@@ -3723,9 +3758,10 @@
 
             var container = document.createElement('span');
             container.className = "lexcolor";
-            // container.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + ")";
+            container.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + ")";
 
             let color = document.createElement('input');
+            color.style.width = "calc(30% - 6px)";
             color.type = 'color';
             color.className = "colorinput";
             color.id = "color" + simple_guidGenerator();
@@ -3736,23 +3772,12 @@
                 color.disabled = true;
             }
 
-            let valueName = document.createElement('span');
-            valueName.className = "colorinfo";
-            valueName.innerText = color.value;
-
-            valueName.addEventListener("click", e => {
-                color.focus();
-                color.click();
-            });
-
-            container.appendChild(color);
-            container.appendChild(valueName);
-
             color.addEventListener("input", e => {
                 let val = e.target.value;
 
                 // Change value (always hex)
-                valueName.innerText = val;
+                if( !change_from_input )
+                    text_widget.set(val);
 
                 // Reset button (default value)
                 if(val != color.iValue) {
@@ -3765,8 +3790,35 @@
 
                 this._trigger( new IEvent(name, val, e), callback );
             }, false);
+
+            container.appendChild(color);
+
+            this.queue( container );
+
+            const text_widget = this.addText(null, color.value, (v) => {
+                change_from_input = true;
+                widget.set( v );
+                change_from_input = false;
+            }, { width: "calc(70% - 4px)" });
+            
+            text_widget.domEl.style.marginLeft = "4px";
+
+            this.clearQueue();
+
+            // let valueName = document.createElement('span');
+            // valueName.className = "colorinfo";
+            // valueName.innerText = color.value;
+
+            // valueName.addEventListener("click", e => {
+            //     color.focus();
+            //     color.click();
+            // });
+
+            // container.appendChild(valueName);
             
             element.appendChild(container);
+
+            return widget;
         }
 
         /**
@@ -3826,15 +3878,17 @@
             }
 
             // add slider below
-            if(options.min && options.max) {
+            if(options.min !== undefined && options.max !== undefined) {
                 let slider = document.createElement('input');
                 slider.className = "lexinputslider";
-                slider.step = options.step ?? "any";
+                slider.step = options.step ?? 1;
                 slider.min = options.min;
                 slider.max = options.max;
                 slider.type = "range";
                 slider.addEventListener("input", function(e) {
-                    vecinput.value = +this.value;
+                    let new_value = +this.valueAsNumber;
+                    let fract = new_value % 1;
+                    vecinput.value = Math.floor(new_value) + (+fract.toPrecision(5));
                     Panel.#dispatch_event(vecinput, "change");
                 }, false);
                 box.appendChild(slider);
@@ -3849,12 +3903,14 @@
                 let mult = options.step ?? 1;
                 if(e.shiftKey) mult *= 10;
                 else if(e.altKey) mult *= 0.1;
-                this.value = (+this.valueAsNumber - mult * (e.deltaY > 0 ? 1 : -1)).toPrecision(5);
+                let new_value = (+this.valueAsNumber - mult * (e.deltaY > 0 ? 1 : -1));
+                let fract = new_value % 1;
+                this.value = Math.floor(new_value) + (+fract.toPrecision(5));
                 Panel.#dispatch_event(vecinput, "change");
-            }, false);
+            }, {passive:false});
 
             vecinput.addEventListener("change", e => {
-                let val = e.target.value = clamp(e.target.value, vecinput.min, vecinput.max);
+                let val = e.target.value = clamp(+e.target.valueAsNumber, +vecinput.min, +vecinput.max);
                 val = options.precision ? round(val, options.precision) : val;
                 // update slider!
                 if( box.querySelector(".lexinputslider"))
@@ -3865,7 +3921,7 @@
                 let btn = element.querySelector(".lexwidgetname .lexicon");
                 if(btn) btn.style.display = val != vecinput.iValue ? "block": "none";
                 this._trigger( new IEvent(name, val, e), callback );
-            }, false);
+            }, {passive:false});
             
             // Add drag input
 
@@ -3888,7 +3944,9 @@
                     let mult = options.step ?? 1;
                     if(e.shiftKey) mult *= 10;
                     else if(e.altKey) mult *= 0.1;
-                    vecinput.value = (+vecinput.valueAsNumber + mult * dt).toPrecision(5);
+                    let new_value = (+vecinput.valueAsNumber + mult * dt);
+                    let fract = new_value % 1;
+                    vecinput.value = Math.floor(new_value) + (+fract.toPrecision(5));
                     Panel.#dispatch_event(vecinput, "change");
                 }
 
@@ -3912,6 +3970,8 @@
                 element.className += " noname";
                 container.style.width = "100%";
             }
+
+            return widget;
         }
 
         static #VECTOR_COMPONENTS = {0: 'x', 1: 'y', 2: 'z', 3: 'w'};
@@ -3997,7 +4057,7 @@
                         this.value = (+this.valueAsNumber - mult * (e.deltaY > 0 ? 1 : -1)).toPrecision(5);
                         Panel.#dispatch_event(vecinput, "change");
                     }
-                }, false);
+                }, {passive:false});
 
                 vecinput.addEventListener("change", e => {
                     let val = e.target.value = clamp(e.target.value, vecinput.min, vecinput.max);
@@ -4084,6 +4144,8 @@
             }, false);
             
             element.appendChild(container);
+
+            return widget;
         }
 
         /**
@@ -4099,17 +4161,17 @@
 
         addVector2( name, value, callback, options ) {
 
-            this._add_vector(2, name, value, callback, options);
+            return this._add_vector(2, name, value, callback, options);
         }
 
         addVector3( name, value, callback, options ) {
 
-            this._add_vector(3, name, value, callback, options);
+            return this._add_vector(3, name, value, callback, options);
         }
 
         addVector4( name, value, callback, options ) {
 
-            this._add_vector(4, name, value, callback, options);
+            return this._add_vector(4, name, value, callback, options);
         }
 
         /**
@@ -4197,6 +4259,8 @@
                     el.removeEventListener("mousemove", inner_mousemove);
                 }
             }
+
+            return widget;
         }
 
         /**
@@ -4257,6 +4321,8 @@
             }, { className: "small" });
 
             this.clearQueue();
+
+            return widget;
         }
 
         /**
@@ -4485,12 +4551,18 @@
 
                 that.content.toggleAttribute('hidden');
                 that.grabber.toggleAttribute('hidden');
+
+                LX.emit("@on_branch_closed", this.classList.contains("closed"), that.panel);
             };
 
-            this.oncontextmenu = function(e){
+            this.oncontextmenu = function(e) {
+
                 e.preventDefault();
                 e.stopPropagation();
 
+                if( this.parentElement.classList.contains("dialog") )
+                   return;
+                   
                 addContextMenu("Dock", e, p => {
                     e.preventDefault();
                     // p.add('<i class="fa-regular fa-window-maximize">', {id: 'dock_options0'});
@@ -4654,6 +4726,7 @@
             console.warn("Content is empty, add some widgets using 'callback' parameter!");
 
             this.#oncreate = callback;
+            this.id = simple_guidGenerator();
 
             const size = options.size ?? [],
                 position = options.position ?? [],
@@ -4759,6 +4832,9 @@
             if(callback)
                 callback.call(this, panel);
             root.appendChild(panel.root);
+
+            // Make branches have a distintive to manage some cases
+            panel.root.querySelectorAll(".lexbranch").forEach( b => b.classList.add("dialog") );
             
             this.panel = panel;
             this.root = root;
@@ -4801,23 +4877,36 @@
 
     class PocketDialog extends Dialog {
 
+        static TOP      = 0;
+        static BOTTOM   = 1;
+
         constructor( title, callback, options = {} ) {
 
             options.draggable = options.draggable ?? false;
             options.closable = false;
-
+            
             super( title, callback, options );
+            
+            let that = this;
+            // Update margins on branch title closes/opens
+            LX.addSignal("@on_branch_closed", this.panel, closed => {
+                if( this.dock_pos == PocketDialog.BOTTOM )
+                    this.root.style.top = "calc(100% - " + (this.root.offsetHeight + 6) + "px)";
+            });
 
             // Custom 
-            let that = this;
             this.root.classList.add( "pocket" );
             this.root.style.left = "calc(100% - " + (this.root.offsetWidth + 6) + "px)";
             this.root.style.top = "0px";
             this.panel.root.style.width = "calc( 100% - 12px )";
+            this.dock_pos = PocketDialog.TOP;
 
             this.title.tabIndex = -1;
             this.title.addEventListener("click", e => {
                 this.root.classList.toggle("closed");
+                if( this.dock_pos == PocketDialog.BOTTOM )
+                    that.root.style.top = this.root.classList.contains("closed") ? 
+                    "calc(100% - " + (that.title.offsetHeight + 6) + "px)" : "calc(100% - " + (that.root.offsetHeight + 6) + "px)";
             });
 
             if( !options.draggable )
@@ -4849,8 +4938,10 @@
                         that.root.style.left = "calc(100% - " + (that.root.offsetWidth + 6) + "px)";
                     }else if( e.ctrlKey && e.key == 'ArrowUp' ) {
                         that.root.style.top = "0px";
+                        that.dock_pos = PocketDialog.TOP;
                     }else if( e.ctrlKey && e.key == 'ArrowDown' ) {
                         that.root.style.top = "calc(100% - " + (that.root.offsetHeight + 6) + "px)";
+                        that.dock_pos = PocketDialog.BOTTOM;
                     }
                 });
             }
@@ -5121,6 +5212,8 @@
             callback( menu );
 
         menu.onCreate();
+
+        return menu;
     }
 
     LX.addContextMenu = addContextMenu;

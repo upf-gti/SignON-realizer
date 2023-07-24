@@ -224,6 +224,8 @@ class App {
 
     init() {
 
+        let main_area = LX.init();
+            
         this.loadLanguageDictionaries( "NGT" );
 
         this.scene = new THREE.Scene();
@@ -240,7 +242,7 @@ class App {
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
         this.renderer.shadowMap.enabled = false;
-        document.body.appendChild( this.renderer.domElement );
+        main_area.attach( this.renderer.domElement );
 
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);

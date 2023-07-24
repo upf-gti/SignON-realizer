@@ -599,8 +599,15 @@ input[type="file"] {
   align-content: center;
 }
 
+.lextitle.link {
+  color: #aaa;
+  text-decoration: none;
+  transition: padding-left 0.1s;
+}
+
 .lextitle.link:hover {
-  color: var(--global-selected-light);
+  color: #049EF4;
+  padding-left: 8px;
 }
 
 
@@ -950,7 +957,7 @@ input[type=checkbox]:checked:after {
 	border-radius: 4px;
 }
 
-.lexcolor:has(input:focus) {
+.lexcolor:has(input:focus) input[type="color"] {
   outline: 2px solid var(--global-selected-light);
   border-radius: 4px;
 }
@@ -962,7 +969,7 @@ input[type=checkbox]:checked:after {
   font-weight: 600;
 }
 
-.lexcolor * {
+.lexcolor input[type="color"] {
   cursor: pointer;
 }
 
@@ -1659,11 +1666,13 @@ meter::-webkit-meter-even-less-good-value {
   margin: 6px;
   top: 0;
   justify-content: start;
+  pointer-events: none;
 }
 
 .lexoverlaybuttons .lexwidget {
   padding: 1px;
   margin-right: 4px;
+  pointer-events: auto;
 }
 
 .lexoverlaybuttons.vertical {

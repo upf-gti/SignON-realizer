@@ -5,7 +5,11 @@
     <title>LexGUI Examples</title>
     <link rel="stylesheet" href="../build/lexgui.css">    
     <style>
-        iframe { border: none; color: red; }
+        iframe { border: none; }
+        .lexexamplespanel {
+            margin-left: 6px;
+            margin-top: 6px;
+        }
     </style>
 </head>
     <body></body>
@@ -16,23 +20,19 @@
         let area = LX.init();
 
         // split main area
-        area.split({sizes:["20%","80%"], resize: false});
-        let [left,right] = area.sections;
+        let [left,right] = area.split({sizes:["20%","80%"], resize: false});
 
         left.root.style.borderRight = "2px solid gray";
         left.addMenubar( m => {
             m.add( "Examples", () => {
-                iframe.src = url;
-                fillExamples(panel);
+                location.href = "../examples/";
             });
-            m.add( "Docs", (v, name) => {
-                iframe.src = "../docs/getting_started.html";
-                fillDocs(panel);
+            m.add( "Docs v" + LX.version, (v, name) => {
+                location.href = "../docs/";
             });
             m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/jxarco/lexgui.js/")}, { float: "left" });
         });
 
-        let url = "asset_view.html";
         let example_selected = "Asset View";
         let show_previews = true;
 
@@ -43,12 +43,12 @@
             'Area Tabs'
         ];
 
-        let panel = left.addPanel();
+        let panel = left.addPanel({ className: "lexexamplespanel" });
         fillExamples( panel );
 
         let iframe = document.createElement('iframe');
         iframe.id = iframe.name = 'viewer';
-        iframe.src = url;
+        iframe.src = "asset_view.html";
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         right.root.appendChild(iframe);
@@ -57,16 +57,18 @@
                 {
                     name: "View Source Code",
                     icon: "fa fa-code",
-                    callback: (value, event) => () => { window.open("https://github.com/jxarco/lexgui.js/blob/master/examples/" + iframe.src, '_blank') }
+                    callback: (value, event) => { 
+                        const tokens = iframe.src.split('/');
+                        window.open("https://github.com/jxarco/lexgui.js/blob/master/examples/" + tokens[tokens.length - 1], '_blank')
+                    }
                 }
-        ], { float: "hbr" } );
+        ], { float: "htc" } );
 
         // **** **** **** **** **** **** **** **** **** **** **** **** 
 
         function fillExamples( panel ) {
             
             panel.clear();
-            panel.branch("Examples");
 
             // panel.addCheckbox("Show previews", show_previews, v => {
             //     show_previews = v;
@@ -77,36 +79,14 @@
             {
                 const id = ex.replace(" ", "_").toLowerCase();
                 const options = {
-                    link: id + ".html", 
-                    target: 'viewer'
+                    callback: function() {
+                        iframe.src = id + ".html";
+                    }
                 };
                 if( show_previews )
                     options.img = "previews/" + id + ".png";
-
                 panel.addCard(ex, options);
             }
-
-            panel.merge();
         }
-
-        function fillDocs( panel ) {
-            
-            panel.clear();
-            panel.branch("Docs");
-            panel.addTitle("LexGUI", { style: { fontSize: "18px" } });
-            panel.addTitle("Getting Started", {link: "../docs/getting_started.html", target: 'viewer'});
-            panel.addTitle("Area", {link: "../docs/area.html", target: 'viewer'});
-            panel.addTitle("Panel", {link: "../docs/panel.html", target: 'viewer'});
-            panel.addTitle("Branch", {link: "../docs/branch.html", target: 'viewer'});
-            panel.addTitle("Widgets", {link: "../docs/widgets.html", target: 'viewer'});
-            panel.addTitle("Dialog", {link: "../docs/dialog.html", target: 'viewer'});
-            panel.addTitle("Event Handling", {link: "../docs/event_handling.html", target: 'viewer'});
-            panel.addSeparator();
-            panel.addTitle("Components", { style: { fontSize: "18px" } });
-            panel.addTitle("Timeline", {link: "../docs/timeline.html", target: 'viewer'});
-            
-            panel.merge();
-        }
-
     </script>
 </html>
