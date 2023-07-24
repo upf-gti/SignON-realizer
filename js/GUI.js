@@ -1,4 +1,6 @@
 import * as THREE from "three"
+import { sigmlStringToBML } from "./sigml/SigmlToBML.js";
+
 class AppGUI{
     constructor( app ){
         this.app = app;

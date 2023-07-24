@@ -14,12 +14,11 @@ function FacialController(config = null) {
     this.lookAtNeck = "neckTarget";
 
     this._gazePositions = {
-        "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
+        "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
         "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
-        "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
-        "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
+        "UPRIGHT": new THREE.Vector3(-30, 20, 100), "UPLEFT": new THREE.Vector3(30, 20, 100),
+        "DOWNRIGHT": new THREE.Vector3(-30, -20, 100), "DOWNLEFT": new THREE.Vector3(30, -20, 100),
         "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
-
     };
 
     this.squintBSName = "Squint";
