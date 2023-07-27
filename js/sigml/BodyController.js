@@ -326,10 +326,10 @@ class BodyController{
     */
     newGesture( bml ){
 
-        this.start = start || 0;
-        this.end = end || relax || attackPeak || (start + 1);
-        this.attackPeak = attackPeak || ( (this.end - this.start) * 0.25 + this.start );
-        this.relax = relax || ( (this.end - this.attackPeak) * 0.5 + this.attackPeak );
+        bml.start = bml.start || 0;
+        bml.end = bml.end || bml.relax || bml.attackPeak || (bml.start + 1);
+        bml.attackPeak = bml.attackPeak || ( (bml.end - bml.start) * 0.25 + bml.start );
+        bml.relax = bml.relax || ( (bml.end - bml.attackPeak) * 0.5 + bml.attackPeak );
 
         // symmetry: bit0 = lr, bit1 = ud, bit2 = io
         let symmetryFlags = ( !!bml.lrSym );
