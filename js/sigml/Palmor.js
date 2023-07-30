@@ -1,27 +1,5 @@
 import * as THREE from "three";
-import { directionStringSymmetry } from "./SigmlUtils.js";
-
-// convert rotation names into radiants. Using positive/negative angles helps with correct interpolation path
-let palmorRightTable = {
-    'ur': 225 * Math.PI / 180,
-    'u' : 180 * Math.PI / 180, 
-    'ul': 135 * Math.PI / 180,
-    'l' : 90 * Math.PI / 180,
-    'dl': 45 * Math.PI / 180,
-    'd' : 0 * Math.PI / 180,
-    'dr': -45 * Math.PI / 180,
-    'r' : -90 * Math.PI / 180,
-}
-let palmorLeftTable = {
-    'l' : 90 * Math.PI / 180,
-    'dl': 45 * Math.PI / 180,
-    'd' : 0 * Math.PI / 180,
-    'dr': -45 * Math.PI / 180,
-    'r' : -90 * Math.PI / 180,
-    'ur': -135 * Math.PI / 180,
-    'u' : -180 * Math.PI / 180, 
-    'ul': -225 * Math.PI / 180,
-}
+import { stringToDirection } from "./SigmlUtils.js";
 
 // receives bml instructions and animates the hands
 class Palmor {
@@ -105,27 +83,23 @@ class Palmor {
     newGestureBML( bml, symmetry = 0x00 ){
         if( !bml.palmor ){ return; }
 
-        let rotationName = bml.palmor;
-        let secondRotName = bml.secondPalmor;
-
-        if ( rotationName && symmetry ){ rotationName = directionStringSymmetry( rotationName, symmetry ); }
-        if ( secondRotName && symmetry ){ secondRotName = directionStringSymmetry( secondRotName, symmetry ); }
+        // TODO (?): solve atan2(0,-0) == up    
+        let result = new THREE.Vector3();
+        if ( !stringToDirection( bml.palmor, result, symmetry, true ) ){ return; }
+        let angle = Math.atan2( result.x, -result.y ); // -y so down is angle=0º
         
-        let angle = ( this.isLeftHand ) ? palmorLeftTable[ rotationName ] : palmorRightTable[ rotationName ];
-        if( isNaN( angle ) ){ return; }
-        let secondAngle = ( this.isLeftHand ) ? palmorLeftTable[ secondRotName ] : palmorRightTable[ secondRotName ];
-        if( !isNaN( secondAngle ) ){ 
-            // find shortest path in the circle and adjust secondAngle
-            if( Math.abs(angle - secondAngle) > Math.PI ){
+        if ( stringToDirection( bml.secondPalmor, result, symmetry, true ) ){ 
+            let secondAngle = Math.atan2( result.x, -result.y ); // -y so down is angle=0º
+            // find shortest path between angle and secondAngle. 
+            // TODO (?): simply interpolate result vectors instead of angles to avoid this if
+            if( Math.abs( angle - secondAngle ) > Math.PI ){
                 if( ( angle - secondAngle ) < 0 ){ secondAngle -= 2 * Math.PI; }
                 else{ secondAngle += 2 * Math.PI; }
             }
-            // avoid impossible angles
-            if( this.isLeftHand ){ secondAngle = Math.max( palmorLeftTable['ul'], Math.min( palmorRightTable['l'], secondAngle ) ); }
-            else{ secondAngle = Math.max( palmorLeftTable['ur'], Math.min( palmorRightTable['u'], secondAngle ) ); }
-
-            angle = 0.5 * angle + 0.5 * secondAngle; 
+            angle = ( angle + secondAngle ) * 0.5
         }
+        if ( !this.isLeftHand && angle < -140 * Math.PI/180 ){ angle += Math.PI *2; }
+        else if ( this.isLeftHand && angle > 140 * Math.PI/180 ){ angle -= Math.PI *2; }
         
         // set source pose twist quaternions
         this.srcAngle = this.curAngle; 

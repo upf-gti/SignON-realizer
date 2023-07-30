@@ -94,25 +94,26 @@ function directionStringSymmetry( str, flags ){
 
 
 // symmetry bit0 = left-right, bit1 = up-down, bit2 = in-out symmetry
-function stringToDirection( str, outV, symmetry = 0x00 ){
+function stringToDirection( str, outV, symmetry = 0x00, accumulate = false ){
     outV.set(0,0,0);
     if ( typeof( str ) != "string" ){ return false; }
 
     let success = false;
 
-    // right hand system
-    if ( str.includes( "l" ) ){ outV.x += 1; success = true; } 
-    if ( str.includes( "r" ) ){ outV.x -= 1; success = true; }
-    if ( str.includes( "u" ) ){ outV.y += 1; success = true; } 
-    if ( str.includes( "d" ) ){ outV.y -= 1; success = true; }
-    if ( str.includes( "o" ) ){ outV.z += 1; success = true; } 
-    if ( str.includes( "i" ) ){ outV.z -= 1; success = true; }
-
+    // right hand system. If accumulate, count repetitions
+    if ( str.includes( "l" ) ){ outV.x += 1 * ( accumulate ? ( str.split("l").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "r" ) ){ outV.x -= 1 * ( accumulate ? ( str.split("r").length -1 ): 1 ); success = true; }
+    if ( str.includes( "u" ) ){ outV.y += 1 * ( accumulate ? ( str.split("u").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "d" ) ){ outV.y -= 1 * ( accumulate ? ( str.split("d").length -1 ): 1 ); success = true; }
+    if ( str.includes( "o" ) ){ outV.z += 1 * ( accumulate ? ( str.split("o").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "i" ) ){ outV.z -= 1 * ( accumulate ? ( str.split("i").length -1 ): 1 ); success = true; }
+ 
     if ( symmetry & 0x01 ){ outV.x *= -1; }
     if ( symmetry & 0x02 ){ outV.y *= -1; }
     if ( symmetry & 0x04 ){ outV.z *= -1; }
 
-    outV.normalize();
+ 
+    if ( !accumulate ){ outV.normalize(); }
     return success;
 }
 

@@ -45,23 +45,20 @@ function CharacterController(o) {
 
 CharacterController.prototype.start = function (o) {
     this.pendingResources = [];
-    this.facialController.start(o);
+
+    if ( this.facialController ){ this.facialController.start(o); }
 }
 
 CharacterController.prototype.reset = function ( keepEmotion = false ) {
     this.pendingResources.length = 0;
 
-    if ( this.facialController ){ 
-        this.facialController.reset( keepEmotion ); }
+    if ( this.facialController ){ this.facialController.reset( keepEmotion ); }
 
-    if (this.BehaviourPlanner){ 
-        this.BehaviourPlanner.reset(); }
+    if (this.BehaviourPlanner){ this.BehaviourPlanner.reset(); }
 
-    if (this.BehaviourManager){ 
-        this.BehaviourManager.reset(); }
+    if (this.BehaviourManager){ this.BehaviourManager.reset(); }
 
-    if (this.bodyController){ 
-        this.bodyController.reset(); }
+    if (this.bodyController){ this.bodyController.reset(); }
 
     this.endSpeakingTime = -1;
     this.speaking = false;
@@ -72,25 +69,15 @@ CharacterController.prototype.update = function (dt, et) {
     let newBlock = null;
     this.time = et;
 
-    if ( this.facialController ){
-        this.facialController.update(dt);
-    }
+    if ( this.facialController ){ this.facialController.update(dt); }
 
-    if (this.bodyController){
-        this.bodyController.update(dt)
-    }
+    if (this.bodyController){ this.bodyController.update(dt) }
 
-    if (this.BehaviourPlanner){
-        newBlock = this.BehaviourPlanner.update(dt);
-    }
+    if (this.BehaviourPlanner){ newBlock = this.BehaviourPlanner.update(dt); }
 
-    if (this.BehaviourManager){
-        this.BehaviourManager.update(this.processBML.bind(this), et);
-    }
+    if (this.BehaviourManager){ this.BehaviourManager.update(this.processBML.bind(this), et); }
 
-    if (newBlock) {
-        this.BehaviourManager.newBlock(newBlock, et);
-    }
+    if ( newBlock ){ this.BehaviourManager.newBlock(newBlock, et); }
 
     // lipsync stuff????
     if (this.BehaviourManager.lgStack.length && this.BehaviourManager.time <= this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime) {

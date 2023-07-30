@@ -448,8 +448,17 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
     }
     if ( attributes.palmor ){
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
-        obj.palmor = attributes.palmor;
-        obj.secondPalmor = attributes.second_palmor;
+
+        if ( attributes.palmor.match( /[l,r,u,d,i,o]/g).length < 1 ){
+            if ( attributes.second_palmor && attributes.second_palmor.match( /[l,r,u,d,i,o]/g).length < 1 ){
+                obj.palmor = attributes.second_palmor;
+            }else{
+                obj.palmor = "dlll";
+            }
+        }else{
+            obj.palmor = attributes.palmor;
+            obj.secondPalmor = attributes.second_palmor;
+        }
         obj.lrSym = symmetry & 0x01;
         obj.udSym = symmetry & 0x02;
         obj.oiSym = symmetry & 0x04;
@@ -1275,15 +1284,16 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
             }else{  
                 let repetition = o.repetition ? o.repetition : 0;
                 o.attackPeak = o.start + TIMESLOT.NMFSTARTPEAK / signSpeed  ;
-                o.relax = o.start + ( TIMESLOT.NMFSTARTPEAK + ( 1 + repetition ) * TIMESLOT.NMFWAIT ) / signSpeed;
-                o.end = o.start + ( TIMESLOT.NMFSTARTPEAK + ( 1 + repetition ) * TIMESLOT.NMFWAIT + TIMESLOT.NMFRELAXEND ) / signSpeed;
+                o.relax = o.attackPeak + ( ( 1 + repetition ) * TIMESLOT.NMFWAIT ) / signSpeed;
+                o.end = o.relax + ( TIMESLOT.NMFRELAXEND ) / signSpeed;
                 
-                if ( o._durationUntilEnd && o.end > maxEnd ){
-                    maxEnd = o.end;
-                    delete o._durationUntilEnd;
-                }
-                else if ( !o._durationUntilEnd && o.relax > maxEnd ){
-                    maxEnd = o.relax;
+                // set duration of the sign. Default relax
+                let timeToTest = o.relax;
+                if ( o._durationUntilEnd ){ timeToTest = o.end; delete o._durationUntilEnd; }
+                // else if ( o._durationUntilPeak ){ timeToTest = o.attackPeak; delete o._durationUntilPeak; }
+                
+                if ( timeToTest > maxEnd ){
+                    maxEnd = timeToTest;
                 }
             }
         }
@@ -1307,16 +1317,16 @@ let shoulderMovementTable = {
 };
 
 let bodyMovementTable = {
-    RL: { type: "gesture", bodyMovement: "RL", amount: 1 }, // _rotated_left
-    RR: { type: "gesture", bodyMovement: "RR", amount: 1 }, // _rotated_right
-    TL: { type: "gesture", bodyMovement: "TL", amount: 1 }, // _tilted_left
-    TR: { type: "gesture", bodyMovement: "TR", amount: 1 }, // _tilted_right
-    TF: { type: "gesture", bodyMovement: "TF", amount: 1 }, // _tilted_forwards
-    TB: { type: "gesture", bodyMovement: "TB", amount: 1 }, // _tilted_backwards
-    SI: { type: "gesture", bodyMovement: "TB", amount: 0.5 }, // _sigh  slightly tilted backwards
+    RL: { type: "gesture", bodyMovement: "RL", amount: 0.7 }, // _rotated_left
+    RR: { type: "gesture", bodyMovement: "RR", amount: 0.7 }, // _rotated_right
+    TL: { type: "gesture", bodyMovement: "TL", amount: 0.5 }, // _tilted_left
+    TR: { type: "gesture", bodyMovement: "TR", amount: 0.5 }, // _tilted_right
+    TF: { type: "gesture", bodyMovement: "TF", amount: 0.5 }, // _tilted_forwards
+    TB: { type: "gesture", bodyMovement: "TB", amount: 0.5 }, // _tilted_backwards
+    RD: { type: "gesture", bodyMovement: "TF", amount: 0.4 }, // _round  sligthly tilted forwards
+    SI: { type: "gesture", bodyMovement: "TB", amount: 0.3 }, // _sigh  slightly tilted backwards
     // HE: { type: "gesture", bodyMovement: "HE", amount: 1 }, // _heave   does not work
     // ST: { type: "gesture", bodyMovement: "ST", amount: 1 }, // _straight 
-    RD: { type: "gesture", bodyMovement: "TF", amount: 0.5 }, // _round  sligthly tilted forwards
 }
 
 let headMovementTable = {
