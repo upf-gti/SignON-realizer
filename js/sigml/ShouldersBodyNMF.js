@@ -192,23 +192,23 @@ class BodyMovement {
         tiltLRAxis = tiltLRAxis.set(0,0,1); // z
         tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
         tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.Spine2 ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
+        this.skeleton.bones[ boneMap.Stomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
         q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333);
-        this.skeleton.bones[ boneMap.Spine2 ].quaternion.premultiply( q );
+        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
         q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333);
-        this.skeleton.bones[ boneMap.Spine2 ].quaternion.premultiply( q );
+        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
 
         // lower back
-        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.Spine2 ].position ).normalize(); // Y        
+        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.Stomach ].position ).normalize(); // Y        
         tiltFBAxis = tiltFBAxis.set(1,0,0); // x
         tiltLRAxis = tiltLRAxis.set(0,0,1); // z
         tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
         tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.Spine1 ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
+        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
         q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333 );
-        this.skeleton.bones[ boneMap.Spine1 ].quaternion.premultiply( q );
+        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
         q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333 );
-        this.skeleton.bones[ boneMap.Spine1 ].quaternion.premultiply( q );
+        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
     }
 
     newGestureBML( bml ){

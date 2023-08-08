@@ -36,10 +36,9 @@ class BodyController{
 
         // create location point objects and attach them to bones
         function locationToObjects( table, skeleton, symmetry = false ){
-            let keys = Object.keys( table );
             let result = {};
-            for( let i = 0; i < keys.length; ++i ){
-                let l = table[ keys[i] ];
+            for( let name in table ){
+                let l = table[ name ];
     
                 let idx = findIndexOfBone( skeleton, symmetry ? l[0].replace( "Right", "Left" ) : l[0] );
                 if ( idx < 0 ){ continue; }
@@ -48,9 +47,9 @@ class BodyController{
                 // let o = new THREE.Mesh( new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial( { color: Math.random()*0xffffff }) );
                 o.position.copy( l[1] );
                 if ( symmetry ){ o.position.x *= -1; }
-                o.name = keys[i];
+                o.name = name;
                 skeleton.bones[ idx ].add( o );
-                result[ keys[i] ] = o;
+                result[ name ] = o;
             }         
             return result;   
         }

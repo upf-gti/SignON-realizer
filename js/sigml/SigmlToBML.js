@@ -977,10 +977,11 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                                     if ( d.hand == "right" || d.hand == "both" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.right[ type ] ) ) ); }
                                     if ( d.hand == "left" || d.hand == "both" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.left[ type ] ) ) ); }
 
+                                    // there was a handconstellation before rpt_motion
                                     if ( d.locationBodyArm ){ backwardAddConstellation |= currentPosture.handConstellation.hand == "both" || d.locationBodyArm.hand == currentPosture.handConstellation.hand; }
                                 }                            
                             }
-                            // add necessary gesture for backward pass
+                            // fix timings of backward instructions
                             for ( let i = 0; i < backward.length; ++i ){
                                 backward[i].start = time - 0.00001;
                                 backward[i].attackPeak = time + TIMESLOT.POSTURE / signSpeed;            
@@ -988,7 +989,8 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                             result = result.concat( backward );
                             if ( backwardAddConstellation ){
                                 backward = JSON.parse( JSON.stringify( currentPosture.handConstellation ) )
-                                backward.start = time; backward.attackpeak = time + TIMESLOT.POSTURE / signSpeed;
+                                backward.start = time; 
+                                backward.attackpeak = time + TIMESLOT.POSTURE / signSpeed;
                                 result.push( backward );
                             }
                             time += TIMESLOT.POSTURE / signSpeed; // add backward time
