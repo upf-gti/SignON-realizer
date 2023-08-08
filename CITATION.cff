@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Pozo"
+  given-names: "Jaume"
+- family-names: "Ubieto"
+  given-names: "Víctor"
+- family-names: "Valls"
+  given-names: "Eva"
+title: "SignON Realizer BML Instructions"
+version: 1.0.0
+date-released: 2023
+url: "https://github.com/upf-gti/SignON-realizer/blob/main/docs/InstructionsBML.md"

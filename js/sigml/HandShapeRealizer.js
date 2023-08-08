@@ -231,7 +231,9 @@ class HandShapeRealizer {
             }
         }
     }
-    _stringToFingerBend( str, outFinger, selectMode = 0 ){
+
+    // selectMode: if str is not numbers,  0 does nothing, 1 same shapes as mainbend in basic handshape, 2 same as mainbend in thumbcombinations
+    _stringToFingerBend( str, outFinger, selectMode = 0, bendRange = 9 ){
         if ( !str ){ return; }
 
         let b = handBendings[ str ];
@@ -241,20 +243,20 @@ class HandShapeRealizer {
                 for( let i = 0; (i < 3) && (i < str.length); ++i ){
                     let val = parseInt( str[i] );
                     if ( isNaN(val) ){ continue; }
-                    outFinger[1+i] = val/9;
+                    outFinger[1+i] = val / bendRange;
                 }
             }
             return;
         }
-        if ( selectMode == 1 ){ 
+        if ( selectMode == 1 ){ // basic handshapes
             let f = b[1];
             outFinger[1] = f[0]; 
             outFinger[2] = f[1]; 
             outFinger[3] = f[2]; 
         }
-        if ( selectMode == 2 ){ 
+        if ( selectMode >= 2 ){  // thumb combination handshapes
             let bf = b[2].f;
-            outFinger[1] = bf[0]; 
+            outFinger[1] = selectedFingers[i] == 3 ? ( bf[0] * 0.8 ) : bf[0]; 
             outFinger[2] = bf[1]; 
             outFinger[3] = bf[2]; 
         }
@@ -263,13 +265,11 @@ class HandShapeRealizer {
     }
     _stringToSplay( str, outFinger ){
         let val = str;
-        // strings int values 0-8
         if ( typeof val == "string" ){ 
             val = parseFloat( val );
         } 
         if ( isNaN(val) ){ return; }
         outFinger[0] = val;
-        
     }
 
     // to avoid having duplicated code for main and second attributes. Fills outHand. Returns 0 on success, >0 otherwise
@@ -408,12 +408,16 @@ class HandShapeRealizer {
             }
         }
 
+        // Jasigning uses numbers in a string for bend. Its range is 0-4. This realizer works with 0-9. Remap
+        let bendRange = parseInt( bml._bendRange );
+        bendRange = isNaN( bendRange ) ? 9 : bendRange; 
+
         // specific bendings
-        this._stringToFingerBend( bml.bend1, this.trgG[0], 1 ); // thumb
-        this._stringToFingerBend( bml.bend2, this.trgG[1], 1 );
-        this._stringToFingerBend( bml.bend3, this.trgG[2], 1 );
-        this._stringToFingerBend( bml.bend4, this.trgG[3], 1 );
-        this._stringToFingerBend( bml.bend5, this.trgG[4], 1 );
+        this._stringToFingerBend( bml.bend1, this.trgG[0], 1, bendRange ); // thumb
+        this._stringToFingerBend( bml.bend2, this.trgG[1], 1, bendRange );
+        this._stringToFingerBend( bml.bend3, this.trgG[2], 1, bendRange );
+        this._stringToFingerBend( bml.bend4, this.trgG[3], 1, bendRange );
+        this._stringToFingerBend( bml.bend5, this.trgG[4], 1, bendRange );
 
         // check if any splay attributes is present. ( function already checks if passed argument is valid )           
         this._stringToSplay( bml.splay1, this.trgG[0] ); // thumb

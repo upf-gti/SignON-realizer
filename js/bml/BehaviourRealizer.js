@@ -685,10 +685,10 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
 
 // Gaze manager (replace BML)
 GazeManager.gazePositions = {   
-    "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
+    "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
-    "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
-    "DOWNRIGHT": new THREE.Vector3(30, -20, 100), "DOWNLEFT": new THREE.Vector3(-30, -20, 100),
+    "UPRIGHT": new THREE.Vector3(-30, 20, 100), "UPLEFT": new THREE.Vector3(30, 20, 100),
+    "DOWNRIGHT": new THREE.Vector3(-30, -20, 100), "DOWNLEFT": new THREE.Vector3(30, -20, 100),
     "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
 };
 
@@ -697,7 +697,8 @@ Gaze.prototype.gazeBS = {
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
     "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
     "DOWNRIGHT": { squint: 0, eyelids: 0.2 }, "DOWNLEFT": { squint: 0, eyelids: 0.2 },
-    "FRONT": { squint: 0, eyelids: 0 }, "CAMERA": { squint: 0, eyelids: 0 }, "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
+    "FRONT": { squint: 0, eyelids: 0 }, "CAMERA": { squint: 0, eyelids: 0 }, 
+    "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
 };
 
 // Constructor (lookAt objects and gazePositions)
@@ -798,6 +799,11 @@ function Gaze(lookAt, gazePositions, isEyes = false) {
     this.transition = false;
     this.eyelidsW = 0;
     this.squintW = 0;
+
+    // Define initial and end positions
+    this.InP = null; 
+    this.EndP = null;
+    this.DefP = gazePositions["FRONT"].clone();
 }
 
 Gaze.prototype.initGazeData = function (gazeData, shift) {
@@ -839,11 +845,16 @@ Gaze.prototype.initGazeData = function (gazeData, shift) {
 
     // Define initial values
     this.initGazeValues();
+    if ( shift ){ this.DefP = this.EndP.clone(); }
+
 }
 
 
 Gaze.prototype.update = function (dt) {
 
+    if ( !this.transition )
+        return;
+    
     // Time increase
     this.time += dt;
 
@@ -860,24 +871,27 @@ Gaze.prototype.update = function (dt) {
         this.EndP.copy(this.gazePositions[this.target]);
     }
 
-    // transition 1 and 2
-    if (this.time <= this.end) {
-        let inter = 0;
-
-        if (this.time <= this.ready) { inter = (this.time - this.start) / (this.ready - this.start); } // trans 1
-        else { inter = 1 - (this.time - this.relax) / (this.end - this.relax); }  // trans 2
-
-        // Cosine interpolation
-        inter = Math.cos(Math.PI * inter + Math.PI) * 0.5 + 0.5;
-
+    if ( this.time <= this.ready ){ 
+        let inter = (this.time - this.start) / (this.ready - this.start); 
+        inter = Math.sin(Math.PI * inter - Math.PI * 0.5) * 0.5 + 0.5;
         if (this.isEyes) {
             this.eyelidsW = this.eyelidsInitW * (1 - inter) + this.eyelidsFinW * (inter);
             this.squintW = this.squintInitW * (1 - inter) + this.squintFinW * (inter);
         }
         // lookAt pos change
         this.lookAt.position.lerpVectors(this.InP, this.EndP, inter);
-
-        //this.lookAt.mustUpdate = true;
+        return;
+    } 
+    
+    if ( this.time <= this.end ){
+        let inter = (this.time - this.relax) / (this.end - this.relax);
+        inter = Math.sin(Math.PI * inter - Math.PI * 0.5) * 0.5 + 0.5;
+        if (this.isEyes) {
+            this.eyelidsW = this.eyelidsInitW * (1 - inter) + this.eyelidsFinW * (inter);
+            this.squintW = this.squintInitW * (1 - inter) + this.squintFinW * (inter);
+        }
+        // lookAt pos change
+        this.lookAt.position.lerpVectors(this.EndP, this.DefP, inter);
         return;
     }
 
@@ -885,11 +899,11 @@ Gaze.prototype.update = function (dt) {
     if (this.time > this.end) {
         // Extension - Dynamic
         if (this.dynamic) {
-            this.lookAt.position.copy(this.EndP);
+            this.lookAt.position.copy(this.DefP);
         }
         else {
             this.transition = false;
-
+            this.lookAt.position.copy(this.DefP);
             this.eyelidsW = this.eyelidsInitW;
             this.squintW = this.squintInitW;
         }

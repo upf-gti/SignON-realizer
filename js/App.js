@@ -17,7 +17,9 @@ class App {
     constructor() {
         
         this.fps = 0;
+        this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
+        this.signingSpeed = 1;
         this.loaderGLB = new GLTFLoader();
         
         this.scene = null;
@@ -222,6 +224,8 @@ class App {
 
     init() {
 
+        let main_area = LX.init();
+            
         this.loadLanguageDictionaries( "NGT" );
 
         this.scene = new THREE.Scene();
@@ -238,7 +242,7 @@ class App {
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
         this.renderer.shadowMap.enabled = false;
-        document.body.appendChild( this.renderer.domElement );
+        main_area.attach( this.renderer.domElement );
 
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
@@ -379,11 +383,12 @@ class App {
 
         requestAnimationFrame( this.animate.bind(this) );
 
-        let delta = this.clock.getDelta();
-        let et = this.clock.getElapsedTime();
-
+        let delta = this.clock.getDelta() 
         this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
-        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, et); }
+        
+        delta *= this.signingSpeed;
+        this.elapsedTime += delta;
+        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
 

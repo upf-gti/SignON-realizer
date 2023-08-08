@@ -15,10 +15,12 @@ AARDAPPELPUREE
 */
 
 
-let TIMESLOT ={
+const TIMESLOT ={
     DEF: 0.5,
 
-    NMF: 0.5,
+    NMFSTARTPEAK: 0.25,
+    NMFWAIT: 0.25,
+    NMFRELAXEND: 0.25,
 
     POSTURE: 0.3,
     LOC: 0.3,
@@ -32,6 +34,8 @@ let TIMESLOT ={
     RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
     PEAKRELAX: 0.5, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
 }
+
+window.TIMESLOTS = TIMESLOT;
 
 
 function sigmlStringToBML( str, timeOffset = 0 ) {
@@ -53,7 +57,6 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
     for( let i = 0; i < xmlDoc.children.length ; ++i ){
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
         
-
         time = time - lastRelaxEndDuration - lastPeakRelaxDuration + 0.2 ; // if not last, remove relax-end stage and partially remove the peak-relax 
         let result = hnsSignParser( xmlDoc.children[i], time );
         time = result.end;
@@ -68,8 +71,6 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
 
 function hnsSignParser( xml, start ){
     let result = [];
-    let nonManualDone = false;
-    let manualDone = false;
     let end = start;
     let relaxEndDuration = 0;
     let peakRelaxDuration = 0;
@@ -82,23 +83,25 @@ function hnsSignParser( xml, start ){
     let signSpeed = parseFloat( attributes.speed ); 
     signSpeed = ( isNaN( signSpeed ) ) ? 1 : signSpeed;
 
+    let resultManual = null;
+    let resultNonManual = null;
     for ( let i = 0; i < xml.children.length; ++i ){
-        if ( !nonManualDone && xml.children[i].tagName == "sign_nonmanual" ){
-            let r = signNonManual( xml.children[i], start, signSpeed );
-            result = result.concat( r.data );
-            if ( end < r.end ){ end = r.end; }
-            nonManualDone = true;
+        if ( !resultNonManual && xml.children[i].tagName == "sign_nonmanual" ){
+            resultNonManual = signNonManual( xml.children[i], start, signSpeed );
+            result = result.concat( resultNonManual.data );
+            if (end < resultNonManual.end ){ end = resultNonManual.end; }
         }
-        if ( !manualDone && xml.children[i].tagName == "sign_manual" ){
-            let r = signManual( xml.children[i], start, signSpeed );
-            result = result.concat( r.data );
-            if (end < r.end ){ end = r.end; }
-            manualDone = true;
+        if ( !resultManual && xml.children[i].tagName == "sign_manual" ){
+            resultManual = signManual( xml.children[i], start, signSpeed );
             peakRelaxDuration = TIMESLOT.PEAKRELAX / signSpeed;
             relaxEndDuration = TIMESLOT.RELAXEND / signSpeed;
+            result = result.concat( resultManual.data );
+            if (end < resultManual.end ){ end = resultManual.end; }
+
         }
     }
 
+    
     return { data: result, end: end, relaxEndDuration: relaxEndDuration, peakRelaxDuration: peakRelaxDuration }; 
 }
 
@@ -431,6 +434,8 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry ){
         obj.bend5 = attributes.bend5;
         obj.specialfingers = attributes.specialfingers;
         // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
+
+        obj._bendRange = 4;
         result.push( obj );
     }
     if ( attributes.extfidir ){
@@ -1137,44 +1142,58 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
 // ###############################################
 
 function signNonManual( xml, start, signSpeed ){
-    let tiers = { // only one instance of each is allowed in jasigning
-        shoulder_tier: false,
-        body_tier: false,
-        head_tier: false,
-        eyegaze_tier: false,
-        facialexpr_tier: false,
-        mouthing_tier: false,
-        extra_tier: false,
+    // [ is tier done, par tag, available tags ]
+    let tiersAvailable = { // only one instance of each is allowed in jasigning
+        shoulder_tier:   [ false, "shoulder_par",   [ "shoulder_movement" ] ],
+        body_tier:       [ false, "body_par",       [ "body_movement" ] ],
+        head_tier:       [ false, "head_par",       [ "head_movement" ] ],
+        eyegaze_tier:    [ false, "eye_par",        [ "eye_gaze" ] ],
+        facialexpr_tier: [ false, "facial_expr_par",[ "eye_gaze", "eye_brows", "eye_lids", "nose" ] ], //for some reason eye_gaze works also
+        mouthing_tier:   [ false, "mouthing_par",   [ "mouth_gesture", "mouth_picture", "mouth_meta" ] ],
+        extra_tier:      [ false, "extra_par",      [ "extra_movement" ] ],
     };
-
-    let allActionTags = [  "shoulder_movement", "body_movement", "head_movement", "eye_gaze", "eye_brows", "eye_lids", "nose", "mouth_gesture", "mouth_picture", "mouth_meta", "extra_movement", "neutral", ]
-    let partTags = [ "shoulder_par", "body_par", "head_par", "eye_par", "facial_expr_par", "mouthing_par", "extra_par" ];
+    // todo: "neutral" is an available tag, but not used in our database
 
     let result = [];
     let end = start;
     start += TIMESLOT.HAND / signSpeed; // start after basic hand-arm positioning
 
+    /**
+     * Result = [ whatever tier, whatever tier, ... ]
+     * Whatever tier = [ instructions, instructions, ... ]
+     * Instructions = [ single bml, single bml ]
+     * 
+     * Different tiers do NOT get into each other with timings. Each reproduces their "instructions" sequentally. 
+     * While an "instructions" reaches peak, the previous reaches end. Except the last "instructions", which will be kept at peak until MFs finish.
+     * Some "instructions" are composed of several mini bmls, that is reason for it being an array
+     * All timing 
+    */
+    
     for ( let i = 0; i < xml.children.length; ++i ){ // check all present tiers
-        if ( tiers.hasOwnProperty( xml.children[i].tagName ) && !tiers[ xml.children[i].tagName ] ){
-            tiers[ xml.children[i].tagName ] = true; // flag tier as done
+        let tier = tiersAvailable[ xml.children[i].tagName ];
+        if ( tier && !tier[0] ){ // if tier is not already done
+            tier[0] = true; // flag tier as done
             let actions = xml.children[i].children;
             let time = start; // start after basic hand-arm positioning
+            let tierLasActions = [-1,-1];
             for( let a = 0; a < actions.length; ++a ){ // check all actions inside this tier
-                if ( allActionTags.includes( actions[a].tagName ) ){ // simple sequential action ( jasigning )
+                if ( tier[2].includes( actions[a].tagName ) ){ // simple sequential action ( jasigning )
                     let r = baseNMFActionToJSON( actions[a], time, signSpeed );
-                    if ( !r ){ continue; }
+                    if ( !r || r.length < 1 ){ continue; }
+                    tierLasActions[0] = result.length;
+                    tierLasActions[1] = r.data.length;
                     result = result.concat( r.data );
                     time = r.end;
                 }
-                else if ( partTags.includes( actions[a].tagName ) ){ // set of parallel actions
+                else if ( tier[1] == actions[a].tagName ){ // set of parallel actions
                     // all actions inside par tag start and end at the same time, regardless of action type
                     let subActions = actions[a].children;
                     let subMaxEnd = time;
                     for ( let sa = 0; sa < subActions.length; ++sa ){ // check all actions inside parallel tag
-                        if ( allActionTags.includes( subActions[sa].tagName ) ){
+                        if ( tier[2].includes( subActions[sa].tagName ) ){
                             // sequential actions ( jasigning )
                             let r = baseNMFActionToJSON( subActions[sa], time, signSpeed );
-                            if ( !r ){ continue; }
+                            if ( !r || r.length < 1 ){ continue; }
                             result = result.concat( r.data );
                             if ( r.end > subMaxEnd ){ subMaxEnd = r.end; }
                         }
@@ -1199,14 +1218,15 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     // Incoming signSpeed is ignored. Only speeds inside the basic instruction are taken into account. 
     signSpeed = parseFloat( obj.speed );
     signSpeed = isNaN( signSpeed ) ? 1 : signSpeed;
+    let signAmount = parseFloat( obj.amount );
+    signAmount = isNaN( signAmount ) ? 1 : signAmount; 
 
     let result = null;
-    let resultEndsAtPeak = false;  // TODO
     switch( xml.tagName ){
-        case "shoulder_movement": result = shoulderMovementTable[ obj.movement ]; resultEndsAtPeak = !!result._endsAtPeak; break;  // - movement   
-        case "body_movement": break; // - movement
+        case "shoulder_movement": result = shoulderMovementTable[ obj.movement ]; break;  // - movement   
+        case "body_movement": result = bodyMovementTable[ obj.movement ]; break; // - movement
         case "head_movement": result = headMovementTable[ obj.movement ]; break; // - movement
-        case "eye_gaze": result = eyeGazeTable[ obj.direction ]; break;
+        case "eye_gaze": result = eyeGazeTable[ obj.movement || obj.direction ]; break;  // direction or movement. movement has priority even if wrong
         case "eye_brows": result = eyebrowsTable[ obj.movement ]; break;
         case "eye_lids": result = eyelidsTable[ obj.movement ]; break;
         case "nose": result = noseTable[ obj.movement ]; break;
@@ -1232,59 +1252,73 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
     }
     let maxEnd = startTime;
     for( let i = 0; i < result.length; ++i ){
-        result[i].start = result[i].start ? ( startTime + result[i].start / signSpeed ) : startTime;
-        if ( result[i].type == "speech" ) { 
-            if(result[i].speed) {
-                result[i].sentT = result[i].text.length * result[i].speed;
-            }
-            result[i].sentT = ( result[i].sentT / signSpeed ) || ( result[i].text.length / ( 6.66 * signSpeed ) ); // default to 6.66 phonemes per second
-            if ( result[i].start + result[i].sentT > maxEnd ){ maxEnd = result[i].start + result[i].sentT; }
+        let o = result[i];
+
+        // modify amount/intensity depending of sign's amount
+        if ( o.hasOwnProperty( "amount" ) ){ o.amount *= signAmount; }
+        else if ( o.hasOwnProperty( "shoulderRaise" ) ){ o.shoulderRaise *= signAmount; }
+        else if ( o.hasOwnProperty( "shoulderHunch" ) ){ o.shoulderHunch *= signAmount; }
+
+        // adust timing
+        o.start = o.start ? ( startTime + o.start / signSpeed ) : startTime;
+        if ( o.type == "speech" ) { 
+            if( o.speed ) { o.sentT = o.text.length * o.speed; }
+            o.sentT = ( o.sentT / signSpeed ) || ( o.text.length / ( 6.66 * signSpeed ) ); // default to 6.66 phonemes per second
+            if ( o.start + o.sentT > maxEnd ){ maxEnd = o.start + o.sentT; }
         } 
         else {
-            let duration = result[i].duration ? result[i].duration : TIMESLOT.NMF; 
 
-            // shoulder movement keeps the position until the end of the sign
-            if ( resultEndsAtPeak ){
-                result[i].attackPeak = result[i].start + duration;
-                if ( result[i].end > maxEnd ){ maxEnd = result[i].attackPeak; }
-            }
-            else{ // Others do their thing with a timing and stops, regardless of the sign
-                duration = result[i].end ? ( (startTime + result[i].end) - result[i].start) : duration;
-                result[i].end = result[i].start + duration / signSpeed; 
-                if ( result[i].end > maxEnd ){ maxEnd = result[i].end; }
+            if ( o.duration || o.end ){
+                // realizer will infer peak and relax from start and end
+                let duration = o.end ? ( (startTime + o.end) - o.start) : o.duration;
+                o.end = o.start + duration / signSpeed; 
+                if ( o.end > maxEnd ){ maxEnd = o.end; } 
+            }else{  
+                let repetition = o.repetition ? o.repetition : 0;
+                o.attackPeak = o.start + TIMESLOT.NMFSTARTPEAK / signSpeed  ;
+                o.relax = o.start + ( TIMESLOT.NMFSTARTPEAK + ( 1 + repetition ) * TIMESLOT.NMFWAIT ) / signSpeed;
+                o.end = o.start + ( TIMESLOT.NMFSTARTPEAK + ( 1 + repetition ) * TIMESLOT.NMFWAIT + TIMESLOT.NMFRELAXEND ) / signSpeed;
+                
+                if ( o._durationUntilEnd && o.end > maxEnd ){
+                    maxEnd = o.end;
+                    delete o._durationUntilEnd;
+                }
+                else if ( !o._durationUntilEnd && o.relax > maxEnd ){
+                    maxEnd = o.relax;
+                }
             }
         }
     }
     return { data: result, end: maxEnd };
 }
 
-let bodyMovementTable = {
-    // RL_rotated_left
-    // RR_rotated_right
-    // TL_tilted_left
-    // TR_tilted_right
-    // TF_tilted_forwards
-    // TB_tilted_backwards
-    // SI_sigh  slightly tilted backwards
-    // HE_heave   does not work
-    // ST_straight 
-    // RD_round  sligthly tilted forwards
-}
-
 let shoulderMovementTable = {
     // keeps that position until it changes or the sign ends
-    UL: { type: "gesture", shoulderRaise: 0.8, hand: "left", _endsAtPeak:true}, //_left_shoulder_raised                
-    UR: { type: "gesture", shoulderRaise: 0.8, hand: "right", _endsAtPeak:true }, //_right_shoulder_raised               
-    UB: { type: "gesture", shoulderRaise: 0.8, hand: "both", _endsAtPeak:true }, //_both_shoulders_raised               
-    HL: { type: "gesture", shoulderHunch: 0.8, hand: "left", _endsAtPeak:true }, //_left_shoulder_hunched_forward       
-    HR: { type: "gesture", shoulderHunch: 0.8, hand: "right", _endsAtPeak:true }, //_right_shoulder_hunched_forward      
-    HB: { type: "gesture", shoulderHunch: 0.8, hand: "both", _endsAtPeak:true }, //_both_shoulders_hunched_forward     
+    UL: { type: "gesture", shoulderRaise: 0.8, hand: "left"  }, //_left_shoulder_raised                
+    UR: { type: "gesture", shoulderRaise: 0.8, hand: "right" }, //_right_shoulder_raised               
+    UB: { type: "gesture", shoulderRaise: 0.8, hand: "both"  }, //_both_shoulders_raised               
+    HL: { type: "gesture", shoulderHunch: 0.8, hand: "left"  }, //_left_shoulder_hunched_forward       
+    HR: { type: "gesture", shoulderHunch: 0.8, hand: "right" }, //_right_shoulder_hunched_forward      
+    HB: { type: "gesture", shoulderHunch: 0.8, hand: "both"  }, //_both_shoulders_hunched_forward     
     
     // up and down once
-    SL: { type: "gesture", shoulderRaise: 0.8, hand: "left" }, //_left_shoulder_shrugging_up_and_down 
-    SR: { type: "gesture", shoulderRaise: 0.8, hand: "right" }, //_right_shoulder_shrugging_up_and_down
-    SB: { type: "gesture", shoulderRaise: 0.8, hand: "both" }, //_both_shoulders_shrugging_up_and_down
+    SL: { type: "gesture", shoulderRaise: 0.8, hand: "left", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
+    SR: { type: "gesture", shoulderRaise: 0.8, hand: "right", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
+    SB: { type: "gesture", shoulderRaise: 0.8, hand: "both", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
 };
+
+let bodyMovementTable = {
+    RL: { type: "gesture", bodyMovement: "RL", amount: 1 }, // _rotated_left
+    RR: { type: "gesture", bodyMovement: "RR", amount: 1 }, // _rotated_right
+    TL: { type: "gesture", bodyMovement: "TL", amount: 1 }, // _tilted_left
+    TR: { type: "gesture", bodyMovement: "TR", amount: 1 }, // _tilted_right
+    TF: { type: "gesture", bodyMovement: "TF", amount: 1 }, // _tilted_forwards
+    TB: { type: "gesture", bodyMovement: "TB", amount: 1 }, // _tilted_backwards
+    SI: { type: "gesture", bodyMovement: "TB", amount: 0.5 }, // _sigh  slightly tilted backwards
+    // HE: { type: "gesture", bodyMovement: "HE", amount: 1 }, // _heave   does not work
+    // ST: { type: "gesture", bodyMovement: "ST", amount: 1 }, // _straight 
+    RD: { type: "gesture", bodyMovement: "TF", amount: 0.5 }, // _round  sligthly tilted forwards
+}
 
 let headMovementTable = {
     NO: { type: "head", lexeme: "NOD", repetition: 1 }, //_nodding_up_and_down     

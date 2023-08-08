@@ -1,0 +1,4 @@
+# keep only build  from lexgui repo
+external/lexgui.js/*
+
+!external/lexgui.js/build/*
