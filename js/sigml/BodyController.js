@@ -25,15 +25,58 @@ class BodyController{
             }
         } );
 
+        this.computeConfig( characterConfig );
 
+        // -------------- All modules --------------
+        this.right = this._createArm( false );
+        this.left = this._createArm( true );
+        this.handConstellation = new HandConstellation( this.config.boneMap, this.skeleton, this.config.handLocationsR, this.config.handLocationsL );
+        this.bodyMovement = new BodyMovement( this.config, this.skeleton );
+
+        this.dominant = this.right;
+        this.nonDominant = this.left;
+
+        this._tempQ_0 = new THREE.Quaternion();
+        this._tempV3_0 = new THREE.Vector3();
+
+    }
+
+    computeConfig( jsonConfig ){
         // reference, not a copy. All changes also affect the incoming characterConfig
-        this.config = characterConfig.bodyController; 
+        this.config = jsonConfig.bodyController; 
 
+
+        /** BoneMap */
         // name to index map. If model changes, only this map (and ik) names need to be changed
         for ( let p in this.config.boneMap ){
             this.config.boneMap[ p ] = findIndexOfBone( this.skeleton, this.config.boneMap[ p ] );            
         }
 
+        /** Main Avatar Axes */
+        if ( this.config.axes ){ 
+            for( let i = 0; i < this.config.axes.length; ++i ){ // probably axes are a simple js object {x:0,y:0,z:0}. Convert it to threejs
+                this.config.axes[i] = new THREE.Vector3(  this.config.axes[i].x, this.config.axes[i].y, this.config.axes[i].z ); 
+            }
+        } else{ 
+            // compute axes in MESH coordinates using the the Bind pose ( TPose mandatory )
+            // MESH coordinates: the same in which the actual vertices are located, without any rigging or any matrix applied
+            this.config.axes = [ new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3() ]; // x,y,z
+            let boneMap = this.config.boneMap;
+            this.skeleton.bones[ boneMap.Hips ].updateWorldMatrix( true, true ); // parents and children also
+    
+            let a = (new THREE.Vector3()).setFromMatrixPosition( this.skeleton.boneInverses[ boneMap.LShoulder ].clone().invert() );
+            let b = (new THREE.Vector3()).setFromMatrixPosition( this.skeleton.boneInverses[ boneMap.RShoulder ].clone().invert() );
+            this.config.axes[0].subVectors( a, b ).normalize(); // x
+    
+            a = a.setFromMatrixPosition( this.skeleton.boneInverses[ boneMap.BelowStomach ].clone().invert() );
+            b = b.setFromMatrixPosition( this.skeleton.boneInverses[ boneMap.Hips ].clone().invert() );
+            this.config.axes[1].subVectors( a, b ).normalize(); // y
+            
+            this.config.axes[2].crossVectors( this.config.axes[0], this.config.axes[1] ).normalize(); // cross( x, y )
+            this.config.axes[1].crossVectors( this.config.axes[2], this.config.axes[0] ).normalize(); // cross( z, x )
+        }
+
+        /** Body and Hand Locations */
         // create location point objects and attach them to bones
         function locationToObjects( table, skeleton, symmetry = false ){
             let result = {};
@@ -54,63 +97,28 @@ class BodyController{
             return result;   
         }
         this.config.bodyLocations = locationToObjects( this.config.bodyLocations, this.skeleton, false );
-        this.config.handLocationsL = locationToObjects( this.config.handLocationsR, this.skeleton, true ); // assume symmetric mesh/skeleton
+        this.config.handLocationsL = locationToObjects( this.config.handLocationsL ? this.config.handLocationsL : this.config.handLocationsR, this.skeleton, this.config.handLocationsL ? false : true ); // assume symmetric mesh/skeleton
         this.config.handLocationsR = locationToObjects( this.config.handLocationsR, this.skeleton, false ); // since this.config is being overwrite, generate left before right
 
         // finger axes do no need any change
 
-        // -------------- All modules --------------
-        this.right = this._createArm( false );
-        this.left = this._createArm( true );
-        this.handConstellation = new HandConstellation( this.config.boneMap, this.skeleton, this.config.handLocationsR, this.config.handLocationsL );
-        this.bodyMovement = new BodyMovement( this.config, this.skeleton );
-
-        this.dominant = this.right;
-        this.nonDominant = this.left;
-
-        this._tempQ_0 = new THREE.Quaternion();
-        this._tempV3_0 = new THREE.Vector3();
-
-
-
-        // // DEBUG
-        // this.point = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthTest:false, depthWrite: false }) );
-        // this.point2 = new THREE.Mesh( new THREE.SphereGeometry(0.005, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthTest:false, depthWrite: false }) );
-        // this.point.position.set(0,1.5,0.5);
-        // window.global.app.scene.add(this.point);
-        // window.global.app.scene.add(this.point2);
-        // this.elbowRaise = 0;
-        // window.s = 1;
-        // window.addEventListener( "keydown", e =>{
-        //     switch( e.which ){
-        //         case 37: this.point.position.x -= 0.001 * window.s; break; // left
-        //         case 39: this.point.position.x += 0.001 * window.s; break; // right
-        //         case 38: this.point.position.y += 0.001 * window.s; break; // up
-        //         case 40: this.point.position.y -= 0.001 * window.s; break; // down
-        //         case 90: this.point.position.z += 0.001 * window.s; break; //z
-        //         case 88: this.point.position.z -= 0.001 * window.s; break; //x
-        //         case 65: this.elbowRaise += 1 * Math.PI / 180; break; //a
-        //         case 83: this.elbowRaise -= 1 * Math.PI / 180; break; //s
-        //         default: break;
-        //     }
-        // } );
     }
     _createArm( isLeftHand = false ){
         let handName = isLeftHand ? "L" : "R";
         return {
-            loc : new LocationBodyArm( this.config, this.skeleton, isLeftHand ),
-            locMotions : [],
-            extfidir : new Extfidir( this.config, this.skeleton, isLeftHand ),
-            palmor : new Palmor( this.config, this.skeleton, isLeftHand ),
-            wristMotion : new WristMotion( this.skeleton.bones[ this.config.boneMap[ handName + "Wrist"] ] ),
-            handshape : new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
-            fingerplay : new FingerPlay(),
+            loc: new LocationBodyArm( this.config, this.skeleton, isLeftHand ),
+            locMotions: [],
+            extfidir: new Extfidir( this.config, this.skeleton, isLeftHand ),
+            palmor: new Palmor( this.config, this.skeleton, isLeftHand ),
+            wristMotion: new WristMotion( this.skeleton.bones[ this.config.boneMap[ handName + "Wrist"] ] ),
+            handshape: new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
+            fingerplay: new FingerPlay(),
             shoulderRaise: new ShoulderRaise( this.config, this.skeleton, isLeftHand ),
             shoulderHunch: new ShoulderHunch( this.config, this.skeleton, isLeftHand ),
 
             needsUpdate: false,
-            ikSolver : new GeometricArmIK( this.skeleton, this.config.boneMap[ handName  + "Shoulder" ], this.config.boneMap[ "ShouldersUnion" ], isLeftHand ),
-            locUpdatePoint : new THREE.Vector3(0,0,0),
+            ikSolver: new GeometricArmIK( this.skeleton, this.config, isLeftHand ),
+            locUpdatePoint: new THREE.Vector3(0,0,0),
             _tempWristQuat: new THREE.Quaternion(0,0,0,1), // stores computed extfidir + palmor before any arm movement applied. Necessary for locBody + handConstellation
         };
     }

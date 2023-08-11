@@ -223,7 +223,7 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
 // Process message
 CharacterController.prototype.processBML = function (key, bml) {
 
-    if (!this.facialController)
+    if ( ( !this.facialController && key != "gesture" ) || ( !this.bodyController && key == "gesture" ) )
         return;
 
     let thatFacial = this.facialController;
