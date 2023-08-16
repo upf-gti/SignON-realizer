@@ -181,6 +181,11 @@ class HandConstellation {
 
 
     _newGestureLocationComposer( bml, handLocations, hand = "R", isSource = true ){
+        // check all-in-one variable first
+        let result = handLocations[ isSource ? bml.srcContact : bml.dstContact ];
+        if ( result ){ return result; }
+
+        // check decomposed variables
         let finger = parseInt( isSource ? bml.srcFinger : bml.dstFinger );
         let side = isSource ? bml.srcSide : bml.dstSide; 
         let location = isSource ? bml.srcLocation : bml.dstLocation;
@@ -199,11 +204,10 @@ class HandConstellation {
                 if ( side == "Right" ){ side = hand == "R" ? "Ulnar" : "Radial"; }
                 else if ( side == "Left" ){ side = hand == "R" ? "Radial" : "Ulnar"; }
             }
-
         }
         let name = finger + location + side; 
 
-        let result = handLocations[ name ];
+        result = handLocations[ name ];
         if ( !result ){ result = handLocations[ "2Tip" ]; }
         return result;
     }
@@ -213,11 +217,13 @@ class HandConstellation {
      * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
      * 
      * Location of the hand in the specified hand (or dominant hand)
+     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
      * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * 
      * Location of the hand in the unspecified hand (or non dominant hand)
+     * dstContact: (optional) source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed)
      * dstFinger: (optional) 1,2,3,4,5
      * dstLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
      * dstSide: (optional) Ulnar, Radial, Palmar, Back 

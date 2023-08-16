@@ -72,8 +72,8 @@ class BodyController{
             b = b.setFromMatrixPosition( this.skeleton.boneInverses[ boneMap.Hips ].clone().invert() );
             this.config.axes[1].subVectors( a, b ).normalize(); // y
             
-            this.config.axes[2].crossVectors( this.config.axes[0], this.config.axes[1] ).normalize(); // cross( x, y )
-            this.config.axes[1].crossVectors( this.config.axes[2], this.config.axes[0] ).normalize(); // cross( z, x )
+            this.config.axes[2].crossVectors( this.config.axes[0], this.config.axes[1] ).normalize(); // z = cross( x, y )
+            this.config.axes[1].crossVectors( this.config.axes[2], this.config.axes[0] ).normalize(); // y = cross( z, x )
         }
 
         /** Body and Hand Locations */
@@ -82,18 +82,26 @@ class BodyController{
             let result = {};
             for( let name in table ){
                 let l = table[ name ];
-    
+                
                 let idx = findIndexOfBone( skeleton, symmetry ? l[0].replace( "Right", "Left" ) : l[0] );
                 if ( idx < 0 ){ continue; }
-    
+                
                 let o = new THREE.Object3D();
                 // let o = new THREE.Mesh( new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial( { color: Math.random()*0xffffff }) );
-                o.position.copy( l[1] );
-                if ( symmetry ){ o.position.x *= -1; }
+                o.position.copy( l[1] ).applyMatrix4( skeleton.boneInverses[ idx ] ); // from mesh space to bone local space
+                
+                // check direction of distance vector 
+                if ( l[2] ){
+                    let m3 = new THREE.Matrix3();
+                    m3.setFromMatrix4( skeleton.boneInverses[ idx ] );
+                    o.direction = (new THREE.Vector3()).copy( l[2] ).applyMatrix3( m3 );
+                }
+                // o.position.copy( l[1] );
+                // if ( symmetry ){ o.position.x *= -1; }
                 o.name = name;
                 skeleton.bones[ idx ].add( o );
                 result[ name ] = o;
-            }         
+            }
             return result;   
         }
         this.config.bodyLocations = locationToObjects( this.config.bodyLocations, this.skeleton, false );
@@ -144,8 +152,8 @@ class BodyController{
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "right", distance: 0.065, side: "r", sideDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "left",  distance: 0.04, side: "l", sideDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "right", distance: 0.065, displace: "r", displaceDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "left",  distance: 0.04, displace: "l", displaceDistance: 0.025, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "right", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "left", shift: true } );
@@ -345,8 +353,10 @@ class BodyController{
         symmetryFlags |= ( ( !!bml.udSym ) << 1 );
         symmetryFlags |= ( ( !!bml.ioSym ) << 2 );
 
-        if ( bml.dominant ){
-            this.setDominantHand( bml.dominant == "right" );
+        if ( bml.config ){
+            let c = bml.config;
+            if ( c.dominant ){ this.setDominantHand( c.dominant == "right" ); }
+            //...
         }
 
         if ( bml.handConstellation ){

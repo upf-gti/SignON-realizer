@@ -3,7 +3,12 @@ import { stringToDirection } from './SigmlUtils.js';
 
 class LocationBodyArm {
     constructor( config, skeleton, isLeftHand = false ) {
+        this._tempV3_0 = new THREE.Vector3();
+        this._tempV3_1 = new THREE.Vector3();
+        this._tempV3_2 = new THREE.Vector3();
+        
         this.skeleton = skeleton;
+        this.config = config;
         this.bodyLocations = config.bodyLocations;
         this.handLocations = isLeftHand ? config.handLocationsL : config.handLocationsR;
         this.isLeftHand = !!isLeftHand;
@@ -31,16 +36,13 @@ class LocationBodyArm {
         
         this.transition = false;
 
-        this._tempV3_0 = new THREE.Vector3();
-        this._tempV3_1 = new THREE.Vector3();
-        this._tempV3_2 = new THREE.Vector3();
         
         this.worldArmSize = 0;
         this.skeleton.bones[ boneMap[ handName + "Arm" ] ].getWorldPosition( this._tempV3_0 );
         this.skeleton.bones[ boneMap[ handName + "Elbow" ] ].getWorldPosition( this._tempV3_1 );
         this.skeleton.bones[ boneMap[ handName + "Wrist" ] ].getWorldPosition( this._tempV3_2 );
         this.worldArmSize = this._tempV3_0.sub( this._tempV3_1 ).length() + this._tempV3_1.sub( this._tempV3_2 ).length();
-
+        
         // set default poses
         this.reset();
     }
@@ -137,7 +139,6 @@ class LocationBodyArm {
 
     // all second and main attributes do not get mixed until the end (jasigning)
     _newGestureLocationComposer( bml, symmetry, resultPos, isSecond = false ){
-        let distance = isNaN( bml.distance ) ? 0 : bml.distance;
         let location = isSecond ? bml.secondLocationBodyArm : bml.locationBodyArm;
 
         // Symmetry should be only for sides
@@ -150,28 +151,39 @@ class LocationBodyArm {
             location += this.isLeftHand ? "L" : "R";
         }
        
+        let side = isSecond ? bml.secondSide : bml.side;
+        if ( stringToDirection( side, this._tempV3_0, symmetry, true ) ){ // accumulate result and do not normalize
+            // 0.5 and 1.5 to avoid rounding problems
+            if ( this._tempV3_0.x < -1.5 ){ location += "_SideRR"; }
+            else if ( this._tempV3_0.x < -0.5 ){ location += "_SideR"; }
+            else if ( this._tempV3_0.x > 1.5 ){ location += "_SideLL"; }
+            else if ( this._tempV3_0.x > 0.5 ){ location += "_SideL"; }
+        }
+
         
         location = this.bodyLocations[ location ];
-        if ( !location ){ 
-            return false;
-        }
-
-        // use src as temporal buffer
+        if ( !location ){ return false; }
         location.getWorldPosition( resultPos );
-        resultPos.z += this.worldArmSize * distance;
 
-        // same as in location
-        let side = isSecond ? bml.secondSide : bml.side;
-        if ( stringToDirection( side, this._tempV3_0, symmetry ) ){
-            side = this._tempV3_0;
-            let sideDist = isSecond ? bml.secondSideDistance : bml.sideDistance;
-            sideDist = isNaN( sideDist ) ? 0 : sideDist;
-            
-            resultPos.x += side.x * sideDist;
-            resultPos.y += side.y * sideDist;
-            resultPos.z += side.z * sideDist;
+        // TODO: expose distance modes? 
+        // distance 
+        let distance = isNaN( bml.distance ) ? 0 : bml.distance;
+        if ( location.direction ){
+            let m3 = ( new THREE.Matrix3() ).setFromMatrix4( location.matrixWorld );
+            this._tempV3_0.copy( location.direction ).applyMatrix3( m3 ).normalize(); // from bone local space to world space direction 
+        }else{
+            // use avatar Z axis as distance
+            this._tempV3_0.copy( this.config.axes[2] );
+            // from mesh space to hips local space direction
+            let m3 = ( new THREE.Matrix3() ).setFromMatrix4( this.skeleton.boneInverses[ this.config.boneMap.Hips ] );
+            this._tempV3_0.applyMatrix3( m3 );
+            // from hips local space to world space direction
+            m3.setFromMatrix4( this.skeleton.bones[ this.config.boneMap.Hips ].matrixWorld );
+            this._tempV3_0.applyMatrix3( m3 );
+            this._tempV3_0.normalize();  
         }
-
+        resultPos.addScaledVector( this._tempV3_0, this.worldArmSize * distance );
+        
         return true;
     }
     /**
@@ -180,18 +192,20 @@ class LocationBodyArm {
      * locationBodyArm: string from bodyLocations
      * secondLocationBodyArm: (optional)
      * distance: (optional) [0,1] how far from the body to locate the hand. 0 = touch, 1 = arm extended (distance == arm size). 
-     * side: (optional) string from sides table. Location will offset into that direction
+     * side: (optional) rr, r, l, ll. If non-existant, defaults to center
      * secondSide: (optional)
-     * sideDistance: (optional) how far to move the indicated side. Metres
-     * secondSideDistance: (optional)
+     * 
+     * displace: 26 directions
+     * displaceDistance: metres
      * 
      * elbowRaise: (optional) in degrees. Positive values raise the elbow.
      * 
      * Following attributes describe which part of the hand will try to reach the locationBodyArm location 
+     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
      * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
-     * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. 
+     * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. Default false
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
      *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
      * shift does not use contact locations
@@ -208,6 +222,14 @@ class LocationBodyArm {
             this.trg.p.lerp( this.src.p, 0.5 );
         }
 
+        // displacement
+        if ( stringToDirection( bml.displace, this._tempV3_0, symmetry ) ){
+            let sideDist = parseFloat( bml.displaceDistance );
+            sideDist = isNaN( sideDist ) ? 0 : sideDist;
+            this.trg.p.x += this._tempV3_0.x * sideDist;
+            this.trg.p.y += this._tempV3_0.y * sideDist;
+            this.trg.p.z += this._tempV3_0.z * sideDist;
+        }
 
         // elbow raise in degrees (in bml)
         let elbowRaise = parseInt( bml.elbowRaise );
@@ -236,7 +258,12 @@ class LocationBodyArm {
         let srcFinger = parseInt( bml.srcFinger );
         let srcSide = bml.srcSide; 
         let srcLocation = bml.srcLocation;
-        if ( srcFinger || srcSide || srcLocation ){ 
+        // check all-in-one variable first. Only hand locations allowed as contact
+        let srcContact = this.handLocations[ bml.srcContact ]; 
+        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "Elbow" ) ){
+            this.contactFinger = srcContact;
+        }
+        else if ( srcFinger || srcSide || srcLocation ){ 
 
             if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
             if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }

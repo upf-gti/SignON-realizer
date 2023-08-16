@@ -246,7 +246,7 @@ function signManual( xml, start, signSpeed ){
 
     let motionsStarted = false; // (JASIGNING) when motion instructions start, no handconfig or location are taken into account. Also time starts adding
 
-    result.push( { type: "gesture", dominant: signGeneralInfo.domHand } );
+    result.push( { type: "gesture", config: { dominant: signGeneralInfo.domHand } } );
     let currentPosture = currentPostureUpdate( null, [] );
 
     for ( let i = 0; i < actions.length; ++i ){
@@ -504,19 +504,6 @@ let locationMap ={};
 for( let l in locationMapHead ){ locationMap[l] = locationMapHead[l]; }
 for( let l in locationMapBody ){ locationMap[l] = locationMapBody[l]; }
 
-let locationSideMap = {
-    left_beside: { side: "l", sideDistance: 0.1 },
-    left_at: { side: "l", sideDistance: 0.05 },
-    right_at: { side: "r", sideDistance: 0.05 },
-    right_beside: { side: "r", sideDistance: 0.1 },
-    front: { side: "o", sideDistance: 0.05 },
-    back: { side: "i", sideDistance: 0.05 },
-    dorsal: null,
-    palmar: null,
-    radial: null,
-    ulnar: null,
-}
-
 // in JaSigning the location lasts until the end of the sign/gloss or until another instruction overwrites it
 function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGeneralInfo ){
     let attributes = {};
@@ -535,19 +522,22 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     else if ( attributes.contact == "armextended" ){ result.distance = 0.5; }
     else { result.distance = 0.3; } // jasigning has a default unmentioned distance...
 
-    let side = locationSideMap[ attributes.side ];
-    if ( side ){
-        result.side = side.side;
-        result.sideDistance = side.sideDistance;    
-    }
-    let secondSide = locationSideMap[ attributes.second_side ];
-    if ( secondSide ){
-        result.secondSide = secondSide.side;
-        result.secondSideDistance = secondSide.sideDistance;    
-    }
-
     result.locationBodyArm = locationMap[ attributes.location ];
     result.secondLocationBodyArm = locationMap[ attributes.second_location ];
+    switch( attributes.side ){
+        case "right_at": result.side = "r"; break;
+        case "right_beside": result.side += "rr"; break;
+        case "left_at": result.side += "l"; break;
+        case "left_beside": result.side += "ll"; break;
+        default: break;    
+    }
+    switch( attributes.second_side ){
+        case "right_at": result.secondSide = "r"; break;
+        case "right_beside": result.secondSide += "rr"; break;
+        case "left_at": result.secondSide += "l"; break;
+        case "left_beside": result.secondSide += "ll"; break;
+        default: break;    
+    }
 
     if ( xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){
         let locationHand = locationHandInfoExtract( xml.children[0], false );

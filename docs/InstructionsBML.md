@@ -239,12 +239,18 @@ All gestures share some optional attributes
     ioSym: false, // bool, only applied to the non-dominant hand
 }
 ```
+
 The dominant hand can be set through the following attribute.
 ``` javascript
 {
-    dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+    type: "gesture",
+    config: { 
+        dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+    },
 }
 ```
+
+Attributes with the ```second``` prefix are usually optional and combines the effects of this and the same attribute without the prefix.
 
 All gesture intructions can be packed into a single BML instruction. Caution must be taken as attributes may overlap between different gesture types. This can be useful to to reuse the same timing for several gestures  
 The following example using a single BML, instructs the avatar the handshape, palmor, extfidir and the shoulder raise with the same timing variables
@@ -327,17 +333,18 @@ Moves the arm (wrist) to a location of the body (face + trunk).
    
     // optionals
     secondLocationBodyArm: "chest", // string
+    side: "rr" || "r" || "l" || "ll", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
+    secondSide: "l", // string
 
     distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
-    side: "u", // string, 26 directions. Location will be offseted into that direction
-    secondSide: "l", // string, 26 directions. Will compute the midpoint between side and secondSide
-    sideDistance: 0.05, // number how far to move to the indicated side. Metres 
-    secondSideDistance: 0.05
-
+    displace: "u", // string, 26 directions. Location will be offseted into that direction
+    displaceDistance: 0.05, // number how far to move to the indicated side. Metres 
+ 
     elbowRaise: 10, // in degrees. Positive values raise the elbow.
 
     //Following attributes describe which part of the hand will try to reach the locationBodyArm location 
-    srcFinger: "1", //(optional) 1,2,3,4,5, see handconstellation for more information
+    srcContact: "1PadPalmar", //source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
+    srcFinger: "1", // 1,2,3,4,5, see handconstellation for more information
     srcLocation: "Pad", // see handconstellation hand locations
     srcSide: "Palmar", // see handconstellation sides
     keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
@@ -510,11 +517,13 @@ The motion is stopped if an arm location is executed afterwards.
 
     handConstellation: true,
     //Location of the hand in the specified hand (or dominant hand)
+    srcContact: "2PadBack", // source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
     srcFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
     srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
     srcSide: "Back", // Ulnar, Radial, Palmar, Back
      
     //Location of the hand in the unspecified hand (or non dominant hand)
+    dstContact: "2Tip", // source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed). Afterwards, there is no need to use dstFinger, dstLocation or dstSide
     dstFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
     dstLocation: "Base", // string from hand locations or arm locations
     dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
@@ -536,9 +545,9 @@ Right
 Left         
 Ulnar         
 Radial         
-Front  ``` // only for Elbow and Upperarm ```      
+Front  ``` // only for Elbow and Upperarm instead of Palmar ```      
 Back         
-Palmar         
+Palmar
 </details>
 <details>
 <summary>Click to view the complete list of HAND LOCATIONS </summary>
