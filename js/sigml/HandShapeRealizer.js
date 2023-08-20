@@ -3,31 +3,30 @@ import * as THREE from "three";
 // selected fingers available for mainblend: 0=Not selected, otherwise selected. 1=raw mainblend, 2=mainblend in thumb combinations (hamnosys)
 // Array of fingers 0=thumb 1=index 2=middle, 3=ring, 4=pinky
 // Four values per finger (0=splay, 1=base, 2=mid, 3=tip)
-let handShapes = {
-    // raw handshapes
-    fist:           { selected:[0,0,0,0,0], shape:[ [-1,0.3,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
-    finger2:        { selected:[0,1,0,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
-    finger23:       { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0,0,0,0], [0,0,0,0], [0,1,1,1], [0,1,1,1] ] },
-    finger23spread: { selected:[0,1,1,0,0], shape:[ [1,1,0.6,0.5], [0.8,0,0,0], [-0.2,0,0,0], [0,1,1,1], [0,1,1,1] ] },
-    finger2345:     { selected:[0,1,1,1,1], shape:[ [-1,0.3,0,0], [0.8,0,0,0], [0,0,0,0], [0.8,0,0,0], [0.8,0,0,0] ] }, 
-    flat:           { selected:[0,1,1,1,1], shape:[ [-1,0.3,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ] },
+let handshapes = {
 
+    // basic handshapes    
+    fist:           { selected: [0,0,0,0,0], shape: [ [0,0.5,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    finger2:        { selected: [0,1,0,0,0], shape: [ [0.5,0.75,0.6,0.5],[0,0,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    finger23:       { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0,0,0,0],[0,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    finger23spread: { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0.8,0,0,0],[-0.2,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    finger2345:     { selected: [0,1,1,1,1], shape: [ [0,0.3,0,0],[0.8,0,0,0],[0,0,0,0],[0.8,0,0,0],[0.8,0,0,0] ] },
+    flat:           { selected: [0,1,1,1,1], shape: [ [0,0.3,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0] ] },
     // thumb combinations - could be reduced to only pinch. Cee are basically pinch but with selected fingers open
-    pinch12:     { selected:[2,2,0,0,0], shape:[ [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
-    pinch12open: { selected:[2,2,0,0,0], shape:[ [1,0.5,0.25,0.5], [0,0.3,0.8,0.25], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ] },
-    pinchall:    { selected:[2,2,2,2,2], shape:[ [1, 0.8, 0.4, 0.6], [0, 0.6, 0.6, 0.8], [0, 0.4, 0.6, 0.6], [0, 0.4, 0.7, 0.4], [0, 0.7, 0.5, 0.5] ] },
-    cee12:       { selected:[3,3,0,0,0], shape:[ [1, 0.5, 0.1, 0.2], [0, 0.15, 0.4, 0.6], [0,1,1,1], [0,1,1,1], [0,1,1,1] ] },
-    cee12open:   { selected:[3,3,0,0,0], shape:[ [1, 0.5, 0.1, 0.1], [0, 0.4, 0.5, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.2, 0.2, 0.2], [0, 0, 0.2, 0.2] ] },
-    ceeall:      { selected:[3,3,3,3,3], shape:[ [1, 0.7, 0.1, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2], [0, 0.4, 0.2, 0.2] ], } 
+    pinch12:        { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    pinch12open:    { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    pinchall:       { selected: [2,2,2,2,2], shape: [ [1, 0.95, 0.1, 0.4],[0,0.67,0.44,0.56],[0,0.56,0.44,0.56],[0,0.67,0.33,0.33],[0,0.89,0.22,0.22] ] },
+    cee12:          { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.41,0.51,0.21],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    cee12open:      { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.5,0.2],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    ceeall:         { selected: [3,3,3,3,3], shape: [ [1,0.78,0.56,0.22],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2] ] }
 };
 
-let thumbShapes = {
-    default:  [-1,0.3,0,0],
-    touch:  [-1,0.3,0,0],
-    out:    [0, -0.3, 0, 0],
-    opposed: [1, 1, 0, 0],
-    across: [1,1,0.6,0.5], 
-    // across: [-0.5,0.7,0.7,1], 
+let thumbshapes = {
+    default: [0,0.5,0,0],
+    touch:   [0,0.5,0,0],
+    out:     [0,-0.3,0,0], 
+    opposed: [1,1,0,0],
+    across:  [0.5,0.77,0.55,0.77]
 }
 
 
@@ -36,10 +35,10 @@ let thumbShapes = {
     2 - bending on a thumb combination. t= thumb, f=rest of fingers 
 */
 let handBendings = {
-    straight: { 1: [0,0,0], 2:{ t:[0,0,0], f:[0,0,0] } }, 
+    straight: { 1: [0,0,0], 2:{ t:[0.45,0,0], f:[0,0,0] } }, 
     halfbent: { 1: [0.5,0,0], 2:{ t:[8/9,0,0], f:[0.5,0,0] } }, 
     bent:     { 1: [1,0,0], 2:{ t:[8/9,0,0], f:[1,0,0] } }, 
-    round:    { 1: [0.5,0.5,0.5], 2:{ t:[4/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
+    round:    { 1: [0.5,0.5,0.5], 2:{ t:[6/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
     hooked:   { 1: [0,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
     dblbent:  { 1: [1,1,0], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
     dblhooked:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
@@ -50,19 +49,34 @@ class HandShapeRealizer {
     constructor( config, skeleton, isLeftHand = false ){
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
-
+        
         let boneMap = config.boneMap;
         let handName = ( this.isLeftHand ) ? "L" : "R";
-        this.idxs = { // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
-            thumb:  boneMap[ handName + "HandThumb" ], 
-            index:  boneMap[ handName + "HandIndex" ],
-            middle: boneMap[ handName + "HandMiddle" ], 
-            ring:   boneMap[ handName + "HandRing" ], 
-            pinky:  boneMap[ handName + "HandPinky" ] 
-        };
-        this.thumbTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.idxs.thumb + 1 ].position).normalize();
+        this.fingerIdxs = [ // base bone indexes. The used bones will be i (base finger), i+1 (mid finger) and i+2 (tip finger). 
+            boneMap[ handName + "HandThumb" ], 
+            boneMap[ handName + "HandIndex" ],
+            boneMap[ handName + "HandMiddle" ], 
+            boneMap[ handName + "HandRing" ], 
+            boneMap[ handName + "HandPinky" ] 
+        ];
+        
+        this.handshapes = config.handshapes ? config.handshapes : handshapes;
+        this.thumbshapes = config.thumbshapes ? config.thumbshapes : thumbshapes;
+        this.handBendings = config.handBendings ? config.handBendings : handBendings;
 
         this.fingerAxes = isLeftHand ? config.fingerAxes.L : config.fingerAxes.R;
+        this.thumbAfterBindTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.fingerIdxs[0] + 1 ].position).applyQuaternion( this.fingerAxes.quats[0] ).normalize();
+        let meshToLocal = new THREE.Matrix3();
+        // for each bone in each finger, transform bend and splay axis from mesh space to bone local space + bind + correctionQuat (thumb needs a correction)
+        for ( let i = 0; i < this.fingerIdxs.length; ++i ){
+            for ( let j = 0; j<3; ++j){
+                meshToLocal.setFromMatrix4( this.skeleton.boneInverses[ this.fingerIdxs[ i ] + j ] );
+                this.fingerAxes.bends[ i*3+j  ] = (new THREE.Vector3()).copy( this.fingerAxes.bends[ i*3+j ] ).applyMatrix3( meshToLocal ).applyQuaternion( this.fingerAxes.quats[ i*3+j ] ).normalize();
+                if ( j == 0 ){
+                    this.fingerAxes.splays[ i ] = (new THREE.Vector3()).copy( this.fingerAxes.splays[ i ] ).applyMatrix3( meshToLocal ).applyQuaternion( this.fingerAxes.quats[ i*3 ] ).normalize();
+                }
+            }
+        }
 
         this.defG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
         this.srcG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
@@ -77,7 +91,7 @@ class HandShapeRealizer {
 
         this.transition = false;
         
-        this._tempHandQuat = new THREE.Quaternion(0,0,0,1);
+        this._tempQ_0 = new THREE.Quaternion(0,0,0,1);
 
         this.reset();
     }
@@ -150,46 +164,51 @@ class HandShapeRealizer {
             
         }
 
-
+        // order of quaternion multiplication matter
         let bones = this.skeleton.bones;
-        let bendAxes = this.fingerAxes.bends;    
+        let bendAxes = this.fingerAxes.bends; 
         let splayAxes = this.fingerAxes.splays; 
         let c = this.curG;   
         
-
         // all finger bends
-        let baseBend = Math.min( 1, Math.max( -0.2, c[0][1] + ( fingerplayResult ? fingerplayResult[0] : 0 ) ) );
-        bones[ this.idxs.thumb      ].quaternion.setFromAxisAngle(  bendAxes[0],  ((1-baseBend)*1.5-0.5) * (-Math.PI*0.2) ); // these maths because of weird thumb position in mesh 
-        bones[ this.idxs.thumb + 1  ].quaternion.setFromAxisAngle(  bendAxes[1],  c[0][2] * Math.PI*0.4 );
-        bones[ this.idxs.thumb + 2  ].quaternion.setFromAxisAngle(  bendAxes[2],  c[0][3] * Math.PI*0.4 );
+        let thumbBase;
+        let baseBend = thumbBase = Math.min( 1, Math.max( -0.2, c[0][1] + ( fingerplayResult ? fingerplayResult[0] : 0 ) ) );
+        bones[ this.fingerIdxs[0]      ].quaternion.setFromAxisAngle(  bendAxes[0],  baseBend * Math.PI*0.5 ); 
+        bones[ this.fingerIdxs[0] + 1  ].quaternion.setFromAxisAngle(  bendAxes[1],  c[0][2] * Math.PI*0.4 );
+        bones[ this.fingerIdxs[0] + 2  ].quaternion.setFromAxisAngle(  bendAxes[2],  c[0][3] * Math.PI*0.4 );
         baseBend = Math.min( 1, Math.max( -0.2, c[1][1] +  ( fingerplayResult ? fingerplayResult[1] : 0 ) ) );
-        bones[ this.idxs.index      ].quaternion.setFromAxisAngle(  bendAxes[3],  ( baseBend ) * Math.PI*0.5 );
-        bones[ this.idxs.index + 1  ].quaternion.setFromAxisAngle(  bendAxes[4],  c[1][2] * Math.PI*0.6 );
-        bones[ this.idxs.index + 2  ].quaternion.setFromAxisAngle(  bendAxes[5],  c[1][3] * Math.PI*0.5 );
+        bones[ this.fingerIdxs[1]      ].quaternion.setFromAxisAngle(  bendAxes[3],  baseBend * Math.PI*0.5 );
+        bones[ this.fingerIdxs[1] + 1  ].quaternion.setFromAxisAngle(  bendAxes[4],  c[1][2] * Math.PI*0.6 );
+        bones[ this.fingerIdxs[1] + 2  ].quaternion.setFromAxisAngle(  bendAxes[5],  c[1][3] * Math.PI*0.5 );
         baseBend = Math.min( 1, Math.max( -0.2, c[2][1] +  ( fingerplayResult ? fingerplayResult[2] : 0 ) ) );
-        bones[ this.idxs.middle     ].quaternion.setFromAxisAngle(  bendAxes[6],  baseBend * Math.PI*0.5 );
-        bones[ this.idxs.middle + 1 ].quaternion.setFromAxisAngle(  bendAxes[7],  c[2][2] * Math.PI*0.6 );
-        bones[ this.idxs.middle + 2 ].quaternion.setFromAxisAngle(  bendAxes[8],  c[2][3] * Math.PI*0.5 );
+        bones[ this.fingerIdxs[2]     ].quaternion.setFromAxisAngle(  bendAxes[6],  baseBend * Math.PI*0.5 );
+        bones[ this.fingerIdxs[2] + 1 ].quaternion.setFromAxisAngle(  bendAxes[7],  c[2][2] * Math.PI*0.6 );
+        bones[ this.fingerIdxs[2] + 2 ].quaternion.setFromAxisAngle(  bendAxes[8],  c[2][3] * Math.PI*0.5 );
         baseBend = Math.min( 1, Math.max( -0.2, c[3][1] +  ( fingerplayResult ? fingerplayResult[3] : 0 ) ) );
-        bones[ this.idxs.ring       ].quaternion.setFromAxisAngle(  bendAxes[9],  baseBend * Math.PI*0.5 );
-        bones[ this.idxs.ring + 1   ].quaternion.setFromAxisAngle(  bendAxes[10], c[3][2] * Math.PI*0.6 * 0.9 ); // 0.9 because of eva model
-        bones[ this.idxs.ring + 2   ].quaternion.setFromAxisAngle(  bendAxes[11], c[3][3] * Math.PI*0.5 );
+        bones[ this.fingerIdxs[3]       ].quaternion.setFromAxisAngle(  bendAxes[9],  baseBend * Math.PI*0.5 );
+        bones[ this.fingerIdxs[3] + 1   ].quaternion.setFromAxisAngle(  bendAxes[10], c[3][2] * Math.PI*0.6 );
+        bones[ this.fingerIdxs[3] + 2   ].quaternion.setFromAxisAngle(  bendAxes[11], c[3][3] * Math.PI*0.5 );
         baseBend = Math.min( 1, Math.max( -0.2, c[4][1] +  ( fingerplayResult ? fingerplayResult[4] : 0 ) ) );
-        bones[ this.idxs.pinky      ].quaternion.setFromAxisAngle(  bendAxes[12], baseBend * Math.PI*0.5 );
-        bones[ this.idxs.pinky + 1  ].quaternion.setFromAxisAngle(  bendAxes[13], c[4][2] * Math.PI*0.6 );
-        bones[ this.idxs.pinky + 2  ].quaternion.setFromAxisAngle(  bendAxes[14], c[4][3] * Math.PI*0.5 );
+        bones[ this.fingerIdxs[4]      ].quaternion.setFromAxisAngle(  bendAxes[12], baseBend * Math.PI*0.5 );
+        bones[ this.fingerIdxs[4] + 1  ].quaternion.setFromAxisAngle(  bendAxes[13], c[4][2] * Math.PI*0.6 );
+        bones[ this.fingerIdxs[4] + 2  ].quaternion.setFromAxisAngle(  bendAxes[14], c[4][3] * Math.PI*0.5 );
 
         // thumb splay is weird
-        bones[ this.idxs.thumb ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[0], c[0][0] * Math.PI*0.15 ) );
-        bones[ this.idxs.thumb ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  this.thumbTwistAxis, (this.isLeftHand?1:-1) * Math.max( 0, c[0][0] ) * Math.PI*0.3 ) );
+        bones[ this.fingerIdxs[0] ].quaternion.multiply( this._tempQ_0.setFromAxisAngle( splayAxes[ 0 ], c[ 0 ][ 0 ] * Math.PI * 0.2 ) );
+        bones[ this.fingerIdxs[0] ].quaternion.multiply( this._tempQ_0.setFromAxisAngle( this.thumbAfterBindTwistAxis, ( this.isLeftHand ? 1 : -1 ) * Math.max( 0, c[ 0 ][ 0 ] ) * thumbBase * Math.PI * 0.4 ) ); // finger rotates only if splay + base bend
 
         // other fingers splay
-        bones[ this.idxs.index  ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
-        bones[ this.idxs.middle ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
-        bones[ this.idxs.ring   ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[3], -1 * this._computeSplayAngle( c[3] ) ) );
-        bones[ this.idxs.pinky  ].quaternion.multiply( this._tempHandQuat.setFromAxisAngle(  splayAxes[4], -1 * this._computeSplayAngle( c[4] ) - this._computeSplayAngle( c[3] ) ) );
+        bones[ this.fingerIdxs[1]  ].quaternion.multiply( this._tempQ_0.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( c[1] ) ) );
+        bones[ this.fingerIdxs[2] ].quaternion.multiply( this._tempQ_0.setFromAxisAngle(  splayAxes[2], this._computeSplayAngle( c[2] ) ) );
+        bones[ this.fingerIdxs[3]   ].quaternion.multiply( this._tempQ_0.setFromAxisAngle(  splayAxes[3], -1 * this._computeSplayAngle( c[3] ) ) );
+        bones[ this.fingerIdxs[4]  ].quaternion.multiply( this._tempQ_0.setFromAxisAngle(  splayAxes[4], -1 * this._computeSplayAngle( c[4] ) - this._computeSplayAngle( c[3] ) ) );
         
-
+        // apply bind quaternions
+        for ( let i = 0; i < 5; ++i ){
+            bones[ this.fingerIdxs[i]      ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.quats[i*3]) );
+            bones[ this.fingerIdxs[i] + 1  ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.quats[i*3+1]) );
+            bones[ this.fingerIdxs[i] + 2  ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.quats[i*3+2]) );            
+        }                
     }
 
     _computeSplayAngle( fingerInfo ){
@@ -204,7 +223,7 @@ class HandShapeRealizer {
         // hooked "bend1":"818","bend2":"966" 
         // dblhooked and dblbent do not exist in hamnosys. Assume hooked
         
-        let b = handBendings[ mainbend ];
+        let b = this.handBendings[ mainbend ];
         if ( !b ){ return; }
 
         // thumb combinations
@@ -236,7 +255,7 @@ class HandShapeRealizer {
     _stringToFingerBend( str, outFinger, selectMode = 0, bendRange = 9 ){
         if ( !str ){ return; }
 
-        let b = handBendings[ str ];
+        let b = this.handBendings[ str ];
         if ( !b ){ 
             if ( typeof( str ) == "string" ){
                 // strings of three int values 0-9
@@ -275,7 +294,7 @@ class HandShapeRealizer {
     // to avoid having duplicated code for main and second attributes. Fills outHand. Returns 0 on success, >0 otherwise
     _newGestureHandComposer( bml, outHand, isSecond ){
 
-        let g = handShapes[ isSecond ? bml.secondHandshape : bml.handshape ];
+        let g = this.handshapes[ isSecond ? bml.secondHandshape : bml.handshape ];
         if ( !g ){ 
             console.warn( "Gesture: HandShape incorrect handshape \"" + (isSecond ? bml.secondHandshape : bml.handshape) + "\"" );
             return 1;
@@ -292,18 +311,18 @@ class HandShapeRealizer {
         this._stringToMainBend( isSecond ? bml.secondMainBend : bml.mainBend, outHand, g.selected );
 
         // modify with thumbshape
-        let thumbGest = thumbShapes[ isSecond ? bml.secondThumbshape : bml.thumbshape ];
+        let thumbGest = this.thumbshapes[ isSecond ? bml.secondThumbshape : bml.thumbshape ];
         if ( thumbGest ){
             for( let i = 0; i < thumbGest.length; ++i ){ outHand[0][i] = thumbGest[i]; }        
         }
 
         // tco (thumb combination opening). Applicable to cee and pinch (select mode 2 and 3). 1=keep original, 0=open fingers
         let thumbCombinationOpening = parseFloat( isSecond ? bml.secondtco : bml.tco );
-        thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(0, Math.min(1, thumbCombinationOpening ) );
+        thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(-1, Math.min(1, thumbCombinationOpening ) );
         for( let i = 0; i < outHand.length; ++i ){
             let finger = outHand[i];
             let fingerOpeningFactor = ( g.selected[i] >= 2 ) ? thumbCombinationOpening : 0;
-            fingerOpeningFactor *= ( i == 0 ) ? 0.25 : 1;
+            fingerOpeningFactor *= ( i == 0 ) ? -0.2 : 1;
             for( let j = 0; j < finger.length; ++j ){ finger[j] = finger[j] * ( 1 - fingerOpeningFactor ); }
         }
 

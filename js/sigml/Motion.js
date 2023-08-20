@@ -343,10 +343,15 @@ class FingerPlay {
         this.fingerEnabler = 0x00; // flags. bit0 = thumb, bit1 = index, bit2 = middle, bit3 = ring, bit4 = pinky
         
         this.transition = false;
-        this.time = 0;
         this.speed = 3;
         this.intensity = 0.3;
-
+        
+        
+        this.clock = 0; // using cos operations. if a finerplay overwrites another in play, need to be in the same phase  
+        this.curUpdateIntensity = [0,0,0,0,0];
+        this.srcUpdateIntensity = [0,0,0,0,0];
+        
+        this.time = 0;
         this.start = 0;
         this.attackPeak = 0;
         this.relax = 0;
@@ -361,35 +366,39 @@ class FingerPlay {
     update( dt ){
         if ( !this.transition ){ return; }
 
+        this.clock += dt;
         this.time += dt;
-        let intensity = 0;
-        if ( this.time < this.start ){ intensity = 0; }
-        else if ( this.time < this.attackPeak ){ intensity = ( this.time - this.start ) / ( this.attackPeak - this.start ); }
-        else if ( this.time < this.relax ){ intensity = 1; }
-        else if ( this.time < this.end ){ intensity = ( this.time - this.relax ) / ( this.end - this.relax ); intensity = 1.0-intensity; }
+        let interpolator = 0;
+        let introInterpolator = 1;
+        if ( this.time < this.start ){ interpolator = 0; }
+        else if ( this.time < this.attackPeak ){ 
+            interpolator = ( this.time - this.start ) / ( this.attackPeak - this.start ); 
+            introInterpolator = interpolator;
+        }
+        else if ( this.time < this.relax ){ interpolator = 1; }
+        else if ( this.time < this.end ){ interpolator = ( this.end - this.time ) / ( this.end - this.relax ); }
         else {
-            intensity = 0; 
+            interpolator = 0; 
             this.transition = false;
         }
 
-        intensity *= this.intensity * 0.5; // intensity = amplitude
+        let intensity = interpolator * this.intensity;
 
         // interpolation -- cos(t + X) where X is different for each finger
-        if ( this.fingerEnabler & 0x01 ) { 
-            this.curBends[0] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.25 ) ) * intensity;
-        }
-        if ( this.fingerEnabler & 0x02 ) { 
-            this.curBends[1] = ( Math.cos( Math.PI * 2 * this.speed * this.time ) ) * intensity;
-        }
-        if ( this.fingerEnabler & 0x04 ) { 
-            this.curBends[2] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 0.65 ) ) * intensity;
-        }
-        if ( this.fingerEnabler & 0x08 ) { 
-            this.curBends[3] = ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.05 ) ) * intensity;
-        }
-        if ( this.fingerEnabler & 0x10 ) { 
-            this.curBends[4] =  ( Math.cos( Math.PI * 2 * this.speed * this.time + Math.PI * 1.35 ) ) * intensity;
-        }
+        this.curUpdateIntensity[0] = ( (this.fingerEnabler & 0x01 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[0] * (1-introInterpolator);
+        this.curBends[0] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.25 ) ) * this.curUpdateIntensity[0];
+
+        this.curUpdateIntensity[1] = ( (this.fingerEnabler & 0x02 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[1] * (1-introInterpolator);
+        this.curBends[1] = ( Math.cos( Math.PI * 2 * this.speed * this.clock ) ) * this.curUpdateIntensity[1];
+
+        this.curUpdateIntensity[2] = ( (this.fingerEnabler & 0x04 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[2] * (1-introInterpolator);
+        this.curBends[2] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.65 ) ) * this.curUpdateIntensity[2];
+
+        this.curUpdateIntensity[3] = ( (this.fingerEnabler & 0x08 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[3] * (1-introInterpolator); 
+        this.curBends[3] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.05 ) ) * this.curUpdateIntensity[3];
+
+        this.curUpdateIntensity[4] = ( (this.fingerEnabler & 0x10 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[4] * (1-introInterpolator);
+        this.curBends[4] =  ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.35 ) ) * this.curUpdateIntensity[4];
     }
 
      /**
@@ -397,16 +406,20 @@ class FingerPlay {
      * start, attackPeak, relax, end
      * speed = (optional) oscillations per second. Default 3
      * intensity = (optional) [0,1]. Default 0.3
-     * fingers = (optional) string with numbers. Each number present activates a finger. 0=thumb, 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled
+     * fingers = (optional) string with numbers. Each number present activates a finger. 1=thumb, 2=index, 3=middle, 4=ring, 5=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
      * exemptedFingers = (optional) string with numbers. Blocks a finger from doing the finger play. Default all fingers move
      */
     newGestureBML( bml ){
-
+        
+        this.transition = true;
         this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
         this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
-        this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
+        this.intensity = Math.min( 1, Math.max( 0, this.intensity ) ) * 0.5; // intensity will be the amplitude in a cos operation
 
-        this.transition = true;
+        // swap pointers
+        let temp = this.srcUpdateIntensity; 
+        this.srcUpdateIntensity = this.curUpdateIntensity;
+        this.curUpdateIntensity = temp;
 
         this.fingerEnabler = 0x1f;
         if ( typeof( bml.fingers ) == 'string' ){
@@ -414,7 +427,7 @@ class FingerPlay {
             this.fingerEnabler = 0x00; 
             for( let i = 0; i < bml.fingers.length; ++i ){
                 let val = parseInt( bml.fingers[i] );
-                if ( !isNaN( val ) ){ this.fingerEnabler |= 0x01 << val; }
+                if ( !isNaN( val ) ){ this.fingerEnabler |= 0x01 << (val-1); }
             }
             this.fingerEnabler &= 0x1f; // mask unused bits
         }
@@ -422,10 +435,11 @@ class FingerPlay {
             // enable only the specified fingers (bits)
             for( let i = 0; i < bml.exemptedFingers.length; ++i ){
                 let val = parseInt( bml.exemptedFingers[i] );
-                if ( !isNaN( val ) ){ this.fingerEnabler &= ~(0x01 << val); }
+                if ( !isNaN( val ) ){ this.fingerEnabler &= ~(0x01 << (val-1)); }
             }
             this.fingerEnabler &= 0x1f; // mask unused bits
         }
+
 
         // check and set timings
         this.start = bml.start;

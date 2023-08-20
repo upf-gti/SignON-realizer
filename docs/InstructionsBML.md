@@ -637,7 +637,7 @@ Wiggle fingers of the hand.
     // optionals
     speed: 2, // oscillations per second. Default 3
     intensity: 0.5, //[0,1]. Default 0.3
-    fingers: "13", // string with numbers. Each number present activates a finger. 1=index, 2=middle, 3=ring, 4=pinky. I.E. "123" activates index, middle, ring but not pinky. Default all enabled. Thumb is not moved
+    fingers: "13", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
     exemptedFingers: "2", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
 
 }

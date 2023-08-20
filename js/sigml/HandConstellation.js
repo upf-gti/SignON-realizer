@@ -78,6 +78,8 @@ class HandConstellation {
         // nothing to do
         if ( !this.transition ){ return; } 
 
+        this.time += dt;
+
         // wait in same pose
         if ( this.time < this.start ){ 
             return;
@@ -116,7 +118,7 @@ class HandConstellation {
                 this.dstCurOffset.set(0,0,0);
             }
 
-            // keep updating check
+            // does not need to keep updating. Set this src and dst as final positions and flag as peak updated
             if ( this.time > this.attackPeak && !this.keepUpdatingContact && !this.peakUpdated ){
                 this.peakOffsetL.copy( this.curOffsetL );
                 this.peakOffsetR.copy( this.curOffsetR );
@@ -124,8 +126,8 @@ class HandConstellation {
             }
         }
 
-        this.time += dt;
-        
+        // reminder: srcCurOffset and dstCurOffset are pointers to curOffsetL and curOffsetR
+        // now that final points are computed, interpolate from origin to target
         let t = 0;
         if ( this.time <= this.attackPeak ){
             t = ( this.time - this.start ) / ( this.attackPeak - this.start );
