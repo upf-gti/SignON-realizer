@@ -157,13 +157,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     if ( !oldPosture ){
         newPosture = {
             right: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12, srcLocation: "Tip",  srcFinger: 2},
+                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.37, side: "r", srcContact: "2Tip" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "right" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "right" }, 
                 { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "right" }, 
             ],
             left: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12, srcLocation: "Tip",  srcFinger: 2 },
+                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.37, side: "l", srcContact: "2Tip" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "left" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "left" }, 
                 { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "left" }, 
@@ -289,12 +289,12 @@ function signManual( xml, start, signSpeed ){
     let checkHandsResult = checkHandsUsage( result );
     if ( checkHandsResult.right.isHandUsed ){
         if ( checkHandsResult.right.firstHandUsage + 0.05 < checkHandsResult.right.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.3, side: "r", sideDistance: 0.12, srcLocation: "Tip", srcFinger:"2" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.37, side: "r", srcContact: "2Tip" } );
         }
     }
     if ( checkHandsResult.left.isHandUsed ){
         if ( checkHandsResult.left.firstHandUsage + 0.05 < checkHandsResult.left.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.3, side: "l", sideDistance: 0.12, srcLocation: "Tip", srcFinger:"2" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.37, side: "l", srcContact: "2Tip" } );
         }
     }
 
@@ -530,11 +530,11 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     result.oiSym = symmetry & 0x04;  
 
     if ( attributes.contact == "armextended" ){ result.distance = 0.5; }
-    else if ( attributes.contact == "close" ){ result.distance = 0.2; }
+    else if ( attributes.contact == "close" ){ result.distance = 0.3; }
     else { 
         if ( locationMapHead[ attributes.location ] ){ attributes.contact = "touch"; } // need this later for srcContact
         if ( attributes.contact == "touch" ){ result.distance = 0.0; }
-        else{ result.distance = 0.3; } 
+        else{ result.distance = 0.36; } 
     } // jasigning has a default unmentioned distance...
 
     result.locationBodyArm = locationMap[ attributes.location ];
@@ -544,7 +544,12 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         case "right_beside": result.side += "rr"; break;
         case "left_at": result.side += "l"; break;
         case "left_beside": result.side += "ll"; break;
-        default: break;    
+        default:   
+            if ( hand == "both" ){ 
+                result.side = signGeneralInfo.domHand[0];
+                result.lrSym = true;
+            }
+            break;    
     }
     switch( attributes.second_side ){
         case "right_at": result.secondSide = "r"; break;
@@ -777,6 +782,8 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         let child = xml.children[i];
         if ( child.tagName == "location_bodyarm" ){
             locBodyArm = locationBodyArmParser( child, start - 0.0000001, attackPeak, "both", 0x00, signGeneralInfo, currentPosture );
+            if ( locBodyArm && locBodyArm.length > 0 ){ locBodyArm = locBodyArm[0]; }
+            else{ locBodyArm = null; }
             break;
         }else if ( child.tagName == "location_hand" ){
             let locationHand = locationHandInfoExtract( child, false );
@@ -798,19 +805,47 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         }
     }
 
-    // must reuse old handconstellation src and dst if no location hands are present
-    if ( locationHandCount < 1 && currentPosture && currentPosture.handConstellation ){
-        result.dstLocation = currentPosture.handConstellation.dstLocation;
-        result.dstSide = currentPosture.handConstellation.dstSide;
-        result.dstFinger = currentPosture.handConstellation.dstFinger;
-    }
-    if ( locationHandCount < 2 && currentPosture && currentPosture.handConstellation ){
-        result.srcLocation = currentPosture.handConstellation.srcLocation;
-        result.srcSide = currentPosture.handConstellation.srcSide;
-        result.srcFinger = currentPosture.handConstellation.srcFinger;
+    // if location hands missing and it is singlehanded, get last handconstellation location and change its distance
+    if ( hand != "both" && locationHandCount == 0 ){
+        if ( currentPosture.handConstellation ){
+            let newResult = JSON.parse( JSON.stringify( currentPosture.handConstellation ) );    
+            newResult.distance = result.distance;
+            newResult.start = result.start;
+            newResult.attackPeak = result.attackPeak;
+            if ( locBodyArm ){ return [ newResult, locBodyArm ]; }
+            return [ newResult ];
+        }
+        if ( locBodyArm ){ return locBodyArm; }
+        locBodyArm = JSON.parse( JSON.stringify( currentPosture[ hand ][0] ) );    
+        locBodyArm.distance = result.distance;
+        locBodyArm.start = result.start;
+        locBodyArm.attackPeak = result.attackPeak;
+        return [ locBodyArm ];
     }
 
-    if ( locBodyArm ){ return locBodyArm.concat( result ); }
+    // must reuse old handconstellation src and dst if no location hands are present
+    if ( locationHandCount < 1 ){
+        if ( currentPosture && currentPosture.handConstellation ){
+            result.dstLocation = currentPosture.handConstellation.dstLocation;
+            result.dstSide = currentPosture.handConstellation.dstSide;
+            result.dstFinger = currentPosture.handConstellation.dstFinger;
+        }else{
+            result.dstLocation = "Hand";
+            result.dstSide = "Palmar";
+        }
+    }
+    if ( locationHandCount < 2 ){
+        if( currentPosture && currentPosture.handConstellation ){
+            result.srcLocation = currentPosture.handConstellation.srcLocation;
+            result.srcSide = currentPosture.handConstellation.srcSide;
+            result.srcFinger = currentPosture.handConstellation.srcFinger;
+        }else{
+            result.dstLocation = "Hand";
+            result.dstSide = "Palmar";
+        }
+    }
+
+    if ( locBodyArm ){ return [ result, locBodyArm ]; }
     return [ result ];
 
 }
@@ -891,35 +926,56 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
     else if ( tagName == "tgt_motion" ){
         // <!ELEMENT tgt_motion ( ( %motion; ), ( %posture; ) ) >
 
-        let motionDone = false;
+
+        let motionBlock = null;
+        let postureBlocks = [];
         let maxEnd = time;
-        let blockResult = []; // block == motion with children 
+        let locationOrHandconstellation= false;
         for ( let i = 0; i < xml.children.length; ++i ){
             if ( motionsAvailable.includes( xml.children[i].tagName ) ){
-                if ( motionDone ) { break; } // if a second motion is present, all subsequent postures are ignored
+                if ( motionBlock || postureBlocks.length ) { break; } // if a second motion is present, all subsequent postures are ignored
                 else {
-                    let r = motionParser( xml.children[i], time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
-                    blockResult.push( r );
-                    if ( maxEnd < r.end ){ maxEnd = r.end; } 
-                    motionDone = true;   
+                    motionBlock = motionParser( xml.children[i], time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
+                    if ( maxEnd < motionBlock.end ){ maxEnd = motionBlock.end; } 
                 } 
             }
             else if ( posturesAvailable.includes( xml.children[i].tagName ) ){
-                motionDone = true;   
                 let r = postureParser( xml.children[i], time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
+                postureBlocks.push( r );
                 currentPosture = currentPostureUpdate( currentPosture, r.data ); // needed for location_hand in locatoin_bodyarm...
-                blockResult.push( r );
+                for ( let l = 0; l < r.data.length; ++l ){
+                    if ( r.data[l].locationBodyArm || r.data[l].handConstellation ){ locationOrHandconstellation = true; }
+                }
                 if ( maxEnd < r.end ){ maxEnd = r.end; } 
             }
         }
 
         // remap bml instructions to the slowest block (motion might have nesting)
-        for ( let i = 0; i < blockResult.length; ++i ){
-            let block = blockResult[i];
+        remapBlockTiming( time, motionBlock.end, time, maxEnd, motionBlock.data );
+        let motionInstructions = motionBlock.data;
+        let postureInstructions = [];        
+        for ( let i = 0; i < postureBlocks.length; ++i ){
+            let block = postureBlocks[i];
             remapBlockTiming( time, block.end, time, maxEnd, block.data );
-            result = result.concat( block.data );
+            postureInstructions = postureInstructions.concat( block.data );
         }
+
+        // TODO: this is not quite correct. All last par directed should be deleted. Also timings might be messed up
+        if ( locationOrHandconstellation ){
+            let lastDirectedMotionIdx = -1;
+            let lastDirectedMotionStart = -1;
+            for ( let l = 0; l < motionInstructions.length; ++l ){
+                if ( motionInstructions[l].motion == "directed" && lastDirectedMotionStart < motionInstructions[l].start ){ 
+                    lastDirectedMotionStart = motionInstructions[l].start; 
+                    lastDirectedMotionIdx = l;
+                }
+            }            
+            if ( lastDirectedMotionIdx > -1 ){ motionInstructions[lastDirectedMotionIdx].distance = 0; } // do not remove as curve and zigzag still work..
+        }
+        result = result.concat( motionInstructions );
+        result = result.concat( postureInstructions );
         time = maxEnd;
+
     }
     else if ( tagName == "rpt_motion" ){ // TO DO
         // <!ELEMENT rpt_motion ( %motion; ) >
@@ -1090,7 +1146,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.curve = attributes.curve;
         result.curveSteepness = attributes.curve_size == "big" ? 1 : 0.3;
 
-        if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ result.zigzag = "l"; }
+        if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ result.zigzag = "l"; result.zigzagSpeed = 5; }
         if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; } // "small" == default value
         else { result.zigzagSize = 0.1; } // "small" == default value
         

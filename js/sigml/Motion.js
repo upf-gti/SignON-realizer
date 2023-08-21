@@ -54,7 +54,7 @@ class DirectedMotion {
             // t = Math.sin( Math.PI * t - Math.PI * 0.5 ) * 0.5 + 0.5; // commented because of sigml purposes
             cubicBezierVec3( this.bezier[0], this.bezier[1], this.bezier[2], this.bezier[3], this.finalOffset, t );
 
-            let zigzagAttenuation = Math.min( ( this.attackPeak - this.time ) / 0.5, Math.min( 1, ( this.time - this.start ) / 0.5 ) );  // min( outro, full, intro ). 0.5 seconds of intro and 0.5 of outro if possible
+            let zigzagAttenuation = Math.min( 1,  Math.min( ( this.attackPeak - this.time ) / 0.15, ( this.time - this.start ) / 0.15 ) );  // min( full, outro, intro ). 0.15 seconds of intro and 0.5 of outro if possible
             let zigzagt = Math.sin( Math.PI * 2 * this.zigzagSpeed * ( this.time - this.start ) ) * this.zigzagSize * 0.5 * zigzagAttenuation;
             this.finalOffset.x = this.finalOffset.x + this.zigzagDir.x * zigzagt;
             this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
