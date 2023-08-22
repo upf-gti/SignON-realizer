@@ -441,6 +441,7 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
         obj.bend3 = attributes.bend3;
         obj.bend4 = attributes.bend4;
         obj.bend5 = attributes.bend5;
+        obj.specialfingers = attributes.specialfingers;
         // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
 
         obj._bendRange = 4;

@@ -307,8 +307,80 @@ class HandShapeRealizer {
             for( let j = 0; j < finger.length; ++j ){ finger[j] = source[j]; }
         }
         
+        let selectedFingers = g.selected;
+        
+        // special fingers override default
+        let specFing = bml.specialfingers; // get special fingers
+        if (specFing && !isSecond) {
+            selectedFingers = [selectedFingers[0],0,0,0,0];
+            specFing = specFing.split(''); // ['23'] -> ['2','3']
+            for (let i = 0; i < specFing.length; i++) {
+                let num = parseInt(specFing[i]) - 1;
+                if (isNaN(num) || num > 4) { specFing.splice(i, 1); i--; continue; }
+                selectedFingers[num] = (g.selected[0] ? g.selected[0] : 1); // depending on thumb, selected value is 1,2 or 3
+                specFing[i] = num;
+            } // str to num (['2', '3'] -> [2,3])
+            
+            if (!specFing.length) selectedFingers = g.selected; // abort special fingers, no finger was valid
+            else {
+
+                switch (bml.handshape) {
+                    case "fist":
+                        for (let i = 1; i < selectedFingers.length; i++) {
+                            if (!selectedFingers[i]) outHand[i] = [0,0,0,0]; // non-selected fingers into flat
+                            selectedFingers[i] = 1 - selectedFingers[i];
+                        }
+                        break;
+                        
+                    case "flat": case "ceeall": case "pinchall":
+                        for (let i = 1; i < selectedFingers.length; i++) {
+                            if (!selectedFingers[i]) outHand[i] = [0,1,1,1]; // non-selected fingers into fist
+                        }
+                        break;
+                        
+                    case "pinch12": case "pinch12open": case "cee12": case "cee12open":
+                        for (let i = 0; i < specFing.length; i++) {
+                            outHand[specFing[i]] = [...handshapes[(bml.handshape.includes("cee") ? "ceeall" : "pinchall")].shape[specFing[i]]];
+                        }
+                        break;
+                        
+                    default:
+                        // get default fingers (handshapes: fingerX)
+                        let defFing = bml.handshape.match(/\d+/g); // ['finger23spread'] -> ['23']
+                        if (defFing) {
+                            defFing = defFing[0].split(''); // ['23'] -> ['2','3']
+                            defFing = defFing.map(function(str) {
+                                return parseInt(str) - 1;
+                            }); // str to num (['2', '3'] -> [2,3])
+                            if(defFing[0] == 0) defFing.shift(); // avoid thumb
+                            
+                            // change handshape
+                            for (let i = 0; i < specFing.length; i++) {                                
+                                if (!defFing[i]) { 
+                                    outHand[specFing[i]] = [...outHand[defFing[0]]]; // copy array as value not reference
+                                }  // if more special fingers than default
+                                else if (specFing[i] == defFing[i]) continue; // default and special are the same finger -> skip
+                                else { outHand[specFing[i]] = [...outHand[defFing[i]]]; } // interchange finger config (eg: default=2, special=5)
+                            }
+                        }
+                        break;
+
+                    }
+                    
+                    // change default to open or fist
+                    var isOpen = bml.handshape.includes("open", 5);
+                    for (let i = 1; i < selectedFingers.length; i++) {
+                        if (!selectedFingers[i]) { outHand[i] = (isOpen ? [0,0.2,0.2,0.2] : [0,1,1,1]); }
+                    }
+                    
+                    // relocate thumb
+                    if ( bml.handshape.includes("pinch") ) { outHand[0] = [...handshapes["pinchall"].shape[0]]; }
+                    else if ( bml.handshape.includes("cee") ) { outHand[0] = [...handshapes["ceeall"].shape[0]]; }
+                }    
+        }
+
         // apply mainbends if any
-        this._stringToMainBend( isSecond ? bml.secondMainBend : bml.mainBend, outHand, g.selected );
+        this._stringToMainBend( isSecond ? bml.secondMainBend : bml.mainBend, outHand, selectedFingers );
 
         // modify with thumbshape
         let thumbGest = this.thumbshapes[ isSecond ? bml.secondThumbshape : bml.thumbshape ];
@@ -321,8 +393,7 @@ class HandShapeRealizer {
         thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(-1, Math.min(1, thumbCombinationOpening ) );
         for( let i = 0; i < outHand.length; ++i ){
             let finger = outHand[i];
-            let fingerOpeningFactor = ( g.selected[i] >= 2 ) ? thumbCombinationOpening : 0;
-            fingerOpeningFactor *= ( i == 0 ) ? -0.2 : 1;
+            let fingerOpeningFactor = thumbCombinationOpening * (( i == 0 ) ? -0.25 : 1);
             for( let j = 0; j < finger.length; ++j ){ finger[j] = finger[j] * ( 1 - fingerOpeningFactor ); }
         }
 
