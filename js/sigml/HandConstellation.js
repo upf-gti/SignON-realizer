@@ -168,11 +168,13 @@ class HandConstellation {
                 this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetR ) ? 0x01 : 0x02; 
                 this.prevOffsetR.set(0,0,0); 
                 this.curOffsetR.set(0,0,0); 
+                this.peakOffsetR.set(0,0,0);
             }
             else if ( arm == "L"){ 
                 this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetL ) ? 0x01 : 0x02; 
                 this.prevOffsetL.set(0,0,0); 
                 this.curOffsetL.set(0,0,0); 
+                this.peakOffsetL.set(0,0,0);
             }
         }
         else{ // only one arm is working. Cancel only if it is the selected arm
@@ -202,7 +204,7 @@ class HandConstellation {
         else{ 
             side = side.toLowerCase();
             side = side[0].toUpperCase() + side.slice( 1 ); 
-            if ( !isNaN( finger ) ){ // jasigning...
+            if ( !location.includes("Elbow") && !location.includes("Upperarm") ){ // jasigning...
                 if ( side == "Right" ){ side = hand == "R" ? "Ulnar" : "Radial"; }
                 else if ( side == "Left" ){ side = hand == "R" ? "Radial" : "Ulnar"; }
             }

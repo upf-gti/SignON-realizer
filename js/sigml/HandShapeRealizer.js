@@ -22,9 +22,9 @@ let handshapes = {
 };
 
 let thumbshapes = {
+    out:     [0,0,0,0], 
     default: [0,0.5,0,0],
     touch:   [0,0.5,0,0],
-    out:     [0,-0.3,0,0], 
     opposed: [1,1,0,0],
     across:  [0.5,0.77,0.55,0.77]
 }

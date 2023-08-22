@@ -665,6 +665,14 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
         let side = "Palmar";
         switch( attributes.side ){
+            case "right_at": 
+            case "right_beside": 
+                side = "right"; // realizer will automatically compute wheter it is the ulna or the radius
+                break; 
+            case "left_at": 
+            case "left_beside": 
+                side = "left"; // realizer will automatically compute wheter it is the ulna or the radius
+                break;
             case "front": side = "palmar"; break; 
             case "dorsal": side = "back"; break;
             case "palmar":
