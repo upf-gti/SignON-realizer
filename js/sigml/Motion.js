@@ -347,7 +347,7 @@ class FingerPlay {
         this.intensity = 0.3;
         
         
-        this.clock = 0; // using cos operations. if a finerplay overwrites another in play, need to be in the same phase  
+        this.clock = 0; // using cos operations. if a fingerplay overwrites another in play, need to be in the same phase  
         this.curUpdateIntensity = [0,0,0,0,0];
         this.srcUpdateIntensity = [0,0,0,0,0];
         
@@ -456,6 +456,10 @@ class FingerPlay {
 class WristMotion {
     constructor( wristBone ){
         this.wristBone = wristBone;
+
+        this.clock = 0; // using cos operations. if a wristmotion overwrites another in play, need to be in the same phase  
+        this.curUpdateIntensity = [0,0,0]; // [ twist, nod, swing ]
+        this.srcUpdateIntensity = [0,0,0];
         
         this.mode = 0; // FLAGS 0=NONE, 1=TWIST, 2=NOD, 4=SWING 
         this.intensity = 1;
@@ -478,44 +482,49 @@ class WristMotion {
     update( dt ){
         if ( !this.transition ){ return; }
 
+        this.clock += dt;
         this.time += dt;
-        let intensity = 0;
-        if ( this.time < this.start ){ intensity = 0; }
-        else if ( this.time < this.attackPeak ){ intensity = ( this.time - this.start ) / ( this.attackPeak - this.start ); }
-        else if ( this.time < this.relax ){ intensity = 1; }
-        else if ( this.time < this.end ){ intensity = ( this.time - this.relax ) / ( this.end - this.relax ); intensity = 1.0-intensity; }
+        let interpolator = 0;
+        let introInterpolator = 0;
+        if ( this.time < this.start ){ interpolator = 0; }
+        else if ( this.time < this.attackPeak ){ interpolator = ( this.time - this.start ) / ( this.attackPeak - this.start ); introInterpolator = 1.0-interpolator; }
+        else if ( this.time < this.relax ){ interpolator = 1; }
+        else if ( this.time < this.end ){ interpolator = ( this.end - this.time ) / ( this.end - this.relax ); }
         else {
-            intensity = 0; 
+            interpolator = 0; 
             this.mode = 0x00;
             this.transition = false;
         }
-        intensity *= this.intensity;
+        
+        let intensity = 0;
+        let axis = _tempVec3_0;
 
-        if ( this.mode & 0x01 ){ // TWIST
-            let twistAxis = _tempVec3_0;
-            twistAxis.set(0,0,1);
-            twistAxis.applyQuaternion( this.wristBone.quaternion );
-            let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
-            _tempQuat_0.setFromAxisAngle( twistAxis, angle );
-            this.wristBone.quaternion.premultiply( _tempQuat_0 );
-        }
-        if ( this.mode & 0x02 ){ // NOD
-            let nodAxis = _tempVec3_0;
-            nodAxis.set(1,0,0);
-            nodAxis.applyQuaternion( this.wristBone.quaternion );
-            let angle = Math.cos( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 );
-            _tempQuat_0.setFromAxisAngle( nodAxis, angle );
-            this.wristBone.quaternion.premultiply( _tempQuat_0 );
-        }
-        if ( this.mode & 0x04 ){ // SWING
-            let swingAxis = _tempVec3_0;
-            swingAxis.set(0,1,0);
-            swingAxis.applyQuaternion( this.wristBone.quaternion );
-            let angle = Math.sin( 2 * Math.PI * this.speed * this.time ) * intensity * ( Math.PI * 0.5 ); // PHASE of 90ª with respect to NOD (see newGestureBML)
-            _tempQuat_0.setFromAxisAngle( swingAxis, angle );
-            this.wristBone.quaternion.premultiply( _tempQuat_0 );
-        }
+        // TWIST
+        axis.set(0,0,1);
+        axis.applyQuaternion( this.wristBone.quaternion );
+        intensity = this.srcUpdateIntensity[0] * introInterpolator;
+        if ( this.mode & 0x01 ){ intensity += this.intensity * interpolator };
+        this.curUpdateIntensity[0] = intensity;
+        _tempQuat_0.setFromAxisAngle( axis, Math.cos( 2 * Math.PI * this.speed * this.clock ) * intensity * ( Math.PI * 0.5 ) );
+        this.wristBone.quaternion.premultiply( _tempQuat_0 );
 
+        // NOD
+        axis.set(1,0,0);
+        axis.applyQuaternion( this.wristBone.quaternion );
+        intensity = this.srcUpdateIntensity[1] * introInterpolator;
+        if ( this.mode & 0x02 ){ intensity += this.intensity * interpolator };
+        this.curUpdateIntensity[1] = intensity;
+        _tempQuat_0.setFromAxisAngle( axis, Math.cos( 2 * Math.PI * this.speed * this.clock ) * intensity * ( Math.PI * 0.5 ) );
+        this.wristBone.quaternion.premultiply( _tempQuat_0 );
+        
+        // SWING
+        axis.set(0,1,0);
+        axis.applyQuaternion( this.wristBone.quaternion );
+        intensity = this.srcUpdateIntensity[2] * introInterpolator;
+        if ( this.mode & 0x04 ){ intensity += this.intensity * interpolator };
+        this.curUpdateIntensity[2] = intensity;
+        _tempQuat_0.setFromAxisAngle( axis, Math.sin( 2 * Math.PI * this.speed * this.clock ) * intensity * ( Math.PI * 0.5 ) ); // PHASE of 90ª (sin instead of cos) with respect to NOD (see newGestureBML)
+        this.wristBone.quaternion.premultiply( _tempQuat_0 );
     }
 
      /**
@@ -555,6 +564,11 @@ class WristMotion {
         else{
             this.mode = bml.mode & 0x07; // take only the necessary bits
         }
+
+        // swap pointers
+        let temp = this.curUpdateIntensity;
+        this.curUpdateIntensity = this.srcUpdateIntensity;
+        this.srcUpdateIntensity = temp;
         
         // check and set timings
         this.start = bml.start;

@@ -1178,6 +1178,10 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         if ( isNaN( result.startAngle ) ) { result.startAngle = 270; }
         if ( isNaN( result.endAngle ) ) { result.endAngle = result.startAngle + 360; }
         if ( attributes.clockplus || attributes.second_clockplus ){ result.endAngle = result.startAngle + 2 * ( result.endAngle - result.startAngle );} 
+        if ( typeof( result.direction ) == "string" && result.direction.includes( "i" ) ){
+                result.endAngle = (result.endAngle - result.startAngle) + ( result.startAngle * (-1) ); // new_start + old_deltaAngle
+                result.startAngle *= -1; // new_start
+        }
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ 
             result.zigzag = "o"; 
