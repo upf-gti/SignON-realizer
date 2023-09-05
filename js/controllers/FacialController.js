@@ -192,24 +192,6 @@ FacialController.prototype.update = function (dt) {
     // Update facial expression
     this.faceUpdate(dt);
 
-    // Gaze
-    if (this.gazeManager){
-        let weights = this.gazeManager.update(dt);
-        let keys = Object.keys(this._facialBS);
-        // for each part (body, eyelashes)
-        for(let i = 0; i < keys.length; ++i ){
-            // eyelids update
-            for(let j = 0; j< this._eyeLidsBS[i].length; j++){         
-                this._facialBS[ keys[i] ][ this._eyeLidsBS[i][j] ] = weights.eyelids;
-            }
-            // squint update
-            for(let j = 0; j< this._squintBS[i].length; j++){
-                this._facialBS[keys[i]][this._squintBS[i][j]] = weights.squint;
-            }
-        }
-    }
-
-
     let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
     let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
     let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
@@ -338,6 +320,23 @@ FacialController.prototype.faceUpdate = function (dt) {
             --k;
         }
     }
+
+    // Gaze
+    if (this.gazeManager){
+        let weights = this.gazeManager.update(dt);
+
+        // eyelids update
+        for(let i = 0; i< this._eyeLidsBS[0].length; i++){         
+            this._facialBSAcc[ "Body" ][ this._eyeLidsBS[0][i] ] += Math.abs(weights.eyelids);
+            this._facialBSFinal[ "Body" ][ this._eyeLidsBS[0][i] ] += weights.eyelids * Math.abs(weights.eyelids);
+        }
+        // squint update
+        for(let i = 0; i< this._squintBS[0].length; i++){         
+            this._facialBSAcc[ "Body" ][ this._squintBS[0][i] ] += Math.abs(weights.squint);
+            this._facialBSFinal[ "Body" ][ this._squintBS[0][i] ] += weights.squint * Math.abs(weights.squint);
+        }
+    }
+
 
     // Second pass, compute mean (division)
     // result = ( val1 * |val1|/|sumVals| ) + ( val2 * |val2|/|sumVals| ) + ...

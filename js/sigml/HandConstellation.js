@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { stringToDirection } from './SigmlUtils.js';
 
 class HandConstellation {
     constructor( boneMap, skeleton, rightHandLocations, leftHandLocations ) {
@@ -46,7 +47,7 @@ class HandConstellation {
         this.dstCurOffset = null; // pointer to curOffset L or R
         this.dstPoint = null;
 
-        this.distance = 0;
+        this.distanceVec = new THREE.Vector3(0,0,0);
         this.isBothHands = false; // whether to move only src hand to dst point or move both hands to their respective destination points 
 
         this.cancelledArmsFlag = 0x00; // 0x01 source cancelled, 0x02 destination cancelled (if both hands enabled)
@@ -64,7 +65,7 @@ class HandConstellation {
         this.prevOffsetR.set(0,0,0);
         this.curOffsetL.set(0,0,0);
         this.curOffsetR.set(0,0,0);
-        this.distance = 0;
+        this.distanceVec.set(0,0,0);
         this.isBothHands = false;
         this.cancelledArmsFlag = 0x00;
 
@@ -91,30 +92,25 @@ class HandConstellation {
             this.dstPoint.updateWorldMatrix( true ); // self and parents
             let srcWorldPoint = this._tempV3_0.setFromMatrixPosition( this.srcPoint.matrixWorld );
             let dstWorldPoint = this._tempV3_1.setFromMatrixPosition( this.dstPoint.matrixWorld );
-
-            let distanceOffsetVector = this._tempV3_2.set(this.worldArmSize * this.distance,0,0);
-            if ( this.srcCurOffset == this.curOffsetR ) { distanceOffsetVector.multiplyScalar( -1 ); }
             
             if ( this.isBothHands ){
-                distanceOffsetVector.multiplyScalar( 0.5 ); // half the distance for each hand
-
                 if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
                 else{
                     this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
                     this.srcCurOffset.sub( srcWorldPoint );
-                    this.srcCurOffset.add( distanceOffsetVector );
+                    this.srcCurOffset.addScaledVector( this.distanceVec, 0.5 );
                 }
                 
                 if ( this.cancelledArmsFlag & 0x02 ){ this.dstCurOffset.set(0,0,0); }
                 else{
                     this.dstCurOffset.lerpVectors( dstWorldPoint, srcWorldPoint, 0.5 );
                     this.dstCurOffset.sub( dstWorldPoint );
-                    this.dstCurOffset.sub( distanceOffsetVector );
+                    this.dstCurOffset.addScaledVector( this.distanceVec, -0.5 ); // same as subScaledVector but this function does not exist
                 }
             }else{
                 this.srcCurOffset.copy( dstWorldPoint );
                 this.srcCurOffset.sub( srcWorldPoint );
-                this.srcCurOffset.add( distanceOffsetVector );
+                this.srcCurOffset.add( this.distanceVec );
                 this.dstCurOffset.set(0,0,0);
             }
 
@@ -276,8 +272,16 @@ class HandConstellation {
         this.srcPoint = this._newGestureLocationComposer( bml, srcLocations, srcHand, true );
         this.dstPoint = this._newGestureLocationComposer( bml, dstLocations, srcHand =="R" ? "L":"R", false );
         
-        this.distance = parseFloat( bml.distance );
-        this.distance = isNaN( this.distance ) ? 0 : this.distance;
+        let distance = parseFloat( bml.distance );
+        if ( isNaN( distance ) ){ this.distanceVec.set(0,0,0); }
+        else{ 
+            if ( !stringToDirection( bml.distanceDirection, this.distanceVec, 0x00, true) ){
+                if ( this.srcCurOffset == this.curOffsetR ){ this.distanceVec.set( -1,0,0 ); }
+                else{ this.distanceVec.set( 1,0,0 ); }
+            }
+            this.distanceVec.normalize();
+            this.distanceVec.multiplyScalar( distance * this.worldArmSize );
+        }
 
         // check and set timings
         this.start = bml.start;

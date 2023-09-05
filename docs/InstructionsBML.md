@@ -531,7 +531,8 @@ The motion is stopped if an arm location is executed afterwards.
     hand: "dom", // if hand=="both", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
 
     // optionals
-    distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
+    distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
+    distanceDirection: "l", // string, any combination of the main directions. If not provided, defaults to horizontal outwards direction
     
     keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
                     // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location

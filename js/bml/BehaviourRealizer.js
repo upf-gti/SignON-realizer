@@ -887,8 +887,8 @@ Gaze.prototype.update = function (dt) {
         let inter = (this.time - this.relax) / (this.end - this.relax);
         inter = Math.sin(Math.PI * inter - Math.PI * 0.5) * 0.5 + 0.5;
         if (this.isEyes) {
-            this.eyelidsW = this.eyelidsInitW * (1 - inter) + this.eyelidsFinW * (inter);
-            this.squintW = this.squintInitW * (1 - inter) + this.squintFinW * (inter);
+            this.eyelidsW = this.eyelidsFinW * (1 - inter) + this.eyelidsInitW * (inter);
+            this.squintW = this.squintFinW * (1 - inter) + this.squintInitW * (inter);
         }
         // lookAt pos change
         this.lookAt.position.lerpVectors(this.EndP, this.DefP, inter);

@@ -112,13 +112,12 @@ class BodyController{
 
     }
     _createArm( isLeftHand = false ){
-        let handName = isLeftHand ? "L" : "R";
         return {
             loc: new LocationBodyArm( this.config, this.skeleton, isLeftHand ),
             locMotions: [],
             extfidir: new Extfidir( this.config, this.skeleton, isLeftHand ),
             palmor: new Palmor( this.config, this.skeleton, isLeftHand ),
-            wristMotion: new WristMotion( this.config, this.skeleton, isLeftHand ), //this.skeleton.bones[ this.config.boneMap[ handName + "Wrist"] ] ),
+            wristMotion: new WristMotion( this.config, this.skeleton, isLeftHand ),
             handshape: new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
             fingerplay: new FingerPlay(),
             shoulderRaise: new ShoulderRaise( this.config, this.skeleton, isLeftHand ),

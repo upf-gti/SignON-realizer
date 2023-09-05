@@ -55,7 +55,7 @@ class AppGUI{
                 htmlStr += "<p>Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed. </p>";
                 htmlStr += "<p>Note: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one. </p>";
                 htmlStr += '<p>An example: <br>{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, <br> { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }</p>';
-                htmlStr += "<textarea id=\"bmlInput\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                htmlStr += "<textarea id=\"bmlInput\" spellcheck=\"false\" placeholder=\"Write bml here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
                 let textarea = handle.document.getElementById( "bmlInput" );
@@ -109,7 +109,7 @@ class AppGUI{
                 }
     
                 let htmlStr = "<p>Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress</p>";
-                htmlStr += "<textarea id=\"sigmlInput\" placeholder=\"Write SiGML here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                htmlStr += "<textarea id=\"sigmlInput\" spellcheck=\"false\" placeholder=\"Write SiGML here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
                 let textarea = handle.document.getElementById( "sigmlInput" );
@@ -137,7 +137,7 @@ class AppGUI{
                 }
     
                 let htmlStr = "<p>Write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress </p>";
-                htmlStr += "<textarea id=\"input\" placeholder=\"Write glosses here\" style=\"width:100%; height:34%;\"></textarea>  ";
+                htmlStr += "<textarea id=\"input\" spellcheck=\"false\" placeholder=\"Write glosses here\" style=\"width:100%; height:34%;\"></textarea>  ";
                 htmlStr += "<button id=\"sendButton\" type=\"button\" style=\"width:100%; height:9%\">Send</button> ";
                 handle.document.write(htmlStr);
                 let textarea = handle.document.getElementById( "input" );
