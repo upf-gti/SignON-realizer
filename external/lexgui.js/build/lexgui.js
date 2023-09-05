@@ -20,6 +20,8 @@
     function round(num, n) { return +num.toFixed(n); }
     function deepCopy(o) { return JSON.parse(JSON.stringify(o)) }
 
+    LX.deepCopy = deepCopy;
+
     function hexToRgb(string) {
         const red = parseInt(string.substring(1, 3), 16) / 255;
         const green = parseInt(string.substring(3, 5), 16) / 255;
@@ -424,6 +426,9 @@
             if( obj.constructor === Widget )
             {
                 obj.set( value );
+                
+                if(obj.options && obj.options.callback)
+                    obj.options.callback(value, data);
             }else
             {
                 obj[signal_name].call(obj, value);
@@ -1128,6 +1133,8 @@
 
         constructor( area, options = {} )  {
 
+            this.onclose = options.onclose;
+
             let container = document.createElement('div');
             container.className = "lexareatabs";
 
@@ -1167,26 +1174,31 @@
                 that.tabs[ el.dataset["name"] ] = content;
             });
 
-            area.root.classList.add( "lexareatabscontent" );
+            area.root.classList.add( "lexareatabscontainer" );
 
-            area.split({type: 'vertical', sizes: [Tabs.TAB_SIZE, null], resize: false, top: 6});
+            area.split({type: 'vertical', sizes: "auto", resize: false, top: 6});
             area.sections[0].attach( container );
 
             this.area = area.sections[1];
+            this.area.root.className += " lexareatabscontent";
             this.selected = null;
             this.root = container;
             this.tabs = {};
+            this.tabDOMs = {};
         }
 
-        add( name, content, isSelected, callback ) {
+        add( name, content, isSelected, callback, options = {} ) {
 
-            if( isSelected )
+            if( isSelected ) {
                 this.root.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
+                this.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
+            }
             
             isSelected = !Object.keys( this.tabs ).length ? true : isSelected;
 
-            content = content.root ? content.root : content;
-            content.style.display = isSelected ? "block" : "none";
+            let contentEl = content.root ? content.root : content;
+            contentEl.style.display = isSelected ? "block" : "none";
+            contentEl.classList.add("lextabcontent");
 
             // Create tab
             let tabEl = document.createElement('span');
@@ -1194,9 +1206,13 @@
             tabEl.className = "lexareatab" + (isSelected ? " selected" : "");
             tabEl.innerHTML = name;
             tabEl.id = name.replace(/\s/g, '') + Tabs.TAB_ID++;
+            tabEl.title = options.title;
             tabEl.selected = isSelected;
+            tabEl.fixed = options.fixed;
+            if(tabEl.selected)
+                this.selected = name;
             tabEl.instance = this;
-            content.id = tabEl.id + "_content";
+            contentEl.id = tabEl.id + "_content";
 
             LX.addSignal( "@on_tab_docked", tabEl, function() {
                 if( this.parentElement.childNodes.length == 1 ){
@@ -1207,12 +1223,30 @@
             tabEl.addEventListener("click", e => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Manage selected
-                tabEl.parentElement.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
-                tabEl.classList.toggle('selected');
-                // Manage visibility
-                tabEl.instance.area.root.childNodes.forEach( c => c.style.display = 'none');
-                content.style.display = "block";
+
+                if( !tabEl.fixed )
+                {
+                    // Manage selected
+                    tabEl.parentElement.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
+                    tabEl.classList.toggle('selected');
+                    // Manage visibility 
+                    tabEl.instance.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
+                    contentEl.style.display = "block";
+                    tabEl.instance.selected = tabEl.dataset.name;
+                }
+
+                if(options.onSelect) 
+                    options.onSelect(e, tabEl.dataset.name);
+            });
+
+            tabEl.addEventListener("mouseup", e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if(e.button == 1 ) {
+                    if(this.onclose)
+                        this.onclose( tabEl.dataset["name"] );
+                    this.delete( tabEl.dataset["name"] );
+                }
             });
             
             tabEl.setAttribute('draggable', true);
@@ -1225,12 +1259,43 @@
             });
             
             // Attach content
-            this.root.prepend(tabEl);
-            this.area.attach( content );
+            this.root.appendChild( tabEl );
+            this.area.attach( contentEl );
+            this.tabDOMs[ name ] = tabEl;
             this.tabs[ name ] = content;
 
             if( callback ) callback.call(this, this.area.root.getBoundingClientRect());
         }
+
+        select( name ) {
+
+            if(!this.tabDOMs[ name ] )
+            return;
+
+            this.tabDOMs[ name ].click();
+        }
+
+        delete( name ) {
+
+            const tabEl = this.tabDOMs[ name ];
+
+            if(!tabEl || tabEl.fixed)
+            return;
+
+            // Delete tab element
+            this.tabDOMs[ name ].remove();
+            delete this.tabDOMs[ name ];
+
+            // Delete content
+            this.tabs[ name ].remove();
+            delete this.tabs[ name ];
+
+            // Select last tab
+            const last_tab = this.root.lastChild;
+            if(last_tab && !last_tab.fixed)
+                this.root.lastChild.click();
+        }
+
     }
 
     LX.Tabs = Tabs;
@@ -1363,16 +1428,23 @@
                         if(subkey == '')
                             subentry.className = " lexseparator";
                         else {
+                            
                             subentry.id = subkey;
-                            subentry.innerHTML = "";
+                            let subentrycont = document.createElement('div');
+                            subentrycont.innerHTML = "";
+                            subentrycont.classList = "lexcontextmenuentrycontainer";
+                            subentry.appendChild(subentrycont);
                             const icon = that.icons[ subkey ];
                             if(is_checkbox){
-                                subentry.innerHTML += "<input type='checkbox' >";
+                                subentrycont.innerHTML += "<input type='checkbox' >";
                             }else if(icon) {
-                                subentry.innerHTML += "<a class='" + icon + " fa-sm'></a>";
-                            }else
-                                subentry.classList.add( "noicon" );
-                            subentry.innerHTML += "<div class='lexentryname'>" + subkey + "</div>";
+                                subentrycont.innerHTML += "<a class='" + icon + " fa-sm'></a>";
+                            }else {
+                                subentrycont.innerHTML += "<a class='fa-solid fa-sm noicon'></a>";
+                                subentrycont.classList.add( "noicon" );
+
+                            }
+                            subentrycont.innerHTML += "<div class='lexentryname'>" + subkey + "</div>";
                         }
 
                         let checkbox_input = subentry.querySelector('input');
@@ -1483,6 +1555,42 @@
         }
 
         /**
+         * @method getSubitems: recursive method to find subentries of a menu entry
+         * @param {Object} item: parent item
+         * @param {Array} tokens: split path strings
+        */
+        getSubitem(item, tokens) {
+           
+            let subitem = null;
+            let path = tokens[0];
+            for(let i = 0; i < item.length; i++) {
+                if(item[i][path]) {
+
+                    if(tokens.length == 1) {
+                        subitem = item[i];
+                        return subitem;
+                    }
+                    else {
+                        tokens.splice(0,1);
+                        return this.getSubitem(item[i][path], tokens);
+                    }
+                     
+                }
+            }
+        }
+
+        /**
+         * @method getItem
+         * @param {String} path
+        */
+        getItem( path ) {
+            // process path
+            const tokens = path.split("/");
+            
+            return this.getSubitem(this.items, tokens)
+        }
+
+        /**
          * @method setButtonIcon
          * @param {String} title
          * @param {String} icon
@@ -1508,6 +1616,9 @@
                     button.right = true;	
                 if(this.root.lastChild && this.root.lastChild.right) {	
                     this.root.lastChild.before( button );	
+                }
+                else if(options.float == "left") {
+                    this.root.prepend(button);
                 }	
                 else {	
                     this.root.appendChild( button );	
@@ -1542,11 +1653,14 @@
                 button.style.padding = "5px";
                 button.style.alignItems = "center";
 
-                if(options.position == "right")	
+                if(options.float == "right")	
                     button.right = true;	
                 if(this.root.lastChild && this.root.lastChild.right) {	
                     this.root.lastChild.before( button );	
                 }	
+                else if(options.float == "left") {
+                    this.root.prepend(button);
+                }
                 else {	
                     this.root.appendChild( button );	
                 }
@@ -1591,7 +1705,7 @@
                 let data = buttons[i];
                 let button = document.createElement('div');
                 const title = data.title;
-                const disabled = data.disabled ?? false;
+                let disabled = data.disabled ?? false;
                 button.className = "lexmenubutton" + (disabled ? " disabled" : "");
                 button.title = title ?? "";
                 button.innerHTML = "<a class='" + data.icon + " lexicon'></a>";
@@ -1599,6 +1713,7 @@
     
                 const _b = button.querySelector('a');
                 _b.addEventListener("click", (e) => {
+                    disabled = e.target.parentElement.classList.contains("disabled");
                     if(data.callback && !disabled)
                         data.callback.call( this, _b, e );
                 });
@@ -1636,8 +1751,9 @@
         static TAGS         = 16;
         static CURVE        = 17;
         static CARD         = 18;
-        static CUSTOM       = 19;
-        static SEPARATOR    = 20;
+        static IMAGE        = 19;
+        static CUSTOM       = 20;
+        static SEPARATOR    = 21;
 
         #no_context_types = [
             Widget.BUTTON,
@@ -1813,6 +1929,7 @@
                 element.appendChild(custom_widgets);
     
                 if( instance ) {
+                    
                     this.queue( custom_widgets );
                     
                     const on_instance_changed = (key, value, event) => {
@@ -1867,19 +1984,24 @@
             this.data = data;
             this.onevent = options.onevent;
             this.options = options;
-            this.#create_item(null, data);
+
+            if(data.constructor === Object)
+                this.#create_item(null, data);
+            else
+                for( let d of data )
+                    this.#create_item(null, d);
         }
 
-        #create_item( parent, node, level = 0 ) {
+        #create_item( parent, node, level = 0, selectedId ) {
 
             const that = this;
             const node_filter_input = this.domEl.querySelector("#lexnodetree_filter");
 
             node.children = node.children ?? [];
-            if(node_filter_input && !node.id.includes(node_filter_input.value))
+            if(node_filter_input && !node.id.includes(node_filter_input.value) || (selectedId != undefined) && selectedId != node.id)
             {
                 for( var i = 0; i < node.children.length; ++i )
-                    this.#create_item( node, node.children[i], level + 1 );
+                    this.#create_item( node, node.children[i], level + 1, selectedId );
                 return;
             }
 
@@ -1888,7 +2010,13 @@
 
             node.visible = node.visible ?? true;
             node.parent = parent;
-            const is_parent = node.children.length > 0;
+            let is_parent = node.children.length > 0;
+            
+            let has_parent_child = false;
+            if( this.options.only_parents ) {
+                node.children.forEach( c => has_parent_child |= (c.children && c.children.length) );
+                is_parent = !!has_parent_child;
+            }
 
             let item = document.createElement('li');
             item.className = "lextreeitem " + "datalevel" + level + " " + (is_parent ? "parent" : "");
@@ -1993,7 +2121,6 @@
                 delete node.rename;
                 that.refresh();
             });
-
 
             if(this.options.draggable ?? true) {
                 // Drag nodes
@@ -2112,17 +2239,37 @@
                 }
             }
 
-            if(node.closed)
+            if(selectedId != undefined && node.id == selectedId) {
+                this.selected = [node];
+                item.click();
+            }
+
+            if(node.closed )
                 return;
 
             for( var i = 0; i < node.children.length; ++i )
-                this.#create_item( node, node.children[i], level + 1 );
+            {
+                let child = node.children[i];
+
+                if( this.options.only_parents ) {
+
+                    if(!child.children || !child.children.length) continue;
+                    let has_parent_child = false;
+                    node.children.forEach( c => has_parent_child |= (c.children && c.children.length) );
+                    if(!has_parent_child) continue;
+                }
+                this.#create_item( node, child, level + 1 );
+            }
         }
 
-        refresh(newData) {
+        refresh(newData, selectedId) {
             this.data = newData ?? this.data;
             this.domEl.querySelector("ul").innerHTML = "";
-            this.#create_item( null, this.data );
+            this.#create_item( null, this.data, 0, selectedId );
+        }
+
+        select(id) {
+            this.refresh(null, id);
         }
     }
 
@@ -2139,6 +2286,8 @@
          * @param {*} options 
          * id: Id of the element
          * className: Add class to the element
+         * width: Width of the panel element [fit space]
+         * height: Height of the panel element [fit space]
          */
 
         constructor( options = {} )  {
@@ -2151,25 +2300,9 @@
 
             root.style.width = options.width || "calc( 100% - 7px )";
             root.style.height = options.height || "100%";
+            Object.assign(root.style, options.style ?? {});
+
             this.root = root;
-
-            let that = this;
-
-            // root.ondragover = (e) => { return false };
-            // root.ondragend = () => { return false };
-            // root.ondrop = function(e) {
-            //     e.preventDefault();
-            //     const branch_to_add = that.branches.find( b => b.name === e.dataTransfer.getData('branch_title') );
-            //     if( branch_to_add )
-            //     {
-            //         that.root.appendChild( branch_to_add.root );
-            //         for( let w of branch_to_add.widgets ) {
-            //             branch_to_add.content.appendChild( w.domEl );
-            //         }
-            //     }
-
-            //     document.querySelector("#" + e.dataTransfer.getData('dialog_id')).remove();
-            // };
 
             this.onevent = (e => {});
 
@@ -2178,6 +2311,7 @@
             this.branches = [];
             this.current_branch = null;
             this.widgets = {};
+            this._queue = []; // Append widgets in other locations
         }
 
         get( name ) {
@@ -2330,6 +2464,8 @@
             if(options.filter) {
                 this.#add_filter( options.filter, {callback: this.#search_widgets.bind(this, branch.name)} );
             }
+
+            return branch;
         }
 
         merge() {
@@ -2379,7 +2515,7 @@
                 element.style.width = element.style.minWidth = options.width;
             }
 
-            if(name) {
+            if(name != undefined) {
 
                 if(!(options.no_name ?? false) )
                 {
@@ -2587,6 +2723,11 @@
                 domEl = this.current_branch.root;
             }
 
+            if( this.queuedContainer )
+            {
+                this._queue.push( this.queuedContainer );
+            }
+
             this.queuedContainer = domEl;
         }
 
@@ -2596,6 +2737,12 @@
 
         clearQueue() {
 
+            if(this._queue && this._queue.length)
+            {
+                this.queuedContainer = this._queue.pop();
+                return;
+            }
+
             delete this.queuedContainer;
         }
 
@@ -2604,11 +2751,15 @@
          * @param {Number} height
          */
 
-        addBlank( height = 8 ) {
+        addBlank( height = 8, width ) {
 
             let widget = this.create_widget(null, Widget.addBlank);
             widget.domEl.className += " blank";
             widget.domEl.style.height = height + "px";
+
+            if(width)
+                widget.domEl.style.width = width;
+
             return widget;
         }
 
@@ -2652,6 +2803,7 @@
          * placeholder: Add input placeholder
          * trigger: Choose onchange trigger (default, input) [default]
          * inputWidth: Width of the text input
+         * float: Justify text
          */
 
         addText( name, value, callback, options = {} ) {
@@ -2664,6 +2816,7 @@
                 wValue.value = new_value;
                 Panel.#dispatch_event(wValue, "focusout");
             };
+
             let element = widget.domEl;
 
             // Add reset functionality
@@ -2685,6 +2838,8 @@
             let wValue = document.createElement('input');
             wValue.value = wValue.iValue = value || "";
             wValue.style.width = "100%";
+            wValue.style.textAlign = options.float ?? "";
+            Object.assign(wValue.style, options.style ?? {});
 
             if(options.disabled ?? false) wValue.setAttribute("disabled", true);
             if(options.placeholder) wValue.setAttribute("placeholder", options.placeholder);
@@ -2829,9 +2984,10 @@
          * @param {String} value Information string
          */
 
-        addLabel( value ) {
+        addLabel( value, options = {} ) {
 
-            return this.addText( null, value, null, { disabled: true, className: "auto" } );
+            options.disabled = true;
+            return this.addText( null, value, null, options );
         }
         
         /**
@@ -2861,7 +3017,7 @@
                 (options.icon ? "<a class='" + options.icon + "'></a>" : 
                 ( options.img  ? "<img src='" + options.img + "'>" : (value || ""))) + "</span>";
 
-            wValue.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + ")";
+            wValue.style.width = "calc( 100% - " + (options.nameWidth ?? LX.DEFAULT_NAME_WIDTH) + ")";
           
             if(options.disabled)
                 wValue.setAttribute("disabled", true);
@@ -2892,6 +3048,7 @@
          * @param {Array} values Each of the {value, callback} items
          * @param {*} options:
          * float: Justify content (left, center, right) [center]
+         * noSelection: Buttons can be clicked, but they are not selectable
          */
 
         addComboButtons( name, values, options = {} ) {
@@ -2905,7 +3062,7 @@
             if( options.float ) container.className += options.float;
             container.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + ")";   
 
-            let should_select = !(options.no_selection ?? false);
+            let should_select = !(options.noSelection ?? false);
             for( let b of values )
             {
                 if( !b.value ) throw("Set 'value' for each button!");
@@ -2914,7 +3071,11 @@
                 buttonEl.className = "lexbutton combo";
                 if(options.buttonClass)
                     buttonEl.classList.add(options.buttonClass);
-                buttonEl.innerHTML = "<a class='"+ (b.icon ?? "") +"'></a><span>" + (b.icon ? "" : b.value) + "</span>";
+
+                if(options.selected == b.value) 
+                    buttonEl.classList.add("selected");
+                    
+                buttonEl.innerHTML = (b.icon ? "<a class='" + b.icon +"'></a>" : "") + "<span>" + (b.icon ? "" : b.value) + "</span>";
               
                 if(options.disabled)
                     buttonEl.setAttribute("disabled", true);
@@ -2930,14 +3091,14 @@
                 container.appendChild(buttonEl);
                 
                 // Remove branch padding and margins
-                if(!widget.name) {
+                if(widget.name === undefined) {
                     buttonEl.className += " noname";
                     buttonEl.style.width =  "100%";
                 }
             }
 
             // Remove branch padding and margins
-            if(!widget.name) {
+            if(widget.name !== undefined) {
                 element.className += " noname";
                 container.style.width = "100%";
             }
@@ -3005,6 +3166,34 @@
                 });
             }
 
+            element.appendChild(container);
+
+            return widget;
+        }
+
+        /**
+         * @method addImage
+         * @param {String} url Image Url
+         * @param {*} options
+         */
+
+        async addImage( url, options = {} ) {
+
+            if( !url )
+            return;
+
+            options.no_name = true;
+            let widget = this.create_widget(null, Widget.IMAGE, options);
+            let element = widget.domEl;
+
+            let container = document.createElement('div');
+            container.className = "leximage";
+            container.style.width = "100%";
+
+            let img = document.createElement('img');
+            img.src = url;
+            await img.decode();
+            container.appendChild(img);
             element.appendChild(container);
 
             return widget;
@@ -3162,6 +3351,7 @@
                         li.setAttribute("value", iValue.value);
                         li.className = "lexlistitem";
                         option.innerText = iValue.value;
+                        option.className += " media";
                         option.prepend(img);
 
                         option.setAttribute("value", iValue.value);
@@ -3831,6 +4021,7 @@
          * step: Step of the input
          * precision: The number of digits to appear after the decimal point
          * min, max: Min and Max values for the input
+         * skipSlider: If there are min and max values, skip the slider
          */
 
         addNumber( name, value, callback, options = {} ) {
@@ -3878,7 +4069,7 @@
             }
 
             // add slider below
-            if(options.min !== undefined && options.max !== undefined) {
+            if(!options.skipSlider && options.min !== undefined && options.max !== undefined) {
                 let slider = document.createElement('input');
                 slider.className = "lexinputslider";
                 slider.step = options.step ?? 1;
@@ -4480,15 +4671,11 @@
                 // push to tab space
                 this.queue( infoContainer );
                 tab.callback( this, infoContainer );
+                this.clearQueue();
             }
             
-            // add separator to last opened tab
             this.addSeparator();
-
-            // push to branch from now on
-            this.clearQueue();
         }
-
     }
 
     LX.Panel = Panel;
@@ -5063,12 +5250,15 @@
                 e.stopImmediatePropagation();
                 
                 if(disabled) return;
-
+                
                 const f = o[ 'callback' ];
                 if(f) {
                     f.call( this, k, entry );
                     this.root.remove();
                 } 
+
+                if( !hasSubmenu )
+                return;
 
                 if( LX.OPEN_CONTEXTMENU_ENTRY == 'click' )
                     this.#create_submenu( o, k, entry, ++d );
@@ -5512,6 +5702,34 @@
 
     LX.Curve = Curve;
 
+    class AssetViewEvent {
+
+        static NONE             = 0;
+        static ASSET_SELECTED   = 1;
+        static ASSET_DELETED    = 2;
+        static ASSET_RENAMED    = 3;
+        static ASSET_CLONED     = 4;
+
+        constructor( type, item, value ) {
+            this.type = type || TreeEvent.NONE;
+            this.item = item;
+            this.value = value;
+            this.multiple = false; // Multiple selection
+        }
+        
+        string() {
+            switch(this.type) {
+                case AssetViewEvent.NONE: return "assetview_event_none";
+                case AssetViewEvent.ASSET_SELECTED: return "assetview_event_selected";
+                case AssetViewEvent.ASSET_DELETED: return "assetview_event_deleted";
+                case AssetViewEvent.ASSET_RENAMED:  return "assetview_event_renamed";
+                case AssetViewEvent.ASSET_CLONED:  return "assetview_event_cloned";
+            }
+        }
+    };
+
+    LX.AssetViewEvent = AssetViewEvent;
+
     /**
      * @class AssetView
      * @description Asset container with Tree for file system
@@ -5528,7 +5746,7 @@
             div.className = 'lexassetbrowser';
             this.root = div;
 
-            let area = new LX.Area();
+            let area = new LX.Area({height: "100%"});
             div.appendChild(area.root);
 
             let left, right, content_area = area;
@@ -5536,108 +5754,99 @@
             
             if( !this.skip_browser )
             {
-                area.split({ type: "horizontal", sizes: ["25%", "75%"]});
-                [left, right] = area.sections;
+                [left, right] = area.split({ type: "horizontal", sizes: ["15%", "85%"]});
                 content_area = right;
             }
-            
-            if( left )
-            {
-                left.addMenubar( m => {
 
-                    m.addButtons( [
-                        {
-                            icon: "fa-solid fa-left-long",
-                            callback:  (domEl) => { 
-                                if(!this.prev_data.length) return;
-                                this.next_data.push( this.current_data );
-                                this.current_data = this.prev_data.pop();
-                                this.#refresh_content();
-                            }
-                        },
-                        {
-                            icon: "fa-solid fa-right-long",
-                            callback:  (domEl) => { 
-                                if(!this.next_data.length) return;
-                                this.prev_data.push( this.current_data );
-                                this.current_data = this.next_data.pop();
-                                this.#refresh_content();
-                            }
-                        },
-                        {
-                            title: "Refresh",
-                            icon: "fa-solid fa-arrows-rotate",
-                            callback:  (domEl) => { this.#refresh_content(); }
-                        }
-                    ]);
-                } );
-            }
+            [content_area, right] = content_area.split({ type: "horizontal", sizes: ["80%", "20%"]});
+            
+            this.allowed_types = ["None", "Image", "Mesh", "Script", "JSON"];
 
             this.prev_data = [];
             this.next_data = [];
-            this.data = [
-                {
-                    id: "color.png",
-                    type: "image",
-                    src: "https://godotengine.org/assets/press/icon_color.png"
-                },
-                {
-                    id: "godot",
-                    type: "folder",
-                    closed: true,
-                    children: [
-                        {
-                            id: "color.png",
-                            type: "image",
-                            src: "https://godotengine.org/assets/press/icon_color.png"
-                        },
-                        {
-                            id: "monochrome_light.png",
-                            type: "image",
-                            src: "https://godotengine.org/assets/press/icon_monochrome_light.png"
-                        },
-                        {
-                            id: "example.png",
-                            type: "image",
-                            src: "../images/godot_pixelart.png"
-                        },
-                        {
-                            id: "vertical_color.png",
-                            type: "image",
-                            src: "https://godotengine.org/assets/press/logo_vertical_color_dark.png"
-                        }
-                    ]
-                },
-                {
-                    id: "monochrome_light.png",
-                    type: "image",
-                    src: "https://godotengine.org/assets/press/icon_monochrome_light.png"
-                },
-                {
-                    id: "example.png",
-                    type: "image",
-                    src: "../images/godot_pixelart.png"
-                },
-                {
-                    id: "vertical_color.png",
-                    type: "image",
-                    src: "https://godotengine.org/assets/press/logo_vertical_color_dark.png"
-                }
-            ];
+            this.data = [];
+
+            this._process_data(this.data, null);
 
             this.current_data = this.data;
+            this.path = ['@'];
 
             if(!this.skip_browser)
-                this.#create_left_panel(left);
+                this._create_tree_panel(left);
 
-            this.#create_right_panel(content_area);
+            this._create_content_panel(content_area);
+            
+            // Create resource preview panel
+            this.previewPanel = right.addPanel({className: 'lexassetcontentpanel', style: { overflow: 'scroll' }});
         }
 
         /**
-        * @method updateLeftPanel
+        * @method _process_data
         */
 
-        #create_left_panel(area) {
+        load( data, onevent ) {
+
+            this.prev_data.length = 0;
+            this.next_data.length = 0;
+            
+            this.data = data;
+            this._process_data(this.data, null);
+            this.current_data = this.data;
+            this.path = ['@'];
+
+            this._create_tree_panel(this.area);
+            this._refresh_content();
+
+            this.onevent = onevent;
+        }
+
+        /**
+        * @method _process_data
+        */
+
+        _process_data( data, parent ) {
+
+            if( data.constructor !== Array )
+            {
+                // process
+                data['folder'] = parent;
+                data.children = data.children ?? [];
+            }
+
+            let list = data.constructor === Array ? data : data.children;
+
+            for( var i = 0; i < list.length; ++i )
+                this._process_data( list[i], data );
+        }
+
+        /**
+        * @method _update_path
+        */
+
+        _update_path( data ) {
+            
+            this.path.length = 0;
+
+            const push_parents_id = i => {
+                if(!i) return;
+                let list = i.children ? i.children : i;
+                let c = list[0];
+                if( !c ) return;
+                if( !c.folder ) return;
+                this.path.push( c.folder.id ?? '@' );
+                push_parents_id( c.folder.folder );
+            };
+
+            push_parents_id( data );
+
+            LX.emit("@on_folder_change", this.path.reverse().join('/'));
+        }
+
+        /**
+        * @method _create_tree_panel
+        */
+
+        _create_tree_panel(area) {
 
             if(this.leftPanel)
                 this.leftPanel.clear();
@@ -5647,37 +5856,47 @@
 
             // Process data to show in tree
             let tree_data = {
-                id: 'root',
+                id: '/',
                 children: this.data
             }
 
             this.tree = this.leftPanel.addTree("Content Browser", tree_data, { 
                 // icons: tree_icons, 
                 filter: false,
+                only_parents: true,
                 onevent: (event) => { 
+
+                    let node = event.node;
+                    let value = event.value;
+
                     switch(event.type) {
                         case LX.TreeEvent.NODE_SELECTED: 
-                            if(!event.multiple && event.node.domEl)
-                                event.node.domEl.click();
-                            break;
-                        case LX.TreeEvent.NODE_DBLCLICKED: 
-                            console.log(event.node.id + " dbl clicked"); 
+                            if(!event.multiple) {
+                                this._enter_folder( node );
+                            }
+                            if(!node.parent) {
+                                this.prev_data.push( this.current_data );
+                                this.current_data = this.data;
+                                this._refresh_content();
+
+                                this.path = ['@'];
+                                LX.emit("@on_folder_change", this.path.join('/'));
+                            }
                             break;
                         case LX.TreeEvent.NODE_DRAGGED: 
-                            console.log(event.node.id + " is now child of " + event.value.id); 
+                            node.folder = value;
+                            this._refresh_content();
                             break;
-                        case LX.TreeEvent.NODE_RENAMED:
-                            console.log(event.node.id + " is now called " + event.value); 
-                            break;
-                        // case LX.TreeEvent.NODE_VISIBILITY:
-                        //     console.log(event.node.id + " visibility: " + event.value); 
-                        //     break;
                     }
                 },
             });    
         }
 
-        #create_right_panel(area) {
+        /**
+        * @method _create_content_panel
+        */
+
+        _create_content_panel(area) {
 
             if(this.rightPanel)
                 this.rightPanel.clear();
@@ -5685,41 +5904,53 @@
                 this.rightPanel = area.addPanel({className: 'lexassetcontentpanel'});
             }
 
-            this.rightPanel.sameLine();
-
-            if( this.skip_browser )
-            {
-                this.rightPanel.addComboButtons( "Content", [
-                    {
-                        value: "Left",
-                        icon: "fa-solid fa-left-long",
-                        callback:  (domEl) => { 
-                            if(!this.prev_data.length) return;
-                            this.next_data.push( this.current_data );
-                            this.current_data = this.prev_data.pop();
-                            this.#refresh_content();
-                        }
-                    },
-                    {
-                        value: "Right",
-                        icon: "fa-solid fa-right-long",
-                        callback:  (domEl) => { 
-                            if(!this.next_data.length) return;
-                            this.prev_data.push( this.current_data );
-                            this.current_data = this.next_data.pop();
-                            this.#refresh_content();
-                        }
-                    },
-                    {
-                        value: "Refresh",
-                        icon: "fa-solid fa-arrows-rotate",
-                        callback:  (domEl) => { this.#refresh_content(); }
-                    }
-                ], { width: "20%", no_selection: true } );
+            function on_sort(value, event) {
+                addContextMenu( "Sort by", event, c => {
+                    c.add("Name", () => this._sort_data('id') );
+                    c.add("Type", () => this._sort_data('type') );
+                    c.add("");
+                    c.add("Ascending", () => this._sort_data() );
+                    c.add("Descending", () => this._sort_data(null, true) );
+                } );
             }
 
-            this.rightPanel.addDropdown("Filter", ["None", "Image", "Mesh", "JSON"], "None", (v) => this.#refresh_content.call(this, null, v), { width: "20%" });
-            this.rightPanel.addText(null, this.search_value ?? "", (v) => this.#refresh_content.call(this, v, null), { placeholder: "Search assets..." });
+            this.rightPanel.sameLine();
+            this.rightPanel.addDropdown("Filter", this.allowed_types, "None", (v) => this._refresh_content.call(this, null, v), { width: "20%" });
+            this.rightPanel.addText(null, this.search_value ?? "", (v) => this._refresh_content.call(this, v, null), { placeholder: "Search assets..." });
+            this.rightPanel.addButton(null, "<a class='fa fa-arrow-up-short-wide'></a>", on_sort.bind(this), { width: "3%" });
+            this.rightPanel.endLine();
+
+            this.rightPanel.sameLine();
+            this.rightPanel.addComboButtons( null, [
+                {
+                    value: "Left",
+                    icon: "fa-solid fa-left-long",
+                    callback:  (domEl) => { 
+                        if(!this.prev_data.length) return;
+                        this.next_data.push( this.current_data );
+                        this.current_data = this.prev_data.pop();
+                        this._refresh_content();
+                        this._update_path( this.current_data );
+                    }
+                },
+                {
+                    value: "Right",
+                    icon: "fa-solid fa-right-long",
+                    callback:  (domEl) => { 
+                        if(!this.next_data.length) return;
+                        this.prev_data.push( this.current_data );
+                        this.current_data = this.next_data.pop();
+                        this._refresh_content();
+                        this._update_path( this.current_data );
+                    }
+                },
+                {
+                    value: "Refresh",
+                    icon: "fa-solid fa-arrows-rotate",
+                    callback:  (domEl) => { this._refresh_content(); }
+                }
+            ], { width: "auto", noSelection: true } );
+            this.rightPanel.addText(null, this.path.join('/'), null, { disabled: true, signal: "@on_folder_change", style: { fontSize: "16px", color: "#aaa" } });
             this.rightPanel.endLine();
 
             this.content = document.createElement('ul');
@@ -5736,16 +5967,16 @@
             });
             this.content.addEventListener('drop', (e) => {
                 e.preventDefault();
-                this.#process_drop(e);
+                this._process_drop(e);
             });
             this.content.addEventListener('click', function() {
                 this.querySelectorAll('.lexassetitem').forEach( i => i.classList.remove('selected') );
             });
 
-            this.#refresh_content();
+            this._refresh_content();
         }
 
-        #refresh_content(search_value, filter) {
+        _refresh_content(search_value, filter) {
 
             this.filter = filter ?? (this.filter ?? "None");
             this.search_value = search_value ?? (this.search_value ?? "");
@@ -5756,12 +5987,13 @@
 
                 const type = item.type.charAt(0).toUpperCase() + item.type.slice(1);
                 const is_folder = type === "Folder";
+                const is_image = type === "Image";
 
                 if((that.filter != "None" && type != that.filter) || !item.id.includes(that.search_value))
                     return;
 
                 let itemEl = document.createElement('li');
-                itemEl.className = "lexassetitem";
+                itemEl.className = "lexassetitem " + item.type.toLowerCase();
                 itemEl.title = type + ": " + item.id;
                 itemEl.tabIndex = -1;
                 that.content.appendChild(itemEl);
@@ -5772,7 +6004,7 @@
                 itemEl.appendChild(title);
 
                 let preview = document.createElement('img');
-                preview.src = is_folder ? "../images/folder.png" : item.src;
+                preview.src = is_image ? item.src : "../images/" + item.type.toLowerCase() + ".png";
                 itemEl.appendChild(preview);
 
                 if( !is_folder )
@@ -5791,10 +6023,14 @@
                         if(!e.shiftKey)
                             that.content.querySelectorAll('.lexassetitem').forEach( i => i.classList.remove('selected') );
                         this.classList.add('selected');
-                    } else {
-                        that.prev_data.push( that.current_data );
-                        that.current_data = item.children;
-                        that.#refresh_content(search_value, filter);
+                        that._preview_asset( item );
+                    } else
+                        that._enter_folder( item );
+
+                    if(that.onevent) {
+                        const event = new AssetViewEvent(AssetViewEvent.ASSET_SELECTED, e.shiftKey ? [item] : item );
+                        event.multiple = !!e.shiftKey;
+                        that.onevent( event );
                     }
                 });
 
@@ -5803,14 +6039,22 @@
 
                     const multiple = that.content.querySelectorAll('.selected').length;
 
-                    LX.addContextMenu( multiple > 1 ? (multiple + " selected") : item.type, e, m => {
-                        if(!multiple) m.add("Rename");
-                        m.add("Clone");
-                        if(!multiple) m.add("Properties");
+                    LX.addContextMenu( multiple > 1 ? (multiple + " selected") : 
+                                is_folder ? item.id : item.type, e, m => {
+                        if(multiple <= 1)   
+                            m.add("Rename");
+                        if( !is_folder )
+                            m.add("Clone", that._clone_item.bind(that, item));
+                        if(multiple <= 1)
+                            m.add("Properties");
                         m.add("");
-                        m.add("Delete");
+                        m.add("Delete", that._delete_item.bind(that, item));
                     });
                 });
+
+                itemEl.addEventListener("dragstart", function(e) {
+                    e.preventDefault();
+                }, false );
 
                 return itemEl;
             }
@@ -5826,7 +6070,7 @@
                         fr.onload = e => { 
                             item.src = e.currentTarget.result;
                             delete item.path;
-                            this.#refresh_content(search_value, filter);
+                            this._refresh_content(search_value, filter);
                         };
                     } });
                 }else
@@ -5836,7 +6080,36 @@
             }
         }
 
-        #process_drop(e) {
+        /**
+        * @method _preview_asset
+        */
+
+        _preview_asset(file) {
+
+            this.previewPanel.clear();
+
+            this.previewPanel.branch("Asset");
+
+            if( file.type == 'image' )
+            {
+                this.previewPanel.addImage(file.src, { style: {} });
+            }
+
+            this.previewPanel.addText("Filename", file.id);
+            this.previewPanel.addText("URL", file.src);
+            // this.previewPanel.addText("Folder", file.id);
+            this.previewPanel.sameLine();
+            this.previewPanel.addText("Type", file.type);
+            this.previewPanel.addText("Size", file.bytesize ?? "0 KBs");
+            this.previewPanel.endLine();
+            this.previewPanel.addSeparator();
+            
+            this.previewPanel.addButton(null, "Download", () => LX.downloadURL(file.src, file.id));
+
+            this.previewPanel.merge();
+        }
+
+        _process_drop(e) {
 
             const fr = new FileReader();
             const num_files = e.dataTransfer.files.length;
@@ -5844,6 +6117,10 @@
             for( let i = 0; i < e.dataTransfer.files.length; ++i )
             {
                 const file = e.dataTransfer.files[i];
+
+                const result = this.current_data.find( e => e.id === file.name );
+                if(result) continue;
+
                 fr.readAsDataURL( file );
                 fr.onload = e => { 
                     
@@ -5866,11 +6143,70 @@
                     });
                     
                     if(i == (num_files - 1)) {
-                        this.#refresh_content(this.search_value, this.filter);
+                        this._refresh_content();
                         if( !this.skip_browser )
                             this.tree.refresh();
                     }
                 };
+            }
+        }
+
+        _sort_data( sort_by, sort_descending = false ) {
+
+            sort_by = sort_by ?? (this._last_sort_by ?? 'id');
+            this.data = this.data.sort( (a, b) => {
+                var r = sort_descending ? b[sort_by].localeCompare(a[sort_by]) : a[sort_by].localeCompare(b[sort_by]);
+                if(r == 0) r = sort_descending ? b['id'].localeCompare(a['id']) : a['id'].localeCompare(b['id']);
+                return r;
+            } );
+
+            this._last_sort_by = sort_by;
+            this._refresh_content();
+        }
+
+        _enter_folder( folder_item ) {
+
+            this.prev_data.push( this.current_data );
+            this.current_data = folder_item.children;
+            this._refresh_content();
+
+            // Update path
+            this._update_path(this.current_data);
+        }
+
+        _delete_item( item ) {
+
+            const idx = this.current_data.indexOf(item);
+            if(idx > -1) {
+                this.current_data.splice(idx, 1);
+                this._refresh_content(this.search_value, this.filter);
+
+                if(this.onevent) {
+                    const event = new AssetViewEvent(AssetViewEvent.ASSET_DELETED, item );
+                    this.onevent( event );
+                }
+
+                this.tree.refresh();
+                this._process_data(this.data);
+            }
+        }
+
+        _clone_item( item ) {
+
+            const idx = this.current_data.indexOf(item);
+            if(idx > -1) {
+                delete item.domEl;
+                delete item.folder;
+                const new_item = deepCopy( item );
+                this.current_data.splice(idx, 0, new_item);
+                this._refresh_content(this.search_value, this.filter);
+
+                if(this.onevent) {
+                    const event = new AssetViewEvent(AssetViewEvent.ASSET_CLONED, item );
+                    this.onevent( event );
+                }
+
+                this._process_data(this.data);
             }
         }
     }
@@ -6050,6 +6386,66 @@
                     }
                 document.getElementsByTagName('head')[0].appendChild(script);
             }
+        },
+
+        downloadURL( url, filename ) {
+
+            const fr = new FileReader();
+
+            const _download = function(_url) {
+                var link = document.createElement('a');
+                link.href = _url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            if( url.includes('http') )
+            {
+                LX.request({ url: url, dataType: 'blob', success: (f) => {
+                    fr.readAsDataURL( f );
+                    fr.onload = e => { 
+                        _download(e.currentTarget.result);
+                    };
+                } });
+            }else
+            {
+                _download(url);
+            }
+
+        },
+
+        downloadFile: function( filename, data, dataType ) {
+            if(!data)
+            {
+                console.warn("No file provided to download");
+                return;
+            }
+
+            if(!dataType)
+            {
+                if(data.constructor === String )
+                    dataType = 'text/plain';
+                else
+                    dataType = 'application/octet-stream';
+            }
+
+            var file = null;
+            if(data.constructor !== File && data.constructor !== Blob)
+                file = new Blob( [ data ], {type : dataType});
+            else
+                file = data;
+
+            var url = URL.createObjectURL( file );
+            var element = document.createElement("a");
+            element.setAttribute('href', url);
+            element.setAttribute('download', filename );
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            setTimeout( function(){ URL.revokeObjectURL( url ); }, 1000*60 ); //wait one minute to revoke url
         }
     });
 

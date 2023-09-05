@@ -454,8 +454,16 @@ class FingerPlay {
 
 
 class WristMotion {
-    constructor( wristBone ){
-        this.wristBone = wristBone;
+    constructor( config, skeleton, isLeftHand = false ){
+        this.skeleton = skeleton;
+        this.config = config;
+        
+        this.time = 0;
+        this.start = 0;
+        this.attackPeak = 0;
+        this.relax = 0;
+        this.end = 0;
+        this.transition = false;
 
         this.clock = 0; // using cos operations. if a wristmotion overwrites another in play, need to be in the same phase  
         this.curUpdateIntensity = [0,0,0]; // [ twist, nod, swing ]
@@ -464,13 +472,33 @@ class WristMotion {
         this.mode = 0; // FLAGS 0=NONE, 1=TWIST, 2=NOD, 4=SWING 
         this.intensity = 1;
         this.speed = 1;
+        
+        let handName = isLeftHand ? "L" : "R";
+        this.wristBone = this.skeleton.bones[ config.boneMap[ handName + "Wrist" ] ];
+        
+        // ** compute axes based on skeleton T-pose shape. Avoids hardcoded axes **
+        this.axes = [ new THREE.Vector3(0,0,1), new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0) ]; // twist, nod, swing. Axes in local space
+        let wristBindMat = this.skeleton.boneInverses[ config.boneMap[ handName + "Wrist" ] ];
+        let middleBindMat = this.skeleton.boneInverses[ config.boneMap[ handName + "HandMiddle" ] ];
+        let indexBindMat = this.skeleton.boneInverses[ config.boneMap[ handName + "HandIndex" ] ];
+        let ringBindMat = this.skeleton.boneInverses[ config.boneMap[ handName + "HandRing" ] ];
+        
+        // bind world positions
+        let wristBindPos = (new THREE.Vector3()).setFromMatrixPosition( wristBindMat.clone().invert() );
+        let middleBindDir = (new THREE.Vector3()).setFromMatrixPosition( middleBindMat.clone().invert() ).sub( wristBindPos ).normalize();
+        let indexBindDir = (new THREE.Vector3()).setFromMatrixPosition( indexBindMat.clone().invert() ).sub( wristBindPos ).normalize();
+        let ringBindDir = (new THREE.Vector3()).setFromMatrixPosition( ringBindMat.clone().invert() ).sub( wristBindPos ).normalize();
 
-        this.time = 0;
-        this.start = 0;
-        this.attackPeak = 0;
-        this.relax = 0;
-        this.end = 0;
-        this.transition = false;
+        this.axes[0].copy( middleBindDir ); // twist
+        this.axes[2].crossVectors( ringBindDir, indexBindDir ).multiplyScalar( isLeftHand ? -1 : 1 ).normalize(); // temporal swing
+        this.axes[1].crossVectors( this.axes[2], this.axes[0] ).normalize(); // nod
+        this.axes[2].crossVectors( this.axes[0], this.axes[1] ); // ensure swing axis is perpendicular
+
+        let wristBindWtoL = (new THREE.Matrix3()).setFromMatrix4( wristBindMat ); // just for direction vectors
+        this.axes[0].applyMatrix3( wristBindWtoL ).normalize();
+        this.axes[1].applyMatrix3( wristBindWtoL ).normalize();
+        this.axes[2].applyMatrix3( wristBindWtoL ).normalize();
+        
     }
 
     reset(){
@@ -500,8 +528,7 @@ class WristMotion {
         let axis = _tempVec3_0;
 
         // TWIST
-        axis.set(0,0,1);
-        axis.applyQuaternion( this.wristBone.quaternion );
+        axis.copy( this.axes[0] ).applyQuaternion( this.wristBone.quaternion ); // apply other rotations to ensure correct axis direction
         intensity = this.srcUpdateIntensity[0] * introInterpolator;
         if ( this.mode & 0x01 ){ intensity += this.intensity * interpolator };
         this.curUpdateIntensity[0] = intensity;
@@ -509,8 +536,7 @@ class WristMotion {
         this.wristBone.quaternion.premultiply( _tempQuat_0 );
 
         // NOD
-        axis.set(1,0,0);
-        axis.applyQuaternion( this.wristBone.quaternion );
+        axis.copy( this.axes[1] ).applyQuaternion( this.wristBone.quaternion ); // apply other rotations to ensure correct axis direction
         intensity = this.srcUpdateIntensity[1] * introInterpolator;
         if ( this.mode & 0x02 ){ intensity += this.intensity * interpolator };
         this.curUpdateIntensity[1] = intensity;
@@ -518,8 +544,7 @@ class WristMotion {
         this.wristBone.quaternion.premultiply( _tempQuat_0 );
         
         // SWING
-        axis.set(0,1,0);
-        axis.applyQuaternion( this.wristBone.quaternion );
+        axis.copy( this.axes[2] ).applyQuaternion( this.wristBone.quaternion ); // apply other rotations to ensure correct axis direction
         intensity = this.srcUpdateIntensity[2] * introInterpolator;
         if ( this.mode & 0x04 ){ intensity += this.intensity * interpolator };
         this.curUpdateIntensity[2] = intensity;

@@ -63,56 +63,85 @@ class App {
             return;
         }
 
-
         // for each gloss, fetch its sigml file, convert it into bml
         let orders = [];
-        let time = 0;
-        let glossesDictionary = this.languageDictionaries[ this.selectedLanguage ].glosses;
         for( let i = 0; i < glosses.length; ++i ){
-            let glossFile = glossesDictionary[ glosses[i] ];
-            if ( !glossFile ){ 
-                // TODO DEFAULT SKIPPING SIGN MESSAGE
-                time += 3; continue; 
-            }
+            orders.push( { type: "glossName", data: glosses[i] } );
+        }
 
-            await fetch( "./data/dictionaries/NGT/Glosses/" + glossFile ).then(x=>x.text()).then( (text) =>{ 
-                let extension = glossFile.split(".");
-                extension = extension[ extension.length - 1 ];
-                if ( extension == "bml" ){ // BML
-                    try{ 
-                        let result = JSON.parse( text );
-                        let maxDuration = 0;
-                        let maxRelax = 0;
-                        for( let b = 0; b < result.length; ++b ){
-                            let bml = result[b];
-                            if( !isNaN( bml.start ) ){ bml.start += time; }
-                            if( !isNaN( bml.ready ) ){ bml.ready += time; }
-                            if( !isNaN( bml.attackPeak ) ){ bml.attackPeak += time; }
-                            if( !isNaN( bml.relax ) ){ 
-                                if ( maxRelax < bml.relax ){ maxRelax = bml.relax; } 
-                                bml.relax += time;  
-                            }
-                            if( !isNaN( bml.end ) ){ 
-                                if ( maxDuration < bml.end ){ maxDuration = bml.end; } 
-                                bml.end += time; 
-                            }
+        // give the orders to the avatar controller 
+        return this.processMessageRawBlocks( orders );
+    }
+
+    /* 
+    * Given an array of blocks of type { type: "bml" || "sigml",  data: "" } where data contains the text instructions either in bml or sigml.
+    * It computes the sequential union of all blocks.
+    * Provides a way to feed the app with custom bmls, sigml 
+    * Returns duration of the whole array, without delayTime
+    */
+    async processMessageRawBlocks( glosses = [], delayTime = 0 ){
+        if ( !glosses ){ return 0; }
+
+        let time = parseFloat( delayTime );
+        time = isNaN( time ) ? 0 : time;
+        let orders = []; // resulting bml instructions
+        let glossesDictionary = this.languageDictionaries[ this.selectedLanguage ].glosses;
+        
+        for( let i = 0; i < glosses.length; ++i ){
+            let gloss = glosses[i];
+            
+            try{ 
+                // if gloss name. First fetch file, update gloss data and continue
+                if ( gloss.type == "glossName" ){
+                    let glossFile = glossesDictionary[ gloss.data ];
+                    if ( !glossFile ){  // skipping gloss
+                        gloss = { type: "invalid" };
+                    }
+                    else{ 
+                        await fetch( "./data/dictionaries/" + this.selectedLanguage + "/Glosses/" + glossFile ).then(x=>x.text()).then( (text) =>{ 
+                            let extension = glossFile.split(".");
+                            extension = extension[ extension.length - 1 ];
+                            gloss = { type: extension, data: text };
+                        } );    
+                    }
+                }
+
+                if ( gloss.type == "bml" ){ // BML
+                    let result = JSON.parse( gloss.data );
+                    let maxDuration = 0;
+                    let maxRelax = 0;
+                    for( let b = 0; b < result.length; ++b ){
+                        let bml = result[b];
+                        if( !isNaN( bml.start ) ){ bml.start += time; }
+                        if( !isNaN( bml.ready ) ){ bml.ready += time; }
+                        if( !isNaN( bml.attackPeak ) ){ bml.attackPeak += time; }
+                        if( !isNaN( bml.relax ) ){ 
+                            if ( maxRelax < bml.relax ){ maxRelax = bml.relax; } 
+                            bml.relax += time;  
                         }
-                        orders = orders.concat( result );
-                        if ( i < ( glosses.length - 1 ) ){ time += maxRelax; }
-                        else{ time += maxDuration; }
-                    
-                    }catch(e){ console.log( "bml parse error in file: " + glossFile ); }
-                }else { // SiGML
-                    let result = sigmlStringToBML( text, time );
+                        if( !isNaN( bml.end ) ){ 
+                            if ( maxDuration < bml.end ){ maxDuration = bml.end; } 
+                            bml.end += time; 
+                        }
+                    }
+                    orders = orders.concat( result );
+                    if ( i < ( glosses.length - 1 ) ){ time += maxRelax; } // time up to last relax
+                    else{ time += maxDuration; } // time up to last end
+                }
+                else if ( gloss.type == "sigml" ){ // SiGML
+                    let result = sigmlStringToBML( gloss.data, time );
                     orders = orders.concat(result.data);
                     time += result.duration; 
                     if ( i < ( glosses.length - 1 ) ){ 
-                        time = time - result.relaxEndDuration - result.peakRelaxDuration + 0.05 ; // if not last, remove relax-end stage and partially remove the peak-relax (*1.85 )
+                        time = time - result.relaxEndDuration - result.peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     }
                 }
-            } ).catch(e =>{ console.log("failed at loading dictionary file: " + glossFile) } );
+                else{
+                    // TODO DEFAULT SKIPPING SIGN MESSAGE
+                    time += 3; continue; 
+                }
+            }catch(e){ console.log( "parse error: " + gloss ); }
         }
-
 
         // give the orders to the avatar controller 
         let msg = {
@@ -120,8 +149,9 @@ class App {
             data: orders
         };
         this.ECAcontroller.processMsg(JSON.stringify(msg));
-    }
 
+        return time; // duration
+    }
 
     // loads dictionary for mouthing purposes. Not synchronous.
     loadMouthingDictinoary( language ){

@@ -35,7 +35,7 @@
 
         /**
          * @param {string} name 
-         * @param {object} options = {animationClip, selectedItems, position = [0,0], width, height, canvas, trackHeight}
+         * @param {object} options = {animationClip, selectedItems, position = [0,0], width, height, canvas, trackHeight, skipLock, skipVisibility}
          */
         constructor( name, options = {} ) {
 
@@ -74,16 +74,21 @@
             this.selectedItems = options.selectedItems ?? null;
             this.animationClip = options.animationClip ?? null;
             this.trackHeight = options.trackHeight ?? 25;
+            
             this.active = true;
+            this.skipVisibility = options.skipVisibility ?? false;
+            this.skipLock = options.skipLock ?? false;
 
             this.root = new LX.Area({className : 'lextimeline'});
             // this.root = document.createElement('div');
             // this.root.className = 'lextimeline';
 
+            
             this.header_offset = 38;
             
             let width = options.width ? options.width : null;
             let height = options.height ? options.height - this.header_offset : null;
+
             let area = new LX.Area( {id: "bottom-timeline-area", width: width || "calc(100% - 7px)", height: height || "100%"});
             area.split({ type: "horizontal", sizes: ["20%", "80%"]});
             this.content_area = area;
@@ -141,7 +146,7 @@
                 if(this.onSetTime)
                     this.onSetTime(this.currentTime);
                 this.draw();
-            }, {signal: "@on_current_time_" + this.constructor.name, step: 0.01, min: 0, max: this.duration, precision: 3,});        
+            }, {signal: "@on_current_time_" + this.constructor.name, step: 0.01, min: 0, max: this.duration, precision: 3, skipSlider: true});        
 
             for(let i = 0; i < this.buttonsDrawn.length; i++) {
                 let button = this.buttonsDrawn[i];
@@ -181,11 +186,11 @@
                     }
                     for(let j = 0; j < this.tracksPerItem[selected].length; j++) {
                         let track = this.tracksPerItem[selected][j];
-                        let id = track.name + (track.type? ' (' + track.type + ')': '');
+                        let id = track.type ? track.type : track.name;
 
-                        t.children.push({'id': id , 'children':[], actions : [{
+                        t.children.push({'id': id, 'skipVisibility': this.skipVisibility, visible: track.active, 'children':[], actions : this.skipLock ? null : [{
                             'name':'Lock edition',
-                            'icon': 'fa-solid fa-lock-open',
+                            'icon': 'fa-solid '+ (track.locked ? 'fa-lock' : 'fa-lock-open'),
                             'callback': (el, node) => {
                                 // TO DO (apply functionality)
                                 let value = el.classList.contains('fa-lock');
@@ -202,10 +207,15 @@
                                 }
                                 let tracks = this.tracksPerItem[node.parent.id];
                                 let type = node.id.replaceAll(node.parent.id, "").replaceAll(" (", "").replaceAll(")","");
+                                let track = null;
                                 for(let i = 0; i < tracks.length; i++) {
-                                    if(tracks[i].name == node.parent.id && type.includes(tracks[i].type))
-                                        tracks[i].lock = !value;
+                                    if(tracks[i].name == node.parent.id && type.includes(tracks[i].type)) {
+                                        tracks[i].locked = !value;
+                                        track = tracks[i];
+                                    }
                                 }
+                                if(this.onLockTrack)
+                                    this.onLockTrack(el, track, node)
                                 this.draw();
                             }
                              
@@ -299,14 +309,14 @@
             this.animationClip = animation;
             this.duration = animation.duration;
 
-            // var w = Math.max(300, this.canvas.width);
-            // this.secondsToPixels = ( w - this.session.left_margin - 100 ) / this.duration;
+            var w = Math.max(300, this.canvas.width);
+            this.secondsToPixels = ( w - this.session.left_margin ) / this.duration;
             // if(this.secondsToPixels < 1)
             //     this.secondsToPixels = 100;
             // this.session.start_time = -50 / this.secondsToPixels;
 
             if(this.processTracks)
-                this.processTracks();
+                this.processTracks(animation);
             
             this.updateHeader();
             this.updateLeftPanel();
@@ -452,17 +462,19 @@
             let h = rect[3];
             let timelineHeight = this.size[1];
             this.currentTime = currentTime;
-            this.updateHeader();
+            // this.updateHeader();
             this.currentScrollInPixels = this.scrollableHeight <= h ? 0 : (this.currentScroll * (this.scrollableHeight - timelineHeight));
 
             //zoom
             if(this.duration > 0)
             {
                 this.startTime = -50 / this.secondsToPixels;
-                this.startTime = Math.floor( this.session.start_time ); //seconds
+                // this.startTime = Math.floor( this.session.start_time ); //seconds
+                this.startTime = this.session.start_time ; //seconds
                 if(this.startTime < 0)
                     this.startTime = 0;
-                this.endTime = Math.ceil( this.startTime + (w - this.session.left_margin) * this.pixelsToSeconds );
+                // this.endTime = Math.ceil( this.startTime + (w - this.session.left_margin) * this.pixelsToSeconds );
+                this.endTime = this.startTime + (w - this.session.left_margin) * this.pixelsToSeconds ;
                 if(this.endTime > this.duration)
                     this.endTime = this.duration;
                 if(this.startTime > this.endTime) //avoids weird bug
@@ -583,36 +595,6 @@
                 this.onSetDuration( t );	 
         }
 
-        /**
-         * @method optimizeTracks
-         */
-
-        optimizeTracks() {
-            
-            let tracks = [];
-            for(let i = 0; i < this.animationClip.tracks.length; i++)
-            {
-                if(this.animationClip.tracks[i].clips.length) {
-                    this.animationClip.tracks[i].idx = tracks.length;
-                    for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++)
-                    {
-                        this.animationClip.tracks[i].clips[j].trackIdx = tracks.length;
-                    }
-                    let selectedIdx = 0;
-                    for(let l = 0; l < this.lastClipsSelected.length; l++)
-                    {
-                        let [t,c] = this.lastClipsSelected[l];
-                    
-                        if(t > i)
-                            this.lastClipsSelected[l][1] = t - 1;
-                        if(t == i)
-                            selectedIdx = l;
-                    }
-                    this.lastClipsSelected = [...this.lastClipsSelected.slice(0, selectedIdx), ...this.lastClipsSelected.slice(selectedIdx + 1, this.lastClipsSelected.length)];
-                    tracks.push(this.animationClip.tracks[i]);
-                }			
-            }
-        }
 
         // Converts distance in pixels to time
         xToTime( x ) {
@@ -666,7 +648,9 @@
 
             if(!this.canvas)
                 return;
-
+            e.preventDefault();
+            e.stopPropagation();
+            e.multipleSelection = false;
             var w = this.size[0];
 
             // Process mouse
@@ -780,7 +764,7 @@
                         time = Math.max(0, time);
                         this.currentTime = Math.min(this.duration, time);
                         this.draw();
-                        // LX.emit( "@on_current_time_" + this.constructor.name, time );
+                        LX.emit( "@on_current_time_" + this.constructor.name, this.currentTime );
                     }
                     else
                     {
@@ -872,7 +856,7 @@
                             ctx.fillStyle = Timeline.COLOR_HOVERED;
                             margin = 0;
                         }
-                        if(trackInfo.lock)
+                        if(trackInfo.locked)
                             ctx.fillStyle = Timeline.COLOR_LOCK;
 
                         if(!this.active || trackInfo.active == false)
@@ -1005,8 +989,13 @@
             this.unSelectAllTracks();
             
             let [name, type] = trackInfo.id.split(" (");
+            
             if(type)
                 type = type.replaceAll(")", "").replaceAll(" ", "");
+            else {
+                type = name;
+                name = trackInfo.parent.id;
+            }
             let tracks = this.tracksPerItem[name];
 
             for(let i = 0; i < tracks.length; i++) {
@@ -1039,6 +1028,10 @@
             let [name, type] = trackInfo.id.split(" (");
             if(type)
                 type = type.replaceAll(")", "").replaceAll(" ", "");
+            else {
+                type = name;
+                name = trackInfo.parent.id;
+            }
             trackInfo = {name, type};
             let tracks = this.tracksPerItem[name];
 
@@ -1064,6 +1057,10 @@
                 let [name, type] = trackInfo.children[idx].id.split(" (");
                 if(type)
                     type = type.replaceAll(")", "").replaceAll(" ", "");
+                else {
+                    type = name;
+                    name = trackInfo.parent.id;
+                }
                 //trackInfo = {name, type};
                 let tracks = this.tracksPerItem[name];
     
@@ -1102,7 +1099,9 @@
         #resizecanvas( size ) {
             this.canvas.width = size[0];
             this.canvas.height = size[1] - this.header_offset;
-           
+            var w = Math.max(300, this.canvas.width);
+            this.secondsToPixels = ( w - this.session.left_margin ) / this.duration;
+            this.pixelsToSeconds = 1 / this.secondsToPixels;
             this.draw(this.currentTime);
         }
 
@@ -1119,8 +1118,10 @@
         * Show timeline area if it is hidden
         */
         show() {
+            
             this.root.show();
             this.resize();
+            
         }
     };
 
@@ -1155,7 +1156,7 @@
 
 
             if(this.animationClip)
-                this.processTracks();
+                this.processTracks(this.animationClip);
 
             // Add button data
             let offset = 25;
@@ -1175,7 +1176,7 @@
 
                 // Multiple selection
                 if(!discard && track) {
-                    this.processCurrentKeyFrame( e, null, track, localX, true ); 
+                    this.processCurrentKeyFrame( e, null, track, localX, e.multipleSelection ); 
                 }
                 // Box selection
                 else{
@@ -1192,7 +1193,7 @@
                             
                         if(keyFrameIndices) {
                             for(let index of keyFrameIndices)
-                                this.processCurrentKeyFrame( e, index, t, null, true );
+                                this.processCurrentKeyFrame( e, index, t, null, e.multipleSelection );
                         }
                     }
                 }
@@ -1239,12 +1240,12 @@
                 this.boxSelection = true;
                 this.boxSelectionStart = [localX, localY - 20];
 
+                e.multipleSelection = true;
             }
-            else if(e.ctrlKey && track && !track.lock) {
-
+            else if(e.ctrlKey && track && !track.locked) {
                 const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                 if( keyFrameIndex != undefined ) {
-                    this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
+                    this.processCurrentKeyFrame( e, keyFrameIndex, track, null, e.multipleSelection ); // Settings this as multiple so time is not being set
                     this.movingKeys = true;
                     this.canvas.style.cursor = "grab";  
                     // Set pre-move state
@@ -1283,7 +1284,7 @@
                 
                 for(let [name, idx, keyIndex, keyTime] of this.lastKeyFramesSelected) {
                     track = this.tracksPerItem[name][idx];
-                    if(track && track.lock)
+                    if(track && track.locked)
                         return;
 
                     this.canvas.style.cursor = "grabbing";
@@ -1323,12 +1324,12 @@
                 let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                 if(keyFrameIndex != undefined) {
                     
-                    const name = this.tracksDictionary[track.name]; 
+                    const name = this.tracksDictionary[track.fullname]; 
                     let t = this.tracksPerItem[ name ][track.idx];
-                    if(t && t.lock)
+                    if(t && t.locked)
                         return;
                     removeHover();
-                        
+                                            
                     this.lastHovered = [name, track.idx, keyFrameIndex];
                     t.hovered[keyFrameIndex] = true;
 
@@ -1391,10 +1392,11 @@
                         title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
                             let keyframesToDelete = this.lastKeyFramesSelected;
+                            e.multipleSelection = keyframesToDelete.length > 1 ?? false;
                             for(let i = 0; i < keyframesToDelete.length; i++){
-                                this.deleteKeyFrame(e, keyframesToDelete [1], keyframesToDelete[2])
+                                this.deleteKeyFrame(e, keyframesToDelete[i][1], keyframesToDelete[i][2]);
                             }
-                            this.optimizeTracks();
+                            
                         }
                     }
                 )
@@ -1496,21 +1498,30 @@
         }
 
         // Creates a map for each item -> tracks
-        processTracks() {
+        processTracks(animation) {
 
             this.tracksPerItem = {};
             this.tracksDictionary = {};
+            this.animationClip = {
+                name: animation.name,
+                duration: animation.duration,
+                speed: animation.speed ?? 1,
+                tracks: []
+            };
 
-            for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
+            for( let i = 0; i < animation.tracks.length; ++i ) {
 
-                let track = this.animationClip.tracks[i];
+                let track = animation.tracks[i];
 
                 const [name, type] = this.getTrackName(track.name);
 
                 let trackInfo = {
+                    fullname: track.name,
                     name: name, type: type,
                     dim: track.values.length/track.times.length,
-                    selected: [], edited: [], hovered: []
+                    selected: [], edited: [], hovered: [], active: true,
+                    times: track.times,
+                    values: track.values
                 };
                 
                 if(!this.tracksPerItem[name]) {
@@ -1527,6 +1538,8 @@
                 // Save index also in original track
                 track.idx = trackIndex;
                 this.tracksDictionary[track.name] = name;
+
+                this.animationClip.tracks.push(trackInfo);
             }
         }
 
@@ -1556,15 +1569,18 @@
             LX.addContextMenu("Optimize", e, m => {
                 for( let t of tracks ) {
                     m.add( t.name + (t.type ? "@" + t.type : ""), () => { 
-                        this.animationClip.tracks[t.clipIdx].optimize( threshold );
-                        t.edited = [];
+                        if(this.optimizeTrack) {
+                            this.optimizeTrack(t.clipIdx, threshold)
+                        // this.animationClip.tracks[t.clipIdx].optimize( threshold );
+                            t.edited = [];
+                        }
                     })
                 }
             });
         }
 
         onPreProcessTrack( track ) {
-            const name = this.tracksDictionary[track.name];
+            const name = this.tracksDictionary[track.fullname];
             let trackInfo = this.tracksPerItem[name][track.idx];
             trackInfo.selected = [];
             trackInfo.edited = [];
@@ -1615,6 +1631,8 @@
             this.unSelectAllKeyFrames();
                                 
             this.lastKeyFramesSelected.push( selectionInfo );
+            if(track.locked)
+                return;
             track.selected[index] = true;
             this.currentTime =  this.animationClip.tracks[track.clipIdx].times[ index ];
             LX.emit( "@on_current_time_" + this.constructor.name, this.currentTime );
@@ -1740,13 +1758,15 @@
             // Update animationClip information
             let clipIdx = track.clipIdx;
 
+            let [name, keyType] = this.getTrackName(track.name)
+            let tracks = this.tracksPerItem[name];
+            if(!tracks) return;
+
+            // Get current track
+            const selectedTrackIdx = tracks.findIndex( t => t.type === keyType );
+            if(selectedTrackIdx >=  0)
+                track = tracks[ selectedTrackIdx ];
             if(clipIdx == undefined) {
-                let [name, keyType] = this.getTrackName(track.name)
-                let tracks = this.tracksPerItem[name];
-                if(!tracks) return;
-    
-                // Get current track
-                const selectedTrackIdx = tracks.findIndex( t => t.type === keyType );
                 if(selectedTrackIdx < 0)
                     return;
                     clipIdx = tracks[ selectedTrackIdx ].clipIdx;
@@ -1798,41 +1818,20 @@
                 for( let i = 0; i < dim; ++i )
                     valuesArray.push(value[i]);
             }
-            // // Get mid values
-            // const items = this.selectedItems;
 
-            // for(let i = 0; i < items.length; i++) {
-            //     let item = items[i];
-            //     let lerpValue = item[ track.type ].toArray();
+            this.animationClip.tracks[clipIdx].values = new Float32Array( valuesArray );
+
             
-            //     // Add values
-            //     let valuesArray = [];
-            //     this.animationClip.tracks[clipIdx].values.forEach( (a, b) => {
-            //         if(b == newIdx * track.dim) {
-            //             for( let i = 0; i < track.dim; ++i )
-            //                 valuesArray.push(lerpValue[i]);
-            //         }
-            //         valuesArray.push(a);
-            //     } );
-    
-            //     if(lastIndex) {
-            //         for( let i = 0; i < track.dim; ++i )
-            //             valuesArray.push(lerpValue[i]);
-            //     }
-    
-            //     this.animationClip.tracks[clipIdx].values = new Float32Array( valuesArray );
-    
-            //     // Move the other's key properties
-            //     for(let i = (this.animationClip.tracks[clipIdx].times.length - 1); i > newIdx; --i) {
-            //         track.edited[i - 1] ? track.edited[i] = track.edited[i - 1] : 0;
-            //     }
-                
-            //     // Reset this key's properties
-            //     track.hovered[newIdx] = undefined;
-            //     track.selected[newIdx] = undefined;
-            //     track.edited[newIdx] = undefined;
-            // }
-           
+            // Move the other's key properties
+            for(let i = (this.animationClip.tracks[clipIdx].times.length - 1); i > newIdx; --i) {
+                track.edited[i - 1] ? track.edited[i] = track.edited[i - 1] : 0;
+            }
+            
+            // Reset this key's properties
+            track.hovered[newIdx] = undefined;
+            track.selected[newIdx] = undefined;
+            track.edited[newIdx] = true;
+        
 
             // Update animation action interpolation info
             if(this.onUpdateTrack)
@@ -1853,7 +1852,7 @@
             // Don't remove by now the first key
             if(index == 0) {
                 console.warn("Operation not supported! [remove first keyframe track]");
-                return;
+                return 0;
             }
 
             // Update clip information
@@ -1888,6 +1887,8 @@
             // Update animation action interpolation info
             if(this.onUpdateTrack)
                 this.onUpdateTrack( clipIdx );
+            
+            return 1;
         }
 
         /** Delete one or more keyframes given the triggered event
@@ -1913,8 +1914,7 @@
 
                     // Delete every selected key
                     for(let [name, idx, keyIndex] of pts) {
-                        this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
-                        deletedIndices++;
+                        deletedIndices += this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
                     }
                 }
             }
@@ -2056,6 +2056,9 @@
 
         processCurrentKeyFrame( e, keyFrameIndex, track, localX, multiple ) {
 
+            if(track.locked)
+                return;
+
             e.multipleSelection = multiple;
             keyFrameIndex = keyFrameIndex ?? this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
 
@@ -2063,7 +2066,7 @@
                 this.unSelectAllKeyFrames();
             }
                             
-            const name = this.tracksDictionary[track.name];
+            const name = this.tracksDictionary[track.fullname];
             let t = this.tracksPerItem[ name ][track.idx];
             let currentSelection = [name, track.idx, keyFrameIndex];
             if(!multiple)
@@ -2328,7 +2331,7 @@
                             for(let i = 0; i < clipstToDelete.length; i++){
                                 this.deleteClip(clipstToDelete[i], null);
                             }
-                            this.optimizeTracks();
+                            // this.optimizeTracks();
                         }
                     }
                 )
@@ -2404,23 +2407,32 @@
         }
 
         // Creates a map for each item -> tracks
-        processTracks() {
+        processTracks(animation) {
 
             this.tracksPerItem = {};
             this.tracksDictionary = {};
+            this.animationClip = {
+                name: animation.name,
+                duration: animation.duration,
+                speed: animation.speed ?? 1,
+                tracks: []
+            };
 
-            for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
+            for( let i = 0; i < animation.tracks.length; ++i ) {
 
-                let track = this.animationClip.tracks[i];
+                let track = animation.tracks[i];
 
                 // const [name, type] = this.getTrackName(track.name);
                 const name = track.name;
                 const type = track.type;
 
                 let trackInfo = {
+                    fullname: track.name,
                     clips: track.clips,
                     name: name, type: type,
-                    selected: [], edited: [], hovered: []
+                    selected: [], edited: [], hovered: [], active: true,
+                    times: track.times,
+                    values: track.values
                 };
                 
                 this.tracksDictionary[track.name] = name;
@@ -2430,10 +2442,40 @@
 
                 // Save index also in original track
                 // track.idx = trackIndex;
-                this.animationClip.tracks[i] = trackInfo;
+                this.animationClip.tracks.push(trackInfo);
             }
         }
 
+        /**
+         * @method optimizeTracks
+         */
+
+        optimizeTracks() {
+            
+            let tracks = [];
+            for(let i = 0; i < this.animationClip.tracks.length; i++)
+            {
+                if(this.animationClip.tracks[i].clips.length) {
+                    this.animationClip.tracks[i].idx = tracks.length;
+                    for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++)
+                    {
+                        this.animationClip.tracks[i].clips[j].trackIdx = tracks.length;
+                    }
+                    let selectedIdx = 0;
+                    for(let l = 0; l < this.lastClipsSelected.length; l++)
+                    {
+                        let [t,c] = this.lastClipsSelected[l];
+                    
+                        if(t > i)
+                            this.lastClipsSelected[l][1] = t - 1;
+                        if(t == i)
+                            selectedIdx = l;
+                    }
+                    this.lastClipsSelected = [...this.lastClipsSelected.slice(0, selectedIdx), ...this.lastClipsSelected.slice(selectedIdx + 1, this.lastClipsSelected.length)];
+                    tracks.push(this.animationClip.tracks[i]);
+                }			
+            }
+        }
         /** Add a clip to the timeline in a free track slot at the current time
          * @clip: clip to be added
          * @offsetTime: (optional) offset time of current time
@@ -2685,7 +2727,7 @@
             this.range = options.range || [0, 1];
 
             if(this.animationClip)
-                this.processTracks();
+                this.processTracks(animation);
 
             // Add button data
             let offset = 25;
@@ -2706,7 +2748,7 @@
 
                 // Multiple selection
                 if(!discard && track) {
-                    this.processCurrentKeyFrame( e, null, track, localX, true ); 
+                    this.processCurrentKeyFrame( e, null, track, localX, e.multipleSelection ); 
                 }
                 // Box selection
                 else{
@@ -2723,7 +2765,7 @@
                             
                         if(keyFrameIndices) {
                             for(let index of keyFrameIndices)
-                                this.processCurrentKeyFrame( e, index, t, null, true );
+                                this.processCurrentKeyFrame( e, index, t, null, e.multipleSelection );
                         }
                     }
                 }
@@ -2777,7 +2819,7 @@
 
                     const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                     if( keyFrameIndex != undefined ) {
-                        this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
+                        this.processCurrentKeyFrame( e, keyFrameIndex, track, null, e.multipleSelection ); // Settings this as multiple so time is not being set
                         if(e.ctrlKey || e.altKey) {
                             this.movingKeys = true;
                             this.canvas.style.cursor = "grab";  
@@ -2820,7 +2862,7 @@
                 
                 for(let [name, idx, keyIndex, keyTime] of this.lastKeyFramesSelected) {
                     track = this.tracksPerItem[name][idx];
-                    if(track && track.lock)
+                    if(track && track.locked)
                         return;
                     
                     this.canvas.style.cursor = "grabbing";
@@ -2831,13 +2873,14 @@
                     }
 
                     if(e.altKey) {
-                        let trackRange = [this.tracksDrawn[track.clipIdx][1], this.tracksDrawn[track.clipIdx][1] + this.trackHeight];
+                        let trackRange = [this.tracksDrawn[track.idx][1], this.tracksDrawn[track.idx][1] + this.trackHeight];
                         localY = Math.min( trackRange[1], Math.max(trackRange[0], localY) );
                         
                         //convert to range track values
                         let value = (((localY - trackRange[1]) * (this.range[1] - this.range[0])) / (trackRange[0] - trackRange[1])) + this.range[0];
                         track.edited[keyIndex] = true;
                         this.animationClip.tracks[ track.clipIdx ].values[ keyIndex ] = value;
+                        LX.emit( "@on_change_" + this.tracksDrawn[track.idx][0].type, value );
                     }
                 }
                 return
@@ -2876,10 +2919,10 @@
                 let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                 if(keyFrameIndex != undefined) {
                     
-                    const name = this.tracksDictionary[track.name]; 
+                    const name = this.tracksDictionary[track.fullname]; 
                     let t = this.tracksPerItem[ name ][track.idx];
                     removeHover();
-                    if(t && t.lock)
+                    if(t && t.locked)
                         return;
                         
                     this.lastHovered = [name, track.idx, keyFrameIndex];
@@ -2892,6 +2935,100 @@
             else {
                 removeHover();
             }
+        }
+
+        showContextMenu( e ) {
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            let actions = [];
+            //let track = this.NMFtimeline.clip.tracks[0];
+            if(this.lastKeyFramesSelected && this.lastKeyFramesSelected.length) {
+                if(this.lastKeyFramesSelected.length == 1 && this.clipboard && this.clipboard.value)
+                {
+                    actions.push(
+                        {
+                            title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
+                            callback: () => {
+                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[0];
+                                    this.pasteKeyFrameValue(e, this.tracksPerItem[id][trackIdx], keyIdx);
+                            }
+                        }
+                    )
+                }
+                actions.push(
+                    {
+                        title: "Copy",// + " <i class='bi bi-clipboard-fill float-right'></i>",
+                        callback: () => {
+                            let toCopy = {};
+                            for(let i = 0; i < this.lastKeyFramesSelected.length; i++){
+                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[i];
+                                if(toCopy[this.tracksPerItem[id][trackIdx].clipIdx]) {
+                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].idxs.push(keyIdx);
+                                } else {
+                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx] = {idxs : [keyIdx]};
+                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].track = this.tracksPerItem[id][trackIdx]
+                                }                
+                                if(i == 0) {
+                                    this.copyKeyFrameValue(this.tracksPerItem[id][trackIdx], keyIdx)
+                                }
+                            }
+                            for(let clipIdx in toCopy) {
+                                
+                                this.copyKeyFrames(toCopy[clipIdx].track, toCopy[clipIdx].idxs)
+                            }
+                           
+                        }
+                    }
+                )
+                actions.push(
+                    {
+                        title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
+                        callback: () => {
+                            let keyframesToDelete = this.lastKeyFramesSelected;
+                            e.multipleSelection = keyframesToDelete.length > 1 ?? false;
+                            for(let i = 0; i < keyframesToDelete.length; i++){
+                                this.deleteKeyFrame(e, keyframesToDelete[i][1], keyframesToDelete[i][2]);
+                            }
+                            
+                        }
+                    }
+                )
+            }
+            else{
+                
+                actions.push(
+                    {
+                        title: "Add",
+                        callback: () => this.addKeyFrame( e.track )
+                    }
+                )
+
+                if(this.clipboard && this.clipboard.keyframes)
+                {
+                    actions.push(
+                        {
+                            title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
+                            callback: () => {
+                                let currentTime = this.currentTime;
+                                for(let clipIdx in this.clipboard.keyframes) {
+                                    let indices = Object.keys( this.clipboard.keyframes[clipIdx].values)
+                                    this.pasteKeyFrames(e, clipIdx, indices);
+                                    this.currentTime = currentTime;
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+            
+            LX.addContextMenu("Options", e, (m) => {
+                for(let i = 0; i < actions.length; i++) {
+                    m.add(actions[i].title,  actions[i].callback )
+                }
+            });
+
         }
 
         onDrawContent( ctx, timeStart, timeEnd ) {
@@ -2991,7 +3128,7 @@
                             ctx.fillStyle = Timeline.COLOR_HOVERED;
                             margin = -2;
                         }
-                        if(trackInfo.lock)
+                        if(trackInfo.locked)
                             ctx.fillStyle = Timeline.COLOR_LOCK;
 
                         if(!this.active || trackInfo.active == false)
@@ -3054,21 +3191,30 @@
         }
 
         // Creates a map for each item -> tracks
-        processTracks() {
+        processTracks(animation) {
 
             this.tracksPerItem = {};
             this.tracksDictionary = {};
+            this.animationClip = {
+                name: animation.name,
+                duration: animation.duration,
+                speed: animation.speed ?? 1,
+                tracks: []
+            };
+            for( let i = 0; i < animation.tracks.length; ++i ) {
 
-            for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
-
-                let track = this.animationClip.tracks[i];
+                let track = animation.tracks[i];
 
                 const [name, type] = this.getTrackName(track.name);
 
                 let trackInfo = {
+                    fullname: track.name,
                     name: name, type: type,
                     dim: track.values.length/track.times.length,
-                    selected: [], edited: [], hovered: []
+                    selected: [], edited: [], hovered: [], active: true,
+                    values: track.values,
+                    times: track.times
+                    
                 };
                 
                 if(!this.tracksPerItem[name]) {
@@ -3083,8 +3229,10 @@
                 this.tracksPerItem[name][trackIndex].clipIdx = i;
 
                 // Save index also in original track
-                track.idx = trackIndex;
+                trackInfo.idx = trackIndex;
                 this.tracksDictionary[track.name] = name;
+                this.animationClip.tracks.push(trackInfo);
+
             }
         }
 
@@ -3121,9 +3269,9 @@
             });
         }
 
-        onPreProcessTrack( track ) {
+        onPreProcessTrack( track, idx ) {
             const name = this.tracksDictionary[track.name];
-            let trackInfo = this.tracksPerItem[name][track.idx];
+            let trackInfo = this.tracksPerItem[track.name][idx];
             trackInfo.selected = [];
             trackInfo.edited = [];
             trackInfo.hovered = [];
@@ -3174,7 +3322,9 @@
                                 
             this.lastKeyFramesSelected.push( selectionInfo );
             track.selected[index] = true;
-            
+            this.currentTime =  this.animationClip.tracks[track.clipIdx].times[ index ];
+            LX.emit( "@on_current_time_" + this.constructor.name, this.currentTime );
+
             if( this.onSetTime )
                 this.onSetTime(  this.animationClip.tracks[track.clipIdx].times[ index ]);
         }
@@ -3447,11 +3597,13 @@
             if(uglyName.includes("[")) {
                 const nameIndex = uglyName.indexOf('['),
                     trackNameInfo = uglyName.substr(nameIndex+1).split("].");
-                name = trackNameInfo[0];
+                name = trackNameInfo[0].replaceAll(/[\[\]]/g,"");
+                name = name.replaceAll("_", " ");
                 type = trackNameInfo[1];
             }else {
                 const trackNameInfo = uglyName.split(".");
-                name = trackNameInfo[0];
+                name = trackNameInfo[0].replaceAll(/[\[\]]/g,"");
+                name = name.replaceAll("_", " ");
                 type = trackNameInfo[1];
             }
 
@@ -3538,7 +3690,7 @@
                 this.unSelectAllKeyFrames();
             }
                             
-            const name = this.tracksDictionary[track.name];
+            const name = this.tracksDictionary[track.fullname];
             let t = this.tracksPerItem[ name ][track.idx];
             let currentSelection = [name, track.idx, keyFrameIndex];
             if(!multiple)
@@ -3623,4 +3775,9 @@
         }
         throw new Error('Bad Hex');
     }
+
+    LX.UTILS.concatTypedArray = (Arrays, ArrayType) => {
+		return Arrays.reduce((acc, arr) => new ArrayType([...acc, ...arr]), []);
+	}
+
 })( typeof(window) != "undefined" ? window : (typeof(self) != "undefined" ? self : global ) );

@@ -516,6 +516,10 @@ let locationMap ={};
 for( let l in locationMapHead ){ locationMap[l] = locationMapHead[l]; }
 for( let l in locationMapBody ){ locationMap[l] = locationMapBody[l]; }
 
+let locationHand_ArmTable = [ "upperarm", "elbow", "elbowinside", "lowerarm" ];
+let locationHand_FingerpartTable = [ "tip", "nail", "pad", "midjoint", "base", "side" ];
+let locationHand_HandpartTable = [ "wristback", "thumbball", "palm", "handback", "thumbside", "pinkyside" ];
+
 // in JaSigning the location lasts until the end of the sign/gloss or until another instruction overwrites it
 function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGeneralInfo, currentPosture ){
     let attributes = {};
@@ -525,6 +529,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
 
     let result = { type: "gesture", start: start - 0.00001, attackPeak: attackPeak, hand: hand }; // -0.000001 to avoid locationBodyArm cancelling motions or handconstellations
 
+    // usual body location
     if ( hand == "both" && signGeneralInfo.bothHands ){ result.lrSym = true; }
     else{ result.lrSym = symmetry & 0x01; }  
     result.udSym = symmetry & 0x02;  
@@ -537,6 +542,21 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         if ( attributes.contact == "touch" ){ result.distance = 0.0; }
         else{ result.distance = 0.36; } 
     } // jasigning has a default unmentioned distance...
+
+    // jasigning might accept some arm locations in the body location instruction. Transform it into a handconstellation
+    if ( locationHand_ArmTable.includes( attributes.location ) || locationHand_HandpartTable.includes( attributes.location ) ){
+        let r = locationHandInfoExtract( xml, true );
+     
+        result.handConstellation = true;
+        result.dstLocation = r.location;
+        result.dstSide = r.side;
+        if ( r.child ){
+            result.srcFinger = r.child.finger;
+            result.srcLocation = r.child.location;
+            result.srcSide = r.child.side;
+        }
+        return [ result ];
+    } // ------
 
     result.locationBodyArm = locationMap[ attributes.location ];
     result.secondLocationBodyArm = locationMap[ attributes.second_location ];
@@ -584,11 +604,6 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
 
     return [ result ];
 }
-
-
-let locationHand_ArmTable = [ "upperarm", "elbow", "elbowinside", "lowerarm" ];
-let locationHand_FingerpartTable = [ "tip", "nail", "pad", "midjoint", "base", "side" ];
-let locationHand_HandpartTable = [ "wristback", "thumbball", "palm", "handback", "thumbside", "pinkyside" ];
 
 function locationHandInfoExtract( xml, parseChildren = true ){
     
