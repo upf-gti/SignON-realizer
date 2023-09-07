@@ -733,13 +733,13 @@ function locationHandInfoExtract( xml, parseChildren = true ){
     else if ( locationHand_ArmTable.includes( attributes.location ) ){
         // default values tip of index finger
         result.location = "Hand"; 
-        result.side = "Palmar";
+        result.side = "Front";
 
-        let side = "Palmar";
+        let side = "Front";
         switch( attributes.side ){
             case "dorsal": side = "back"; break;
-            case "front": 
             case "palmar":
+            case "front": 
             case "back":
             case "radial":
             case "ulnar": 
@@ -751,11 +751,11 @@ function locationHandInfoExtract( xml, parseChildren = true ){
         switch( attributes.location ){
             case "upperarm": 
                 result.location = "Upperarm";
-                result.side = side;
+                result.side = side == "Palmar" ? "Front" : side;
                 break;
             case "elbow":
                 result.location = "Elbow";
-                result.side = side;
+                result.side = side == "Palmar" ? "Front" : side;;
                 break;
             case "elbowinside": 
                 result.location = "Elbow";
@@ -763,7 +763,7 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 break;
             case "lowerarm":
                 result.location ="Forearm";
-                result.side = side;
+                result.side = side == "Front" ? "Palmar" : side;
                 break;
             default: break;
         }

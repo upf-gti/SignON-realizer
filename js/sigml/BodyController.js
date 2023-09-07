@@ -1,9 +1,8 @@
 import * as THREE from "three";
 
 import { LocationBodyArm } from "./LocationBodyArm.js";
-import { Palmor } from "./Palmor.js"
-import { Extfidir } from "./Extfidir.js";
 import { HandShapeRealizer } from "./HandShapeRealizer.js"
+import { ExtfidirPalmor } from "./ExtfidirPalmor.js";
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 import { HandConstellation } from "./HandConstellation.js";
 import { ShoulderRaise, ShoulderHunch, BodyMovement } from "./ShouldersBodyNMF.js";
@@ -115,8 +114,7 @@ class BodyController{
         return {
             loc: new LocationBodyArm( this.config, this.skeleton, isLeftHand ),
             locMotions: [],
-            extfidir: new Extfidir( this.config, this.skeleton, isLeftHand ),
-            palmor: new Palmor( this.config, this.skeleton, isLeftHand ),
+            extfidirPalmor: new ExtfidirPalmor( this.config, this.skeleton, isLeftHand ),
             wristMotion: new WristMotion( this.config, this.skeleton, isLeftHand ),
             handshape: new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
             fingerplay: new FingerPlay(),
@@ -127,14 +125,13 @@ class BodyController{
             ikSolver: new GeometricArmIK( this.skeleton, this.config, isLeftHand ),
             locUpdatePoint: new THREE.Vector3(0,0,0),
             _tempWristQuat: new THREE.Quaternion(0,0,0,1), // stores computed extfidir + palmor before any arm movement applied. Necessary for locBody + handConstellation
+
         };
     }
 
     _resetArm( arm ){
         arm.loc.reset();
         arm.locMotions = [];
-        arm.extfidir.reset();
-        arm.palmor.reset();
         arm.wristMotion.reset();
         arm.handshape.reset();
         arm.fingerplay.reset();
@@ -142,6 +139,8 @@ class BodyController{
         arm.shoulderHunch.reset();
         arm.locUpdatePoint.set(0,0,0);
         arm.needsUpdate = false;
+
+        arm.extfidirPalmor.reset();
 
     }
     
@@ -197,25 +196,15 @@ class BodyController{
         // overwrite finger rotations
         arm.fingerplay.update(dt); // motion, prepare offsets
         arm.handshape.update( dt, arm.fingerplay.curBends );
+      
+        // wrist point and twist
+        arm.extfidirPalmor.update(dt);
 
-        // wrist extfidir
-        bones[ arm.extfidir.idx ].quaternion.set(0,0,0,1);
-        arm.extfidir.update( dt );
-        bones[ arm.extfidir.idx ].quaternion.copy( arm.extfidir.curG );
-        
-
-        // wrist (and forearm) twist
-        arm.palmor.update( dt );
-        let q = this._tempQ_0;
-        let palmorAngle = arm.palmor.curAngle * arm.extfidir.curPalmorRefactor
-        q.setFromAxisAngle( arm.palmor.twistAxisWrist, palmorAngle ); // wrist
-        bones[ arm.palmor.idx + 1 ].quaternion.multiply( q );
-        
         // wristmotion. ADD rotation to wrist
         arm.wristMotion.update(dt); // wrist - add rotation
 
         // backup the current wrist quaternion, before any arm rotation is applied
-        arm._tempWristQuat.copy( bones[ arm.extfidir.idx ].quaternion );
+        arm._tempWristQuat.copy( arm.extfidirPalmor.wristBone.quaternion );
 
         // update arm posture world positions but do not commit results to the bones, yet.
         arm.loc.update( dt );
@@ -224,7 +213,7 @@ class BodyController{
         arm.shoulderRaise.update( dt );
         arm.shoulderHunch.update( dt );
 
-        arm.needsUpdate = motionsRequireUpdated | arm.fingerplay.transition | arm.handshape.transition | arm.wristMotion.transition | arm.palmor.transition | arm.extfidir.transition | arm.loc.transition | arm.shoulderRaise.transition | arm.shoulderHunch.transition;
+        arm.needsUpdate = motionsRequireUpdated | arm.fingerplay.transition | arm.handshape.transition | arm.wristMotion.transition | arm.extfidirPalmor.transition | arm.loc.transition | arm.shoulderRaise.transition | arm.shoulderHunch.transition;
     }
 
     update( dt ){
@@ -271,29 +260,29 @@ class BodyController{
         let bones = this.skeleton.bones;
 
         // copy back the original wrist quaternion, when no arm rotations were applied
-        bones[ arm.extfidir.idx ].quaternion.copy( arm._tempWristQuat );  
+        arm.extfidirPalmor.wristBone.quaternion.copy( arm._tempWristQuat );  
 
         // wrist did not know about arm quaternions. Compensate them
         q.copy( bones[ arm.loc.idx ].quaternion );
         q.multiply( bones[ arm.loc.idx + 1 ].quaternion );
         q.multiply( bones[ arm.loc.idx + 2 ].quaternion );
         q.invert();
-        bones[ arm.extfidir.idx ].quaternion.premultiply( q );  
+        arm.extfidirPalmor.wristBone.quaternion.premultiply( q );  
         
         if ( fixWristOnly ){ return } // whether to correct forearm twisting also
         
         // Doing the previous wrist fix introduces some extra twist correction. Forearm twist should adjust to palmor + twist correction. The following operations combine both
         // get wrist twist quaternion
-        getTwistQuaternion( bones[ arm.extfidir.idx ].quaternion, arm.palmor.twistAxisWrist, q );
+        getTwistQuaternion( arm.extfidirPalmor.wristBone.quaternion, arm.extfidirPalmor.twistAxisWrist, q );
 
         // from wrist twist quaternion, compute twist angle and apply it to the forearm. Correct this extra quaternion for the wrist also
         let angle = Math.acos( q.w ) * 2;
         // angle = Math.max( 0, Math.min( Math.PI * 0.6, angle ) );
         angle = ( Math.sin( angle - Math.PI * 0.5 ) * 0.35 + 0.35 ) * angle; // limit angle to avoid overtwisting of elbow
-        angle *= ( arm.palmor.twistAxisForeArm.x * q.x + arm.palmor.twistAxisForeArm.y * q.y + arm.palmor.twistAxisForeArm.z * q.z ) < 0 ? -1 : 1; // is the axis of rotation inverted ?
-        q.setFromAxisAngle( arm.palmor.twistAxisForeArm, angle);
-        bones[ arm.palmor.idx ].quaternion.multiply( q ); // forearm
-        bones[ arm.extfidir.idx ].quaternion.premultiply( q.invert() ); // wrist did not know about this twist, undo it
+        angle *= ( arm.extfidirPalmor.twistAxisForearm.x * q.x + arm.extfidirPalmor.twistAxisForearm.y * q.y + arm.extfidirPalmor.twistAxisForearm.z * q.z ) < 0 ? -1 : 1; // is the axis of rotation inverted ?
+        q.setFromAxisAngle( arm.extfidirPalmor.twistAxisForearm, angle);
+        arm.extfidirPalmor.forearmBone.quaternion.multiply( q ); // forearm
+        arm.extfidirPalmor.wristBone.quaternion.premultiply( q.invert() ); // wrist did not know about this twist, undo it
 
     }
 
@@ -314,11 +303,8 @@ class BodyController{
                 m.newGestureBML( bml, symmetry );
             }
         }
-        if ( bml.palmor ){
-            arm.palmor.newGestureBML( bml, symmetry );
-        }
-        if ( bml.extfidir ){
-            arm.extfidir.newGestureBML( bml, symmetry );
+        if ( bml.palmor || bml.extfidir ){
+            arm.extfidirPalmor.newGestureBML( bml, symmetry );
         }
         if ( bml.handshape ){
             arm.handshape.newGestureBML( bml, symmetry );
