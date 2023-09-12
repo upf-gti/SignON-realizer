@@ -37,7 +37,33 @@ function FacialController(config = null) {
     this.browsInnerUpBSName = "BrowsIn";
     this.browsUpBSName = "BrowsUp";
 
-    this._morphDeformers = {};
+    this._morphTargets = {}; // current avatar morph targets
+    this._mappingBS = {}; // mappings of current avatar BS to default morph deformers
+    
+    // default morph deformers
+    this._morphDeformers = {
+        "Body": {
+            "morphTargetDictionary": {
+                "Blink_Left": 0, "Blink_Right": 1, "BrowsDown_Left": 2, "BrowsDown_Right": 3, "BrowsIn_Left": 4, "BrowsIn_Right": 5, "BrowsOuterLower_Left": 6, "BrowsOuterLower_Right": 7, "BrowsUp_Left": 8, "BrowsUp_Right": 9,
+                "CheekPuff_Left": 10, "CheekPuff_Right": 11, "EyesWide_Left": 12, "EyesWide_Right": 13, "Frown_Left": 14, "Frown_Right": 15, "JawBackward": 16, "JawForeward": 17, "JawRotateY_Left": 18, "JawRotateY_Right": 19,
+                "JawRotateZ_Left": 20, "JawRotateZ_Right": 21, "Jaw_Down": 22, "Jaw_Left": 23, "Jaw_Right": 24, "Jaw_Up": 25, "LowerLipDown_Left": 26, "LowerLipDown_Right": 27, "LowerLipIn": 28, "LowerLipOut": 29, "Midmouth_Left": 30,
+                "Midmouth_Right": 31, "MouthDown": 32, "MouthNarrow_Left": 33, "MouthNarrow_Right": 34, "MouthOpen": 35, "MouthUp": 36, "MouthWhistle_NarrowAdjust_Left": 37, "MouthWhistle_NarrowAdjust_Right": 38, "NoseScrunch_Left": 39,
+                "NoseScrunch_Right": 40, "Smile_Left": 41, "Smile_Right": 42, "Squint_Left": 43, "Squint_Right": 44, "TongueUp": 45, "UpperLipIn": 46, "UpperLipOut": 47, "UpperLipUp_Left": 48, "UpperLipUp_Right": 49
+            },
+            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        },
+        "Eyelashes": {
+            "morphTargetDictionary": {
+                "Blink_Left": 0, "Blink_Right": 1, "BrowsDown_Left": 2, "BrowsDown_Right": 3, "BrowsIn_Left": 4, "BrowsIn_Right": 5, "BrowsOuterLower_Left": 6, "BrowsOuterLower_Right": 7, "BrowsUp_Left": 8, "BrowsUp_Right": 9,
+                "CheekPuff_Left": 10, "CheekPuff_Right": 11, "EyesWide_Left": 12, "EyesWide_Right": 13, "Frown_Left": 14, "Frown_Right": 15, "JawBackward": 16, "JawForeward": 17, "JawRotateY_Left": 18, "JawRotateY_Right": 19,
+                "JawRotateZ_Left": 20, "JawRotateZ_Right": 21, "Jaw_Down": 22, "Jaw_Left": 23, "Jaw_Right": 24, "Jaw_Up": 25, "LowerLipDown_Left": 26, "LowerLipDown_Right": 27, "LowerLipIn": 28, "LowerLipOut": 29, "Midmouth_Left": 30,
+                "Midmouth_Right": 31, "MouthDown": 32, "MouthNarrow_Left": 33, "MouthNarrow_Right": 34, "MouthOpen": 35, "MouthUp": 36, "MouthWhistle_NarrowAdjust_Left": 37, "MouthWhistle_NarrowAdjust_Right": 38, "NoseScrunch_Left": 39,
+                "NoseScrunch_Right": 40, "Smile_Left": 41, "Smile_Right": 42, "Squint_Left": 43, "Squint_Right": 44, "TongueUp": 45, "UpperLipIn": 46, "UpperLipOut": 47, "UpperLipUp_Left": 48, "UpperLipUp_Right": 49
+            },
+            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]    
+        }
+    };
+        
     this.lipsyncModule = new Lipsync();
 
     // if we have the state passed, then we restore the state
@@ -62,29 +88,34 @@ FacialController.prototype.configure = function (o) {
         this.lookAtNeck = o.lookAtNeck;
     if (o.gazePositions)
         this._gazePositions = o.gazePositions;
+    // if (o.morphTargets)
+        // this._morphDeformers = o.morphTargets;
     if (o.morphTargets)
-        this._morphDeformers = o.morphTargets;
-
+        this._morphTargets = o.morphTargets;
+    if(o.characterConfig)
+        this._mappingBS = o.characterConfig.faceController.blendshapeMap;
 }
 
 FacialController.prototype.start = function (morphTargets) {
-   
+    // console.log(this._facialBS);
+    
     if (!morphTargets) {
         // Get morph targets
         morphTargets = {
             Body: this.character.getObjectByName("BodyMesh") || this.character.getObjectByName("Body"),
             Eyelashes: this.character.getObjectByName("Eyelashes")
         }
+        this._morphTargets = morphTargets;
     }
-
+    
     this._facialBSAcc = {};
     this._facialBSFinal = {};
-
-    this._morphDeformers = { "Body": morphTargets.Body, "Eyelashes": morphTargets.Eyelashes };
+    
+    // this._morphDeformers = { "Body": morphTargets.Body, "Eyelashes": morphTargets.Eyelashes };
     this._facialBS = {};
     this._eyeLidsBS = [];
     this._squintBS = [];
-
+    
     if (morphTargets) {
         for (let part in this._morphDeformers) {
 
@@ -98,13 +129,13 @@ FacialController.prototype.start = function (morphTargets) {
 
             for (let i = 0; i < BSnames.length; ++i) {
                 let name = BSnames[i].replaceAll("mesh_morph_", "");
-
+                
                 // Eyelashes things
                 if (name.toLocaleLowerCase().includes(this.eyelidsBSName.toLocaleLowerCase())) // get blendshape indices of eyelids
-                    eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
+                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
 
                 if (name.toLocaleLowerCase().includes(this.squintBSName.toLocaleLowerCase())) // get blendshape indices of squint
-                    squintIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
+                squintIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
 
             }
             this._eyeLidsBS.push(eyelidsIdx);
@@ -117,16 +148,16 @@ FacialController.prototype.start = function (morphTargets) {
         console.error("Morph deformer not found");
         return;
     }
-
+    
     this.resetFace();
 
     this._FacialLexemes = [];
     this.FA = new FacialEmotion(this._facialBS);
-
+    
     // Gaze
     // Get head bone node
     if (!this.headNode)
-        console.error("Head bone node not found with id: ");
+    console.error("Head bone node not found with id: ");
     else if (!this._gazePositions["HEAD"]) {
         let headNode = this.character.getObjectByName(this.headNode)
         this._gazePositions["HEAD"] = headNode.getWorldPosition(new THREE.Vector3());
@@ -138,19 +169,19 @@ FacialController.prototype.start = function (morphTargets) {
     let lookAtHeadNode = this.character.headTarget;
 
     if (!this.lookAtEyes)
-        console.error("LookAt Eyes not found");
+    console.error("LookAt Eyes not found");
     else if (!this._gazePositions["EYESTARGET"])
-        this._gazePositions["EYESTARGET"] = lookAtEyesNode.getWorldPosition(new THREE.Vector3());
+    this._gazePositions["EYESTARGET"] = lookAtEyesNode.getWorldPosition(new THREE.Vector3());
 
     if (!this.lookAtHead)
-        console.error("LookAt Head not found");
+    console.error("LookAt Head not found");
     else if (!this._gazePositions["HEADTARGET"])
-        this._gazePositions["HEADTARGET"] = lookAtHeadNode.getWorldPosition(new THREE.Vector3());
+    this._gazePositions["HEADTARGET"] = lookAtHeadNode.getWorldPosition(new THREE.Vector3());
 
     if (!this.lookAtNeck)
-        console.error("LookAt Neck not found");
+    console.error("LookAt Neck not found");
     else if (!this._gazePositions["NECKTARGET"])
-        this._gazePositions["NECKTARGET"] = lookAtNeckNode.getWorldPosition(new THREE.Vector3());
+    this._gazePositions["NECKTARGET"] = lookAtNeckNode.getWorldPosition(new THREE.Vector3());
 
     // Gaze manager
     this.gazeManager = new GazeManager(lookAtNeckNode, lookAtHeadNode, lookAtEyesNode, this._gazePositions);
@@ -158,12 +189,13 @@ FacialController.prototype.start = function (morphTargets) {
     this.headBML = []; //null;
 
     this.autoBlink = new Blink();
+
 }
 
 FacialController.prototype.reset = function ( keepEmotion = false ) {
-
+    
     this.resetFace(); // blendshapes to 0
-
+    
     if (this.textToLip) { this.textToLip.cleanQueueSentences(); }
     if (this.lipsyncModule) { this.lipsyncModule.stop(); }
 
@@ -186,8 +218,25 @@ FacialController.prototype.resetFace = function () {
     }
 }
 
-//example of one method called for ever update event
+//public update function
 FacialController.prototype.update = function (dt) {
+    
+    // Update Facial BlendShapes
+    this.defaultUpdate(dt);
+
+    // Map facialBS to current model BS
+    for (let part in this._morphDeformers) {
+        for (const BSName in this._mappingBS[part]) {
+            let nameBS = this._mappingBS[part][BSName]; // current avatar BS name to default BS name
+            let idx = this._morphDeformers[part].morphTargetDictionary[nameBS] // dictionary of BS to idx
+            let value = this._morphDeformers[part].morphTargetInfluences[idx] // values
+            this._morphTargets[part].morphTargetInfluences[[this._morphTargets[part].morphTargetDictionary[BSName]]] = value;   
+        }
+    }
+}
+
+//example of one method called for ever update event
+FacialController.prototype.defaultUpdate = function (dt) {
 
     // Update facial expression
     this.faceUpdate(dt);
@@ -221,7 +270,6 @@ FacialController.prototype.update = function (dt) {
     
     this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
     this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
-    
 }
 
 // Update facial expressions
@@ -394,7 +442,7 @@ FacialController.prototype.newTextToLip = function (bml) {
 
         // determine which blendshapes exist and map them to text2lip output
         for(let i = 0; i<BS.length; i++) {
-            if(BS[i].includes("Midmouth_Left"))         this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 0.4 ]);
+            if(BS[i].includes("Midmouth_Left"))         this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 0.4 ]); // morphTargets["Body"]
             if(BS[i].includes("Midmouth_Right"))        this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 0.4 ]);
             if(BS[i].includes("MouthNarrow_Left"))      this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 1.0 ]);
             if(BS[i].includes("MouthNarrow_Right"))     this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 1.0 ]);
