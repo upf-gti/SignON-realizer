@@ -154,10 +154,10 @@ class LocationBodyArm {
         let side = isSecond ? bml.secondSide : bml.side;
         if ( stringToDirection( side, this._tempV3_0, symmetry, true ) ){ // accumulate result and do not normalize
             // 0.5 and 1.5 to avoid rounding problems
-            if ( this._tempV3_0.x < -1.5 ){ location += "_SideRR"; }
-            else if ( this._tempV3_0.x < -0.5 ){ location += "_SideR"; }
-            else if ( this._tempV3_0.x > 1.5 ){ location += "_SideLL"; }
-            else if ( this._tempV3_0.x > 0.5 ){ location += "_SideL"; }
+            if ( this._tempV3_0.x < -1.5 ){ location += "SideRR"; }
+            else if ( this._tempV3_0.x < -0.5 ){ location += "SideR"; }
+            else if ( this._tempV3_0.x > 1.5 ){ location += "SideLL"; }
+            else if ( this._tempV3_0.x > 0.5 ){ location += "SideL"; }
         }
 
         
