@@ -260,7 +260,7 @@ function signManual( xml, start, signSpeed ){
     
             // some sigml signs have several sign_manual inside
             if ( tagName == "sign_manual" ){
-                time -= peakRelaxDuration * 0.2 + relaxEndDuration;
+                time = time - peakRelaxDuration * 0.8 - relaxEndDuration;
                 let r = signManual( action, time, signSpeed );
                 result = result.concat( r.data );
                 peakRelaxDuration = r.peakRelaxDuration;
@@ -268,7 +268,7 @@ function signManual( xml, start, signSpeed ){
                 if ( time < r.end ) { time = r.end; }
             }
         }
-        return { data: [], end: time, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration };
+        return { data: result, end: time, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration };
 
     }
     
@@ -328,7 +328,7 @@ function signManual( xml, start, signSpeed ){
             if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
             if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.RELAXEND; } //TIMESLOT.RELAXEND / signSpeed; }
         }
-        if ( result[i].motion == "wrist" ){ 
+        if ( result[i].motion == "wrist" || result[i].motion == "fingerplay" ){ 
             let dt = 0.15 * ( result[i].end - result[i].start );
             result[i].attackPeak = result[i].start + ( ( dt < 0.15 ) ? dt : 0.15 ); // entry not higher than 150 ms
             result[i].relax = result[i].end - ( ( dt < 0.15 ) ? dt : 0.15 ) ;
@@ -1190,7 +1190,9 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.seconDirection = attributes.second_direction;
     
         result.curve = attributes.curve;
-        result.curveSteepness = attributes.curve_size == "big" ? 1 : 0.3;
+        if ( attributes.curve_size == "big" ){ result.curveSteepness = 0.5; }
+        else if ( attributes.curve_size == "small" ){ result.curveSteepness = 0.05; }
+        else { result.curveSteepness = 0.15; }
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ result.zigzag = "l"; result.zigzagSpeed = 5; }
         if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; } // "small" == default value

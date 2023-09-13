@@ -571,7 +571,9 @@ Upperarm
 
 ---
 ## Directed Motion
-Moves the arm (wrist) in a linear direction. Not suited for large displacements.
+Moves the arm (wrist) in a linear direction.
+
+``distance`` and ``curveSteepness`` attributes are concurrent and not exclusive. Meaning one attribute can be 0 while the other different from 0.
 
 The motion is stopped if an arm location is executed afterwards.
 ``` javascript
@@ -590,7 +592,7 @@ The motion is stopped if an arm location is executed afterwards.
     distance: 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
     curve: "u", // string 8 directions. Default to none
     secondCurve: "l", // string 8 directions. Will compute midpoint between curve and secondCurve.
-    curveSteepness: 1, // number from [0,1] meaning the sharpness of the curve
+    curveSteepness: 1, // number meaning the sharpness of the curve
     zigzag: "l", // string 26 directions
     zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     zigzagSpeed: 3, // oscillations per second. Default 2

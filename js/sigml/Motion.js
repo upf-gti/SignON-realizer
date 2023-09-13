@@ -117,10 +117,10 @@ class DirectedMotion {
 
 
         // set default direction (+z), default curve direction (+y) and ajust with size and curve steepness
-        this.bezier[0].set(0,0,0);
-        this.bezier[3].set(0,0,1).multiplyScalar( this.distance );
-        this.bezier[1].set(0,1,0.5).multiplyScalar( this.distance * this.steepness );
-        this.bezier[2].set(0,1,-0.5).multiplyScalar( this.distance * this.steepness ).add( this.bezier[3] );
+        this.bezier[0].set( 0, 0, 0 );
+        this.bezier[3].set( 0, 0, this.distance );
+        this.bezier[1].set( 0, this.steepness * 0.5, this.distance * 0.5 );
+        this.bezier[2].set( 0, this.steepness * 0.5, this.distance * (-0.5) ).add( this.bezier[3] );
                 
         // rotate default curve direction (+y) to match user's one
         if ( !isNaN( curveDir ) ){
