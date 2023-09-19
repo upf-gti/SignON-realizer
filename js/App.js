@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
-import { TIMESLOT, sigmlStringToBML } from './sigml/SigmlToBML.js';
+import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 import { AppGUI } from './GUI.js';
 
 // Correct negative blenshapes shader of ThreeJS
@@ -261,16 +261,14 @@ class App {
 
     init() {
 
-        let main_area = LX.init();
-            
         this.loadLanguageDictionaries( "NGT" );
-
+        
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color( 0xa0a0a0 );
         //const gridHelper = new THREE.GridHelper( 10, 10 );
         //gridHelper.position.set(0,0.001,0);
         //this.scene.add( gridHelper );
-                        
+        
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
@@ -279,8 +277,8 @@ class App {
         this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
         this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
         this.renderer.shadowMap.enabled = false;
-        main_area.attach( this.renderer.domElement );
-
+        document.body.appendChild( this.renderer.domElement );
+        
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );

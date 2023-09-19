@@ -108,8 +108,8 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
 
     // Add new block to stack
     //this.BehaviourManager.newBlock(msg, thiscene.time);
-    data = JSON.parse(data);
-    if (data.type == "behaviours") data = data.data;
+    if(typeof(data) == "string"){ data = JSON.parse(data); }
+    if (data.type == "behaviours"){ data = data.data; }
 
     // Add new blocks to stack
     let msg = {};

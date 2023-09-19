@@ -4,34 +4,47 @@ import { sigmlStringToBML } from "./sigml/SigmlToBML.js";
 class AppGUI{
     constructor( app ){
         this.app = app;
+
+        // take canvas from dom, detach from dom, attach to lexgui 
+        this.app.renderer.domElement.remove(); // removes from dom
+        let main_area = LX.init();
+        main_area.attach( this.app.renderer.domElement );
+
         this.gui = null;
         this.createPanel();
     }
 
     createPanel(){
 
-        new LX.PocketDialog( "Controls", p => {
+        this.gui = new LX.PocketDialog( "Controls", p => {
 
             // --------- Customization ---------
             p.branch( "Customization" );
             // get color set on the actual objects and set them as default values to the colorpicker
             let color = new THREE.Color();
-            color.copyLinearToSRGB(this.app.scene.getObjectByName("Chroma").material.color);
-            let backPlaneColor = "#" + color.getHexString();
-        
-            color.copyLinearToSRGB(this.app.model.getObjectByName("Tops").material.color);
-            let topsColor = "#" + color.getHexString();
 
-            p.addColor("Color Chroma", backPlaneColor, (value, event) => {
-                let color = this.app.scene.getObjectByName("Chroma").material.color; // css works in sRGB
-                color.set(value);
-                color.copySRGBToLinear(color); // material.color needs to be in linearSpace
-            });
-            p.addColor("Color Clothes", topsColor, (value, event) => {
-                let color = this.app.scene.getObjectByName("Tops").material.color; // css works in sRGB
-                color.set(value);
-                color.copySRGBToLinear(color); // material.color needs to be in linearSpace
-            });
+            let chroma = this.app.scene.getObjectByName("Chroma");
+            if ( chroma ){
+                color.copyLinearToSRGB(chroma.material.color);
+                let backPlaneColor = "#" + color.getHexString();
+                p.addColor("Color Chroma", backPlaneColor, (value, event) => {
+                    let color = this.app.scene.getObjectByName("Chroma").material.color; // css works in sRGB
+                    color.set(value);
+                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                });
+            }
+        
+            let modelShirt = this.app.model.getObjectByName("Tops");
+            if ( modelShirt ){
+                color.copyLinearToSRGB(this.app.model.getObjectByName("Tops").material.color);
+                let topsColor = "#" + color.getHexString();
+    
+                p.addColor("Color Clothes", topsColor, (value, event) => {
+                    let color = this.app.scene.getObjectByName("Tops").material.color; // css works in sRGB
+                    color.set(value);
+                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                });
+            }
 
             p.addNumber("Signing Speed", 1, (value, event) => {
                 // this.app.signingSpeed = Math.pow( Math.E, (value - 1) );
