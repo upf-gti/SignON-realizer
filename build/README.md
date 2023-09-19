@@ -25,6 +25,7 @@ The organisation of folders and files should be as follows:
             - hdrs/
             - imgs/
             - EvaHandsEyesFixed.glb
+            - EvaConfig.json
 
         - external/ 
             - three/

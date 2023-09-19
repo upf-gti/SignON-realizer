@@ -148,7 +148,7 @@ class AppGUI{
                 button.addEventListener( "click", () => { 
                     // parse glosses array and remove undesired characters
                     let glosses = textarea.value;
-                    glosses = glosses.replace( "\n", " ").split( " " );
+                    glosses = glosses.replaceAll( "\n", " ").split( " " );
                     for ( let i = 0; i < glosses.length; ++i ){
                         if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
                             glosses.splice( i, 1 ); 

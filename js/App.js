@@ -74,18 +74,22 @@ class App {
     }
 
     /* 
-    * Given an array of blocks of type { type: "bml" || "sigml",  data: "" } where data contains the text instructions either in bml or sigml.
+    * Given an array of blocks of type { type: "bml" || "sigml" || "glossName",  data: "" } where data contains the text instructions either in bml or sigml.
     * It computes the sequential union of all blocks.
     * Provides a way to feed the app with custom bmls, sigml 
     * Returns duration of the whole array, without delayTime
     */
     async processMessageRawBlocks( glosses = [], delayTime = 0 ){
-        if ( !glosses ){ return 0; }
+        if ( !glosses ){ return null; }
 
-        let time = parseFloat( delayTime );
-        time = isNaN( time ) ? 0 : time;
+        delayTime = parseFloat( delayTime );
+        delayTime = isNaN( delayTime ) ? 0 : delayTime;
+        let time = delayTime;
         let orders = []; // resulting bml instructions
         let glossesDictionary = this.languageDictionaries[ this.selectedLanguage ].glosses;
+        
+        let peakRelaxDuration = 0;
+        let relaxEndDuration = 0;
         
         for( let i = 0; i < glosses.length; ++i ){
             let gloss = glosses[i];
@@ -108,6 +112,7 @@ class App {
 
                 if ( gloss.type == "bml" ){ // BML
                     let result = JSON.parse( gloss.data );
+                    time = time - result.relaxEndDuration - result.peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     let maxDuration = 0;
                     let maxRelax = 0;
                     for( let b = 0; b < result.length; ++b ){
@@ -125,22 +130,24 @@ class App {
                         }
                     }
                     orders = orders.concat( result );
-                    if ( i < ( glosses.length - 1 ) ){ time += maxRelax; } // time up to last relax
-                    else{ time += maxDuration; } // time up to last end
+                    time += maxDuration; // time up to last end
+
+                    peakRelaxDuration = 0;
+                    relaxEndDuration = maxDuration - maxRelax;
                 }
                 else if ( gloss.type == "sigml" ){ // SiGML
+                    time = time - relaxEndDuration - peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     let result = sigmlStringToBML( gloss.data, time );
                     orders = orders.concat(result.data);
                     time += result.duration; 
-                    if ( i < ( glosses.length - 1 ) ){ 
-                        time = time - result.relaxEndDuration - result.peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
-                    }
+                    peakRelaxDuration = result.peakRelaxDuration;
+                    relaxEndDuration = result.relaxEndDuration;
                 }
                 else{
                     // TODO DEFAULT SKIPPING SIGN MESSAGE
                     time += 3; continue; 
                 }
-            }catch(e){ console.log( "parse error: " + gloss ); }
+            }catch(e){ console.log( "parse error: " + gloss ); time += 3; }
         }
 
         // give the orders to the avatar controller 
@@ -150,7 +157,7 @@ class App {
         };
         this.ECAcontroller.processMsg(JSON.stringify(msg));
 
-        return time; // duration
+        return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -361,9 +368,10 @@ class App {
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
 
-        this.loaderGLB.load( './data/EvaHandsEyesFixed.glb', (glb) => {
+        let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
+        this.loaderGLB.load( modelFilePath, (glb) => {
             let model = this.model = glb.scene;
-            model.rotateOnAxis( new THREE.Vector3(1,0,0), -Math.PI/2 );
+            model.quaternion.premultiply( modelRotation );
             model.castShadow = true;
             
             model.traverse( (object) => {
@@ -393,7 +401,7 @@ class App {
             model.headTarget = this.headTarget;
             model.neckTarget = this.neckTarget;
 
-            fetch('./data/EVAconfig.json').then(response => response.text()).then( (text) =>{
+            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
                 let config = JSON.parse( text );
                 let ECAcontroller = this.ECAcontroller = new CharacterController( {character: this.model, characterConfig: config} );
                 ECAcontroller.start();
