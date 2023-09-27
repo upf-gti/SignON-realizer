@@ -111,8 +111,11 @@ class App {
                 }
 
                 if ( gloss.type == "bml" ){ // BML
-                    let result = JSON.parse( gloss.data );
-                    time = time - result.relaxEndDuration - result.peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
+                    let result = gloss.data;
+                    if( typeof( result ) == "string" ){ result = JSON.parse( result ) };
+                    if ( !Array.isArray( result ) ){ throw true; }
+
+                    time = time - relaxEndDuration - peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     let maxDuration = 0;
                     let maxRelax = 0;
                     for( let b = 0; b < result.length; ++b ){
@@ -155,7 +158,7 @@ class App {
             type: "behaviours",
             data: orders
         };
-        this.ECAcontroller.processMsg(JSON.stringify(msg));
+        this.ECAcontroller.processMsg( msg );
 
         return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
     }
@@ -282,7 +285,7 @@ class App {
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set(0.0, 1.5, 1);
+        this.controls.object.position.set( Math.sin(13*Math.PI/180), 1.5, Math.cos(13*Math.PI/180) );
         this.controls.minDistance = 0.1;
         this.controls.maxDistance = 7;
         this.controls.target.set(0.0, 1.3, 0);
@@ -413,6 +416,29 @@ class App {
         });
 
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+
+        window.addEventListener(
+            "message",
+            (event) => {
+            //   if (event.origin !== "http://example.org:8080") return;
+                if ( !this.ECAcontroller ){ return; }
+                
+                let data = event.data;
+                console.log( event );
+
+                if ( typeof( data ) == "string" ){ 
+                    try{ 
+                        data =  JSON.parse( data ); 
+                    }catch( e ){ console.error("Error while parsing an external message: ", event ); };
+                }
+
+                if ( !Array.isArray(data) ){ return; }
+
+                this.ECAcontroller.reset();
+                this.processMessageRawBlocks( data );          
+            },
+            false,
+          );
     }
 
     animate() {

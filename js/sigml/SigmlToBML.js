@@ -293,6 +293,7 @@ function signManual( xml, start, signSpeed ){
             let r = motionParser( action, time, signGeneralInfo.bothHands ? "both" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, currentPosture );
             result = result.concat( r.data );
             if ( time < r.end ) { time = r.end; }
+            currentPosture = currentPostureUpdate( currentPosture, r.data );
         }
     }
     // no motions were inserted, but a location was

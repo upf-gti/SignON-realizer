@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { findIndexOfBone } from "./SigmlUtils.js";
 
 class BasicBMLValueInterpolator {
     constructor( config, skeleton, isLeftHand = false ){
@@ -125,9 +126,38 @@ class BodyMovement {
         this.transition = false;
 
         this._tempQ_0 = new THREE.Quaternion();
-        this._tempV3_0 = new THREE.Vector3();
-        this._tempV3_1 = new THREE.Vector3();
-        this._tempV3_2 = new THREE.Vector3();
+        
+
+
+
+        this.jointsData = { };
+        this.jointsData.shouldersUnion = this.computeJointData( this.config.boneMap.ShouldersUnion, this.config.boneMap.Neck );
+        this.jointsData.stomach = this.computeJointData( this.config.boneMap.Stomach, this.config.boneMap.ShouldersUnion );
+        this.jointsData.belowStomach = this.computeJointData( this.config.boneMap.BelowStomach, this.config.boneMap.Stomach );
+    }
+
+    computeJointData( boneIdx, upAxisReferenceBoneIdx ){
+        // compute bind quat
+        let m1 = this.skeleton.boneInverses[ boneIdx ].clone().invert(); // LocalToMeshCoords:    parentParentBone * parentBone * bone * point
+        // inv(parentBone) * inv(parentParentBone)    *    parentParentBone * parentBone * bone   --> 
+        m1.premultiply( this.skeleton.boneInverses[ findIndexOfBone( this.skeleton, this.skeleton.bones[ boneIdx ].parent.name ) ] ); 
+        let bindQuat = (new THREE.Quaternion()).setFromRotationMatrix( m1 ).normalize();;
+
+        // compute local axes of rotation based on bones boneIdx and upAxisReferenceBoneIdx.
+        let m2 = this.skeleton.boneInverses[ upAxisReferenceBoneIdx ].clone().invert(); // LocalToMeshCoords
+        let xAxis = new THREE.Vector3();
+        let yAxis = new THREE.Vector3();
+        let zAxis = new THREE.Vector3();
+        zAxis.setFromMatrixPosition( m1 ); // position of boneIdx in mesh coordinates
+        yAxis.setFromMatrixPosition( m2 ); // position of upAxisReferenceBoneIdx in mesh coordinates
+        yAxis.subVectors( yAxis, zAxis ); // Y axis direction in mesh coordinates
+        let m3 = (new THREE.Matrix3).setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] ); // mesh to local, directions only
+        yAxis.applyMatrix3( m3 ).normalize(); // Y axis, convert to local boneIdx coordinates
+        zAxis.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // Z convert mesh config front axis from mesh coords to local coords
+        xAxis.crossVectors( yAxis, zAxis ).normalize(); // x
+        zAxis.crossVectors( xAxis, yAxis ).normalize(); // Z ensure orthogonality
+
+        return { idx: boneIdx, bindQuat: bindQuat, beforeBindAxes: [ xAxis, yAxis, zAxis ] }; // tiltFB, rotateRL, tiltRL || x,y,z
     }
 
     reset (){
@@ -135,6 +165,9 @@ class BodyMovement {
         this.tiltFB = [];
         this.tiltLR = [];
         this.rotateLR = [];
+        for( let part in this.jointsData ){
+            this.skeleton.bones[ this.jointsData[ part ].idx ].quaternion.copy( this.jointsData[ part ].bindQuat );
+        }
     }
 
     update( dt ){
@@ -170,45 +203,20 @@ class BodyMovement {
         }
 
         this.transition = transition;
-        let boneMap = this.config.boneMap;
         let q = this._tempQ_0;
 
 
-        // upper back
-        let rotateLRAxis = this._tempV3_0.copy( this.skeleton.bones[ boneMap.Neck ].position).normalize(); // Y        
-        let tiltFBAxis = this._tempV3_1.set(1,0,0); // x
-        let tiltLRAxis = this._tempV3_2.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333);
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333);
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.premultiply( q );
-
-        // mid back
-        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.ShouldersUnion ].position ).normalize(); // Y        
-        tiltFBAxis = tiltFBAxis.set(1,0,0); // x
-        tiltLRAxis = tiltLRAxis.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333);
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333);
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
-
-        // lower back
-        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.Stomach ].position ).normalize(); // Y        
-        tiltFBAxis = tiltFBAxis.set(1,0,0); // x
-        tiltLRAxis = tiltLRAxis.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333 );
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333 );
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
+        for( let part in this.jointsData ){
+            let data = this.jointsData[ part ];
+            let bone = this.skeleton.bones[ data.idx ];
+            bone.quaternion.setFromAxisAngle( data.beforeBindAxes[1], rotateLRAngle *0.3333 ); // y
+            q.setFromAxisAngle( data.beforeBindAxes[0], tiltFBAngle *0.3333); // x
+            bone.quaternion.premultiply( q );
+            q.setFromAxisAngle( data.beforeBindAxes[2], tiltLRAngle *0.3333); // z
+            bone.quaternion.premultiply( q );
+            bone.quaternion.premultiply( data.bindQuat ); // probably should MULTIPLY bind quat (previously adjusting axes)
+            bone.quaternion.normalize();
+        }
     }
 
     newGestureBML( bml ){

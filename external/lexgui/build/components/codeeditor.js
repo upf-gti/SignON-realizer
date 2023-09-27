@@ -53,8 +53,9 @@
 
         constructor( area, options = {} ) {
 
+            this.skip_info = options.skip_info;
             this.base_area = area;
-            this.area = new LX.Area( { className: "lexcodeeditor" } );
+            this.area = new LX.Area( { className: "lexcodeeditor", height: "auto" } );
 
             this.tabs = this.area.addTabs( { onclose: (name) => delete this.openedTabs[name] } );
             this.tabs.root.addEventListener( 'dblclick', (e) => {
@@ -62,8 +63,7 @@
                 this.addTab("unnamed.js", true);
             } );
 
-            area.root.style.display = "flex"; // add gutter and code
-            area.root.style.position = "relative";
+            area.root.classList.add('codebasearea');
             this.gutter = document.createElement('div');
             this.gutter.className = "lexcodegutter";
             area.attach( this.gutter );
@@ -122,7 +122,7 @@
 
             // Code
 
-            this.highlight = 'JavaScript';
+            this.highlight = options.highlight ?? 'Plain Text';
             this.onsave = options.onsave ?? ((code) => {  });
             this.onrun = options.onrun ?? ((code) => { this.runScript(code) });
             this.actions = {};
@@ -133,7 +133,7 @@
             this._lastTime = null;
 
             this.languages = [
-                'JavaScript', 'GLSL'
+                'Plain Text', 'JavaScript', 'GLSL', 'JSON', 'XML'
             ];
             this.specialKeys = [
                 'Backspace', 'Enter', 'ArrowUp', 'ArrowDown', 
@@ -154,13 +154,16 @@
                 'while', 'continue', 'break', 'do'
             ];
             this.symbols = [
-                '<', '>', '{', '}', '(', ')', ';', '=', '|', '||', '&', '&&', '?', '??'
+                '<', '>', '[', ']', '{', '}', '(', ')', ';', '=', '|', '||', '&', '&&', '?', '??'
             ];
 
             // Action keys
 
             this.action('Backspace', ( ln, cursor, e ) => {
+
+                this._addUndoStep(cursor);
                 let selection = this.selections.children[0];
+
                 if(selection.range) {
                     this.deleteSelection(cursor, selection);
                     if(!this.code.lines[ln].length) this.actions['Backspace'](ln, cursor, e);
@@ -185,6 +188,9 @@
             });
 
             this.action('Delete', ( ln, cursor, e ) => {
+
+                this._addUndoStep( cursor );
+
                 let selection = this.selections.children[0];
                 if(selection.range)
                 {
@@ -243,9 +249,11 @@
 
                 if(e.ctrlKey)
                 {
-                    this.onrun( this.code.lines.join("\n") );
+                    this.onrun( this.getText() );
                     return;
                 }
+
+                this._addUndoStep(cursor);
 
                 var _c0 = this.getCharAtPos( cursor, -1 );
                 var _c1 = this.getCharAtPos( cursor );
@@ -397,13 +405,15 @@
         
             this.openedTabs = { };
             this.addTab("+", false, "New File");
-            this.addTab("script1.js", true);
-
-            this.loadFile( "../data/script.js" );
+            this.addTab("untitled", true);
 
             // Create inspector panel
             let panel = this._create_panel_info();
-            area.attach( panel );
+            if( panel ) area.attach( panel );
+        }
+
+        getText( min ) {
+            return this.code.lines.join(min ? ' ' : '\n');
         }
 
         loadFile( file ) {
@@ -420,7 +430,9 @@
             {
                 let filename = file;
                 LX.request({ url: filename, success: text => {
+
                     const name = filename.substring(filename.lastIndexOf('/') + 1);
+                    this._change_language_from_extension( LX.getExtension(name) );
                     inner_add_tab( text, name, filename );
                 } });
             }
@@ -429,6 +441,7 @@
                 const fr = new FileReader();
                 fr.readAsText( file );
                 fr.onload = e => { 
+                    this._change_language_from_extension( LX.getExtension(file.name) );
                     const text = e.currentTarget.result;
                     inner_add_tab( text, file.name );
                 };
@@ -436,40 +449,84 @@
             
         }
 
+        _addUndoStep( cursor )  {
+
+            var cursor = cursor ?? this.cursors.children[0];
+
+            this.code.undoSteps.push( {
+                lines: LX.deepCopy(this.code.lines),
+                cursor: this.saveCursor(cursor),
+                line: cursor.line
+            } );
+        }
+
+        _change_language( lang ) {
+            this.highlight = lang;
+            this._refresh_code_info();
+            this.processLines();
+        }
+
+        _change_language_from_extension( ext ) {
+            
+            switch(ext.toLowerCase())
+            {
+                case 'js': return this._change_language('JavaScript');
+                case 'glsl': return this._change_language('GLSL');
+                case 'json': return this._change_language('JSON');
+                case 'xml': return this._change_language('XML');
+                case 'txt': 
+                default:
+                    this._change_language('Plain Text');
+            }
+        }
+
         _create_panel_info() {
             
-            let panel = new LX.Panel({ className: "lexcodetabinfo", width: "calc(100%)", height: "auto" });
-            panel.ln = 0;
-            panel.col = 0;
+            if( !this.skip_info )
+            {
+                let panel = new LX.Panel({ className: "lexcodetabinfo", width: "calc(100%)", height: "auto" });
+                panel.ln = 0;
+                panel.col = 0;
+    
+                this._refresh_code_info = (ln = panel.ln, col = panel.col) => {
+                    panel.ln = ln;
+                    panel.col = col;
+                    panel.clear();
+                    panel.sameLine();
+                    panel.addLabel(this.code.title, { float: 'right' });
+                    panel.addLabel("Ln " + ln, { width: "48px" });
+                    panel.addLabel("Col " + col, { width: "48px" });
+                    panel.addButton("<b>{ }</b>", this.highlight, (value, event) => {
+                        LX.addContextMenu( "Language", event, m => {
+                            for( const lang of this.languages )
+                                m.add( lang, this._change_language.bind(this) );
+                        });
+                    }, { width: "25%", nameWidth: "15%" });
+                    panel.endLine();
+                };
 
-            const on_change_language = ( lang ) => {
-                this.highlight = lang;
                 this._refresh_code_info();
+
+                return panel;
             }
+            else
+            {
+                this._refresh_code_info = () => {};
 
-            this._refresh_code_info = (ln = panel.ln, col = panel.col) => {
-                panel.ln = ln;
-                panel.col = col;
-                panel.clear();
-                panel.sameLine();
-                panel.addLabel(this.code.title, { float: 'right' });
-                panel.addLabel("Ln " + ln, { width: "48px" });
-                panel.addLabel("Col " + col, { width: "48px" });
-                panel.addButton("<b>{ }</b>", this.highlight, (value, event) => {
-                    LX.addContextMenu( "Language", event, m => {
-                        for( const lang of this.languages )
-                            m.add( lang, on_change_language );
-                    });
-                }, { width: "25%", nameWidth: "15%" });
-                panel.endLine();
-            };
+                setTimeout( () => {
 
-            this._refresh_code_info();
+                    // Change css a little bit...
+                    this.gutter.style.height = "calc(100% - 31px)";
+                    this.root.querySelectorAll('.code').forEach( e => e.style.height = "100%" );
+                    this.root.querySelector('.lexareatabscontent').style.height = "calc(100% - 23px)";
 
-            return panel;
+                }, 100);
+            }
         }
 
         _onNewTab( e ) {
+
+            this.processFocus(false);
 
             LX.addContextMenu( null, e, m => {
                 m.add( "Create", this.addTab.bind(this, "unnamed.js", true) );
@@ -535,7 +592,8 @@
                 this.code = this.openedTabs[tabname];
                 this.restoreCursor(cursor, this.code.cursorState);    
                 this.endSelection();
-                this.processLines();
+                // this.processLines();
+                this._change_language_from_extension( LX.getExtension(tabname) );
                 this._refresh_code_info(cursor.line + 1, cursor.charPos);
 
                 // Restore scroll
@@ -696,7 +754,9 @@
             if( !this.code ) 
                 return;
 
-            var key = e.key;
+            var key = e.key ?? e.detail.key;
+
+            const skip_undo = e.detail.skip_undo ?? false;
 
             // keys with length > 1 are probably special keys
             if( key.length > 1 && this.specialKeys.indexOf(key) == -1 )
@@ -731,7 +791,7 @@
                     return;
                 case 's': // save
                     e.preventDefault();
-                    this.onsave( this.code.lines.join("\n") );
+                    this.onsave( this.getText() );
                     return;
                 case 'v': // paste
                     const text = await navigator.clipboard.readText();
@@ -792,24 +852,19 @@
             const d = new Date();
             const current = d.getTime();
 
-            if( !this._lastTime ) {
-                this._lastTime = current;
-                this.code.undoSteps.push( {
-                    lines: LX.deepCopy(this.code.lines),
-                    cursor: this.saveCursor(cursor),
-                    line: cursor.line
-                } );
-            } else {
-                if( (current - this._lastTime) > 3000 && this.code.lines.length){
-                    this._lastTime = null;
-                    this.code.undoSteps.push( {
-                        lines: LX.deepCopy(this.code.lines),
-                        cursor: this.saveCursor(cursor),
-                        line: cursor.line
-                    } );
-                }else{
-                    // If time not enough, reset timer
+            if( !skip_undo )
+            {
+                if( !this._lastTime ) {
                     this._lastTime = current;
+                    this._addUndoStep( cursor );
+                } else {
+                    if( (current - this._lastTime) > 3000 && this.code.lines.length){
+                        this._lastTime = null;
+                        this._addUndoStep( cursor );
+                    }else{
+                        // If time not enough, reset timer
+                        this._lastTime = current;
+                    }
                 }
             }
 
@@ -895,20 +950,8 @@
             const is_comment = linestring.split('//');
             linestring = ( is_comment.length > 1 ) ? is_comment[0] : linestring;
 
-            // ... if starts comment block
-            const starts_block_comment = linestring.split('/*');
-            linestring = ( starts_block_comment.length > 1 ) ? starts_block_comment[0] : linestring;
-
-            // ... if ends comment block
-            // const ends_block_comment = linestring.split('*/');
-            // linestring = ( ends_block_comment.length > 1 ) ? ends_block_comment[1] : linestring;
-
             const tokens = linestring.split(' ').join('¬ ¬').split('¬'); // trick to split without losing spaces
             const to_process = []; // store in a temp array so we know prev and next tokens...
-
-            // append block line
-            // if( ends_block_comment.length > 1 )
-            //     to_process.push( ends_block_comment[0] + "*/" );
 
             for( let t of tokens )
             {
@@ -937,21 +980,6 @@
             if( is_comment.length > 1 )
                 to_process.push( "//" + is_comment[1] );
 
-            else if( starts_block_comment.length > 1 )
-            {
-                let line_comm = starts_block_comment[1];
-
-                // ... if ends comment block
-                const ends_block_comment = line_comm.split('*/');
-                if( ends_block_comment.length > 1 ) {
-                    line_comm = ends_block_comment[0];
-                }
-
-                to_process.push( "/*" + line_comm );
-                to_process.push( "*/" );
-                to_process.push( ends_block_comment[1] );
-            }
-            
             // Process all tokens
             for( var i = 0; i < to_process.length; ++i )
             {
@@ -1007,39 +1035,44 @@
                 span.innerHTML = token;
 
                 if( this._building_block_comment )
-                    span.className += " cm-com";
+                    span.classList.add("cm-com");
                 
                 else if( this._building_string  )
-                    span.className += " cm-str";
+                    span.classList.add("cm-str");
                 
                 else if( this.keywords.indexOf(token) > -1 )
-                    span.className += " cm-kwd";
+                    span.classList.add("cm-kwd");
 
                 else if( this.builtin.indexOf(token) > -1 )
-                    span.className += " cm-bln";
+                    span.classList.add("cm-bln");
 
                 else if( this.literals.indexOf(token) > -1 )
-                    span.className += " cm-lit";
+                    span.classList.add("cm-lit");
 
                 else if( this.symbols.indexOf(token) > -1 )
-                    span.className += " cm-sym";
+                    span.classList.add("cm-sym");
 
                 else if( token.substr(0, 2) == '//' )
-                    span.className += " cm-com";
+                    span.classList.add("cm-com");
 
                 else if( token.substr(0, 2) == '/*' )
-                    span.className += " cm-com";
+                    span.classList.add("cm-com");
 
                 else if( token.substr(token.length - 2) == '*/' )
-                    span.className += " cm-com";
+                    span.classList.add("cm-com");
 
                 else if( !Number.isNaN(+token) )
-                    span.className += " cm-dec";
+                    span.classList.add("cm-dec");
 
                 else if (   (prev == 'class' && next == '{') || 
                             (prev == 'new' && next == '(') )
-                    span.className += " cm-typ";
+                     span.classList.add("cm-typ");
+                
+                else if ( next == '(' )
+                    span.classList.add("cm-mtd");
 
+                let highlight = this.highlight.replace(/\s/g, '');
+                span.classList.add(highlight.toLowerCase());
                 linespan.appendChild(span);
             }
 
@@ -1236,7 +1269,10 @@
         addSpaces(n) {
             
             for( var i = 0; i < n; ++i ) {
-                this.root.dispatchEvent(new KeyboardEvent('keydown', {'key': ' '}));
+                this.root.dispatchEvent(new CustomEvent('keydown', {'detail': {
+                    skip_undo: true,
+                    key: ' '
+                }}));
             }
         }
 

@@ -110,7 +110,7 @@ class ExtfidirPalmor {
         }
         else if ( this.time < this.attackPeak ){      
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.curQuat.multiply( this._tempQ_0 );
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
             nlerpQuats( this.curQuat, this.srcQuat, this.curQuat, t );
@@ -120,17 +120,17 @@ class ExtfidirPalmor {
         }
         else if ( this.time < this.relax ){ 
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.curQuat.multiply( this._tempQ_0 );
             this.wristBone.quaternion.copy( this.curQuat );
         }
         else { 
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.srcQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.srcQuat.multiply( this._tempQ_0 );
 
             this._computeSwingFromCurrentPose( this.extfidir.defDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.defAngle * ( this.extfidir.defDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.defAngle );
             this.curQuat.multiply( this._tempQ_0 );
 
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
@@ -215,6 +215,7 @@ class ExtfidirPalmor {
             if ( this.time > this.relax ){ this.extfidir.trgDir.copy( this.extfidir.defDir ); }
             // this.extfidir.trgDir.copy( this.extfidir.defDir );
         }
+        symmetry = (symmetry & 0xfe) | ( ( symmetry & 0x01 ) ^ ( this.extfidir.trgDir.z < 0 ? 0x01 : 0x00 ) );
         if ( !this.newGestureBMLPalmor( bml, symmetry ) ){
             if ( this.time > this.relax ){ this.palmor.trgAngle = this.palmor.defAngle; }
             // this.palmor.trgAngle = this.palmor.defAngle;
