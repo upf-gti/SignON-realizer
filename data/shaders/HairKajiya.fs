@@ -242,6 +242,8 @@ void RE_IndirectSpecular_HairKajiya( const in vec3 radiance, const in vec3 irrad
     reflectedLight.indirectSpecular += GetHairSpecular(geometry, material, radiance / 2.0, geometry.viewDir);
 }
 
+// #include <alphahash_pars_fragment>
+
 #define RE_Direct				RE_Direct_HairKajiya
 #define RE_IndirectDiffuse		RE_IndirectDiffuse_HairKajiya
 #define RE_IndirectSpecular     RE_IndirectSpecular_HairKajiya
@@ -265,10 +267,12 @@ void main() {
 
     vec2 uv = vUv;
 
+    vec4 diffuse_color = texture2D(u_hairColorMap, uv);
+
     // ------------ Analogous block to <lights_phong_fragment.glsl> ------------
     // Fill material properties
     HairKajiyaMaterial material;
-    material.diffuseColor = texture2D(u_hairColorMap, uv).rgb * u_diffuseColor;
+    material.diffuseColor = diffuse_color.rgb * u_diffuseColor;
     material.constantDiffuseFactor = u_constantDiffuseFactor;
     material.specularExp1 = u_specularExp1;
     material.specularExp2 = u_specularExp2;
@@ -291,6 +295,13 @@ void main() {
     // Calls BRDF to apply for indirect lighting (rendering equation RE_IndirectDiffuse_HairKajiya)
 	#include <lights_fragment_end>
 
+    float alphaSample = texture2D(alphaMap, vUv).r;
+    float alpha = diffuse_color.a;
+
+    vec4 diffuseColor = vec4(material.diffuseColor, alphaSample);
+
+// #include <alphahash_fragment>
+
     // Get final color output
     vec3 totalDiffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
     vec3 totalSpecular = reflectedLight.directSpecular + reflectedLight.indirectSpecular;
@@ -300,10 +311,15 @@ void main() {
     float reflectivity = 1.0;
 
     // Get opacity for alpha to coverage
-    float alphaSample = texture2D(alphaMap, vUv).r;
+    // alphaSample = alphaSample * 2.0;
+    // alphaSample = clamp(alphaSample, 0.0, 1.0);
+    // float alpha = diffuseColor.r + diffuseColor.g + diffuseColor.b;
 
+    alphaSample = (alphaSample - 0.15) / max(fwidth(alphaSample), 0.1) + 1.0;
+
+    //fragColor = vec4(outgoingLight, alpha > 0.0 ? 1.0 : 0.0);
     fragColor = vec4(outgoingLight, alphaSample);
 
     // Analogous to <tonemapping_fragment>
-    fragColor.rgb = toneMapping(fragColor.rgb);
+    //fragColor.rgb = toneMapping(fragColor.rgb);
 }

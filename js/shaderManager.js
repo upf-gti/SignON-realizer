@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 // Read, process and update shader assets
 
 class ShaderManager {
