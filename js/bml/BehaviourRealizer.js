@@ -1320,9 +1320,9 @@ var stringToUpperCase = function (item, textItem, def) {
 
 // --------------------- LIPSYNC MODULE --------------------
 
-// Switch to https if using this script
-if (window.location.protocol != "https:")
-    window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+// // Switch to https if using this script
+// if (window.location.protocol != "https:")
+//     window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
 
 // // Audio context
 // if (!Lipsync.AContext)

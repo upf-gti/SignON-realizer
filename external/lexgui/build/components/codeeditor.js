@@ -29,8 +29,13 @@
         return str.search(/\S|$/);
     }
 
-    function doAsync( fn ) {
-        setTimeout( fn, 0 );
+    let ASYNC_ENABLED = true;
+
+    function doAsync( fn, ms ) {
+        if( ASYNC_ENABLED )
+            setTimeout( fn, ms ?? 0 );
+        else
+            fn();
     }
 
     class ISelection {
@@ -46,13 +51,22 @@
             this.toY    = iy;
         }
 
+        invertIfNecessary() {
+            if(this.fromX > this.toX)
+                swapElements(this, 'fromX', 'toX');
+            if(this.fromY > this.toY)
+                swapElements(this, 'fromY', 'toY');
+        }
+
         selectInline(x, y, width) {
            
             var domEl = document.createElement('div');
             domEl.className = "lexcodeselection";
             
-            domEl.style.top = (4 + y * this.editor.lineHeight - this.editor.getScrollTop()) + "px";
-            domEl.style.left = "calc(" + (x * this.editor.charWidth) + "px + 0.25em)";
+            domEl._top = 4 + y * this.editor.lineHeight;
+            domEl.style.top = (domEl._top - this.editor.getScrollTop()) + "px";
+            domEl._left = x * this.editor.charWidth;
+            domEl.style.left = "calc(" + (domEl._left - this.editor.getScrollLeft()) + "px + 0.25em)";
             domEl.style.width = width + "px";
             this.editor.selections.appendChild(domEl);
             
@@ -155,28 +169,31 @@
             this._lastTime = null;
 
             this.languages = [
-                'Plain Text', 'JavaScript', 'GLSL', 'JSON', 'XML'
+                'Plain Text', 'JavaScript', 'GLSL', 'WGSL', 'JSON', 'XML' 
             ];
             this.specialKeys = [
                 'Backspace', 'Enter', 'ArrowUp', 'ArrowDown', 
                 'ArrowRight', 'ArrowLeft', 'Delete', 'Home',
                 'End', 'Tab'
             ];
-            this.keywords = [
-                'var', 'let', 'const', 'this', 'in', 'of', 
-                'true', 'false', 'new', 'function', 'NaN',
-                'static', 'class', 'constructor', 'null', 
-                'typeof'
-            ];
+            this.keywords = {
+                'JavaScript': ['var', 'let', 'const', 'this', 'in', 'of', 'true', 'false', 'new', 'function', 'NaN', 'static', 'class', 'constructor', 'null', 'typeof'],
+                'GLSL': ['true', 'false', 'function', 'int', 'float', 'vec2', 'vec3', 'vec4', 'mat2x2', 'mat3x3', 'mat4x4', 'struct'],
+                'WGSL': ['var', 'let', 'true', 'false', 'fn', 'u32', 'f32', 'vec2f', 'vec3f', 'vec4f', 'mat2x2f', 'mat3x3f', 'mat4x4f', 'array', 'struct'],
+            };
             this.builtin = [
                 'console', 'window', 'navigator'
             ];
             this.literals = {
-                'JavaScript': ['for', 'if', 'else', 'case', 'switch', 'return', 'while', 'continue', 'break', 'do']
+                'JavaScript': ['for', 'if', 'else', 'case', 'switch', 'return', 'while', 'continue', 'break', 'do'],
+                'GLSL': ['for', 'if', 'else', 'return', 'continue', 'break'],
+                'WGSL': ['for', 'if', 'else', 'return', 'continue', 'break', 'storage', 'read', 'uniform']
             };
             this.symbols = {
                 'JavaScript': ['<', '>', '[', ']', '{', '}', '(', ')', ';', '=', '|', '||', '&', '&&', '?', '??'],
-                'JSON': ['[', ']', '{', '}', '(', ')']
+                'JSON': ['[', ']', '{', '}', '(', ')'],
+                'GLSL': ['[', ']', '{', '}', '(', ')'],
+                'WGSL': ['[', ']', '{', '}', '(', ')', '->']
             };
 
             // Action keys
@@ -246,8 +263,10 @@
                 const prestring = this.code.lines[ln].substring(0, idx);
                 let last_pos = cursor.position;
 
-                this.resetCursorPos( CodeEditor.CURSOR_LEFT, cursor );
-                this.cursorToString(cursor, prestring);
+                this.resetCursorPos( CodeEditor.CURSOR_LEFT );
+                if(idx > 0) this.cursorToString(cursor, prestring);
+                this._refresh_code_info(cursor.line + 1, cursor.position);
+                this.code.scrollLeft = 0;
 
                 if( !e.shiftKey )
                 return;
@@ -266,11 +285,15 @@
                 if( e.shiftKey || e._shiftKey ) {
                     
                     var string = this.code.lines[ln].substring(cursor.position);
-                    this.startSelection(cursor);
+                    if(!this.selection)
+                        this.startSelection(cursor);
                     this.selection.selectInline(cursor.position, cursor.line, this.measureString(string));
                 }
                 this.resetCursorPos( CodeEditor.CURSOR_LEFT );
                 this.cursorToString( cursor, this.code.lines[ln] );
+
+                const last_char = ((this.code.scrollLeft + this.code.clientWidth) / this.charWidth)|0;
+                this.code.scrollLeft = cursor.position >= last_char ? (cursor.position - last_char) * this.charWidth : 0;
             });
 
             this.action('Enter', true, ( ln, cursor, e ) => {
@@ -307,19 +330,41 @@
             });
 
             this.action('ArrowUp', false, ( ln, cursor, e ) => {
-                this.lineUp();
-                // Go to end of line if out of line
-                var letter = this.getCharAtPos( cursor );
-                if(!letter) this.actions['End'].callback(cursor.line, cursor, e);
+                if(e.shiftKey) {
+                    if(!this.selection)
+                        this.startSelection(cursor);
+                    this.selection.fromX = cursor.position;
+                    this.selection.toY = this.selection.toY > 0 ? this.selection.toY - 1 : 0;
+                    this.processSelection(null, true);
+                    this.cursorToPosition(cursor, this.selection.fromX);
+                    this.cursorToLine(cursor, this.selection.toY);
+                } else {
+
+                    this.lineUp();
+                    // Go to end of line if out of line
+                    var letter = this.getCharAtPos( cursor );
+                    if(!letter) this.actions['End'].callback(cursor.line, cursor, e);
+                }
             });
 
             this.action('ArrowDown', false, ( ln, cursor, e ) => {
-                if( this.code.lines[ ln + 1 ] == undefined ) 
-                    return;
-                this.lineDown();
-                // Go to end of line if out of line
-                var letter = this.getCharAtPos( cursor );
-                if(!letter) this.actions['End'].callback(cursor.line, cursor, e);
+                if(e.shiftKey) {
+                    if(!this.selection)
+                        this.startSelection(cursor);
+                    this.selection.toX = cursor.position;
+                    this.selection.toY = this.selection.toY < this.code.lines.length - 1 ? this.selection.toY + 1 : this.code.lines.length - 1;
+                    this.processSelection(null, true);
+                    this.cursorToPosition(cursor, this.selection.toX);
+                    this.cursorToLine(cursor, this.selection.toY);
+                } else {
+
+                    if( this.code.lines[ ln + 1 ] == undefined ) 
+                        return;
+                    this.lineDown();
+                    // Go to end of line if out of line
+                    var letter = this.getCharAtPos( cursor );
+                    if(!letter) this.actions['End'].callback(cursor.line, cursor, e);
+                }
             });
 
             this.action('ArrowLeft', false, ( ln, cursor, e ) => {
@@ -333,7 +378,10 @@
                     const [word, from, to] = this.getWordAtPos( cursor, -1 );
                     var diff = Math.max(cursor.position - from, 1);
                     var substr = word.substr(0, diff);
+                    // Selections...
+                    if( e.shiftKey ) if(!this.selection) this.startSelection(cursor);
                     this.cursorToString(cursor, substr, true);
+                    if( e.shiftKey ) this.processSelection();
                 }
                 else {
                     var letter = this.getCharAtPos( cursor, -1 );
@@ -374,11 +422,14 @@
                     e.preventDefault();
                     this.actions[ 'End' ].callback( ln, cursor );
                 } else if(e.ctrlKey) {
-                    // get next word
+                    // Get next word
                     const [word, from, to] = this.getWordAtPos( cursor );
                     var diff = cursor.position - from;
                     var substr = word.substr(diff);
+                    // Selections...
+                    if( e.shiftKey ) if(!this.selection) this.startSelection(cursor);
                     this.cursorToString(cursor, substr);
+                    if( e.shiftKey ) this.processSelection();
                 } else {
                     var letter = this.getCharAtPos( cursor );
                     if(letter) {
@@ -524,7 +575,7 @@
             {
                 this._refresh_code_info = () => {};
 
-                setTimeout( () => {
+                doAsync( () => {
 
                     // Change css a little bit...
                     this.gutter.style.height = "calc(100% - 31px)";
@@ -583,11 +634,14 @@
 
                 // Update cursor
                 var cursor = this.cursors.children[0];
-                cursor.style.top = "calc(" + cursor._top + "px - " + code.scrollTop + "px)";
+                cursor.style.top = (cursor._top - code.scrollTop) + "px";
+                cursor.style.left = "calc( " + (cursor._left - code.scrollLeft) + "px + 0.25em)";
 
                 // Update selection
-                for( let s of this.selections.childNodes )
+                for( let s of this.selections.childNodes ) {
                     s.style.top = (s._top - code.scrollTop) + "px";
+                    s.style.left = "calc( " + (s._left - code.scrollLeft) + "px + 0.25em)";
+                }
             });
 
             this.openedTabs[name] = code;
@@ -619,7 +673,7 @@
                 this.code = code;  
                 this.resetCursorPos(CodeEditor.CURSOR_LEFT | CodeEditor.CURSOR_TOP);
                 this.processLines();
-                setTimeout( () => this._refresh_code_info(0, 0), 50 );
+                doAsync( () => this._refresh_code_info(0, 0), 50 );
             }
         }
 
@@ -656,23 +710,25 @@
 
             if( e.type == 'mousedown' )
             {
+                var code_rect = this.code.getBoundingClientRect();
+                var mouse_pos = [(e.clientX - code_rect.x), (e.clientY - code_rect.y)];
+                if( mouse_pos[0] > this.code.clientWidth || mouse_pos[1] > this.code.clientHeight )
+                    return; // Scrollbar click
                 this.lastMouseDown = time.getTime();
                 this.state.selectingText = true;
+                this.endSelection();
                 return;
             }
             
             else if( e.type == 'mouseup' )
             {
-                if( (time.getTime() - this.lastMouseDown) < 200 ) {
+                if( (time.getTime() - this.lastMouseDown) < 300 ) {
                     this.state.selectingText = false;
                     this.processClick(e);
                     this.endSelection();
                 }
 
-                if(this.selection && (this.selection.fromY > this.selection.toY)) {
-                    swapElements(this.selection, 'fromX', 'toX');
-                    swapElements(this.selection, 'fromY', 'toY');
-                }
+                if(this.selection) this.selection.invertIfNecessary();
 
                 this.state.selectingText = false;
             }
@@ -680,9 +736,7 @@
             else if( e.type == 'mousemove' )
             {
                 if( this.state.selectingText )
-                {
                     this.processSelection(e);
-                }
             }
 
             else if ( e.type == 'click' ) // trip
@@ -693,7 +747,7 @@
                         const [word, from, to] = this.getWordAtPos( cursor );
 
                         this.resetCursorPos( CodeEditor.CURSOR_LEFT );
-                        this.cursorToString( cursor, this.code.lines[cursor.line].substr(0, from) );
+                        this.cursorToPosition( cursor, from );
                         this.startSelection( cursor );
                         this.selection.selectInline(from, cursor.line, this.measureString(word));
                         this.cursorToString( cursor, word ); // Go to the end of the word
@@ -722,7 +776,7 @@
         processClick(e, skip_refresh = false) {
 
             var code_rect = this.code.getBoundingClientRect();
-            var position = [e.clientX - code_rect.x, (e.clientY - code_rect.y) + this.getScrollTop()];
+            var position = [(e.clientX - code_rect.x) + this.getScrollLeft(), (e.clientY - code_rect.y) + this.getScrollTop()];
             var ln = (position[1] / this.lineHeight)|0;
 
             if(this.code.lines[ln] == undefined) return;
@@ -734,7 +788,8 @@
             
             var ch = (position[0] / this.charWidth)|0;
             var string = this.code.lines[ln].slice(0, ch);
-            this.cursorToString(cursor, string);
+            // this.cursorToString(cursor, string);
+            this.cursorToPosition(cursor, string.length);
             
             if(!skip_refresh) 
                 this._refresh_code_info( ln + 1, cursor.position );
@@ -790,12 +845,14 @@
                         const reverse = fromX > toX;
                         if(deltaY == 0) string = !reverse ? this.code.lines[i].substring(fromX, toX) : this.code.lines[i].substring(toX, fromX);
                         else string = this.code.lines[i].substr(fromX);
-                        domEl.style.left = "calc(" + ((reverse && deltaY == 0 ? toX : fromX) * this.charWidth) + "px + 0.25em)";
+                        const pixels = ((reverse && deltaY == 0 ? toX : fromX) * this.charWidth) - this.getScrollLeft();
+                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
                     }
                     else
                     {
                         string = (i == toY) ? this.code.lines[i].substring(0, toX) : this.code.lines[i]; // Last line, any multiple line...
-                        domEl.style.left = "0.25em";
+                        const pixels = -this.getScrollLeft();
+                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
                     }
                     
                     const stringWidth = this.measureString(string);
@@ -829,12 +886,13 @@
                     if(sId == 0)
                     {
                         string = this.code.lines[i].substr(toX);
-                        domEl.style.left = "calc(" + (toX * this.charWidth) + "px + 0.25em)";
+                        const pixels = (toX * this.charWidth) - this.getScrollLeft();
+                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
                     }
                     else
                     {
                         string = (i == fromY) ? this.code.lines[i].substring(0, fromX) : this.code.lines[i]; // Last line, any multiple line...
-                        domEl.style.left = "0.25em";
+                        domEl.style.left = "calc(" + (-this.getScrollLeft()) + "px + 0.25em)";
                     }
                     
                     const stringWidth = this.measureString(string);
@@ -913,40 +971,64 @@
                     this.onsave( this.getText() );
                     return;
                 case 'v': // paste
-                    let text = await navigator.clipboard.readText();
 
-                    const new_lines = text.split('\n');
-                    let num_lines = new_lines.length;
-                    console.assert(num_lines > 0);
-                    const first_line = new_lines.shift();
-                    num_lines--;
-
-                    const remaining = this.code.lines[lidx].slice(cursor.position);
-
-                    // Add first line
-                    this.code.lines[lidx] = [
-                        this.code.lines[lidx].slice(0, cursor.position), 
-                        first_line
-                    ].join('');
-
-                    this.cursorToString(cursor, first_line);
-
-                    // Enter next lines...
-
-                    let _text = null;
-                    for( var i = 0; i < new_lines.length; ++i )
-                    {
-                        _text = new_lines[i];
-                        this.cursorToBottom(cursor, true);
-                        // Add remaining...
-                        if( i == (new_lines.length - 1) )
-                            _text += remaining;
-                        this.code.lines.splice( 1 + lidx + i, 0, _text);
+                    if( this.selection ) {
+                        this.deleteSelection(cursor);
+                        lidx = cursor.line;
                     }
 
-                    if(_text) this.cursorToString(cursor, _text);
-                    this.cursorToLine(cursor, cursor.line + num_lines);
-                    this.processLines(lidx);
+                    this.endSelection();
+
+                    let text = await navigator.clipboard.readText();
+                    const new_lines = text.split('\n');
+
+                    // Pasting Multiline...
+                    if(new_lines.length != 1)
+                    {
+                        let num_lines = new_lines.length;
+                        console.assert(num_lines > 0);
+                        const first_line = new_lines.shift();
+                        num_lines--;
+    
+                        const remaining = this.code.lines[lidx].slice(cursor.position);
+    
+                        // Add first line
+                        this.code.lines[lidx] = [
+                            this.code.lines[lidx].slice(0, cursor.position), 
+                            first_line
+                        ].join('');
+    
+                        this.cursorToPosition(cursor, (cursor.position + first_line.length));
+    
+                        // Enter next lines...
+    
+                        let _text = null;
+    
+                        for( var i = 0; i < new_lines.length; ++i ) {
+                            _text = new_lines[i];
+                            this.cursorToLine(cursor, cursor.line++, true);
+                            // Add remaining...
+                            if( i == (new_lines.length - 1) )
+                                _text += remaining;
+                            this.code.lines.splice( 1 + lidx + i, 0, _text);
+                        }
+    
+                        if(_text) this.cursorToPosition(cursor, _text.length);
+                        this.cursorToLine(cursor, cursor.line + num_lines);
+                        this.processLines(lidx);
+                    }
+                    // Pasting one line...
+                    else
+                    {
+                        this.code.lines[lidx] = [
+                            this.code.lines[lidx].slice(0, cursor.position), 
+                            new_lines[0], 
+                            this.code.lines[lidx].slice(cursor.position)
+                        ].join('');
+
+                        this.cursorToPosition(cursor, (cursor.position + new_lines[0].length));
+                        this.processLine(lidx);
+                    }
                     return;
                 case 'x': // cut line
                     const to_copy = this.code.lines.splice(lidx, 1)[0];
@@ -962,13 +1044,15 @@
                     this.restoreCursor( cursor, step.cursor );
                     this.processLines();
                     return;
+
+                    
                 }
             }
 
-            if( e.altKey )
+            else if( e.altKey )
             {
                 switch( key ) {
-                case 'ArrowUp':
+                    case 'ArrowUp':
                     if(this.code.lines[ lidx - 1 ] == undefined)
                         return;
                     swapArrayElements(this.code.lines, lidx - 1, lidx);
@@ -984,6 +1068,14 @@
                     this.processLine( lidx );
                     this.processLine( lidx + 1 );
                     return;
+                }
+            }
+            
+            else if(!e.shiftKey){
+                switch( key ) {
+                    case 'ArrowUp': case 'ArrowDown': case 'ArrowLeft': case 'ArrowRight':
+                    this.endSelection();
+                
                 }
             }
 
@@ -1215,13 +1307,9 @@
                     span.classList.add("cm-com");
                 
                 else if( this._building_string  )
-                {
                     span.classList.add("cm-str");
-                    // if (this.highlight === "JSON" && next == ':' )
-                    //     span.classList.add("key");
-                }
                 
-                else if( this.keywords.indexOf(token) > -1 )
+                else if( this.keywords[this.highlight] && this.keywords[this.highlight].indexOf(token) > -1 )
                     span.classList.add("cm-kwd");
 
                 else if( this.builtin.indexOf(token) > -1 )
@@ -1249,7 +1337,7 @@
                             (prev == 'new' && next == '(') )
                      span.classList.add("cm-typ");
                 
-                else if ( next == '(' )
+                else if ( token[0] != '@' && next == '(' )
                     span.classList.add("cm-mtd");
 
                 let highlight = this.highlight.replace(/\s/g, '');
@@ -1351,6 +1439,9 @@
 
         deleteSelection( cursor ) {
 
+            // Some selections don't depend on mouse up..
+            if(this.selection) this.selection.invertIfNecessary();
+
             const separator = "_NEWLINE_";
             let code = this.code.lines.join(separator);
 
@@ -1367,8 +1458,9 @@
 
             this.code.lines = (pre + post).split(separator);
             this.processLines(this.selection.fromY);
+            
             this.cursorToLine(cursor, this.selection.fromY, true);
-            this.cursorToString(cursor, this.code.lines[this.selection.fromY].slice(0, this.selection.fromX));
+            this.cursorToPosition(cursor, this.selection.fromX);
             this.endSelection();
         }
 
@@ -1384,10 +1476,18 @@
             if(!key) return;
             cursor = cursor ?? this.cursors.children[0];
             cursor._left += this.charWidth;
-            cursor.style.left = "calc(" + cursor._left + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
             cursor.position++;
             this.restartBlink();
             this._refresh_code_info( cursor.line + 1, cursor.position );
+
+            // Add horizontal scroll
+
+            doAsync(() => {
+                var last_char = ((this.code.scrollLeft + this.code.clientWidth) / this.charWidth)|0;
+                if( cursor.position >= last_char )
+                    this.code.scrollLeft += this.charWidth;
+            });
         }
 
         cursorToLeft( key, cursor ) {
@@ -1396,11 +1496,17 @@
             cursor = cursor ?? this.cursors.children[0];
             cursor._left -= this.charWidth;
             cursor._left = Math.max(cursor._left, 0);
-            cursor.style.left = "calc(" + cursor._left + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
             cursor.position--;
             cursor.position = Math.max(cursor.position, 0);
             this.restartBlink();
             this._refresh_code_info( cursor.line + 1, cursor.position );
+
+            doAsync(() => {
+                var first_char = (this.code.scrollLeft / this.charWidth)|0;
+                if( (cursor.position - 1) < first_char )
+                    this.code.scrollLeft -= this.charWidth;
+            });
         }
 
         cursorToTop( cursor, resetLeft = false ) {
@@ -1408,7 +1514,7 @@
             cursor = cursor ?? this.cursors.children[0];
             cursor._top -= this.lineHeight;
             cursor._top = Math.max(cursor._top, 4);
-            cursor.style.top = "calc(" + cursor._top + "px - " + this.getScrollTop() + "px)";
+            cursor.style.top = "calc(" + (cursor._top - this.getScrollTop()) + "px)";
             this.restartBlink();
             
             if(resetLeft)
@@ -1427,7 +1533,7 @@
 
             cursor = cursor ?? this.cursors.children[0];
             cursor._top += this.lineHeight;
-            cursor.style.top = "calc(" + cursor._top + "px - " + this.getScrollTop() + "px)";
+            cursor.style.top = "calc(" + (cursor._top - this.getScrollTop()) + "px)";
             this.restartBlink();
 
             if(resetLeft)
@@ -1453,14 +1559,14 @@
 
             cursor.position = position;
             cursor._left = position * this.charWidth;
-            cursor.style.left = "calc(" + cursor._left + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
         }
 
         cursorToLine( cursor, line, resetLeft = false ) {
 
             cursor.line = line;
             cursor._top = 4 + this.lineHeight * line;
-            cursor.style.top = "calc(" + cursor._top + "px - " + this.getScrollTop() + "px)";
+            cursor.style.top = (cursor._top - this.getScrollTop()) + "px";
             if(resetLeft) this.resetCursorPos( CodeEditor.CURSOR_LEFT, cursor );
         }
 
@@ -1481,9 +1587,9 @@
             cursor.position = state.charPos ?? 0;
 
             cursor._left = state.left ?? 0;
-            cursor.style.left = "calc(" + cursor._left + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
             cursor._top = state.top ?? 4;
-            cursor.style.top = "calc(" + cursor._top + "px - " + this.getScrollTop() + "px)";
+            cursor.style.top = "calc(" + (cursor._top - this.getScrollTop()) + "px)";
         }
 
         resetCursorPos( flag, cursor ) {
@@ -1493,14 +1599,14 @@
             if( flag & CodeEditor.CURSOR_LEFT )
             {
                 cursor._left = 0;
-                cursor.style.left = "0.25em";
+                cursor.style.left = "calc(" + (-this.getScrollLeft()) + "px + 0.25em)";
                 cursor.position = 0;
             }
 
             if( flag & CodeEditor.CURSOR_TOP )
             {
                 cursor._top = 4;
-                cursor.style.top = "calc(4px - " + this.getScrollTop() + "px)";
+                cursor.style.top = (cursor._top - this.getScrollTop()) + "px";
                 cursor.line = 0;
             }
         }
@@ -1520,6 +1626,12 @@
                     key: ' '
                 }}));
             }
+        }
+
+        getScrollLeft() {
+            
+            if(!this.code) return 0;
+            return this.code.scrollLeft;
         }
 
         getScrollTop() {
