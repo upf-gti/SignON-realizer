@@ -745,7 +745,7 @@ function locationHandInfoExtract( xml, parseChildren = true ){
             case "pinkyside":
                 result.finger = "5"
                 result.location = "BASE";
-                result.side = "UNLAR";
+                result.side = "ULNAR";
                 break;    
             default: break;
         }

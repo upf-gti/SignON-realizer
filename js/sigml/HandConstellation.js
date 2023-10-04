@@ -199,7 +199,7 @@ class HandConstellation {
         }
         if ( typeof( side ) != "string" || side.length < 1 ){ side = ""; }
         else{ 
-            location = location.toUpperCase();
+            side = "_" + side.toUpperCase();
             // side = side.toLowerCase();
             // side = side[0].toUpperCase() + side.slice( 1 ); 
             if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
