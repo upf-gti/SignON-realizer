@@ -193,19 +193,21 @@ class HandConstellation {
         if ( isNaN( finger ) || finger < 1 || finger > 5 ){ finger = ""; }
         if ( typeof( location ) != "string" || location.length < 1){ location = ""; }
         else{ 
-            location = location.toLowerCase();
-            location = location[0].toUpperCase() + location.slice( 1 ); 
+            location = "_" + location.toUpperCase();
+            // location = location.toLowerCase();
+            // location = location[0].toUpperCase() + location.slice( 1 ); 
         }
         if ( typeof( side ) != "string" || side.length < 1 ){ side = ""; }
         else{ 
-            side = side.toLowerCase();
-            side = side[0].toUpperCase() + side.slice( 1 ); 
-            if ( !location.includes("Elbow") && !location.includes("Upperarm") ){ // jasigning...
-                if ( side == "RIGHT" ){ side = hand == "R" ? "ULNAR" : "RADIAL"; }
-                else if ( side == "LEFT" ){ side = hand == "R" ? "RADIAL" : "ULNAR"; }
+            location = location.toUpperCase();
+            // side = side.toLowerCase();
+            // side = side[0].toUpperCase() + side.slice( 1 ); 
+            if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
+                if ( side == "RIGHT" ){ side = "_" + (hand == "R" ? "ULNAR" : "RADIAL"); }
+                else if ( side == "LEFT" ){ side = "_" + (hand == "R" ? "RADIAL" : "ULNAR"); }
             }
         }
-        let name = finger + "_" + location + "_" + side; 
+        let name = finger + location + side; 
 
         result = handLocations[ name ];
         if ( !result ){ result = handLocations[ "2_TIP" ]; }
@@ -217,7 +219,7 @@ class HandConstellation {
      * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
      * 
      * Location of the hand in the specified hand (or dominant hand)
-     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
+     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + "_" +srcLocation + "_" +srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
      * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)

@@ -156,13 +156,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     let newPosture;
     if ( !oldPosture ){
         newPosture = {
-            right: [
+            RIGHT: [
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "RIGHT" }, 
             ],
-            left: [
+            LEFT: [
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
@@ -303,13 +303,13 @@ function signManual( xml, start, signSpeed ){
 
     // add default locations if necessary
     let checkHandsResult = checkHandsUsage( result );
-    if ( checkHandsResult.right.isHandUsed ){
-        if ( checkHandsResult.right.firstHandUsage + 0.05 < checkHandsResult.right.firstLocationBody ){ 
+    if ( checkHandsResult["RIGHT"].isHandUsed ){
+        if ( checkHandsResult["RIGHT"].firstHandUsage + 0.05 < checkHandsResult["RIGHT"].firstLocationBody ){ 
             result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" } );
         }
     }
-    if ( checkHandsResult.left.isHandUsed ){
-        if ( checkHandsResult.left.firstHandUsage + 0.05 < checkHandsResult.left.firstLocationBody ){ 
+    if ( checkHandsResult["LEFT"].isHandUsed ){
+        if ( checkHandsResult["LEFT"].firstHandUsage + 0.05 < checkHandsResult["LEFT"].firstLocationBody ){ 
             result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" } );
         }
     }
@@ -583,7 +583,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         case "left_beside": result.side = "ll"; break;
         default:   
             if ( hand == "BOTH" && signGeneralInfo.bothHands ){ 
-                result.side = signGeneralInfo.domHand[0];
+                result.side = signGeneralInfo.domHand[0].toLowerCase();
                 result.lrSym = true;
             }
             break;    
@@ -595,7 +595,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         case "left_beside": result.secondSide = "ll"; break;
         default: 
             if ( hand == "BOTH" && signGeneralInfo.bothHands ){ 
-                result.secondSide = signGeneralInfo.domHand[0];
+                result.secondSide = signGeneralInfo.domHand[0].toLowerCase();
                 result.lrSym = true;
             }
             break;    
@@ -618,7 +618,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
             result.srcFinger = "2";
             result.srcLocation = "TIP";
         }else{
-            result.srcLocation = "Hand";
+            result.srcLocation = "HAND";
             result.srcSide = "PALMAR";
         }
     }
@@ -696,7 +696,7 @@ function locationHandInfoExtract( xml, parseChildren = true ){
     }
     else if ( locationHand_HandpartTable.includes( attributes.location ) ){
          // default values tip of index finger
-        result.location = "Hand"; 
+        result.location = "HAND"; 
         result.side = "PALMAR";
 
         let side = "PALMAR";
@@ -722,19 +722,19 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
         switch( attributes.location ){
             case "wristback": 
-                result.location = "Wrist";
+                result.location = "WRIST";
                 result.side = side;
                 break;
             case "thumbball":
-                result.location = "THUMBBALL";
+                result.location = "THUMB_BALL";
                 result.side = side;
                 break;
             case "palm": 
-                result.location = "Hand";
+                result.location = "HAND";
                 result.side = "PALMAR";
                 break;
             case "handback":
-                result.location ="Hand";
+                result.location ="HAND";
                 result.side = "BACK";
                 break;
             case "thumbside":
@@ -753,7 +753,7 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
     else if ( locationHand_ArmTable.includes( attributes.location ) ){
         // default values tip of index finger
-        result.location = "Hand"; 
+        result.location = "HAND"; 
         result.side = "FRONT";
 
         let side = "FRONT";
@@ -771,19 +771,19 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
         switch( attributes.location ){
             case "upperarm": 
-                result.location = "Upperarm";
+                result.location = "UPPER_ARM";
                 result.side = side == "PALMAR" ? "FRONT" : side;
                 break;
             case "elbow":
-                result.location = "Elbow";
+                result.location = "ELBOW";
                 result.side = side == "PALMAR" ? "FRONT" : side;
                 break;
             case "elbowinside": 
-                result.location = "Elbow";
+                result.location = "ELBOW";
                 result.side = "FRONT";
                 break;
             case "lowerarm":
-                result.location ="Forearm";
+                result.location ="FOREARM";
                 result.side = side == "FRONT" ? "PALMAR" : side;
                 break;
             default: break;

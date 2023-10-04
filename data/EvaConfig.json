@@ -28,7 +28,7 @@
 			"LHandPinky": "mixamorig_LeftHandPinky1"
 		},
 		"bodyLocations": {
-			"headSideLL": [
+			"HEAD_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.052366,
@@ -41,7 +41,7 @@
 					"z": -0.010382
 				}
 			],
-			"headSideL": [
+			"HEAD_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.046858,
@@ -54,7 +54,7 @@
 					"z": -0.014836
 				}
 			],
-			"head": [
+			"HEAD": [
 				"mixamorig_Head",
 				{
 					"x": -0.006616,
@@ -67,7 +67,7 @@
 					"z": -0.015905
 				}
 			],
-			"headSideR": [
+			"HEAD_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.056664,
@@ -80,7 +80,7 @@
 					"z": -0.016497
 				}
 			],
-			"headSideRR": [
+			"HEAD_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.062622,
@@ -93,7 +93,7 @@
 					"z": -0.015838
 				}
 			],
-			"neckSideLL": [
+			"NECK_SideLL": [
 				"mixamorig_Neck",
 				{
 					"x": 0.054999,
@@ -106,7 +106,7 @@
 					"z": -0.010382
 				}
 			],
-			"neckSideL": [
+			"NECK_SideL": [
 				"mixamorig_Neck",
 				{
 					"x": 0.023339,
@@ -119,7 +119,7 @@
 					"z": -0.014836
 				}
 			],
-			"neck": [
+			"NECK": [
 				"mixamorig_Neck",
 				{
 					"x": -0.005898,
@@ -132,7 +132,7 @@
 					"z": -0.015905
 				}
 			],
-			"neckSideR": [
+			"NECK_SideR": [
 				"mixamorig_Neck",
 				{
 					"x": -0.035007,
@@ -145,7 +145,7 @@
 					"z": -0.016497
 				}
 			],
-			"neckSideRR": [
+			"NECK_SideRR": [
 				"mixamorig_Neck",
 				{
 					"x": -0.071025,
@@ -158,7 +158,7 @@
 					"z": -0.015838
 				}
 			],
-			"shoulderTopSideLL": [
+			"SHOULDER_TOP_SideLL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.111069,
@@ -171,7 +171,7 @@
 					"z": -0.010382
 				}
 			],
-			"shoulderTopSideL": [
+			"SHOULDER_TOP_SideL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.04036,
@@ -184,7 +184,7 @@
 					"z": -0.014836
 				}
 			],
-			"shoulderTop": [
+			"SHOULDER_TOP": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.004874,
@@ -197,7 +197,7 @@
 					"z": -0.015905
 				}
 			],
-			"shoulderTopSideR": [
+			"SHOULDER_TOP_SideR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.055808,
@@ -210,7 +210,7 @@
 					"z": -0.016497
 				}
 			],
-			"shoulderTopSideRR": [
+			"SHOULDER_TOP_SideRR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.107768,
@@ -223,7 +223,7 @@
 					"z": -0.015838
 				}
 			],
-			"shoulderLineSideLL": [
+			"SHOULDER_LINE_SideLL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.13188,
@@ -236,7 +236,7 @@
 					"z": -0.010382
 				}
 			],
-			"shoulderLineSideL": [
+			"SHOULDER_LINE_SideL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.061765,
@@ -262,7 +262,7 @@
 					"z": -0.015905
 				}
 			],
-			"shoulderLineSideR": [
+			"SHOULDER_LINE_SideR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.064777,
@@ -275,7 +275,7 @@
 					"z": -0.016497
 				}
 			],
-			"shoulderLineSideRR": [
+			"SHOULDER_LINE_SideRR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.130471,
@@ -288,7 +288,7 @@
 					"z": -0.015838
 				}
 			],
-			"shoulderLSideLL": [
+			"SHOULDER_LEFT_SideLL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.238465,
@@ -301,7 +301,7 @@
 					"z": -0.010382
 				}
 			],
-			"shoulderLSideL": [
+			"SHOULDER_LEFT_SideL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.166796,
@@ -327,7 +327,7 @@
 					"z": -0.015905
 				}
 			],
-			"shoulderLSideR": [
+			"SHOULDER_LEFT_SideR": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.081194,
@@ -340,7 +340,7 @@
 					"z": -0.016497
 				}
 			],
-			"shoulderLSideRR": [
+			"SHOULDER_LEFT_SideRR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.078499,
@@ -353,7 +353,7 @@
 					"z": -0.015838
 				}
 			],
-			"shoulderRSideLL": [
+			"SHOULDER_RIGHT_SideLL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.073463,
@@ -366,7 +366,7 @@
 					"z": -0.010382
 				}
 			],
-			"shoulderRSideL": [
+			"SHOULDER_RIGHT_SideL": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.089617,
@@ -392,7 +392,7 @@
 					"z": -0.015905
 				}
 			],
-			"shoulderRSideR": [
+			"SHOULDER_RIGHT_SideR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.171741,
@@ -405,7 +405,7 @@
 					"z": -0.016497
 				}
 			],
-			"shoulderRSideRR": [
+			"SHOULDER_RIGHT_SideRR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.240091,
@@ -418,7 +418,7 @@
 					"z": -0.015838
 				}
 			],
-			"chestSideLL": [
+			"CHEST_SideLL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.141284,
@@ -431,7 +431,7 @@
 					"z": -0.010382
 				}
 			],
-			"chestSideL": [
+			"CHEST_SideL": [
 				"mixamorig_Spine2",
 				{
 					"x": 0.083526,
@@ -457,7 +457,7 @@
 					"z": -0.015905
 				}
 			],
-			"chestSideR": [
+			"CHEST_SideR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.08565,
@@ -470,7 +470,7 @@
 					"z": -0.016497
 				}
 			],
-			"chestSideRR": [
+			"CHEST_SideRR": [
 				"mixamorig_Spine2",
 				{
 					"x": -0.136184,
@@ -483,7 +483,7 @@
 					"z": -0.015838
 				}
 			],
-			"stomachSideLL": [
+			"STOMACH_SideLL": [
 				"mixamorig_Spine1",
 				{
 					"x": 0.122172,
@@ -496,7 +496,7 @@
 					"z": -0.010382
 				}
 			],
-			"stomachSideL": [
+			"STOMACH_SideL": [
 				"mixamorig_Spine1",
 				{
 					"x": 0.068741,
@@ -522,7 +522,7 @@
 					"z": -0.015905
 				}
 			],
-			"stomachSideR": [
+			"STOMACH_SideR": [
 				"mixamorig_Spine1",
 				{
 					"x": -0.068886,
@@ -535,7 +535,7 @@
 					"z": -0.016497
 				}
 			],
-			"stomachSideRR": [
+			"STOMACH_SideRR": [
 				"mixamorig_Spine1",
 				{
 					"x": -0.121773,
@@ -548,7 +548,7 @@
 					"z": -0.015838
 				}
 			],
-			"belowstomachSideLL": [
+			"BELOW_STOMACH_SideLL": [
 				"mixamorig_Spine",
 				{
 					"x": 0.130085,
@@ -561,7 +561,7 @@
 					"z": -0.010382
 				}
 			],
-			"belowstomachSideL": [
+			"BELOW_STOMACH_SideL": [
 				"mixamorig_Spine",
 				{
 					"x": 0.062652,
@@ -587,7 +587,7 @@
 					"z": -0.015905
 				}
 			],
-			"belowstomachSideR": [
+			"BELOW_STOMACH_SideR": [
 				"mixamorig_Spine",
 				{
 					"x": -0.067574,
@@ -600,7 +600,7 @@
 					"z": -0.016497
 				}
 			],
-			"belowstomachSideRR": [
+			"BELOW_STOMACH_SideRR": [
 				"mixamorig_Spine",
 				{
 					"x": -0.132884,
@@ -613,7 +613,7 @@
 					"z": -0.015838
 				}
 			],
-			"neutralSideLL": [
+			"NEUTRAL_SideLL": [
 				"mixamorig_Hips",
 				{
 					"x": 0.159528,
@@ -626,7 +626,7 @@
 					"z": -0.010382
 				}
 			],
-			"neutralSideL": [
+			"NEUTRAL_SideL": [
 				"mixamorig_Hips",
 				{
 					"x": 0.071284,
@@ -652,7 +652,7 @@
 					"z": -0.015905
 				}
 			],
-			"neutralSideR": [
+			"NEUTRAL_SideR": [
 				"mixamorig_Hips",
 				{
 					"x": -0.074459,
@@ -665,7 +665,7 @@
 					"z": -0.016497
 				}
 			],
-			"neutralSideRR": [
+			"NEUTRAL_SideRR": [
 				"mixamorig_Hips",
 				{
 					"x": -0.162071,
@@ -678,7 +678,7 @@
 					"z": -0.015838
 				}
 			],
-			"headtopSideLL": [
+			"HEAD_TOP_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.061813,
@@ -691,7 +691,7 @@
 					"z": -0.01419
 				}
 			],
-			"headtopSideL": [
+			"HEAD_TOP_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.03422,
@@ -717,7 +717,7 @@
 					"z": -0.015905
 				}
 			],
-			"headtopSideR": [
+			"HEAD_TOP_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.048333,
@@ -730,7 +730,7 @@
 					"z": -0.016392
 				}
 			],
-			"headtopSideRR": [
+			"HEAD_TOP_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.073411,
@@ -743,7 +743,7 @@
 					"z": -0.016605
 				}
 			],
-			"foreheadSideLL": [
+			"FOREHEAD_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.054485,
@@ -756,7 +756,7 @@
 					"z": -0.014842
 				}
 			],
-			"foreheadSideL": [
+			"FOREHEAD_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.029478,
@@ -782,7 +782,7 @@
 					"z": -0.015905
 				}
 			],
-			"foreheadSideR": [
+			"FOREHEAD_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.042605,
@@ -795,7 +795,7 @@
 					"z": -0.016263
 				}
 			],
-			"foreheadSideRR": [
+			"FOREHEAD_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.060504,
@@ -808,7 +808,7 @@
 					"z": -0.016496
 				}
 			],
-			"eyebrowsLineSideLL": [
+			"EYEBROWS_LINE_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.016354,
@@ -821,7 +821,7 @@
 					"z": -0.015626
 				}
 			],
-			"eyebrowsLineSideL": [
+			"EYEBROWS_LINE_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.005227,
@@ -834,7 +834,7 @@
 					"z": -0.015771
 				}
 			],
-			"eyebrowsLine": [
+			"EYEBROWS_LINE": [
 				"mixamorig_Head",
 				{
 					"x": -0.007047,
@@ -847,7 +847,7 @@
 					"z": -0.015905
 				}
 			],
-			"eyebrowsLineSideR": [
+			"EYEBROWS_LINE_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.019127,
@@ -860,7 +860,7 @@
 					"z": -0.016027
 				}
 			],
-			"eyebrowsLineSideRR": [
+			"EYEBROWS_LINE_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.030032,
@@ -873,7 +873,7 @@
 					"z": -0.016138
 				}
 			],
-			"eyebrowRSideLL": [
+			"EYEBROW_RIGHT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": -0.011481,
@@ -886,7 +886,7 @@
 					"z": -0.01595
 				}
 			],
-			"eyebrowRSideL": [
+			"EYEBROW_RIGHT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": -0.024302,
@@ -912,7 +912,7 @@
 					"z": -0.016187
 				}
 			],
-			"eyebrowRSideR": [
+			"EYEBROW_RIGHT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.045763,
@@ -925,7 +925,7 @@
 					"z": -0.016287
 				}
 			],
-			"eyebrowRSideRR": [
+			"EYEBROW_RIGHT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.053285,
@@ -938,7 +938,7 @@
 					"z": -0.016372
 				}
 			],
-			"eyebrowLSideLL": [
+			"EYEBROW_LEFT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.04159,
@@ -951,7 +951,7 @@
 					"z": -0.015201
 				}
 			],
-			"eyebrowLSideL": [
+			"EYEBROW_LEFT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.032924,
@@ -977,7 +977,7 @@
 					"z": -0.015553
 				}
 			],
-			"eyebrowLSideR": [
+			"EYEBROW_LEFT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": 0.010314,
@@ -990,7 +990,7 @@
 					"z": -0.015712
 				}
 			],
-			"eyebrowLSideRR": [
+			"EYEBROW_LEFT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.002685,
@@ -1003,7 +1003,7 @@
 					"z": -0.015858
 				}
 			],
-			"eyesLineSideLL": [
+			"EYES_LINE_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.013946,
@@ -1016,7 +1016,7 @@
 					"z": -0.015643
 				}
 			],
-			"eyesLineSideL": [
+			"EYES_LINE_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.003778,
@@ -1029,7 +1029,7 @@
 					"z": -0.015779
 				}
 			],
-			"eyesLine": [
+			"EYES_LINE": [
 				"mixamorig_Head",
 				{
 					"x": -0.00695,
@@ -1042,7 +1042,7 @@
 					"z": -0.015905
 				}
 			],
-			"eyesLineSideR": [
+			"EYES_LINE_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.017093,
@@ -1055,7 +1055,7 @@
 					"z": -0.016021
 				}
 			],
-			"eyesLineSideRR": [
+			"EYES_LINE_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.027461,
@@ -1068,7 +1068,7 @@
 					"z": -0.016127
 				}
 			],
-			"eyeRSideLL": [
+			"EYE_RIGHT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": -0.014461,
@@ -1081,7 +1081,7 @@
 					"z": -0.015989
 				}
 			],
-			"eyeRSideL": [
+			"EYE_RIGHT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": -0.02486,
@@ -1107,7 +1107,7 @@
 					"z": -0.016202
 				}
 			],
-			"eyeRSideR": [
+			"EYE_RIGHT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.045406,
@@ -1120,7 +1120,7 @@
 					"z": -0.016291
 				}
 			],
-			"eyeRSideRR": [
+			"EYE_RIGHT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.05019,
@@ -1133,7 +1133,7 @@
 					"z": -0.01637
 				}
 			],
-			"eyeLSideLL": [
+			"EYE_LEFT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.038689,
@@ -1146,7 +1146,7 @@
 					"z": -0.015207
 				}
 			],
-			"eyeLSideL": [
+			"EYE_LEFT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.032243,
@@ -1172,7 +1172,7 @@
 					"z": -0.01553
 				}
 			],
-			"eyeLSideR": [
+			"EYE_LEFT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": 0.011053,
@@ -1185,7 +1185,7 @@
 					"z": -0.015678
 				}
 			],
-			"eyeLSideRR": [
+			"EYE_LEFT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": 0.001092,
@@ -1198,7 +1198,7 @@
 					"z": -0.015815
 				}
 			],
-			"earRSideLL": [
+			"EAR_RIGHT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": -0.087531,
@@ -1211,7 +1211,7 @@
 					"z": -0.016284
 				}
 			],
-			"earRSideL": [
+			"EAR_RIGHT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": -0.083422,
@@ -1237,7 +1237,7 @@
 					"z": -0.015838
 				}
 			],
-			"earRSideR": [
+			"EAR_RIGHT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.07212,
@@ -1250,7 +1250,7 @@
 					"z": -0.015577
 				}
 			],
-			"earRSideRR": [
+			"EAR_RIGHT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.068306,
@@ -1263,7 +1263,7 @@
 					"z": -0.015301
 				}
 			],
-			"earLSideLL": [
+			"EAR_LEFT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.073876,
@@ -1276,7 +1276,7 @@
 					"z": -0.009131
 				}
 			],
-			"earLSideL": [
+			"EAR_LEFT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.073844,
@@ -1302,7 +1302,7 @@
 					"z": -0.010382
 				}
 			],
-			"earLSideR": [
+			"EAR_LEFT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": 0.075635,
@@ -1315,7 +1315,7 @@
 					"z": -0.011038
 				}
 			],
-			"earLSideRR": [
+			"EAR_LEFT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": 0.078292,
@@ -1328,7 +1328,7 @@
 					"z": -0.011706
 				}
 			],
-			"earlobeRSideLL": [
+			"EARLOBE_RIGHT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": -0.066664,
@@ -1341,7 +1341,7 @@
 					"z": -0.016238
 				}
 			],
-			"earlobeRSideL": [
+			"EARLOBE_RIGHT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": -0.066862,
@@ -1367,7 +1367,7 @@
 					"z": -0.015838
 				}
 			],
-			"earlobeRSideR": [
+			"EARLOBE_RIGHT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.065137,
@@ -1380,7 +1380,7 @@
 					"z": -0.015609
 				}
 			],
-			"earlobeRSideRR": [
+			"EARLOBE_RIGHT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.064646,
@@ -1393,7 +1393,7 @@
 					"z": -0.015368
 				}
 			],
-			"earlobeLSideLL": [
+			"EARLOBE_LEFT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.054093,
@@ -1406,7 +1406,7 @@
 					"z": -0.009275
 				}
 			],
-			"earlobeLSideL": [
+			"EARLOBE_LEFT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.054634,
@@ -1432,7 +1432,7 @@
 					"z": -0.010382
 				}
 			],
-			"earlobeLSideR": [
+			"EARLOBE_LEFT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": 0.057085,
@@ -1445,7 +1445,7 @@
 					"z": -0.010959
 				}
 			],
-			"earlobeLSideRR": [
+			"EARLOBE_LEFT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": 0.057649,
@@ -1458,7 +1458,7 @@
 					"z": -0.011545
 				}
 			],
-			"noseSideLL": [
+			"NOSE_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.01237,
@@ -1471,7 +1471,7 @@
 					"z": -0.015671
 				}
 			],
-			"noseSideL": [
+			"NOSE_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.004396,
@@ -1497,7 +1497,7 @@
 					"z": -0.015905
 				}
 			],
-			"noseSideR": [
+			"NOSE_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.017789,
@@ -1510,7 +1510,7 @@
 					"z": -0.016009
 				}
 			],
-			"noseSideRR": [
+			"NOSE_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.025517,
@@ -1523,7 +1523,7 @@
 					"z": -0.016106
 				}
 			],
-			"belownoseSideLL": [
+			"BELOW_NOSE_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.012279,
@@ -1536,7 +1536,7 @@
 					"z": -0.015678
 				}
 			],
-			"belownoseSideL": [
+			"BELOW_NOSE_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.003183,
@@ -1562,7 +1562,7 @@
 					"z": -0.015905
 				}
 			],
-			"belownoseSideR": [
+			"BELOW_NOSE_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.016446,
@@ -1575,7 +1575,7 @@
 					"z": -0.016007
 				}
 			],
-			"belownoseSideRR": [
+			"BELOW_NOSE_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.025296,
@@ -1588,7 +1588,7 @@
 					"z": -0.016101
 				}
 			],
-			"cheekRSideLL": [
+			"CHEEK_RIGHT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": -0.024759,
@@ -1601,7 +1601,7 @@
 					"z": -0.016102
 				}
 			],
-			"cheekRSideL": [
+			"CHEEK_RIGHT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": -0.041958,
@@ -1627,7 +1627,7 @@
 					"z": -0.01643
 				}
 			],
-			"cheekRSideR": [
+			"CHEEK_RIGHT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.05827,
@@ -1640,7 +1640,7 @@
 					"z": -0.016532
 				}
 			],
-			"cheekRSideRR": [
+			"CHEEK_RIGHT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.060338,
@@ -1653,7 +1653,7 @@
 					"z": -0.016594
 				}
 			],
-			"cheekLSideLL": [
+			"CHEEK_LEFT_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.051445,
@@ -1666,7 +1666,7 @@
 					"z": -0.014305
 				}
 			],
-			"cheekLSideL": [
+			"CHEEK_LEFT_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.048721,
@@ -1692,7 +1692,7 @@
 					"z": -0.015053
 				}
 			],
-			"cheekLSideR": [
+			"CHEEK_LEFT_SideR": [
 				"mixamorig_Head",
 				{
 					"x": 0.029816,
@@ -1705,7 +1705,7 @@
 					"z": -0.015383
 				}
 			],
-			"cheekLSideRR": [
+			"CHEEK_LEFT_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": 0.012016,
@@ -1718,7 +1718,7 @@
 					"z": -0.015677
 				}
 			],
-			"mouthSideLL": [
+			"MOUTH_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.027364,
@@ -1731,7 +1731,7 @@
 					"z": -0.015428
 				}
 			],
-			"mouthSideL": [
+			"MOUTH_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.011757,
@@ -1757,7 +1757,7 @@
 					"z": -0.015905
 				}
 			],
-			"mouthSideR": [
+			"MOUTH_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.024508,
@@ -1770,7 +1770,7 @@
 					"z": -0.016099
 				}
 			],
-			"mouthSideRR": [
+			"MOUTH_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.039755,
@@ -1783,7 +1783,7 @@
 					"z": -0.016262
 				}
 			],
-			"chinSideLL": [
+			"CHIN_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.024754,
@@ -1796,7 +1796,7 @@
 					"z": -0.015394
 				}
 			],
-			"chinSideL": [
+			"CHIN_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.011587,
@@ -1822,7 +1822,7 @@
 					"z": -0.015905
 				}
 			],
-			"chinSideR": [
+			"CHIN_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.024228,
@@ -1835,7 +1835,7 @@
 					"z": -0.01611
 				}
 			],
-			"chinSideRR": [
+			"CHIN_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.036569,
@@ -1848,7 +1848,7 @@
 					"z": -0.016281
 				}
 			],
-			"underchinSideLL": [
+			"UNDER_CHIN_SideLL": [
 				"mixamorig_Head",
 				{
 					"x": 0.021297,
@@ -1861,7 +1861,7 @@
 					"z": -0.015345
 				}
 			],
-			"underchinSideL": [
+			"UNDER_CHIN_SideL": [
 				"mixamorig_Head",
 				{
 					"x": 0.009335,
@@ -1887,7 +1887,7 @@
 					"z": -0.015905
 				}
 			],
-			"underchinSideR": [
+			"UNDER_CHIN_SideR": [
 				"mixamorig_Head",
 				{
 					"x": -0.021666,
@@ -1900,7 +1900,7 @@
 					"z": -0.016126
 				}
 			],
-			"underchinSideRR": [
+			"UNDER_CHIN_SideRR": [
 				"mixamorig_Head",
 				{
 					"x": -0.032658,
@@ -1915,7 +1915,7 @@
 			]
 		},
 		"handLocationsL": {
-			"Hand_RADIAL": [
+			"HAND_RADIAL": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.71743,
@@ -1923,7 +1923,7 @@
 					"z": 1.35777
 				}
 			],
-			"Hand_ULNAR": [
+			"HAND_ULNAR": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.71792,
@@ -1931,7 +1931,7 @@
 					"z": 1.35908
 				}
 			],
-			"Hand_BACK": [
+			"HAND_BACK": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.71758,
@@ -1939,7 +1939,7 @@
 					"z": 1.37509
 				}
 			],
-			"Hand_PALMAR": [
+			"HAND_PALMAR": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.71774,
@@ -1947,7 +1947,7 @@
 					"z": 1.34353
 				}
 			],
-			"Wrist_RADIAL": [
+			"WRIST_RADIAL": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.65654,
@@ -1955,7 +1955,7 @@
 					"z": 1.35769
 				}
 			],
-			"Wrist_ULNAR": [
+			"WRIST_ULNAR": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.65691,
@@ -1963,7 +1963,7 @@
 					"z": 1.35868
 				}
 			],
-			"Wrist_BACK": [
+			"WRIST_BACK": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.65667,
@@ -1971,7 +1971,7 @@
 					"z": 1.37405
 				}
 			],
-			"Wrist_PALMAR": [
+			"WRIST_PALMAR": [
 				"mixamorig_LeftHand",
 				{
 					"x": 0.65686,
@@ -1979,7 +1979,7 @@
 					"z": 1.33428
 				}
 			],
-			"Forearm_RADIAL": [
+			"FOREARM_RADIAL": [
 				"mixamorig_LeftForeArm",
 				{
 					"x": 0.52618,
@@ -1987,7 +1987,7 @@
 					"z": 1.35297
 				}
 			],
-			"Forearm_ULNAR": [
+			"FOREARM_ULNAR": [
 				"mixamorig_LeftForeArm",
 				{
 					"x": 0.52658,
@@ -1995,7 +1995,7 @@
 					"z": 1.35404
 				}
 			],
-			"Forearm_BACK": [
+			"FOREARM_BACK": [
 				"mixamorig_LeftForeArm",
 				{
 					"x": 0.52624,
@@ -2003,7 +2003,7 @@
 					"z": 1.38355
 				}
 			],
-			"Forearm_PALMAR": [
+			"FOREARM_PALMAR": [
 				"mixamorig_LeftForeArm",
 				{
 					"x": 0.52661,
@@ -2011,7 +2011,7 @@
 					"z": 1.30855
 				}
 			],
-			"Elbow_LEFT": [
+			"ELBOW_LEFT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.39625,
@@ -2019,7 +2019,7 @@
 					"z": 1.3494
 				}
 			],
-			"Elbow_RIGHT": [
+			"ELBOW_RIGHT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.39578,
@@ -2027,7 +2027,7 @@
 					"z": 1.34815
 				}
 			],
-			"Elbow_BACK": [
+			"ELBOW_BACK": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.39625,
@@ -2035,7 +2035,7 @@
 					"z": 1.30255
 				}
 			],
-			"Elbow_FRONT": [
+			"ELBOW_FRONT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.39581,
@@ -2043,7 +2043,7 @@
 					"z": 1.39193
 				}
 			],
-			"Upperarm_LEFT": [
+			"UPPER_ARM_LEFT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.2659,
@@ -2051,7 +2051,7 @@
 					"z": 1.34949
 				}
 			],
-			"Upperarm_RIGHT": [
+			"UPPER_ARM_RIGHT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.26537,
@@ -2059,7 +2059,7 @@
 					"z": 1.3481
 				}
 			],
-			"Upperarm_BACK": [
+			"UPPER_ARM_BACK": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.2659,
@@ -2067,7 +2067,7 @@
 					"z": 1.28878
 				}
 			],
-			"Upperarm_FRONT": [
+			"UPPER_ARM_FRONT": [
 				"mixamorig_LeftArm",
 				{
 					"x": 0.26543,
@@ -2283,7 +2283,7 @@
 					"z": 1.35936
 				}
 			],
-			"_BASE_BACK": [
+			"4_BASE_BACK": [
 				"mixamorig_LeftHandRing1",
 				{
 					"x": 0.74214,
@@ -2499,7 +2499,7 @@
 					"z": 1.3254
 				}
 			],
-			"THUMBBALL_ULNAR": [
+			"THUMB_BALL_ULNAR": [
 				"mixamorig_LeftHandThumb1",
 				{
 					"x": 0.66928,
@@ -2515,7 +2515,7 @@
 					"z": 1.3654
 				}
 			],
-			"THUMBBALL_RADIAL": [
+			"THUMB_BALL_RADIAL": [
 				"mixamorig_LeftHandThumb1",
 				{
 					"x": 0.696,
@@ -2531,7 +2531,7 @@
 					"z": 1.33507
 				}
 			],
-			"THUMBBALL_BACK": [
+			"THUMB_BALL_BACK": [
 				"mixamorig_LeftHandThumb1",
 				{
 					"x": 0.69112,
@@ -2547,7 +2547,7 @@
 					"z": 1.34687
 				}
 			],
-			"THUMBBALL_PALMAR": [
+			"THUMB_BALL_PALMAR": [
 				"mixamorig_LeftHandThumb1",
 				{
 					"x": 0.67232,
@@ -2629,7 +2629,7 @@
 			]
 		},
 		"handLocationsR": {
-			"Hand_RADIAL": [
+			"HAND_RADIAL": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.73101,
@@ -2637,7 +2637,7 @@
 					"z": 1.35322
 				}
 			],
-			"Hand_ULNAR": [
+			"HAND_ULNAR": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.73053,
@@ -2645,7 +2645,7 @@
 					"z": 1.3545
 				}
 			],
-			"Hand_BACK": [
+			"HAND_BACK": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.73086,
@@ -2653,7 +2653,7 @@
 					"z": 1.36908
 				}
 			],
-			"Hand_PALMAR": [
+			"HAND_PALMAR": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.7307,
@@ -2661,7 +2661,7 @@
 					"z": 1.33798
 				}
 			],
-			"Wrist_RADIAL": [
+			"WRIST_RADIAL": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.66945,
@@ -2669,7 +2669,7 @@
 					"z": 1.35313
 				}
 			],
-			"Wrist_ULNAR": [
+			"WRIST_ULNAR": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.66908,
@@ -2677,7 +2677,7 @@
 					"z": 1.35412
 				}
 			],
-			"Wrist_BACK": [
+			"WRIST_BACK": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.66932,
@@ -2685,7 +2685,7 @@
 					"z": 1.36945
 				}
 			],
-			"Wrist_PALMAR": [
+			"WRIST_PALMAR": [
 				"mixamorig_RightHand",
 				{
 					"x": -0.66913,
@@ -2693,7 +2693,7 @@
 					"z": 1.33022
 				}
 			],
-			"Forearm_RADIAL": [
+			"FOREARM_RADIAL": [
 				"mixamorig_RightForeArm",
 				{
 					"x": -0.53479,
@@ -2701,7 +2701,7 @@
 					"z": 1.34969
 				}
 			],
-			"Forearm_ULNAR": [
+			"FOREARM_ULNAR": [
 				"mixamorig_RightForeArm",
 				{
 					"x": -0.53433,
@@ -2709,7 +2709,7 @@
 					"z": 1.35089
 				}
 			],
-			"Forearm_BACK": [
+			"FOREARM_BACK": [
 				"mixamorig_RightForeArm",
 				{
 					"x": -0.53473,
@@ -2717,7 +2717,7 @@
 					"z": 1.38479
 				}
 			],
-			"Forearm_PALMAR": [
+			"FOREARM_PALMAR": [
 				"mixamorig_RightForeArm",
 				{
 					"x": -0.53435,
@@ -2725,7 +2725,7 @@
 					"z": 1.30622
 				}
 			],
-			"Elbow_LEFT": [
+			"ELBOW_LEFT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.40013,
@@ -2733,7 +2733,7 @@
 					"z": 1.34623
 				}
 			],
-			"Elbow_RIGHT": [
+			"ELBOW_RIGHT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.39965,
@@ -2741,7 +2741,7 @@
 					"z": 1.3475
 				}
 			],
-			"Elbow_BACK": [
+			"ELBOW_BACK": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.39965,
@@ -2749,7 +2749,7 @@
 					"z": 1.29971
 				}
 			],
-			"Elbow_FRONT": [
+			"ELBOW_FRONT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.40007,
@@ -2757,7 +2757,7 @@
 					"z": 1.38379
 				}
 			],
-			"Upperarm_LEFT": [
+			"UPPER_ARM_LEFT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.27008,
@@ -2765,7 +2765,7 @@
 					"z": 1.34659
 				}
 			],
-			"Upperarm_RIGHT": [
+			"UPPER_ARM_RIGHT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.26952,
@@ -2773,7 +2773,7 @@
 					"z": 1.34808
 				}
 			],
-			"Upperarm_BACK": [
+			"UPPER_ARM_BACK": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.26956,
@@ -2781,7 +2781,7 @@
 					"z": 1.28938
 				}
 			],
-			"Upperarm_FRONT": [
+			"UPPER_ARM_FRONT": [
 				"mixamorig_RightArm",
 				{
 					"x": -0.27003,
@@ -3213,7 +3213,7 @@
 					"z": 1.36062
 				}
 			],
-			"THUMBBALL_ULNAR": [
+			"THUMB_BALL_ULNAR": [
 				"mixamorig_RightHandThumb1",
 				{
 					"x": -0.70766,
@@ -3229,7 +3229,7 @@
 					"z": 1.3207
 				}
 			],
-			"THUMBBALL_RADIAL": [
+			"THUMB_BALL_RADIAL": [
 				"mixamorig_RightHandThumb1",
 				{
 					"x": -0.68085,
@@ -3245,7 +3245,7 @@
 					"z": 1.33015
 				}
 			],
-			"THUMBBALL_BACK": [
+			"THUMB_BALL_BACK": [
 				"mixamorig_RightHandThumb1",
 				{
 					"x": -0.70255,
@@ -3261,7 +3261,7 @@
 					"z": 1.34221
 				}
 			],
-			"THUMBBALL_PALMAR": [
+			"THUMB_BALL_PALMAR": [
 				"mixamorig_RightHandThumb1",
 				{
 					"x": -0.68392,

@@ -154,10 +154,10 @@ class LocationBodyArm {
         let side = isSecond ? bml.secondSide : bml.side;
         if ( stringToDirection( side, this._tempV3_0, symmetry, true ) ){ // accumulate result and do not normalize
             // 0.5 and 1.5 to avoid rounding problems
-            if ( this._tempV3_0.x < -1.5 ){ location += "SideRR"; }
-            else if ( this._tempV3_0.x < -0.5 ){ location += "SideR"; }
-            else if ( this._tempV3_0.x > 1.5 ){ location += "SideLL"; }
-            else if ( this._tempV3_0.x > 0.5 ){ location += "SideL"; }
+            if ( this._tempV3_0.x < -1.5 ){ location += "_SideRR"; }
+            else if ( this._tempV3_0.x < -0.5 ){ location += "_SideR"; }
+            else if ( this._tempV3_0.x > 1.5 ){ location += "_SideLL"; }
+            else if ( this._tempV3_0.x > 0.5 ){ location += "_SideL"; }
         }
 
         
@@ -260,7 +260,7 @@ class LocationBodyArm {
         let srcLocation = bml.srcLocation;
         // check all-in-one variable first. Only hand locations allowed as contact
         let srcContact = this.handLocations[ bml.srcContact ]; 
-        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "Elbow" ) ){
+        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "ELBOW" ) ){
             this.contactFinger = srcContact;
         }
         else if ( srcFinger || srcSide || srcLocation ){ 
@@ -268,7 +268,7 @@ class LocationBodyArm {
             if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
             if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
             else{ 
-                srcLocation = srcLocation.toUpperCase(); 
+                srcLocation = "_" + srcLocation.toUpperCase(); 
                 // srcLocation = srcLocation.toLowerCase(); 
                 // srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
             }
@@ -278,14 +278,14 @@ class LocationBodyArm {
                 // srcSide = srcSide.toLowerCase();
                 // srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "RIGHT" ){ srcSide = this.isLeftHand ? "RADIAL" : "ULNAR"; }
-                    else if ( srcSide == "LEFT" ){ srcSide = this.isLeftHand ? "ULNAR" : "RADIAL"; }
+                    if ( srcSide == "RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
+                    else if ( srcSide == "LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 
          
             // only hand locations allowed as contact
-            if ( !srcName.includes( "Arm" ) && !srcName.includes( "Elbow" ) ){
+            if ( !srcName.includes( "ARM" ) && !srcName.includes( "ELBOW" ) ){
                 this.contactFinger = this.handLocations[ srcName ];
             }
         }
