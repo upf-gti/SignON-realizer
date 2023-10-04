@@ -679,26 +679,26 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
 // <gaze or gazeShift start ready* relax* end influence target offsetAngle offsetDirection>
 // influence [EYES, HEAD, NECK, SHOULDER, WAIST, WHOLE, ...]
 // offsetAngle relative to target
-// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
-// target [CAMERA, RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
+// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
+// target [CAMERA, RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
 // Scene inputs: gazePositions (head and camera), lookAt objects
 
 // Gaze manager (replace BML)
 GazeManager.gazePositions = {   
     "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
-    "UPRIGHT": new THREE.Vector3(-30, 20, 100), "UPLEFT": new THREE.Vector3(30, 20, 100),
-    "DOWNRIGHT": new THREE.Vector3(-30, -20, 100), "DOWNLEFT": new THREE.Vector3(30, -20, 100),
+    "UP_RIGHT": new THREE.Vector3(-30, 20, 100), "UP_LEFT": new THREE.Vector3(30, 20, 100),
+    "DOWN_RIGHT": new THREE.Vector3(-30, -20, 100), "DOWN_LEFT": new THREE.Vector3(30, -20, 100),
     "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
 };
 
 Gaze.prototype.gazeBS = {
     "RIGHT": { squint: 0, eyelids: 0 }, "LEFT": { squint: 0, eyelids: 0 },
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
-    "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
-    "DOWNRIGHT": { squint: 0, eyelids: 0.2 }, "DOWNLEFT": { squint: 0, eyelids: 0.2 },
+    "UP_RIGHT": { squint: 0.3, eyelids: 0 }, "UP_LEFT": { squint: 0.3, eyelids: 0 },
+    "DOWN_RIGHT": { squint: 0, eyelids: 0.2 }, "DOWN_LEFT": { squint: 0, eyelids: 0.2 },
     "FRONT": { squint: 0, eyelids: 0 }, "CAMERA": { squint: 0, eyelids: 0 }, 
-    "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
+    "EYES_TARGET": { squint: 0, eyelids: 0 }, "HEAD_TARGET": { squint: 0, eyelids: 0 }, "NECK_TARGET": { squint: 0, eyelids: 0 }
 };
 
 // Constructor (lookAt objects and gazePositions)
@@ -930,7 +930,7 @@ Gaze.prototype.initGazeValues = function () {
     this.squintFinW = this.gazeBS[this.target].squint;
     // Rotate vector and reposition
     switch (this.offsetDirection) {
-        case "UPRIGHT":
+        case "UP_RIGHT":
             q.setFromAxisAngle(v, -25 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -940,7 +940,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "UPLEFT":
+        case "UP_LEFT":
             q.setFromAxisAngle(v, -75 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -950,7 +950,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "DOWNRIGHT":
+        case "DOWN_RIGHT":
             q.setFromAxisAngle(v, -25 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -959,7 +959,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "DOWNLEFT":
+        case "DOWN_LEFT":
             q.setFromAxisAngle(v, 75 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -1021,7 +1021,7 @@ Gaze.prototype.initGazeValues = function () {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, TILTFORWARD, TILTBACKWARD, FORWARD, BACKWARD]
+// lexeme [NOD, SHAKE, TILT, TILT_LEFT, TILT_RIGHT, TILT_FORWARD, TILT_BACKWARD, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 
@@ -1063,7 +1063,7 @@ HeadBML.prototype.initHeadData = function (headData) {
     this.amount = headData.amount || 0.2;
 
     // Maximum rotation amplitude
-    if (this.lexeme == "NOD" || this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "TILTFORWARD" || this.lexeme == "TILTBACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
+    if (this.lexeme == "NOD" || this.lexeme == "TILT_LEFT" || this.lexeme == "TILT_RIGHT" || this.lexeme == "TILT_FORWARD" || this.lexeme == "TILT_BACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
         this.maxDeg = this.limVert * 2;
     else
         this.maxDeg = this.limHor * 2;
@@ -1147,7 +1147,7 @@ HeadBML.prototype.initHeadValues = function () {
             this.readyDeg = this.strokeDeg * 0.5;
             break;
 
-        case "TILTLEFT":
+        case "TILT_LEFT":
             this.strokeAxis.set(0, 0, 1);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -1158,7 +1158,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
 
-        case "TILTRIGHT":
+        case "TILT_RIGHT":
             this.strokeAxis.set(0, 0, -1);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -1169,7 +1169,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
         
-        case "TILTFORWARD":
+        case "TILT_FORWARD":
             this.strokeAxis.set(-1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -1180,7 +1180,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
 
-        case "TILTBACKWARD":
+        case "TILT_BACKWARD":
             this.strokeAxis.set(1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -1321,8 +1321,8 @@ var stringToUpperCase = function (item, textItem, def) {
 // --------------------- LIPSYNC MODULE --------------------
 
 // Switch to https if using this script
-// if (window.location.protocol != "https:")
-//     window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+if (window.location.protocol != "https:")
+    window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
 
 // // Audio context
 // if (!Lipsync.AContext)

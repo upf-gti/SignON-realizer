@@ -225,14 +225,14 @@ class BodyMovement {
         amount = amount * 15 * Math.PI / 180;
         let dstBuffer = null;
         switch( bml.bodyMovement ){
-            case "TL": amount *= -1;
-            case "TR": dstBuffer = this.tiltLR;
+            case "TILT_LEFT": amount *= -1;
+            case "TILT_RIGHT": dstBuffer = this.tiltLR;
                 break;
-            case "TB": amount *= -1;
-            case "TF": dstBuffer = this.tiltFB;
+            case "TILT_BACKWARD": amount *= -1;
+            case "TILT_FORWARD": dstBuffer = this.tiltFB;
                 break;
-            case "RR": amount *= -1;
-            case "RL": dstBuffer = this.rotateLR;
+            case "ROTATE_RIGHT": amount *= -1;
+            case "ROTATE_LEFT": dstBuffer = this.rotateLR;
                 break;
         }
 

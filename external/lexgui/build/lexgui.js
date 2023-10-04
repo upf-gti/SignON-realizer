@@ -24,6 +24,14 @@
     LX.getExtension = getExtension;
     LX.deepCopy = deepCopy;
 
+    function setThemeColor(color_name, color)
+    {
+        var r = document.querySelector(':root');
+        r.style.setProperty("--" + color_name, color);
+    }
+
+    LX.setThemeColor = setThemeColor;
+
     function hexToRgb(string) {
         const red = parseInt(string.substring(1, 3), 16) / 255;
         const green = parseInt(string.substring(3, 5), 16) / 255;
@@ -110,13 +118,13 @@
                 const el = allItems[ hoverElId ];
                 if(el) {
                     const is_checkbox = (el.item.type && el.item.type === 'checkbox');
+                    this.classList.toggle('hidden');
                     if(is_checkbox)  {
                         el.item.checked = !el.item.checked;
                         el.callback.call(window, el.item.checked, el.entry_name);
                     }
                     else
                         el.callback.call(window, el.entry_name);
-                    global_search.classList.toggle('hidden');
                 }
             }
             else if ( e.key == 'ArrowDown' && hoverElId < (allItems.length - 1) ) {
@@ -290,7 +298,7 @@
         var link = document.createElement('link');
         link.rel = 'stylesheet';
         link.type = 'text/css';
-        link.href = 'https://use.fontawesome.com/releases/v6.4.0/css/all.css';
+        link.href = 'https://use.fontawesome.com/releases/v6.4.2/css/all.css';
         head.appendChild(link);
 
         // Global vars
@@ -341,6 +349,7 @@
      * id: Id of the prompt dialog
      * position: Dialog position in screen [screen centered]
      * draggable: Dialog can be dragged [false]
+     * input: If false, no text input appears
      */
 
     function prompt(text, title, callback, options = {})
@@ -351,14 +360,16 @@
 
         const dialog = new Dialog(title, p => {
             p.addTextArea(null, text, null, { disabled: true });
-            p.addText(null, value, (v) => value = v, {placeholder: "..."} );
+            if(options.input != false)
+                p.addText(null, value, (v) => value = v, {placeholder: "..."} );
             p.sameLine(2);
             p.addButton(null, "OK", () => { callback.call(this, value); dialog.close() }, { buttonClass: "accept" });
-            p.addButton(null, "Cancel", () => dialog.close() );
+            p.addButton(null, "Cancel", () => {if(options.on_cancel) options.on_cancel(); dialog.close();} );
         }, options);
 
         // Focus text prompt
-        dialog.root.querySelector('input').focus();
+        if(options.input != false)
+            dialog.root.querySelector('input').focus();
     }
 
     LX.prompt = prompt;
@@ -503,7 +514,9 @@
             }
 
             let overlay = options.overlay;
-            if(overlay) {
+
+            if(overlay)
+            {
                 this.root.classList.add("overlay-" + overlay);
 
                 if(options.resize)
@@ -564,7 +577,6 @@
                                 var size = Math.min(document.body.clientWidth - LX.DEFAULT_SPLITBAR_SIZE, (that.root.offsetWidth - dt));
                                 that.root.style.width = size + "px";
                                 that.split_bar.style.left = size + LX.DEFAULT_SPLITBAR_SIZE/2 + "px";
-
                                 break;
                             
                             case "top":
@@ -661,8 +673,11 @@
             }
 
             // Create areas
-            var area1 = new Area({className: "split"});
+            var area1 = new Area({className: "split" + (options.menubar ? "" : " origin")});
             var area2 = new Area({className: "split"});
+
+            area1.parentArea = this;
+            area2.parentArea = this;
 
             var resize = options.resize ?? true;
             var data = "0px";
@@ -675,11 +690,11 @@
 
                 if(type == "horizontal") {
                     this.split_bar.style.width = LX.DEFAULT_SPLITBAR_SIZE + "px";
-                    this.split_bar.style.left = -LX.DEFAULT_SPLITBAR_SIZE/2 + "px";
+                    // this.split_bar.style.left = -LX.DEFAULT_SPLITBAR_SIZE/2 + "px";
                 }
                 else {
                     this.split_bar.style.height = LX.DEFAULT_SPLITBAR_SIZE + "px";
-                    this.split_bar.style.top = -LX.DEFAULT_SPLITBAR_SIZE/2 + "px";
+                    // this.split_bar.style.top = -LX.DEFAULT_SPLITBAR_SIZE/2 + "px";
                 }
                 this.split_bar.addEventListener("mousedown", inner_mousedown);
                 data = LX.DEFAULT_SPLITBAR_SIZE/2 + "px"; // updates
@@ -759,7 +774,6 @@
             {
                 return this.sections;
             }
-            
 
             // from litegui.js @jagenjo
 
@@ -803,6 +817,8 @@
                 that.split_bar.classList.remove("nocursor");
             }
 
+            this._moveSplit(0);
+
             return this.sections;
         }
 
@@ -843,6 +859,14 @@
         */
         show() {
             this.root.classList.remove("hidden");
+        }
+
+        /**
+        * @method toggle
+        * Toggle element if it is hidden
+        */
+        toggle( force ) {
+            this.root.classList.toggle("hidden", force);
         }
 
         /**
@@ -893,12 +917,12 @@
             // document.body.appendChild(d);
             // const height = menubar.root.clientHeight;
             // d.remove();
-            const height = 39; // pixels
+            const height = 48; // pixels
 
-            this.split({type: 'vertical', sizes:[height,null], resize: false});
-            this.sections[0].attach( menubar );
-            this.sections[0].is_menubar = true;
-
+            const [bar, content] = this.split({type: 'vertical', sizes: [height, null], resize: false, menubar: true});
+            bar.attach( menubar );
+            bar.is_menubar = true;
+            window.content = content;
             return menubar;
         }
 
@@ -1063,7 +1087,7 @@
             if(!this.type)
                 throw("No split area");
 
-            if(!dt) // splitbar didn't move!
+            if(dt === undefined) // splitbar didn't move!
                 return;
 
             var a1 = this.sections[0];
@@ -1127,7 +1151,10 @@
             this.onclose = options.onclose;
 
             let container = document.createElement('div');
-            container.className = "lexareatabs";
+            container.className = "lexareatabs " + (options.fit ? "fit" : "row");
+            
+            const folding = options.folding ?? false;
+            if(folding) container.classList.add("folding");
 
             let that = this;
 
@@ -1176,6 +1203,41 @@
             this.root = container;
             this.tabs = {};
             this.tabDOMs = {};
+
+            // debug
+            if(folding) 
+            {
+                this.folded = true;
+                this.folding = folding;
+                
+                if(folding == "up") area.root.insertBefore(area.sections[1].root, area.sections[0].root);
+
+                // // Add fold back button
+
+                // let btn = document.createElement('button');
+                // btn.className = "lexbutton foldback";
+                // btn.innerHTML = "<a class='fa-solid fa-x'></a>";
+                // this.area.root.appendChild(btn);
+
+                // btn.addEventListener('click', e => {
+                //     this.area.hide();
+                //     this.folded = true;
+                // });
+
+                // Listen resize event on parent area
+                const resizeObserver = new ResizeObserver((entries) => {
+                    for (const entry of entries) {
+                        const bb = entry.contentRect;
+                        const sibling = area.parentArea.sections[0].root;
+                        const add_offset = true; // hardcoded...
+                        sibling.style.height = "calc(100% - " + ((add_offset ? 42 : 0) + bb.height) + "px )";
+                    }
+                });
+
+                resizeObserver.observe(this.area.root);
+
+                this.area.hide();
+            }
         }
 
         add( name, content, isSelected, callback, options = {} ) {
@@ -1185,7 +1247,7 @@
                 this.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
             }
             
-            isSelected = !Object.keys( this.tabs ).length ? true : isSelected;
+            isSelected = !Object.keys( this.tabs ).length && !this.folding ? true : isSelected;
 
             let contentEl = content.root ? content.root : content;
             contentEl.style.display = isSelected ? "block" : "none";
@@ -1198,7 +1260,7 @@
             tabEl.innerHTML = name;
             tabEl.id = name.replace(/\s/g, '') + Tabs.TAB_ID++;
             tabEl.title = options.title;
-            tabEl.selected = isSelected;
+            tabEl.selected = isSelected ?? false;
             tabEl.fixed = options.fixed;
             if(tabEl.selected)
                 this.selected = name;
@@ -1217,13 +1279,23 @@
 
                 if( !tabEl.fixed )
                 {
+                    // For folding tabs
+                    const lastValue = tabEl.selected;
+                    tabEl.parentElement.querySelectorAll('span').forEach( s => s.selected = false );
+                    tabEl.selected = !lastValue; 
                     // Manage selected
                     tabEl.parentElement.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
-                    tabEl.classList.toggle('selected');
+                    tabEl.classList.toggle('selected', (this.folding && tabEl.selected));
                     // Manage visibility 
                     tabEl.instance.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
                     contentEl.style.display = "block";
                     tabEl.instance.selected = tabEl.dataset.name;
+                }
+
+                if( this.folding )
+                {
+                    this.folded = tabEl.selected;
+                    this.area.toggle(!this.folded);
                 }
 
                 if(options.onSelect) 
@@ -1590,6 +1662,7 @@
          */
 
         setButtonIcon( title, icon, callback, options = {} ) {
+
             const button = this.buttons[ title ];
             if(button) {
 
@@ -1642,7 +1715,7 @@
                 const disabled = options.disabled ?? false;
                 button.className = "lexmenubutton" + (disabled ? " disabled" : "");
                 button.title = title ?? "";
-                button.innerHTML = "<a style='height:100%;'><image src='" + src + "' class='lexicon' style='height:100%;'></a>";
+                button.innerHTML = "<a><image src='" + src + "' class='lexicon' style='height:32px;'></a>";
                 button.style.padding = "5px";
                 button.style.alignItems = "center";
 
@@ -1877,8 +1950,8 @@
     
                 this.queue(container);
 
-                let buttonName = custom_widget_name + (!instance ? " [empty]" : "");
-                buttonName += "<a class='fa-solid " + (options.icon ?? "fa-cube")  + "' style='float:left'></a>";
+                let buttonName = "<a class='fa-solid " + (options.icon ?? "fa-cube")  + "' style='float:left'></a>";
+                buttonName += custom_widget_name + (!instance ? " [empty]" : "");
                 if(instance)
                     buttonName += "<a class='fa-solid fa-bars-staggered menu' style='float:right; width:5%;'></a>";
                 let buttonEl = this.addButton(null, buttonName, (value, event) => {
@@ -1896,7 +1969,7 @@
                         });
                     }
     
-                }, { buttonClass: 'array' });
+                }, { buttonClass: 'custom' });
                 
                 this.clearQueue();
     
@@ -1977,6 +2050,7 @@
             this.data = data;
             this.onevent = options.onevent;
             this.options = options;
+            this.selected = [];
 
             if(data.constructor === Object)
                 this.#create_item(null, data);
@@ -1999,11 +2073,11 @@
             }
 
             const list = this.domEl.querySelector("ul");
-            this.selected = [];
 
             node.visible = node.visible ?? true;
             node.parent = parent;
             let is_parent = node.children.length > 0;
+            let is_selected = this.selected.indexOf( node ) > -1;
             
             let has_parent_child = false;
             if( this.options.only_parents ) {
@@ -2012,7 +2086,7 @@
             }
 
             let item = document.createElement('li');
-            item.className = "lextreeitem " + "datalevel" + level + " " + (is_parent ? "parent" : "");
+            item.className = "lextreeitem " + "datalevel" + level + (is_parent ? " parent" : "") + (is_selected ? " selected" : "");
             item.id = node.id;
 
             // Select hierarchy icon
@@ -2021,8 +2095,8 @@
             item.innerHTML = "<a class='" + icon + " hierarchy'></a>";
             
             // Add display icon
-            icon = node.icon; // Default: no childs
-            if( icon ) item.innerHTML = "<a class='" + icon + "'></a>";
+            icon = node.icon;
+            if( icon ) item.innerHTML += "<a class='" + icon + "'></a>";
 
             item.innerHTML += (node.rename ? "" : node.id);
 
@@ -2050,6 +2124,16 @@
                 }else {
                     item.classList.add('selected');
                     this.selected.push( node );
+                }
+
+                // Only Show children...
+                if(is_parent) {
+                    node.closed = false;
+                    if(that.onevent) {
+                        const event = new TreeEvent(TreeEvent.NODE_CARETCHANGED, node, node.closed);
+                        that.onevent( event );
+                    }
+                    that.refresh();
                 }
 
                 if(that.onevent) {
@@ -2093,6 +2177,8 @@
 
             name_input.addEventListener("keyup", function(e){
                 if(e.key == 'Enter') {
+
+                    this.value = this.value.replace(/\s/g, '_');
 
                     if(that.onevent) {
                         const event = new TreeEvent(TreeEvent.NODE_RENAMED, node, this.value);
@@ -2180,18 +2266,17 @@
 
             // Show/hide children
             if(is_parent) {
-                item.querySelector('a').addEventListener("click", function(e) {
+                item.querySelector('a.hierarchy').addEventListener("click", function(e) {
                     
                     handled = true;
                     e.stopImmediatePropagation();
                     e.stopPropagation();
 
                     node.closed = !node.closed;
-                    const event = new TreeEvent(TreeEvent.NODE_CARETCHANGED, node, node.closed);
                     if(that.onevent) {
+                        const event = new TreeEvent(TreeEvent.NODE_CARETCHANGED, node, node.closed);
                         that.onevent( event );
                     }
-                    item.click();
                     that.refresh();
                 });
             }
@@ -2291,7 +2376,7 @@
             if(options.className)
                 root.className += " " + options.className;
 
-            root.style.width = options.width || "calc( 100% - 7px )";
+            root.style.width = options.width || "calc( 100% - 6px )";
             root.style.height = options.height || "100%";
             Object.assign(root.style, options.style ?? {});
 
@@ -2377,13 +2462,17 @@
          * @description Stop inlining widgets
          */
 
-        endLine() {
+        endLine(justifyContent) {
 
             this.#inline_widgets_left = 0;
 
             if(!this._inlineContainer)  {
                 this._inlineContainer = document.createElement('div');
                 this._inlineContainer.className = "lexinlinewidgets";
+                if(justifyContent)
+                {
+                    this._inlineContainer.style.justifyContent = justifyContent;
+                }
             }
             
             // Push all elements single element or Array[element, container]
@@ -2503,9 +2592,12 @@
             if(options.title)
                 element.title = options.title;
 
-            element.style.width = "calc(100% - 10px)";
-            if( options.width ) {
-                element.style.width = element.style.minWidth = options.width;
+            if( type != Widget.TITLE )
+            {
+                element.style.width = "calc(100% - " + (this.current_branch || type == Widget.FILE ? 10 : 20) + "px)";
+                if( options.width ) {
+                    element.style.width = element.style.minWidth = options.width;
+                }
             }
 
             if(name != undefined) {
@@ -2549,6 +2641,7 @@
                     }
                     else
                     {
+                        el.classList.add("nobranch");
                         this.root.appendChild( el );
                     }
                 } 
@@ -2594,7 +2687,7 @@
 
         #add_filter( placeholder, options = {} ) {
 
-            options.placeholder = placeholder.constructor == String ? placeholder : "Filter properties"
+            options.placeholder = placeholder.constructor == String ? placeholder : "Filter properties..";
             options.skipWidget = options.skipWidget ?? true;
 
             let widget = this.create_widget(null, Widget.TEXT, options);
@@ -2670,11 +2763,11 @@
                 let o = options[i];
                 if(!emptyFilter)
                 {
-                    if(typeof o == 'string')
-                        o = {value: o};
+                    let toCompare = (typeof o == 'string') ? o : o.value;
+                    ;
                     const filterWord = value.toLowerCase();
-                    const name = o.value.toLowerCase();
-                    if(!name.includes(value)) continue;
+                    const name = toCompare.toLowerCase();
+                    if(!name.includes(filterWord)) continue;
                 }
                 // insert filtered widget
                 filteredOptions.push(o);
@@ -2769,11 +2862,21 @@
                 throw("Set Widget Name!");
             }
 
-            options.width = options.width ?? "auto";
             let widget = this.create_widget(null, Widget.TITLE, options);
             let element = widget.domEl;
-            element.innerText = name;
             element.className = "lextitle";
+
+            if(options.icon) {
+                let icon = document.createElement('a');
+                icon.className = options.icon;
+                icon.style.color = options.icon_color || "";
+                element.appendChild(icon);
+            }
+
+            let text = document.createElement('span');
+            text.innerText = name;
+            element.appendChild(text);
+
             Object.assign(element.style, options.style ?? {});
 
             if(options.link != undefined)
@@ -3041,7 +3144,7 @@
             // Remove branch padding and margins
             if(!widget.name) {
                 wValue.className += " noname";
-                wValue.style.width =  "100%";
+                wValue.style.width =  options.width || "100%";
             }
 
             return element;
@@ -3260,7 +3363,7 @@
 
             // Add dropdown widget button  
             let buttonName = value;
-            buttonName += "<a class='fa-solid fa-caret-down' style='float:right'></a>";
+            buttonName += "<a class='fa-solid fa-angle-down' style='float:right; margin-right: 6px;'></a>";
 
             this.queue(container);
 
@@ -3596,8 +3699,10 @@
             
             this.queue( container );
 
+            const angle_down = `<a class='fa-solid fa-angle-down' style='float:right; margin-right: 6px;'></a>`;
+
             let buttonName = "Array (size " + values.length + ")";
-            buttonName += "<a class='fa-solid fa-caret-down' style='float:right'></a>";
+            buttonName += angle_down;
             this.addButton(null, buttonName, () => {
                 element.querySelector(".lexarrayitems").toggleAttribute('hidden');
             }, { buttonClass: 'array' });
@@ -3618,7 +3723,7 @@
                 // Update num items
                 let buttonEl = element.querySelector(".lexbutton.array span");
                 buttonEl.innerHTML = "Array (size " + values.length + ")";
-                buttonEl.innerHTML += "<a class='fa-solid fa-caret-down' style='float:right'></a>";
+                buttonEl.innerHTML += angle_down;
 
                 // Update inputs
                 array_items.innerHTML = "";
@@ -3656,7 +3761,7 @@
                 }
 
                 buttonName = "Add item";
-                buttonName += "<a class='fa-solid fa-plus' style='float:right'></a>";
+                buttonName += "<a class='fa-solid fa-plus' style='float:right; margin-right: 6px;'></a>";
                 this.addButton(null, buttonName, (v, event) => {
                     values.push( "" );
                     updateItems();
@@ -4502,6 +4607,9 @@
             let input = document.createElement('input');
             input.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + " - 10%)";
             input.type = 'file';
+            if(options.placeholder)
+                input.placeholder = options.placeholder;
+
             input.addEventListener('change', function(e) {
                 const files = e.target.files;
                 if(!files.length) return;
@@ -4531,7 +4639,7 @@
             
             if(local) {
 
-                this.addButton(null, "<a class='fa-solid fa-gear'></a>", () => {
+                this.addButton(null, "<a style='margin-top: 0px;' class='fa-solid fa-gear'></a>", () => {
                     
                     new Dialog("Load Settings", p => {
                         p.addDropdown("Type", ['text', 'buffer', 'bin', 'url'], type, v => { type = v } );
@@ -4602,7 +4710,7 @@
                 });
         
                 let searchIcon = document.createElement('a');
-                searchIcon.className = "fa-solid fa-magnifying-glass";
+                searchIcon.className = "lexicon fa-solid fa-magnifying-glass";
                 toolsDiv.appendChild(node_filter_input);
                 toolsDiv.appendChild(searchIcon);
             }
@@ -4738,7 +4846,7 @@
             var title = document.createElement('div');
             title.className = "lexbranchtitle";
             
-            title.innerHTML = "<span class='switch-branch-button'></span>";
+            title.innerHTML = "<a class='fa-solid fa-angle-up switch-branch-button'></a>";
             if(options.icon) {
                 title.innerHTML += "<a class='branchicon " + options.icon + "' style='margin-right: 8px; margin-bottom: -2px;'>";
             }
@@ -5104,7 +5212,7 @@
         constructor( title, callback, options = {} ) {
 
             options.draggable = options.draggable ?? false;
-            options.closable = false;
+            options.closable = options.closable ?? false;
             
             super( title, callback, options );
             
@@ -5459,7 +5567,7 @@
             element.style.width = options.width || "100%";
 
             element.bgcolor = options.bgcolor || "#15181c";
-            element.pointscolor = options.pointscolor || "#67aae9";
+            element.pointscolor = options.pointscolor || "#7b8ae2";
             element.linecolor = options.linecolor || "#555";
 
             element.value = value || [];
@@ -5533,19 +5641,27 @@
 
             //value to canvas
             function convert(v) {
-                return [ canvas.width * ( (element.xrange[1] - element.xrange[0]) * v[0] + element.xrange[0]),
-                    canvas.height * ((element.yrange[1] - element.yrange[0]) * v[1] + element.yrange[0])];
+                return [ canvas.width * ( v[0] - element.xrange[0])/ (element.xrange[1]),
+                    canvas.height * (v[1] - element.yrange[0])/ (element.yrange[1])];
+                // return [ canvas.width * ( (element.xrange[1] - element.xrange[0]) * v[0] + element.xrange[0]),
+                //     canvas.height * ((element.yrange[1] - element.yrange[0]) * v[1] + element.yrange[0])];
             }
 
             //canvas to value
             function unconvert(v) {
-                return [(v[0] / canvas.width - element.xrange[0]) / (element.xrange[1] - element.xrange[0]),
-                        (v[1] / canvas.height - element.yrange[0]) / (element.yrange[1] - element.yrange[0])];
+                return [(v[0] * element.xrange[1] / canvas.width + element.xrange[0]),
+                        (v[1] * element.yrange[1] / canvas.height + element.yrange[0])];
+                // return [(v[0] / canvas.width - element.xrange[0]) / (element.xrange[1] - element.xrange[0]),
+                //         (v[1] / canvas.height - element.yrange[0]) / (element.yrange[1] - element.yrange[0])];
             }
 
             var selected = -1;
 
-            element.redraw = function()  {
+            element.redraw = function(o = {} )  {
+                
+                if(o.value) element.value = o.value;
+                if(o.xrange) element.xrange = o.xrange;
+                if(o.yrange) element.yrange = o.yrange;
 
                 var rect = canvas.parentElement.getBoundingClientRect();
                 if(canvas.parentElement.parentElement) rect = canvas.parentElement.parentElement.getBoundingClientRect();
@@ -5730,8 +5846,8 @@
             return this;
         }
 
-        redraw() {
-            this.element.redraw();
+        redraw(options = {}) {
+            this.element.redraw(options);
         }
     }
 
@@ -5744,6 +5860,7 @@
         static ASSET_DELETED    = 2;
         static ASSET_RENAMED    = 3;
         static ASSET_CLONED     = 4;
+        static ASSET_DBCLICK    = 5;
 
         constructor( type, item, value ) {
             this.type = type || TreeEvent.NONE;
@@ -5759,6 +5876,7 @@
                 case AssetViewEvent.ASSET_DELETED: return "assetview_event_deleted";
                 case AssetViewEvent.ASSET_RENAMED:  return "assetview_event_renamed";
                 case AssetViewEvent.ASSET_CLONED:  return "assetview_event_cloned";
+                case AssetViewEvent.ASSET_DBCLICK:  return "assetview_event_dbclick";
             }
         }
     };
@@ -5960,7 +6078,7 @@
 
             this.rightPanel.sameLine();
             this.rightPanel.addDropdown("Filter", this.allowed_types, "None", (v) => this._refresh_content.call(this, null, v), { width: "20%" });
-            this.rightPanel.addText(null, this.search_value ?? "", (v) => this._refresh_content.call(this, v, null), { placeholder: "Search assets..." });
+            this.rightPanel.addText(null, this.search_value ?? "", (v) => this._refresh_content.call(this, v, null), { placeholder: "Search assets.." });
             this.rightPanel.addButton(null, "<a class='fa fa-arrow-up-short-wide'></a>", on_sort.bind(this), { width: "3%" });
             this.rightPanel.endLine();
 
@@ -6080,7 +6198,7 @@
                         that._enter_folder( item );
 
                     if(that.onevent) {
-                        const event = new AssetViewEvent(AssetViewEvent.ASSET_SELECTED, e.shiftKey ? [item] : item );
+                        const event = new AssetViewEvent(e.detail === 1 ? AssetViewEvent.ASSET_SELECTED: AssetViewEvent.ASSET_DBCLICK, e.shiftKey ? [item] : item );
                         event.multiple = !!e.shiftKey;
                         that.onevent( event );
                     }

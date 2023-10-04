@@ -152,14 +152,14 @@ class BodyController{
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "right", distance: 0.15, displace: "r", displaceDistance: 0.045, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "left",  distance: 0.1, displace: "l", displaceDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", thumbshape: "touch", hand: "right", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", tco:0.5, thumbshape: "touch", hand: "left", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "right", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "left", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "right", mode: "local", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "left", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "RIGHT", distance: 0.15, displace: "r", displaceDistance: 0.045, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "LEFT",  distance: 0.1, displace: "l", displaceDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", thumbshape: "touch", hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", tco:0.5, thumbshape: "touch", hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "RIGHT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "LEFT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "LEFT", mode: "local", shift:true } );
 
     }
 
@@ -341,7 +341,7 @@ class BodyController{
     * lrSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
     * udSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
     * ioSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
-    * hand: (optional) "right", "left", "both". Default right
+    * hand: (optional) "RIGHT", "LEFT", "BOTH". Default right
     * shift: (optional) bool - make this the default position. Motions not affected
     */
     newGesture( bml ){
@@ -358,7 +358,7 @@ class BodyController{
 
         if ( bml.config ){
             let c = bml.config;
-            if ( c.dominant ){ this.setDominantHand( c.dominant == "right" ); }
+            if ( c.dominant ){ this.setDominantHand( c.dominant == "RIGHT" ); }
             //...
         }
 
@@ -371,13 +371,13 @@ class BodyController{
         }
 
         switch ( bml.hand ){
-            case "right" :             
+            case "RIGHT" :             
                 this._newGestureArm( bml, this.right, ( this.dominant == this.right ) ? 0x00 : symmetryFlags ); 
                 break;
-            case "left" : 
+            case "LEFT" : 
                 this._newGestureArm( bml, this.left, ( this.dominant == this.left ) ? 0x00 : symmetryFlags ); 
                 break;
-            case "both" : 
+            case "BOTH" : 
                 this._newGestureArm( bml, this.dominant, 0x00 ); 
                 this._newGestureArm( bml, this.nonDominant, symmetryFlags ); 
                 break;

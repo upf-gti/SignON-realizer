@@ -147,8 +147,8 @@ class LocationBodyArm {
         //     if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
         //     else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
         // }
-        if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "eyebrow" || location == "shoulder" ){
-            location += this.isLeftHand ? "L" : "R";
+        if ( location == "EAR" || location == "EARLOBE" || location == "CHEEK" || location == "EYE" || location == "EYEBROW" || location == "SHOULDER" ){
+            location += this.isLeftHand ? "_LEFT" : "_RIGHT";
         }
        
         let side = isSecond ? bml.secondSide : bml.side;
@@ -204,7 +204,7 @@ class LocationBodyArm {
      * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. Default false
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
      *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
@@ -268,16 +268,18 @@ class LocationBodyArm {
             if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
             if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
             else{ 
-                srcLocation = srcLocation.toLowerCase(); 
-                srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
+                srcLocation = srcLocation.toUpperCase(); 
+                // srcLocation = srcLocation.toLowerCase(); 
+                // srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
             }
             if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
             else{ 
-                srcSide = srcSide.toLowerCase();
-                srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
+                srcSide = srcSide.toUpperCase();
+                // srcSide = srcSide.toLowerCase();
+                // srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "Right" ){ srcSide = this.isLeftHand ? "Radial" : "Ulnar"; }
-                    else if ( srcSide == "Left" ){ srcSide = this.isLeftHand ? "Ulnar" : "Radial"; }
+                    if ( srcSide == "RIGHT" ){ srcSide = this.isLeftHand ? "RADIAL" : "ULNAR"; }
+                    else if ( srcSide == "LEFT" ){ srcSide = this.isLeftHand ? "ULNAR" : "RADIAL"; }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 

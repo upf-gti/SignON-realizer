@@ -55,10 +55,10 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
     end: 0.4,
 
     influence: "NECK" || "HEAD" || "EYES",
-    target: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT",
+    target: "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT",
 
     // optionals
-    offsetDirection: "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN",
+    offsetDirection: "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN",
     offsetAngle: 0, // degrees
     headOnly: true, // whether to move the eyes with a head movement
     shift: false
@@ -81,7 +81,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
     amount: 1,  
 	repetition: 3,       //amount of times to REPEAT. Default 0 (meaning only moves once)
 
-    lexeme: "NOD" || "SHAKE" || "TILT" || "TILTLEFT" || "TILTRIGHT" || "TILTFORWARD" || "TILTBACKWARD" || "FORWARD" || "BACKWARD"
+    lexeme: "NOD" || "SHAKE" || "TILT" || "TILT_LEFT" || "TILT_RIGHT" || "TILT_FORWARD" || "TILT_BACKWARD" || "FORWARD" || "BACKWARD"
 
 }
 ```
@@ -233,7 +233,7 @@ ui,uil,il,dil,di,dir,ir,uir,i,
 All gestures share some optional attributes 
 ``` javascript
 {
-    hand: "right" || "left" || "both", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "right"
+    hand: "RIGHT" || "LEFT" || "BOTH", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT"
     lrSym: true,  // bool, only applied to the non-dominant hand
     udSym: false, // bool, only applied to the non-dominant hand
     ioSym: false, // bool, only applied to the non-dominant hand
@@ -245,7 +245,7 @@ The dominant hand can be set through the following attribute.
 {
     type: "gesture",
     config: { 
-        dominant: "right" || "left", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+        dominant: "RIGHT" || "LEFT", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
     },
 }
 ```
@@ -262,7 +262,7 @@ The following example using a single BML, instructs the avatar the handshape, pa
     extfidir: "u", 
     palmor: "l",  
     handshape: "finger2",
-    hand: "left" 
+    hand: "LEFT" 
 }
 ```
 ## Shoulder Raise
@@ -311,7 +311,7 @@ Moves the body (trunk). Tilt forward-backward, tilt left-right and rotate left-r
     relax: 0.3,  
     end: 0.4,
     
-    bodyMovement: "TF" || "TB" || "TL" || "TR" || "RL" || "RR",
+    bodyMovement: "TILT_FORWARD" || "TILT_BACKWARD" || "TILT_LEFT" || "TILT_RIGHT" || "ROTATE_LEFT" || "ROTATE_RIGHT",
     
     //optional
     amount: 0.5, // default to 1 
@@ -329,10 +329,10 @@ Moves the arm (wrist) to a location of the body (face + trunk).
     relax: 0.3,  
     end: 0.4,
     
-    locationBodyArm: "chest", // string
+    locationBodyArm: "CHEST", // string
    
     // optionals
-    secondLocationBodyArm: "chest", // string
+    secondLocationBodyArm: "CHEST", // string
     side: "rr" || "r" || "l" || "ll", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
     secondSide: "l", // string
 
@@ -343,10 +343,9 @@ Moves the arm (wrist) to a location of the body (face + trunk).
     elbowRaise: 10, // in degrees. Positive values raise the elbow.
 
     //Following attributes describe which part of the hand will try to reach the locationBodyArm location 
-    srcContact: "1PadPalmar", //source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
     srcFinger: "1", // 1,2,3,4,5, see handconstellation for more information
-    srcLocation: "Pad", // see handconstellation hand locations
-    srcSide: "Palmar", // see handconstellation sides
+    srcLocation: "PAD", // see handconstellation hand locations
+    srcSide: "PALMAR", // see handconstellation sides
     keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
                 // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
                 // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
@@ -357,38 +356,37 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 <details>
 <summary>Click to view the complete list of available locations</summary>
 
-head               
-headtop               
-forehead               
-nose               
-belownose               
-chin               
-underchin               
-mouth               
-earlobe ``` // automatically assigns right or left from the incoming hand ```                    
-earlobeR               
-earlobeL               
-ear  ``` // automatically assigns right or left from the incoming hand ```                    
-earR               
-earL               
-cheek  ``` // automatically assigns right or left from the incoming hand ```                    
-cheekR               
-cheekL               
-eye ``` // automatically assigns right or left from the incoming hand ```                    
-eyeR               
-eyeL               
-eyebrow ``` // automatically assigns right or left from the incoming hand ```                    
-eyebrowL               
-eyebrowR               
-mouth               
-chest               
-shoulderLine          
-shoulder ``` // automatically assigns right or left from the incoming hand ```                    
-shoulderR               
-shoulderL               
-stomach               
-belowstomach               
-neutral               
+"HEAD"               
+"HEAD_TOP"
+"FOREHEAD"
+"NOSE"               
+"BELOW_NOSE"               
+"CHIN"               
+"UNDER_CHIN"               
+"MOUTH"               
+"EARLOBE" ``` // automatically assigns right or left from the incoming hand ```                    
+"EARLOBE_RIGHT"
+"EARLOBE_LEFT"               
+"EAR"  ``` // automatically assigns right or left from the incoming hand ```                    
+"EAR_RIGHT"               
+"EAR_LEFT"
+"CHEEK"  ``` // automatically assigns right or left from the incoming hand ```                    
+"CHEEK_RIGHT"               
+"CHEEK_LEFT"        
+"EYE" ``` // automatically assigns right or left from the incoming hand ```                    
+"EYE_RIGHT"               
+"EYE_LEFT"        
+"EYEBROW" ``` // automatically assigns right or left from the incoming hand ```                    
+"EYEBROW_RIGHT"               
+"EYEBROW_LEFT"                       
+"CHEST"               
+"SHOULDER_LINE"          
+"SHOULDER" ``` // automatically assigns right or left from the incoming hand ```                    
+"SHOULDER_RIGHT"               
+"SHOULDER_LEFT"        
+"STOMACH"               
+"BELOW_STOMACH"               
+"NEUTRAL"               
 </details>
 
 ---
@@ -517,18 +515,16 @@ The motion is stopped if an arm location is executed afterwards.
 
     handConstellation: true,
     //Location of the hand in the specified hand (or dominant hand)
-    srcContact: "2PadBack", // source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
     srcFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
-    srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
-    srcSide: "Back", // Ulnar, Radial, Palmar, Back
+    srcLocation: "PAD", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
+    srcSide: "BACK", // ULNAR, RADIAL, PALMAR, BACK
      
     //Location of the hand in the unspecified hand (or non dominant hand)
-    dstContact: "2Tip", // source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed). Afterwards, there is no need to use dstFinger, dstLocation or dstSide
     dstFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
-    dstLocation: "Base", // string from hand locations or arm locations
-    dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
+    dstLocation: "BASE", // string from hand locations or arm locations
+    dstSide: "PALMAR", // ULNAR, RADIAL, PALMAR, BACK 
     
-    hand: "dom", // if hand=="both", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
+    hand: "dom", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
 
     // optionals
     distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
@@ -542,22 +538,22 @@ The motion is stopped if an arm location is executed afterwards.
 <details>
 <summary>Click to view the complete list of HAND CONSTELLATION SIDES </summary>
 
-Right         
-Left         
-Ulnar         
-Radial         
-Front  ``` // only for Elbow and Upperarm instead of Palmar ```      
-Back         
-Palmar
+RIGHT         
+LEFT         
+ULNAR         
+RADIAL         
+FRONT  ``` // only for Elbow and Upperarm instead of PALMAR ```      
+BACK         
+PALMAR
 </details>
 <details>
 <summary>Click to view the complete list of HAND LOCATIONS </summary>
 
-Tip  ``` // need a finger specification and does not have sides ```        
-Pad ``` // need a finger specification ```        
-Mid ``` // need a finger specification ```         
-Base ``` // need a finger specification ```         
-Thumbball         
+TIP  ``` // need a finger specification and does not have sides ```        
+PAD ``` // need a finger specification ```        
+MID ``` // need a finger specification ```         
+BASE ``` // need a finger specification ```         
+THUMBBALL         
 Hand         
 Wrist         
 </details>

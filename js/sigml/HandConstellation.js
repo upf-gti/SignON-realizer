@@ -201,14 +201,14 @@ class HandConstellation {
             side = side.toLowerCase();
             side = side[0].toUpperCase() + side.slice( 1 ); 
             if ( !location.includes("Elbow") && !location.includes("Upperarm") ){ // jasigning...
-                if ( side == "Right" ){ side = hand == "R" ? "Ulnar" : "Radial"; }
-                else if ( side == "Left" ){ side = hand == "R" ? "Radial" : "Ulnar"; }
+                if ( side == "RIGHT" ){ side = hand == "R" ? "ULNAR" : "RADIAL"; }
+                else if ( side == "LEFT" ){ side = hand == "R" ? "RADIAL" : "ULNAR"; }
             }
         }
-        let name = finger + location + side; 
+        let name = finger + "_" + location + "_" + side; 
 
         result = handLocations[ name ];
-        if ( !result ){ result = handLocations[ "2Tip" ]; }
+        if ( !result ){ result = handLocations[ "2_TIP" ]; }
         return result;
     }
     /**
@@ -220,13 +220,13 @@ class HandConstellation {
      * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * 
      * Location of the hand in the unspecified hand (or non dominant hand)
      * dstContact: (optional) source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed)
      * dstFinger: (optional) 1,2,3,4,5
      * dstLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * dstSide: (optional) Ulnar, Radial, Palmar, Back 
+     * dstSide: (optional) ULNAR, RADIAL, PALMAR, BACK 
      * 
      * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. 
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
@@ -241,13 +241,13 @@ class HandConstellation {
         let dstLocations = null;
         let srcHand = "R";
 
-        if ( bml.hand == "both" ){ // src default to domhand
+        if ( bml.hand == "BOTH" ){ // src default to domhand
             this.isBothHands = true;
             srcHand = domHand == "L" ? "L" : "R";
         }else{
             this.isBothHands = false;
-            if ( bml.hand == "right" ){ srcHand = "R"; }
-            else if ( bml.hand == "left" ){ srcHand = "L"; }
+            if ( bml.hand == "RIGHT" ){ srcHand = "R"; }
+            else if ( bml.hand == "LEFT" ){ srcHand = "L"; }
             else if ( bml.hand == "nonDom" ){ srcHand = domHand == "L" ? "R" : "L"; }
             else{ srcHand = domHand == "L" ? "L" : "R"; }
         }

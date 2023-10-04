@@ -117,7 +117,7 @@ let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", 
 
 function checkHandsUsage( orders ){
     
-    let hand = "right";
+    let hand = "RIGHT";
     let result = {};
 
     while( true ){
@@ -130,7 +130,7 @@ function checkHandsUsage( orders ){
         if ( !orders ){ orders = []; }
       
         for ( let i = 0; i < orders.length; ++i ){
-            if ( orders[i].hand != "both" && orders[i].hand != hand ){ continue; }
+            if ( orders[i].hand != "BOTH" && orders[i].hand != hand ){ continue; }
             handResult.isHandUsed = true;
             let o = orders[i];
             if ( o.start < handResult.firstHandUsage && !o.locationBodyArm ){ handResult.firstHandUsage = o.start; }
@@ -143,7 +143,7 @@ function checkHandsUsage( orders ){
         }
 
         result[ hand ] = handResult;
-        if ( hand == "right" ){ hand = "left"; }
+        if ( hand == "RIGHT" ){ hand = "LEFT"; }
         else{ break; }
     }
 
@@ -157,16 +157,16 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     if ( !oldPosture ){
         newPosture = {
             right: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.37, side: "r", srcContact: "2Tip" },
-                { type: "gesture", start: -1, extfidir: "dl", hand: "right" }, 
-                { type: "gesture", start: -1, palmor: "l", hand: "right" }, 
-                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "right" }, 
+                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" },
+                { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
+                { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
+                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "RIGHT" }, 
             ],
             left: [
-                { type: "gesture", start: -1, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.37, side: "l", srcContact: "2Tip" },
-                { type: "gesture", start: -1, extfidir: "dr", hand: "left" }, 
-                { type: "gesture", start: -1, palmor: "r", hand: "left" }, 
-                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "left" }, 
+                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" },
+                { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
+                { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
+                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "LEFT" }, 
             ],
             handConstellation: null,
         }
@@ -175,7 +175,7 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     else { newPosture = JSON.parse( JSON.stringify( oldPosture ) ); }
 
     // check all new orders
-    let hand = "right";
+    let hand = "RIGHT";
     while( true ){
 
         for( let i = 0; i < newOrders.length; ++i ){
@@ -189,7 +189,7 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     
             // if a new order has a bigger start than the old posture, it becomes the new posture
             if( type > -1 && type < 4 ){
-                if ( ( o.hand == hand || o.hand == "both" ) && newPosture[ hand ][ type ].start < o.start ){
+                if ( ( o.hand == hand || o.hand == "BOTH" ) && newPosture[ hand ][ type ].start < o.start ){
                     newPosture[ hand ][ type ] = JSON.parse( JSON.stringify( o ) ); // copy object, not reference
                     newPosture[ hand ][ type ].hand = hand;
                     delete newPosture[ hand ][ type ].attackPeak; // just in case
@@ -208,7 +208,7 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
             }
         }
 
-        if ( hand == "right" ){ hand = "left"; }
+        if ( hand == "RIGHT" ){ hand = "LEFT"; }
         else{ break; }
     }
 
@@ -230,15 +230,15 @@ function signManual( xml, start, signSpeed ){
     }
     
     const signGeneralInfo = {
-        domHand: "right",
-        nonDomHand: "left",
+        domHand: "RIGHT",
+        nonDomHand: "LEFT",
         bothHands: false,
         symmetry: 0x00,
         outofphase: false,
     };
     signGeneralInfo.bothHands = attributes.both_hands == "true";
-    if ( !signGeneralInfo.bothHands && attributes.nondominant == "true" ){ signGeneralInfo.domHand = "left"; }
-    signGeneralInfo.nonDomHand = signGeneralInfo.domHand == "right" ? "left" : "right";
+    if ( !signGeneralInfo.bothHands && attributes.nondominant == "true" ){ signGeneralInfo.domHand = "LEFT"; }
+    signGeneralInfo.nonDomHand = signGeneralInfo.domHand == "RIGHT" ? "LEFT" : "RIGHT";
     let lrSym = attributes.lr_symm == "true";
     let oiSym = attributes.oi_symm == "true";
     let udSym = attributes.ud_symm == "true";
@@ -279,7 +279,7 @@ function signManual( xml, start, signSpeed ){
 
         if ( !motionsStarted ){
             if ( posturesAvailable.includes( tagName ) ){
-                let r = postureParser( action, time, signGeneralInfo.bothHands ? "both" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, currentPosture );
+                let r = postureParser( action, time, signGeneralInfo.bothHands ? "BOTH" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, currentPosture );
                 result = result.concat( r.data );
                 currentPosture = currentPostureUpdate( currentPosture, r.data ); // needed for location_hand in locatoin_bodyarm...
                 // do not advance time. All postures should happen at the same time
@@ -290,7 +290,7 @@ function signManual( xml, start, signSpeed ){
                 time += TIMESLOT.LOC / signSpeed; 
             }
             motionsStarted = true; // locations and handconfigs will no longer be accepted for this sign
-            let r = motionParser( action, time, signGeneralInfo.bothHands ? "both" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, currentPosture );
+            let r = motionParser( action, time, signGeneralInfo.bothHands ? "BOTH" : signGeneralInfo.domHand, signGeneralInfo.symmetry, signSpeed, signGeneralInfo, currentPosture );
             result = result.concat( r.data );
             if ( time < r.end ) { time = r.end; }
             currentPosture = currentPostureUpdate( currentPosture, r.data );
@@ -305,12 +305,12 @@ function signManual( xml, start, signSpeed ){
     let checkHandsResult = checkHandsUsage( result );
     if ( checkHandsResult.right.isHandUsed ){
         if ( checkHandsResult.right.firstHandUsage + 0.05 < checkHandsResult.right.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "right", distance: 0.37, side: "r", srcContact: "2Tip" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" } );
         }
     }
     if ( checkHandsResult.left.isHandUsed ){
         if ( checkHandsResult.left.firstHandUsage + 0.05 < checkHandsResult.left.firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "chest", secondLocationBodyArm: "stomach", hand: "left", distance: 0.37, side: "l", srcContact: "2Tip" } );
+            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" } );
         }
     }
 
@@ -392,7 +392,7 @@ function postureParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, 
 
             // each location hand specifies where to touch in the OTHER hand 
             if ( domChild && nonDomChild ){ 
-                handConstellation.hand = "both";
+                handConstellation.hand = "BOTH";
                 handConstellation.dstLocation = domChild.location;
                 handConstellation.dstSide = domChild.side;
                 handConstellation.dstFinger = domChild.finger;
@@ -486,7 +486,7 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
             obj.secondPalmor = attributes.second_palmor;
         }
 
-        if ( hand == "both" && signGeneralInfo.bothHands ){ obj.lrSym = true; }
+        if ( hand == "BOTH" && signGeneralInfo.bothHands ){ obj.lrSym = true; }
         else{ obj.lrSym = symmetry & 0x01; }  
         obj.udSym = symmetry & 0x02;
         obj.oiSym = symmetry & 0x04;
@@ -498,35 +498,35 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
 
 
 let locationMapHead = {
-    forehead: "forehead",
-    eyebrows: "eyebrow",
-    eyes: "eye",
-    uppereyelid: "eye",
-    lowereyelid: "eye",
-    nose: "nose",
-    nostrils: "nose",
-    ear: "ear",
-    earlobe: "earlobe",
-    cheek: "cheek",
-    lips: "mouth",
-    upperlip: "mouth",
-    lowerlip: "mouth",
-    tongue: "mouth",
-    teeth: "mouth",
-    upperteeth: "mouth",
-    lowerteeth: "mouth",
-    chin: "chin",
-    underchin: "underchin",
+    forehead: "FOREHEAD",
+    eyebrows: "EYEBROW",
+    eyes: "EYE",
+    uppereyelid: "EYE",
+    lowereyelid: "EYE",
+    nose: "NOSE",
+    nostrils: "NOSE",
+    ear: "EAR",
+    earlobe: "EARLOBE",
+    cheek: "CHEEK",
+    lips: "MOUTH",
+    upperlip: "MOUTH",
+    lowerlip: "MOUTH",
+    tongue: "MOUTH",
+    teeth: "MOUTH",
+    upperteeth: "MOUTH",
+    lowerteeth: "MOUTH",
+    chin: "CHIN",
+    underchin: "UNDER_CHIN",
 }
 let locationMapBody = {
-    headtop: "headtop",
-    head: "head", 
+    headtop: "HEAD_TOP",
+    head: "HEAD", 
     neck: "neck",
-    shoulders: "shoulderLine",
-    shouldertop: "shoulderTop",
-    chest: "chest",
-    stomach: "stomach",
-    belowstomach: "belowstomach",
+    shoulders: "SHOULDER_LINE",
+    shouldertop: "SHOULDER_TOP",
+    chest: "CHEST",
+    stomach: "STOMACH",
+    belowstomach: "BELOW_STOMACH",
 }
 let locationMap ={};
 for( let l in locationMapHead ){ locationMap[l] = locationMapHead[l]; }
@@ -546,7 +546,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     let result = { type: "gesture", start: start - 0.00001, attackPeak: attackPeak, hand: hand }; // -0.000001 to avoid locationBodyArm cancelling motions or handconstellations
 
     // usual body location
-    if ( hand == "both" && signGeneralInfo.bothHands ){ result.lrSym = true; }
+    if ( hand == "BOTH" && signGeneralInfo.bothHands ){ result.lrSym = true; }
     else{ result.lrSym = symmetry & 0x01; }  
     result.udSym = symmetry & 0x02;  
     result.oiSym = symmetry & 0x04;  
@@ -582,7 +582,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         case "left_at": result.side = "l"; break;
         case "left_beside": result.side = "ll"; break;
         default:   
-            if ( hand == "both" && signGeneralInfo.bothHands ){ 
+            if ( hand == "BOTH" && signGeneralInfo.bothHands ){ 
                 result.side = signGeneralInfo.domHand[0];
                 result.lrSym = true;
             }
@@ -594,7 +594,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         case "left_at": result.secondSide = "l"; break;
         case "left_beside": result.secondSide = "ll"; break;
         default: 
-            if ( hand == "both" && signGeneralInfo.bothHands ){ 
+            if ( hand == "BOTH" && signGeneralInfo.bothHands ){ 
                 result.secondSide = signGeneralInfo.domHand[0];
                 result.lrSym = true;
             }
@@ -610,16 +610,16 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         let handshape = currentPosture[ hand == signGeneralInfo.nonDomHand ? signGeneralInfo.nonDomHand : signGeneralInfo.domHand ][3].handshape;
 
         // when touch or specific hand in face, check if handshape is 
-        let shouldBeFingerSelected = ( attributes.contact == "touch" ) || ( hand != "both" && locationMapHead[ attributes.location ] );
+        let shouldBeFingerSelected = ( attributes.contact == "touch" ) || ( hand != "BOTH" && locationMapHead[ attributes.location ] );
         shouldBeFingerSelected = shouldBeFingerSelected &&  ( handshape != "flat" && handshape != "fist" && handshape != "finger2345" );
 
         if ( shouldBeFingerSelected ){
             // actually should be the selected finger but let's keep it simple for now
             result.srcFinger = "2";
-            result.srcLocation = "Tip";
+            result.srcLocation = "TIP";
         }else{
             result.srcLocation = "Hand";
-            result.srcSide = "Palmar";
+            result.srcSide = "PALMAR";
         }
     }
 
@@ -643,52 +643,52 @@ function locationHandInfoExtract( xml, parseChildren = true ){
         // default values tip of index finger
         let digit = parseInt( attributes.digits );
         result.finger = ( isNaN(digit) || digit < 1 || digit > 5 ) ? 2 : digit; 
-        result.location = "Tip"; 
+        result.location = "TIP"; 
 
-        let side = "Palmar";
+        let side = "PALMAR";
         switch( attributes.side ){
             case "right_at": 
             case "right_beside": 
-                side = "right"; 
+                side = "RIGHT"; 
                 break; 
             case "left_at": 
             case "left_beside": 
-                side = "left"; 
+                side = "LEFT"; 
                 break; 
-            case "front": side = "palmar"; break; 
-            case "dorsal": side = "back"; break;
+            case "front": side = "PALMAR"; break; 
+            case "dorsal": side = "BACK"; break;
             case "palmar":
             case "back":
             case "radial":
             case "ulnar": 
-                side = attributes.side; 
+                side = attributes.side.toUpperCase(); 
                 break;
             default: break;
         }
 
         switch( attributes.location ){
             case "nail": 
-                result.location = "Pad";
+                result.location = "PAD";
                 result.side = side;  
                 break;
             case "pad":
-                result.location = "Pad";
+                result.location = "PAD";
                 result.side = side;
                 break;
             case "midjoint": 
-                result.location = "Mid";
+                result.location = "MID";
                 result.side = side;
                 break;
             case "side":
-                result.location ="Mid";
-                result.side = "Ulna";
+                result.location ="MID";
+                result.side = "UNLA";
                 break;
             case "base":
-                result.location = "Base";
+                result.location = "BASE";
                 result.side = side;
                 break;
             case "tip":
-                result.location = "Tip";
+                result.location = "TIP";
                 result.side = null;
                 break;
             default: break;
@@ -697,25 +697,25 @@ function locationHandInfoExtract( xml, parseChildren = true ){
     else if ( locationHand_HandpartTable.includes( attributes.location ) ){
          // default values tip of index finger
         result.location = "Hand"; 
-        result.side = "Palmar";
+        result.side = "PALMAR";
 
-        let side = "Palmar";
+        let side = "PALMAR";
         switch( attributes.side ){
             case "right_at": 
             case "right_beside": 
-                side = "right"; // realizer will automatically compute wheter it is the ulna or the radius
+                side = "RIGHT"; // realizer will automatically compute wheter it is the ulna or the radius
                 break; 
             case "left_at": 
             case "left_beside": 
-                side = "left"; // realizer will automatically compute wheter it is the ulna or the radius
+                side = "LEFT"; // realizer will automatically compute wheter it is the ulna or the radius
                 break;
-            case "front": side = "palmar"; break; 
-            case "dorsal": side = "back"; break;
+            case "front": side = "PALMAR"; break; 
+            case "dorsal": side = "BACK"; break;
             case "palmar":
             case "back":
             case "radial":
             case "ulnar": 
-                side = attributes.side; 
+                side = attributes.side.toUpperCase(); 
                 break;
             default: break;
         }
@@ -726,26 +726,26 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 result.side = side;
                 break;
             case "thumbball":
-                result.location = "Thumbball";
+                result.location = "THUMBBALL";
                 result.side = side;
                 break;
             case "palm": 
                 result.location = "Hand";
-                result.side = "Palmar";
+                result.side = "PALMAR";
                 break;
             case "handback":
                 result.location ="Hand";
-                result.side = "Back";
+                result.side = "BACK";
                 break;
             case "thumbside":
                 result.finger = "2"
-                result.location = "Base";
-                result.side = "Radial";
+                result.location = "BASE";
+                result.side = "RADIAL";
                 break;
             case "pinkyside":
                 result.finger = "5"
-                result.location = "Base";
-                result.side = "Ulnar";
+                result.location = "BASE";
+                result.side = "UNLAR";
                 break;    
             default: break;
         }
@@ -754,17 +754,17 @@ function locationHandInfoExtract( xml, parseChildren = true ){
     else if ( locationHand_ArmTable.includes( attributes.location ) ){
         // default values tip of index finger
         result.location = "Hand"; 
-        result.side = "Front";
+        result.side = "FRONT";
 
-        let side = "Front";
+        let side = "FRONT";
         switch( attributes.side ){
-            case "dorsal": side = "back"; break;
+            case "dorsal": side = "BACK"; break;
             case "palmar":
             case "front": 
             case "back":
             case "radial":
             case "ulnar": 
-                side = attributes.side; 
+                side = attributes.side.toUpperCase(); 
                 break;
             default: break;
         }
@@ -772,19 +772,19 @@ function locationHandInfoExtract( xml, parseChildren = true ){
         switch( attributes.location ){
             case "upperarm": 
                 result.location = "Upperarm";
-                result.side = side == "Palmar" ? "Front" : side;
+                result.side = side == "PALMAR" ? "FRONT" : side;
                 break;
             case "elbow":
                 result.location = "Elbow";
-                result.side = side == "Palmar" ? "Front" : side;;
+                result.side = side == "PALMAR" ? "FRONT" : side;
                 break;
             case "elbowinside": 
                 result.location = "Elbow";
-                result.side = "Front";
+                result.side = "FRONT";
                 break;
             case "lowerarm":
                 result.location ="Forearm";
-                result.side = side == "Front" ? "Palmar" : side;
+                result.side = side == "FRONT" ? "PALMAR" : side;
                 break;
             default: break;
         }
@@ -826,7 +826,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
 
         let child = xml.children[i];
         if ( child.tagName == "location_bodyarm" ){
-            locBodyArm = locationBodyArmParser( child, start - 0.0000001, attackPeak, "both", 0x00, signGeneralInfo, currentPosture );
+            locBodyArm = locationBodyArmParser( child, start - 0.0000001, attackPeak, "BOTH", 0x00, signGeneralInfo, currentPosture );
             if ( locBodyArm && locBodyArm.length > 0 ){ locBodyArm = locBodyArm[0]; }
             else{ locBodyArm = null; }
             break;
@@ -851,7 +851,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
     }
 
     // if location hands missing and it is singlehanded, get last handconstellation location and change its distance
-    if ( hand != "both" && locationHandCount == 0 ){
+    if ( hand != "BOTH" && locationHandCount == 0 ){
         if ( currentPosture.handConstellation ){
             let newResult = JSON.parse( JSON.stringify( currentPosture.handConstellation ) );    
             newResult.distance = result.distance;
@@ -876,7 +876,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
             result.dstFinger = currentPosture.handConstellation.dstFinger;
         }else{
             // "wachten" sign needs these
-            result.dstLocation = "Tip"; 
+            result.dstLocation = "TIP"; 
             result.dstFinger = "2";
         }
     }
@@ -887,7 +887,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
             result.srcFinger = currentPosture.handConstellation.srcFinger;
         }else{
             // "wachten" sign needs these
-            result.dstLocation = "Tip";
+            result.dstLocation = "TIP";
             result.dstFinger = "2";
         }
     }
@@ -1080,11 +1080,11 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
 
                                 if ( type == 4 ){ backwardAddConstellation = !!currentPosture.handConstellation; } // flag as true only if there was a previous handconstellation
                                 else if ( type > -1 ){
-                                    if ( d.hand == "right" || d.hand == "both" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.right[ type ] ) ) ); }
-                                    if ( d.hand == "left" || d.hand == "both" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.left[ type ] ) ) ); }
+                                    if ( d.hand == "RIGHT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.right[ type ] ) ) ); }
+                                    if ( d.hand == "LEFT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.left[ type ] ) ) ); }
 
                                     // there was a handconstellation before rpt_motion
-                                    if ( d.locationBodyArm && currentPosture.handConstellation ){ backwardAddConstellation |= currentPosture.handConstellation.hand == "both" || d.locationBodyArm.hand == currentPosture.handConstellation.hand; }
+                                    if ( d.locationBodyArm && currentPosture.handConstellation ){ backwardAddConstellation |= currentPosture.handConstellation.hand == "BOTH" || d.locationBodyArm.hand == currentPosture.handConstellation.hand; }
                                 }                            
                             }
                             // fix timings of backward instructions
@@ -1234,7 +1234,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         resultArray.push( result );
 
         // wait for a 180º of phase between hands (even if angles are shorter than 180)
-        if ( hand == "both" && signGeneralInfo.outofphase ){ 
+        if ( hand == "BOTH" && signGeneralInfo.outofphase ){ 
             let resultOutOfPhase = JSON.parse( JSON.stringify( result ) );
             let timeTo180 = 90 * duration / Math.abs( result.endAngle - result.startAngle ); // how much timet would need to move 180º
             resultOutOfPhase.start += timeTo180;
@@ -1442,17 +1442,17 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
 
 let shoulderMovementTable = {
     // keeps that position until it changes or the sign ends
-    UL: { type: "gesture", shoulderRaise: 0.8, hand: "left"  }, //_left_shoulder_raised                
-    UR: { type: "gesture", shoulderRaise: 0.8, hand: "right" }, //_right_shoulder_raised               
-    UB: { type: "gesture", shoulderRaise: 0.8, hand: "both"  }, //_both_shoulders_raised               
-    HL: { type: "gesture", shoulderHunch: 0.8, hand: "left"  }, //_left_shoulder_hunched_forward       
-    HR: { type: "gesture", shoulderHunch: 0.8, hand: "right" }, //_right_shoulder_hunched_forward      
-    HB: { type: "gesture", shoulderHunch: 0.8, hand: "both"  }, //_both_shoulders_hunched_forward     
+    UL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT"  }, //_left_shoulder_raised                
+    UR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT" }, //_right_shoulder_raised               
+    UB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH"  }, //_both_shoulders_raised               
+    HL: { type: "gesture", shoulderHunch: 0.8, hand: "LEFT"  }, //_left_shoulder_hunched_forward       
+    HR: { type: "gesture", shoulderHunch: 0.8, hand: "RIGHT" }, //_right_shoulder_hunched_forward      
+    HB: { type: "gesture", shoulderHunch: 0.8, hand: "BOTH"  }, //_both_shoulders_hunched_forward     
     
     // up and down once
-    SL: { type: "gesture", shoulderRaise: 0.8, hand: "left", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
-    SR: { type: "gesture", shoulderRaise: 0.8, hand: "right", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
-    SB: { type: "gesture", shoulderRaise: 0.8, hand: "both", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
+    SL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
+    SR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
+    SB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
 };
 
 let bodyMovementTable = {
@@ -1473,10 +1473,10 @@ let headMovementTable = {
     SH: { type: "head", lexeme: "SHAKE", repetition: 3 }, //_shaking_left_and_right  
     SR: { type: "gaze", influence: "HEAD", target: "RIGHT", headOnly: true }, //_turned_right            
     SL: { type: "gaze", influence: "HEAD", target: "LEFT", headOnly: true }, //_turned_left             
-    TR: { type: "head", lexeme: "TILTRIGHT", repetition: 0 }, //_tilted_right            
-    TL: { type: "head", lexeme: "TILTLEFT", repetition: 0 }, //_tilted_left             
-    NF: { type: "head", lexeme: "TILTFORWARD", repetition: 0 }, //_tilted_forward          
-    NB: { type: "head", lexeme: "TILTBACKWARD", repetition: 0 }, //_tilted_back             
+    TR: { type: "head", lexeme: "TILT_RIGHT", repetition: 0 }, //_tilted_right            
+    TL: { type: "head", lexeme: "TILT_LEFT", repetition: 0 }, //_tilted_left             
+    NF: { type: "head", lexeme: "TILT_FORWARD", repetition: 0 }, //_tilted_forward          
+    NB: { type: "head", lexeme: "TILT_BACKWARD", repetition: 0 }, //_tilted_back             
     PF: { type: "head", lexeme: "FORWARD", repetition: 0 }, //_pushed_forward          
     PB: { type: "head", lexeme: "BACKWARD", repetition: 0 }, //_pushed_backward         
     //LI: , //_head_movement_linked_to_eye_gaze
@@ -1493,10 +1493,10 @@ let eyeGazeTable = {
     DN:{ type: "gaze", influence: "EYES", target: "DOWN" },     // _down                                        
     LE:{ type: "gaze", influence: "EYES", target: "LEFT" },     // _left                                        
     RI:{ type: "gaze", influence: "EYES", target: "RIGHT" },    // _right                                       
-    LU:{ type: "gaze", influence: "EYES", target: "UPLEFT" },   // _left_up                                     
-    LD:{ type: "gaze", influence: "EYES", target: "DOWNLEFT" }, // _left_down                                   
-    RU:{ type: "gaze", influence: "EYES", target: "UPRIGHT" },  // _right_up                                    
-    RD:{ type: "gaze", influence: "EYES", target: "DOWNRIGHT" },// _right_down
+    LU:{ type: "gaze", influence: "EYES", target: "UP_LEFT" },   // _left_up                                     
+    LD:{ type: "gaze", influence: "EYES", target: "DOWN_LEFT" }, // _left_down                                   
+    RU:{ type: "gaze", influence: "EYES", target: "UP_RIGHT" },  // _right_up                                    
+    RD:{ type: "gaze", influence: "EYES", target: "DOWN_RIGHT" },// _right_down
 };
 let eyebrowsTable = {
     RB: { type: "faceLexeme", lexeme: "BROW_RAISER", amount: 1 }, 
