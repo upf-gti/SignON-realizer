@@ -160,13 +160,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
-                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "RIGHT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "RIGHT" }, 
             ],
             LEFT: [
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
-                { type: "gesture", start: -1, handshape: "flat", thumbshape: "touch", hand: "LEFT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "LEFT" }, 
             ],
             handConstellation: null,
         }
@@ -436,12 +436,12 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
     let result = [];
     if ( attributes.handshape || attributes.thumbpos || attributes.bend1 || attributes.bend2 || attributes.bend3 || attributes.bend4 || attributes.bend5 || attributes.mainbend ){ 
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
-        obj.handshape = attributes.handshape || "flat";
-        obj.secondHandshape = attributes.second_handshape;
-        obj.mainBend = attributes.mainbend;
-        obj.secondMainBend = attributes.second_mainbend;
-        obj.thumbshape = attributes.thumbpos;
-        obj.secondThumbshape = attributes.second_thumbpos;
+        obj.handshape = attributes.handshape.toUpperCase().replace("FINGER", "FINGER_").replace("SPREAD", "_SPREAD").replace("PINCH", "PINCH_").replace("CEE", "CEE_").replace("OPEN", "_OPEN") || "FLAT";
+        obj.secondHandshape = attributes.second_handshape ? attributes.second_handshape.toUpperCase().replace("FINGER", "FINGER_").replace("SPREAD", "_SPREAD").replace("PINCH", "PINCH_").replace("CEE", "CEE_").replace("OPEN", "_OPEN") : null;
+        obj.mainBend = attributes.mainbend ? attributes.mainbend.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.secondMainBend = attributes.second_mainbend ? attributes.second_mainbend.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.thumbshape = attributes.thumbpos ? attributes.thumbpos.toUpperCase(): null;
+        obj.secondThumbshape = attributes.second_thumbpos ? attributes.second_thumbpos.toUpperCase() : null; 
         switch( attributes.ceeopening ){ 
             case "slack": obj.tco = 0.4; break;
             case "tight": obj.tco = -0.4; break;
@@ -521,7 +521,7 @@ let locationMapHead = {
 let locationMapBody = {
     headtop: "HEAD_TOP",
     head: "HEAD", 
-    neck: "neck",
+    neck: "NECK",
     shoulders: "SHOULDER_LINE",
     shouldertop: "SHOULDER_TOP",
     chest: "CHEST",
@@ -574,6 +574,8 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
         return [ result ];
     } // ------
 
+    attributes.location = attributes.location;
+    attributes.second_location = attributes.second_location;
     result.locationBodyArm = locationMap[ attributes.location ];
     result.secondLocationBodyArm = locationMap[ attributes.second_location ];
     switch( attributes.side ){
@@ -611,7 +613,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
 
         // when touch or specific hand in face, check if handshape is 
         let shouldBeFingerSelected = ( attributes.contact == "touch" ) || ( hand != "BOTH" && locationMapHead[ attributes.location ] );
-        shouldBeFingerSelected = shouldBeFingerSelected &&  ( handshape != "flat" && handshape != "fist" && handshape != "finger2345" );
+        shouldBeFingerSelected = shouldBeFingerSelected &&  ( handshape != "FLAT" && handshape != "FIST" && handshape != "FINGER_2345" );
 
         if ( shouldBeFingerSelected ){
             // actually should be the selected finger but let's keep it simple for now
@@ -1080,8 +1082,8 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
 
                                 if ( type == 4 ){ backwardAddConstellation = !!currentPosture.handConstellation; } // flag as true only if there was a previous handconstellation
                                 else if ( type > -1 ){
-                                    if ( d.hand == "RIGHT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.right[ type ] ) ) ); }
-                                    if ( d.hand == "LEFT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture.left[ type ] ) ) ); }
+                                    if ( d.hand == "RIGHT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture["RIGHT"][ type ] ) ) ); }
+                                    if ( d.hand == "LEFT" || d.hand == "BOTH" ){ backward.push( JSON.parse( JSON.stringify( currentPosture["LEFT"][ type ] ) ) ); }
 
                                     // there was a handconstellation before rpt_motion
                                     if ( d.locationBodyArm && currentPosture.handConstellation ){ backwardAddConstellation |= currentPosture.handConstellation.hand == "BOTH" || d.locationBodyArm.hand == currentPosture.handConstellation.hand; }
@@ -1250,7 +1252,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.motion = "wrist";
         if ( attributes.size == "big" ){ result.intensity = 0.3; } 
         else { result.intensity = 0.1; }
-        result.mode = attributes.motion;
+        result.mode = attributes.motion.toUpperCase().replace("STIR", "STIR_");
         result.speed = 4;
 
         duration = TIMESLOT.MOTION / signSpeed;

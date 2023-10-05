@@ -141,7 +141,6 @@ class App {
                 else if ( gloss.type == "sigml" ){ // SiGML
                     time = time - relaxEndDuration - peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     let result = sigmlStringToBML( gloss.data, time );
-                    console.log(result.data)
                     orders = orders.concat(result.data);
                     time += result.duration; 
                     peakRelaxDuration = result.peakRelaxDuration;

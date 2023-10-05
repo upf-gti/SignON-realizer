@@ -261,7 +261,7 @@ The following example using a single BML, instructs the avatar the handshape, pa
     "shoulderRaise": "1",
     "extfidir": "u", 
     "palmor": "l",  
-    "handshape": "finger2",
+    "handshape": "FINGER_2",
     "hand": "LEFT" 
 }
 ```
@@ -357,8 +357,8 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 <summary>Click to view the complete list of available locations</summary>
 
 "HEAD"               
-"HEAD_TOP"
-"FOREHEAD"
+"HEAD_TOP"    
+"FOREHEAD"    
 "NOSE"               
 "BELOW_NOSE"               
 "CHIN"               
@@ -369,7 +369,7 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 "EARLOBE_LEFT"               
 "EAR"  ``` // automatically assigns right or left from the incoming hand ```                    
 "EAR_RIGHT"               
-"EAR_LEFT"
+"EAR_LEFT"    
 "CHEEK"  ``` // automatically assigns right or left from the incoming hand ```                    
 "CHEEK_RIGHT"               
 "CHEEK_LEFT"        
@@ -439,17 +439,17 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     "relax": 0.3,  
     "end": 0.4,
     
-    "handshape": "flat", //string from the handshape table
+    "handshape": "FLAT", //string from the handshape table
     
     // optionals
-    "secondHandshape": "flat", //string from the handshape table
-    "thumbshape": "touch", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
-    "secondThumbshape": "touch", // string from thumbshape table. Applied to secondHandshape
+    "secondHandshape": "FLAT", //string from the handshape table
+    "thumbshape": "TOUCH", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
+    "secondThumbshape": "TOUCH", // string from thumbshape table. Applied to secondHandshape
     "tco": 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
     "secondtco": 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
     
-    "mainBend": "hooked", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
-    "secondMainBend": "hooked", // mainbend applied to secondHandshape
+    "mainBend": "HOOKED", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
+    "secondMainBend": "HOOKED", // mainbend applied to secondHandshape
     "bend1": "099", // overrides any other bend applied for this handshape for this finger. bend1=thumb, bend2=index, and so on. The value is one from the bend table
     "mainSplay": 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
     "splay1": 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent. splay1=thumb, splay2=index, and so on
@@ -460,43 +460,43 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
 <summary>Click to view the complete list of available HANDSHAPES</summary>
 
 --- BASIC HANDSHAPES ---                       
-fist               
-finger2               
-finger23               
-finger23spread               
-finger2345               
-flat            
+FIST               
+FINGER_2               
+FINGER_23               
+FINGER_23_SPREAD               
+FINGER_2345               
+FLAT            
                
 --- THUMB COMBINATION HANDSHAPES ---               
-pinch12               
-pinch12open               
-pinchall               
-ceeall               
-cee12               
-cee12open               
+PINCH_12               
+PINCH_12_OPEN               
+PINCH_ALL               
+CEE_ALL               
+CEE_12               
+CEE_12_OPEN               
 </details>
 
 <details>
 <summary>Click to view the complete list of available THUMBSHAPES </summary>
 
-default               
-out               
-opposed               
-across               
-touch               
+DEFAULT   
+OUT    
+OPPOSED    
+ACROSS    
+TOUCH                   
 </details>
 <details>
 <summary>Click to view the complete list of BEND STATES </summary>
 
-straight         
-halfbent         
-bent         
-round         
-hooked         
-dblbent                 
-dblhooked         
+STRAIGHT         
+HALF_BENT         
+BENT         
+ROUND         
+HOOKED         
+DOUBLE_BENT                 
+DOUBLE_HOOKED         
 triplets of numbers from 0-9. The first number indicates the base of the finger, the second the middle joint and the third the joint in the tip of the finger.         
-i.e. bent = "900", hooked = "099"
+i.e. BENT = "900", HOOKED = "099"
 </details>
 
 ---

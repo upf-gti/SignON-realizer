@@ -154,8 +154,8 @@ class BodyController{
 
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "RIGHT", distance: 0.15, displace: "r", displaceDistance: 0.045, shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "LEFT",  distance: 0.1, displace: "l", displaceDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", thumbshape: "touch", hand: "RIGHT", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", mainBend: "round", tco:0.5, thumbshape: "touch", hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "RIGHT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "LEFT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );

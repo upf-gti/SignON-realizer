@@ -60,6 +60,11 @@
 
         selectInline(x, y, width) {
            
+            this.chars = width / this.editor.charWidth;
+            this.fromX = x;
+            this.toX = x + this.chars;
+            this.fromY = this.toY = y;
+
             var domEl = document.createElement('div');
             domEl.className = "lexcodeselection";
             
@@ -69,8 +74,6 @@
             domEl.style.left = "calc(" + (domEl._left - this.editor.getScrollLeft()) + "px + 0.25em)";
             domEl.style.width = width + "px";
             this.editor.selections.appendChild(domEl);
-            
-            this.chars = width / this.editor.charWidth;
         }
     };
 
@@ -179,7 +182,10 @@
             this.keywords = {
                 'JavaScript': ['var', 'let', 'const', 'this', 'in', 'of', 'true', 'false', 'new', 'function', 'NaN', 'static', 'class', 'constructor', 'null', 'typeof'],
                 'GLSL': ['true', 'false', 'function', 'int', 'float', 'vec2', 'vec3', 'vec4', 'mat2x2', 'mat3x3', 'mat4x4', 'struct'],
-                'WGSL': ['var', 'let', 'true', 'false', 'fn', 'u32', 'f32', 'vec2f', 'vec3f', 'vec4f', 'mat2x2f', 'mat3x3f', 'mat4x4f', 'array', 'struct'],
+                'WGSL': ['var', 'const', 'let', 'true', 'false', 'fn', 'bool', 'u32', 'i32', 'f16', 'f32', 'vec2f', 'vec3f', 'vec4f', 'mat2x2f', 'mat3x3f', 'mat4x4f', 'array', 'atomic', 'struct',
+                        'sampler', 'sampler_comparison', 'texture_depth_2d', 'texture_depth_2d_array', 'texture_depth_cube', 'texture_depth_cube_array', 'texture_depth_multisampled_2d',
+                        'texture_external', 'texture_1d', 'texture_2d', 'texture_2d_array', 'texture_3d', 'texture_cube', 'texture_cube_array', 'texture_storage_1d', 'texture_storage_2d',
+                        'texture_storage_2d_array', 'texture_storage_3d'],
             };
             this.builtin = [
                 'console', 'window', 'navigator'
@@ -289,6 +295,7 @@
                         this.startSelection(cursor);
                     this.selection.selectInline(cursor.position, cursor.line, this.measureString(string));
                 }
+
                 this.resetCursorPos( CodeEditor.CURSOR_LEFT );
                 this.cursorToString( cursor, this.code.lines[ln] );
 
@@ -339,7 +346,7 @@
                     this.cursorToPosition(cursor, this.selection.fromX);
                     this.cursorToLine(cursor, this.selection.toY);
                 } else {
-
+                    this.endSelection();
                     this.lineUp();
                     // Go to end of line if out of line
                     var letter = this.getCharAtPos( cursor );
@@ -360,6 +367,7 @@
 
                     if( this.code.lines[ ln + 1 ] == undefined ) 
                         return;
+                    this.endSelection();
                     this.lineDown();
                     // Go to end of line if out of line
                     var letter = this.getCharAtPos( cursor );
@@ -402,6 +410,7 @@
                         else {
                             if(!this.selection) this.cursorToLeft( letter, cursor );
                             else {
+                                this.selection.invertIfNecessary();
                                 this.resetCursorPos( CodeEditor.CURSOR_LEFT | CodeEditor.CURSOR_TOP );
                                 this.cursorToLine(cursor, this.selection.fromY, true);
                                 this.cursorToPosition(cursor, this.selection.fromX);
@@ -450,7 +459,14 @@
                             this.processSelection(null, keep_range);
                         }else{
                             if(!this.selection) this.cursorToRight( letter, cursor );
-                            else this.endSelection();
+                            else 
+                            {
+                                this.selection.invertIfNecessary();
+                                this.resetCursorPos( CodeEditor.CURSOR_LEFT | CodeEditor.CURSOR_TOP );
+                                this.cursorToLine(cursor, this.selection.toY);
+                                this.cursorToPosition(cursor, this.selection.toX);
+                                this.endSelection();
+                            }
                         }
                     }
                     else if( this.code.lines[ cursor.line + 1 ] !== undefined ) {
@@ -536,6 +552,7 @@
                 case 'glsl': return this._change_language('GLSL');
                 case 'json': return this._change_language('JSON');
                 case 'xml': return this._change_language('XML');
+                case 'wgsl': return this._change_language('WGSL');
                 case 'txt': 
                 default:
                     this._change_language('Plain Text');
@@ -556,8 +573,8 @@
                     panel.clear();
                     panel.sameLine();
                     panel.addLabel(this.code.title, { float: 'right' });
-                    panel.addLabel("Ln " + ln, { width: "48px" });
-                    panel.addLabel("Col " + col, { width: "48px" });
+                    panel.addLabel("Ln " + ln, { width: "64px" });
+                    panel.addLabel("Col " + col, { width: "64px" });
                     panel.addButton("<b>{ }</b>", this.highlight, (value, event) => {
                         LX.addContextMenu( "Language", event, m => {
                             for( const lang of this.languages )
@@ -1071,14 +1088,6 @@
                 }
             }
             
-            else if(!e.shiftKey){
-                switch( key ) {
-                    case 'ArrowUp': case 'ArrowDown': case 'ArrowLeft': case 'ArrowRight':
-                    this.endSelection();
-                
-                }
-            }
-
             // Apply binded actions...
 
             for( const actKey in this.actions ) {
@@ -1333,9 +1342,8 @@
                 else if( !Number.isNaN(+token) )
                     span.classList.add("cm-dec");
 
-                else if (   (prev == 'class' && next == '{') || 
-                            (prev == 'new' && next == '(') )
-                     span.classList.add("cm-typ");
+                else if ( this.isType(token, prev, next) )
+                    span.classList.add("cm-typ");
                 
                 else if ( token[0] != '@' && next == '(' )
                     span.classList.add("cm-mtd");
@@ -1346,6 +1354,22 @@
             }
 
             if(sString) delete this._building_string;
+        }
+
+        isType( token, prev, next) {
+            
+            if( this.highlight == 'JavaScript' )
+            {
+                return (prev == 'class' && next == '{') || (prev == 'new' && next == '(');
+            }
+            else if ( this.highlight == 'WGSL' )
+            {
+                const is_kwd = (this.keywords[this.highlight] && this.keywords[this.highlight].indexOf(token) == -1);
+                return (prev == 'struct' && next == '{') || 
+                ( is_kwd && 
+                    ( prev == ':' && next == ')' || prev == ':' && next == ',' || prev == '>' && next == '{' 
+                        || prev == '<' && next == ',' || prev == '<' && next == '>' || prev == '>' && !next ));
+            }
         }
 
         encloseSelectedWordWithKey( key, lidx, cursor ) {
@@ -1462,6 +1486,8 @@
             this.cursorToLine(cursor, this.selection.fromY, true);
             this.cursorToPosition(cursor, this.selection.fromX);
             this.endSelection();
+
+            this._refresh_code_info(cursor.line, cursor.position);
         }
 
         endSelection() {

@@ -209,7 +209,7 @@ class AppGUI{
                         });
                     }
                     p.refresh();
-                });
+                }, {closable: true});
                
             });
             

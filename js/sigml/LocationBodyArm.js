@@ -274,12 +274,12 @@ class LocationBodyArm {
             }
             if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
             else{ 
-                srcSide = srcSide.toUpperCase();
+                srcSide = "_" + srcSide.toUpperCase();
                 // srcSide = srcSide.toLowerCase();
                 // srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
-                    else if ( srcSide == "LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
+                    if ( srcSide == "_RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
+                    else if ( srcSide == "_LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 
