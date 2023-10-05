@@ -556,10 +556,10 @@ class WristMotion {
      * bml info
      * start, attackPeak, relax, end
      * mode = either a: 
-     *          - string from [ "nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all" ]
-     *          - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
-     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
-     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
+     *          - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
+     *          - or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
+     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = STIR_CW
+     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = STIR_CW
      * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
      * intensity = (optional) [0,1]. Default 0.3
      */
@@ -570,12 +570,12 @@ class WristMotion {
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
         
         if ( typeof( bml.mode ) == "string" ){
-            switch( bml.mode ){
+            switch( bml.mode.toLowerCase() ){
                 case "nod": case "nodding": this.mode = 0x02; break;
                 case "swing": case "swinging": this.mode = 0x04; break;
                 case "twist": case "twisting": this.mode = 0x01; break;
-                case "stirCW": case "stircw": this.mode = 0x06; break; // 0x02 | 0x04
-                case "stirCCW": case "stirccw":this.mode = 0x06; this.speed *= -1; break;
+                case "stir_CW": case "stir_cw": this.mode = 0x06; break; // 0x02 | 0x04
+                case "stir_CCW": case "stir_ccw":this.mode = 0x06; this.speed *= -1; break;
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );

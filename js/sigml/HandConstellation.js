@@ -250,7 +250,7 @@ class HandConstellation {
             this.isBothHands = false;
             if ( bml.hand == "RIGHT" ){ srcHand = "R"; }
             else if ( bml.hand == "LEFT" ){ srcHand = "L"; }
-            else if ( bml.hand == "nonDom" ){ srcHand = domHand == "L" ? "R" : "L"; }
+            else if ( bml.hand == "NON_DOMINANT" ){ srcHand = domHand == "L" ? "R" : "L"; }
             else{ srcHand = domHand == "L" ? "L" : "R"; }
         }
 

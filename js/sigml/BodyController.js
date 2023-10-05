@@ -381,10 +381,10 @@ class BodyController{
                 this._newGestureArm( bml, this.dominant, 0x00 ); 
                 this._newGestureArm( bml, this.nonDominant, symmetryFlags ); 
                 break;
-            case "nonDom" : 
+            case "NON_DOMINANT" : 
                 this._newGestureArm( bml, this.nonDominant, symmetryFlags ); 
                 break;
-            case "dom": 
+            case "DOMINANT": 
             default:
                 this._newGestureArm( bml, this.dominant, 0x00 ); 
                 break;

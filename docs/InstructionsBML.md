@@ -22,7 +22,7 @@ Example of objects inside the  "data" array
     "type": "faceLexeme",
     "start": 0.1,
     "attackPeak": 0.6,
-    ""relax":": 1.5,
+    "relax": 1.5,
     "end": 1.8,
     "amount": 0.1,
     "lexeme": "NMF_ARCH"
@@ -524,7 +524,7 @@ The motion is stopped if an arm location is executed afterwards.
     "dstLocation": "BASE", // string from hand locations or arm locations
     "dstSide": "PALMAR", // ULNAR, RADIAL, PALMAR, BACK 
     
-    "hand": "dom", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
+    "hand": "DOMINANT" || "NON_DOMINANT" || "LEFT" || "RIGHT" || "BOTH", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
 
     // optionals
     "distance": 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
@@ -655,12 +655,12 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
     "end": 0.4,
     
     "motion": "wrist",
-    "mode": "nod",
+    "mode": "NOD",
     /* either a: 
-        - string from [ "nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all" ]
-        - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
-    Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
-    Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
+        - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
+        - or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
+    Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = STIR_CW
+    Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = STIR_CW
     */
 
     // optionals
