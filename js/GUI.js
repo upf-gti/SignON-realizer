@@ -171,7 +171,7 @@ class AppGUI{
                 new LX.PocketDialog( "Glosses Input", p => {
                     p.refresh = () => {
                         p.clear();
-                        let htmlStr = "Write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
+                        let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
                         p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
                         
                         const area = new LX.Area({ height: "85%" });
@@ -183,15 +183,15 @@ class AppGUI{
                         } );
 
                         
-                        p.addDropdown("Glosses", glossesDictionary[this.language], "", (value, event) => {
+                        p.addDropdown("Select glosses", glossesDictionary[this.language], "", (value, event) => {
                             this.glosses+= " " + value;
                             p.refresh();
                         }, {filter: true});
                         
-                        p.addTextArea(null, this.glosses, (value, event) => {
+                        p.addTextArea("Write glosses", this.glosses, (value, event) => {
                             this.glosses = value;
                             p.refresh();
-                        });
+                        }, {placeholder: "Hallo Leuk"});
 
                         p.addButton(null, "Send", () => {
             
@@ -204,12 +204,12 @@ class AppGUI{
                                 }
                                 glosses[i] = glosses[i].toUpperCase();
                             }
-            
+                            if(!glosses.length) alert("Please, write or select at least one gloss");
                             this.app.processMessage( { IntermediateRepresentation: { glosses: glosses } } );    
                         });
                     }
                     p.refresh();
-                }, {closable: true});
+                }, {draggable: true, closable: true});
                
             });
             
