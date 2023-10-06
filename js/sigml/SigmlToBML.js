@@ -908,7 +908,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
     for( let attr = 0; attr < xml.attributes.length; ++attr ){
         attributes[ xml.attributes[attr].name ] = xml.attributes[attr].value;
     }
-    if ( attributes.fast == "true" ){ signSpeed *= 2.5; }
+    if ( attributes.fast == "true" ){ signSpeed *= 1.5; }
     if ( attributes.slow == "true" ){ signSpeed *= 0.5; }
     if ( attributes.tense == "true" ){ signSpeed *= 0.5; }
     
@@ -998,8 +998,12 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
         }
 
         // remap bml instructions to the slowest block (motion might have nesting)
-        remapBlockTiming( time, motionBlock.end, time, maxEnd, motionBlock.data );
-        let motionInstructions = motionBlock.data;
+        let motionInstructions = [];
+        if ( motionBlock ){
+            remapBlockTiming( time, motionBlock.end, time, maxEnd, motionBlock.data );
+            motionInstructions = motionBlock.data;
+        }
+        
         let postureInstructions = [];        
         for ( let i = 0; i < postureBlocks.length; ++i ){
             let block = postureBlocks[i];
@@ -1122,7 +1126,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                     // timings during reverse are inverted
 
                     // circular:  swap endAngle and startAngle
-                    // directed:  use sigmlutils.directionStringSymmetry with all symmetry set to the direction (curve should not be necessary)
+                    // directed:  use  with all symmetry set to the direction (curve should not be necessary)
                     // wrist and fingerplay: nothing special
 
                     // posture: be careful with start and attackpeak timings

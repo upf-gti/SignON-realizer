@@ -8,10 +8,10 @@ class BasicBMLValueInterpolator {
         this.config = config;
 
         // store TWIST quaternions for forearm and hand (visally better than just forearm or wrist)
-        this.defAngle = 0;
-        this.trgAngle = 0;
-        this.srcAngle = 0;
-        this.curAngle = 0;
+        this.defValue = 0;
+        this.trgValue = 0;
+        this.srcValue = 0;
+        this.curValue = 0;
 
         this.time = 0; // current time of transition
         this.start = 0;
@@ -27,8 +27,8 @@ class BasicBMLValueInterpolator {
     reset() {
         // Force pose update to flat
         this.transition = false;
-        this.defAngle = 0;
-        this.curAngle = 0;
+        this.defValue = 0;
+        this.curValue = 0;
     }
 
     update( dt ) {
@@ -38,7 +38,7 @@ class BasicBMLValueInterpolator {
         // wait in same pose
         if ( this.time < this.start ){ return; }
         if ( this.time > this.attackPeak && this.time < this.relax ){ 
-            this.curAngle = this.trgAngle;
+            this.curValue = this.trgValue;
             return; 
         }
         
@@ -46,7 +46,7 @@ class BasicBMLValueInterpolator {
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
             if ( t > 1 ){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-            this.curAngle = this.srcAngle * ( 1 - t ) + this.trgAngle * t;
+            this.curValue = this.srcValue * ( 1 - t ) + this.trgValue * t;
             return;
         }
 
@@ -54,7 +54,7 @@ class BasicBMLValueInterpolator {
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
             if ( t > 1 ){ t = 1; }
             t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
-            this.curAngle = this.trgAngle * ( 1 - t ) + this.defAngle * t;
+            this.curValue = this.trgValue * ( 1 - t ) + this.defValue * t;
 
             if ( this.time > this.end ){ 
                 this.transition = false;
@@ -73,14 +73,14 @@ class BasicBMLValueInterpolator {
         if( isNaN( newTargetValue ) || newTargetValue == null ){ return false; }
 
         // set source pose twist quaternions
-        this.srcAngle = this.curAngle; 
+        this.srcValue = this.curValue; 
 
         // set target pose
-        this.trgAngle = newTargetValue;
+        this.trgValue = newTargetValue;
 
         // set defualt pose if necessary
         if ( shift ){
-            this.defAngle = this.trgAngle;
+            this.defValue = this.trgValue;
         }
 
         // check and set timings
@@ -96,6 +96,12 @@ class BasicBMLValueInterpolator {
     }
 }
 
+class ElbowRaise extends BasicBMLValueInterpolator {
+    newGestureBML ( bml ){
+        let value = parseFloat( bml.elbowRaise ) * ( 90 * Math.PI / 180 ); // shoulderRaise = [0,1]. where 1 == 90 Degrees
+        super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
+    }
+}
 
 class ShoulderRaise extends BasicBMLValueInterpolator {
     newGestureBML ( bml ){
@@ -103,14 +109,13 @@ class ShoulderRaise extends BasicBMLValueInterpolator {
         super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
+
 class ShoulderHunch extends BasicBMLValueInterpolator {
     newGestureBML ( bml ){
         let value = parseFloat( bml.shoulderHunch ) * ( 30 * Math.PI / 180 ); // shoulderRaise = [0,1]. where 1 == 30 Degrees
         super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
-
-
 
 // this class should be different, but need to support jasigning
 class BodyMovement {
@@ -127,9 +132,6 @@ class BodyMovement {
 
         this._tempQ_0 = new THREE.Quaternion();
         
-
-
-
         this.jointsData = { };
         this.jointsData.shouldersUnion = this.computeJointData( this.config.boneMap.ShouldersUnion, this.config.boneMap.Neck );
         this.jointsData.stomach = this.computeJointData( this.config.boneMap.Stomach, this.config.boneMap.ShouldersUnion );
@@ -144,12 +146,11 @@ class BodyMovement {
         let bindQuat = (new THREE.Quaternion()).setFromRotationMatrix( m1 ).normalize();;
 
         // compute local axes of rotation based on bones boneIdx and upAxisReferenceBoneIdx.
-        let m2 = this.skeleton.boneInverses[ upAxisReferenceBoneIdx ].clone().invert(); // LocalToMeshCoords
         let xAxis = new THREE.Vector3();
         let yAxis = new THREE.Vector3();
         let zAxis = new THREE.Vector3();
-        zAxis.setFromMatrixPosition( m1 ); // position of boneIdx in mesh coordinates
-        yAxis.setFromMatrixPosition( m2 ); // position of upAxisReferenceBoneIdx in mesh coordinates
+        zAxis.setFromMatrixPosition( this.skeleton.boneInverses[ boneIdx ].clone().invert() ); // position of boneIdx in mesh coordinates
+        yAxis.setFromMatrixPosition( this.skeleton.boneInverses[ upAxisReferenceBoneIdx ].clone().invert() ); // position of upAxisReferenceBoneIdx in mesh coordinates
         yAxis.subVectors( yAxis, zAxis ); // Y axis direction in mesh coordinates
         let m3 = (new THREE.Matrix3).setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] ); // mesh to local, directions only
         yAxis.applyMatrix3( m3 ).normalize(); // Y axis, convert to local boneIdx coordinates
@@ -165,6 +166,10 @@ class BodyMovement {
         this.tiltFB = [];
         this.tiltLR = [];
         this.rotateLR = [];
+        this.forceBindPose();
+    }
+
+    forceBindPose(){
         for( let part in this.jointsData ){
             this.skeleton.bones[ this.jointsData[ part ].idx ].quaternion.copy( this.jointsData[ part ].bindQuat );
         }
@@ -180,7 +185,7 @@ class BodyMovement {
             let o = this.tiltFB[i];
             o.update( dt );
             if ( !o.transition ){ this.tiltFB.splice( i, 1 ); --i; }
-            tiltFBAngle += o.curAngle;
+            tiltFBAngle += o.curValue;
             transition |= o.transition;
         }
 
@@ -189,7 +194,7 @@ class BodyMovement {
             let o = this.tiltLR[i];
             o.update( dt );
             if ( !o.transition ){ this.tiltLR.splice( i, 1 ); --i; }
-            tiltLRAngle += o.curAngle;
+            tiltLRAngle += o.curValue;
             transition |= o.transition;
         }
 
@@ -198,13 +203,12 @@ class BodyMovement {
             let o = this.rotateLR[i];
             o.update( dt );
             if ( !o.transition ){ this.rotateLR.splice( i, 1 ); --i; }
-            rotateLRAngle += o.curAngle;
+            rotateLRAngle += o.curValue;
             transition |= o.transition;
         }
 
         this.transition = transition;
         let q = this._tempQ_0;
-
 
         for( let part in this.jointsData ){
             let data = this.jointsData[ part ];
@@ -247,4 +251,4 @@ class BodyMovement {
 
 
 
-export { ShoulderRaise, ShoulderHunch, BodyMovement }
+export { ElbowRaise, ShoulderRaise, ShoulderHunch, BodyMovement }
