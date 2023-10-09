@@ -70,50 +70,28 @@ function getTwistQuaternion( q, normAxis, outTwist ){
     return outTwist;
 }
 
-// symmetry string
-function directionStringSymmetry( str, flags ){
-    let result = str;
-
-    if ( flags & 0x01 ){ // left-right symmetry
-        if ( result.includes( "l" ) ){ result = result.replace( "l", "r" ); } 
-        else if( result.includes( "r" ) ){ result =result.replace( "r", "l" ); }
-    }
-
-    if ( flags & 0x02 ){ // up-down symmetry
-        if ( result.includes( "u" ) ){ result = result.replace( "u", "d" ); } 
-        else if( result.includes( "d" ) ){ result =result.replace( "d", "u" ); }
-    }
-
-    if ( flags & 0x04 ){ // in-out symmetry
-        if ( result.includes( "i" ) ){ result = result.replace( "i", "o" ); } 
-        else if( result.includes( "o" ) ){ result =result.replace( "o", "i" ); }
-    }
-
-    return result;
-}
-
-
 // symmetry bit0 = left-right, bit1 = up-down, bit2 = in-out symmetry
 function stringToDirection( str, outV, symmetry = 0x00, accumulate = false ){
     outV.set(0,0,0);
     if ( typeof( str ) != "string" ){ return false; }
 
+    str = str.toUpperCase();
     let success = false;
 
     // right hand system. If accumulate, count repetitions
-    if ( str.includes( "l" ) ){ outV.x += 1 * ( accumulate ? ( str.split("l").length -1 ): 1 ); success = true; } 
-    if ( str.includes( "r" ) ){ outV.x -= 1 * ( accumulate ? ( str.split("r").length -1 ): 1 ); success = true; }
-    if ( str.includes( "u" ) ){ outV.y += 1 * ( accumulate ? ( str.split("u").length -1 ): 1 ); success = true; } 
-    if ( str.includes( "d" ) ){ outV.y -= 1 * ( accumulate ? ( str.split("d").length -1 ): 1 ); success = true; }
-    if ( str.includes( "o" ) ){ outV.z += 1 * ( accumulate ? ( str.split("o").length -1 ): 1 ); success = true; } 
-    if ( str.includes( "i" ) ){ outV.z -= 1 * ( accumulate ? ( str.split("i").length -1 ): 1 ); success = true; }
+    if ( str.includes( "L" ) ){ outV.x += 1 * ( accumulate ? ( str.split("L").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "R" ) ){ outV.x -= 1 * ( accumulate ? ( str.split("R").length -1 ): 1 ); success = true; }
+    if ( str.includes( "U" ) ){ outV.y += 1 * ( accumulate ? ( str.split("U").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "D" ) ){ outV.y -= 1 * ( accumulate ? ( str.split("D").length -1 ): 1 ); success = true; }
+    if ( str.includes( "O" ) ){ outV.z += 1 * ( accumulate ? ( str.split("O").length -1 ): 1 ); success = true; } 
+    if ( str.includes( "I" ) ){ outV.z -= 1 * ( accumulate ? ( str.split("I").length -1 ): 1 ); success = true; }
  
     if ( symmetry & 0x01 ){ outV.x *= -1; }
     if ( symmetry & 0x02 ){ outV.y *= -1; }
     if ( symmetry & 0x04 ){ outV.z *= -1; }
 
- 
-    if ( !accumulate ){ outV.normalize(); }
+    if ( !success ){ outV.set(0,0,0); }
+    else if ( !accumulate ){ outV.normalize(); }
     return success;
 }
 
@@ -129,4 +107,4 @@ function findIndexOfBone( skeleton, name ){
     return -1;
 }
 
-export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion,  directionStringSymmetry, stringToDirection,  findIndexOfBone }
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone }

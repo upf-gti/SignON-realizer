@@ -25,24 +25,20 @@ class AppGUI{
 
             let chroma = this.app.scene.getObjectByName("Chroma");
             if ( chroma ){
-                color.copyLinearToSRGB(chroma.material.color);
+                color.copy(chroma.material.color);
                 let backPlaneColor = "#" + color.getHexString();
                 p.addColor("Color Chroma", backPlaneColor, (value, event) => {
-                    let color = this.app.scene.getObjectByName("Chroma").material.color; // css works in sRGB
-                    color.set(value);
-                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                    this.app.scene.getObjectByName("Chroma").material.color.set(value); // css works in sRGB
                 });
             }
         
             let modelShirt = this.app.model.getObjectByName("Tops");
             if ( modelShirt ){
-                color.copyLinearToSRGB(this.app.model.getObjectByName("Tops").material.color);
+                color.copy(this.app.model.getObjectByName("Tops").material.color);
                 let topsColor = "#" + color.getHexString();
     
                 p.addColor("Color Clothes", topsColor, (value, event) => {
-                    let color = this.app.scene.getObjectByName("Tops").material.color; // css works in sRGB
-                    color.set(value);
-                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                    this.app.scene.getObjectByName("Tops").material.color.set(value); // css works in sRGB
                 });
             }
 
@@ -54,7 +50,6 @@ class AppGUI{
             p.addButton( null, "Reset Pose", (value, event) =>{
                 this.app.ECAcontroller.reset();
             });
-
             
             p.addButton( null, "BML Input", (value, event) =>{
 
@@ -209,7 +204,7 @@ class AppGUI{
                         });
                     }
                     p.refresh();
-                }, {draggable: true, closable: true});
+                }, { closable: true } );
                
             });
             
@@ -219,9 +214,6 @@ class AppGUI{
             });
 
             p.merge(); // end of customization
-
-            // p.branch( "Preset Signs", { closed: true } );
-            // p.merge(); // end of preset signs
 
         }, { size: ["20%", null], float:"left", draggable:false});
 

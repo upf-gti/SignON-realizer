@@ -182,8 +182,12 @@ class HandConstellation {
 
     _newGestureLocationComposer( bml, handLocations, hand = "R", isSource = true ){
         // check all-in-one variable first
-        let result = handLocations[ isSource ? bml.srcContact : bml.dstContact ];
-        if ( result ){ return result; }
+        let compactContact = isSource ? bml.srcContact : bml.dstContact;
+        if ( typeof( compactContact ) == "string" ){
+            compactContact.toUpperCase();
+            let result = handLocations[ compactContact ];
+            if ( result ){ return result; }
+        }
 
         // check decomposed variables
         let finger = parseInt( isSource ? bml.srcFinger : bml.dstFinger );
@@ -193,15 +197,11 @@ class HandConstellation {
         if ( isNaN( finger ) || finger < 1 || finger > 5 ){ finger = ""; }
         if ( typeof( location ) != "string" || location.length < 1){ location = ""; }
         else{ 
-            location = "_" + location.toUpperCase();
-            // location = location.toLowerCase();
-            // location = location[0].toUpperCase() + location.slice( 1 ); 
+            location = ( finger > 0 ? "_" : "" ) + location.toUpperCase();
         }
         if ( typeof( side ) != "string" || side.length < 1 ){ side = ""; }
         else{ 
             side = "_" + side.toUpperCase();
-            // side = side.toLowerCase();
-            // side = side[0].toUpperCase() + side.slice( 1 ); 
             if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
                 if ( side == "RIGHT" ){ side = "_" + (hand == "R" ? "ULNAR" : "RADIAL"); }
                 else if ( side == "LEFT" ){ side = "_" + (hand == "R" ? "RADIAL" : "ULNAR"); }
@@ -209,7 +209,7 @@ class HandConstellation {
         }
         let name = finger + location + side; 
 
-        result = handLocations[ name ];
+        let result = handLocations[ name ];
         if ( !result ){ result = handLocations[ "2_TIP" ]; }
         return result;
     }

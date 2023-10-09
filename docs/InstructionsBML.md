@@ -218,25 +218,17 @@ WINK_RIGHT
 # Manual Features (MF)
 
 ```
-8 directions
-u=up, d=down, l=left, r=right, i=in, o=out, 
-u,ul,l,dl,d,dr,r,ur, 
-```
-```
-26 directions
-u=up, d=down, l=left, r=right, i=in, o=out, 
-u,ul,l,dl,d,dr,r,ur, 
-uo,uol,ol,dol,do,dor,or,uor,o,
-ui,uil,il,dil,di,dir,ir,uir,i,
+6 main directions
+U=up, D=down, L=left, R=right, I=in, O=out, 
 ```
 
 All gestures share some optional attributes 
 ``` json
 {
     "hand": "RIGHT" || "LEFT" || "BOTH", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT"
-    "lrSym": true,  // bool, only applied to the non-dominant hand
-    "udSym": false, // bool, only applied to the non-dominant hand
-    "ioSym": false, // bool, only applied to the non-dominant hand
+    "lrSym": true,  // bool, left-right symmetry. Only applied to the non-dominant hand
+    "udSym": false, // bool, up-down  symmetry. Only applied to the non-dominant hand
+    "ioSym": false, // bool, in-out  symmetry. Only applied to the non-dominant hand
 }
 ```
 
@@ -259,14 +251,33 @@ The following example using a single BML, instructs the avatar the handshape, pa
     "type": "gesture",
     "start": 0,   "attackPeak": 0.5,   "relax": 1,   "end": 2, 
     "shoulderRaise": "1",
-    "extfidir": "u", 
-    "palmor": "l",  
+    "extfidir": "U", 
+    "palmor": "L",  
     "handshape": "FINGER_2",
     "hand": "LEFT" 
 }
 ```
+
+## Elbow Raise
+Raises the elbow (added to the elbow raise automatically computed while moving the arm)
+``` json
+{
+    "type": "gesture",
+    "start": 0.1,
+    "attackPeak": 0.2, 
+    "relax": 0.3,  
+    "end": 0.4,
+
+    "elbowRaise": 1, // number [-1,1], where 0 = 0 degrees and 1 = 90 degrees
+
+    //optional
+    "shift": false, 
+}
+```
+
+---
 ## Shoulder Raise
-Raises the shoulder
+Raises the shoulder (added to the shoulder raise automatically computed while moving the arm)
 ``` json
 {
     "type": "gesture",
@@ -275,7 +286,7 @@ Raises the shoulder
     "relax": 0.3,  
     "end": 0.4,
     
-    "shoulderRaise": 0.8, // value [0,1]
+    "shoulderRaise": 0.8, // value [-1,1], where 0 = 0 degrees and 1 = 30 degrees
     
     //optional
     "shift": false, 
@@ -284,7 +295,7 @@ Raises the shoulder
 
 ---
 ## Shoulder Hunch
-Moves the shoulder forward
+Moves the shoulder forward (added to the shoulder hunch automatically computed while moving the arm)
 ``` json
 {
     "type": "gesture",
@@ -293,7 +304,7 @@ Moves the shoulder forward
     "relax": 0.3,  
     "end": 0.4,
     
-    "shoulderHunch": 0.8, // value [0,1]
+    "shoulderHunch": 0.8, // value [-1,1], where 0 = 0 degrees and 1 = 30 degrees.
     
     //optional
     "shift": false, 
@@ -333,14 +344,12 @@ Moves the arm (wrist) to a location of the body (face + trunk).
    
     // optionals
     "secondLocationBodyArm": "CHEST", // string
-    "side": "rr" || "r" || "l" || "ll", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
-    "secondSide": "l", // string
+    "side": "RR" || "R" || "L" || "LL", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
+    "secondSide": "L", // string
 
     "distance": 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
-    "displace": "u", // string, 26 directions. Location will be offseted into that direction
+    "displace": "U", // string, combination of the 6 directions. Location will be offseted into that direction
     "displaceDistance": 0.05, // number how far to move to the indicated side. Metres 
- 
-    "elbowRaise": 10, // in degrees. Positive values raise the elbow.
 
     //Following attributes describe which part of the hand will try to reach the locationBodyArm location 
     "srcFinger": "1", // 1,2,3,4,5, see handconstellation for more information
@@ -401,10 +410,10 @@ Roll of the wrist joint.
     "relax": 0.3,  
     "end": 0.4,
     
-    "palmor": "u", //string 8 directions. Relative to arm (not to world coordinates )
+    "palmor": "U", //string, combinatino of 4 directions ( "I", "O" not valid )
     
     // optionals
-    "secondPalmor": "l", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
+    "secondPalmor": "L", // string, combinatino of 4 directions ( "I", "O" not valid ). Will compute midpoint between palmor and secondPalmor.
     "shift": false 
 }
 ```
@@ -421,10 +430,10 @@ Yaw and Pitch of the wrist joint.
     "relax": 0.3,  
     "end": 0.4,
     
-    "extfidir": "l", // string  26 directions
+    "extfidir": "L", // string, combination of 6 directions
     
     // optionals
-    "secondExtfidir": "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
+    "secondExtfidir": "L", // string, combination of 6 directions. Will compute midpoint between extifidir and secondExtfidir  
     "shift": false, // optional
 }
 ```
@@ -528,7 +537,7 @@ The motion is stopped if an arm location is executed afterwards.
 
     // optionals
     "distance": 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
-    "distanceDirection": "l", // string, any combination of the main directions. If not provided, defaults to horizontal outwards direction
+    "distanceDirection": "L", // string, combination of 6 directions. If not provided, defaults to horizontal outwards direction
     
     "keepUpdatingContact": false, // once peak is reached, the location will be updated only if this is true. 
                     // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
@@ -569,7 +578,7 @@ UPPER_ARM
 ## Directed Motion
 Moves the arm (wrist) in a linear direction.
 
-``distance`` and ``curveSteepness`` attributes are concurrent and not exclusive. Meaning one attribute can be 0 while the other different from 0.
+``distance`` and ``curveSize`` attributes are concurrent and not exclusive. Meaning one attribute can be 0 while the other different from 0.
 
 The motion is stopped if an arm location is executed afterwards.
 ``` json
@@ -580,16 +589,16 @@ The motion is stopped if an arm location is executed afterwards.
     "relax": 0.3,  
     "end": 0.4,
 
-    "motion": "directed",
-    "direction": "o", // string 26 directions
+    "motion": "DIRECTED",
+    "direction": "O", // string, combination of 6 directions
     
     // optionals
-    "secondDirection": "l", // string 8 directions. Will compute midpoint between direction and secondDirection.
+    "secondDirection": "L", // string, combination of 6 directions. Will compute midpoint between direction and secondDirection.
     "distance": 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
-    "curve": "u", // string 8 directions. Default to none
-    "secondCurve": "l", // string 8 directions. Will compute midpoint between curve and secondCurve.
-    "curveSteepness": 1, // number meaning the sharpness of the curve
-    "zigzag": "l", // string 26 directions
+    "curve": "U", // string, combination of 6 directions.  Default to none
+    "secondCurve": "L", // string, combination of 6 directions. Will compute midpoint between curve and secondCurve.
+    "curveSize": 1, // number meaning the amplitude of the curve
+    "zigzag": "L", // string, combination of 6 directions
     "zigzagSize": 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     "zigzagSpeed": 3, // oscillations per second. Default 2
 }
@@ -606,15 +615,15 @@ The motion is stopped if an arm location is executed afterwards.
     "start": 0.1,
     "end": 0.4,
     
-    "motion": "circular",
-    "direction": "o", // string 26 directions. Axis of rotation
+    "motion": "CIRCULAR",
+    "direction": "O", // string, combination of 6 directions. Axis of rotation
     
     // optionals
-    "secondDirection": "l", // string 8 directions. Will compute midpoint between direction and secondDirection.
+    "secondDirection": "L", // string, combination of 6 directions. Will compute midpoint between direction and secondDirection.
     "distance": 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
     "startAngle": 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
     "endAngle": 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
-    "zigzag": "l", // string 26 directions
+    "zigzag": "L", // string, combination of 6 directions
     "zigzagSize": 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     "zigzagSpeed": 3, // oscillations per second. Default 2
 }
@@ -623,7 +632,7 @@ The motion is stopped if an arm location is executed afterwards.
 ---
 ## Fingerplay Motion
 Wiggle fingers of the hand.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -631,7 +640,7 @@ Wiggle fingers of the hand.
     "relax": 0.3,  
     "end": 0.4,
     
-    "motion": "fingerplay",
+    "motion": "FINGERPLAY",
 
     // optionals
     "speed": 2, // oscillations per second. Default 3
@@ -646,7 +655,7 @@ Wiggle fingers of the hand.
 ---
 ## Wrist Motion
 Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
-``` json
+``` yaml
 {
     "type": "gesture",
     "start": 0.1,
@@ -654,7 +663,7 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
     "relax": 0.3,  
     "end": 0.4,
     
-    "motion": "wrist",
+    "motion": "WRIST",
     "mode": "NOD",
     /* either a: 
         - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]

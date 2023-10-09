@@ -12,6 +12,10 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
+// global var and func for development
+window.debugMode = false;
+window.changeMode = function() { window.debugMode = window.debugMode == true ? false: true; global.app.onModeChange(window.debugMode); };
+
 class App {
 
     constructor() {
@@ -267,29 +271,27 @@ class App {
         this.loadLanguageDictionaries( "NGT" );
         
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xa0a0a0 );
-        //const gridHelper = new THREE.GridHelper( 10, 10 );
-        //gridHelper.position.set(0,0.001,0);
-        //this.scene.add( gridHelper );
-        
+        let sceneColor = 0x303030;
+        this.scene.background = new THREE.Color( sceneColor );
+        this.scene.fog = new THREE.Fog( sceneColor, 5, 50 );
+
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-        this.renderer.outputEncoding = THREE.sRGBEncoding;
-        this.renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
-        this.renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
-        this.renderer.shadowMap.enabled = false;
+
+        this.renderer.toneMapping = THREE.LinearToneMapping;
+        this.renderer.toneMappingExposure = 1;
+        // this.renderer.shadowMap.enabled = false;
         document.body.appendChild( this.renderer.domElement );
         
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set( Math.sin(13*Math.PI/180), 1.5, Math.cos(13*Math.PI/180) );
-        this.controls.minDistance = 0.1;
-        this.controls.maxDistance = 7;
         this.controls.target.set(0.0, 1.3, 0);
-        this.controls.update();
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.1;
         
         // IBL Light
         // var that = this;
@@ -307,10 +309,10 @@ class App {
         // } );
 
         // include lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.2 );
+        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.5 );
         this.scene.add( hemiLight );
 
-        let keySpotlight = new THREE.SpotLight( 0xffffff, 0.4, 0, 45 * (Math.PI/180), 0.5, 1 );
+        let keySpotlight = new THREE.SpotLight( 0xffffff, 3.5, 0, 45 * (Math.PI/180), 0.5, 2 );
         keySpotlight.position.set( 0.5, 2, 2 );
         keySpotlight.target.position.set( 0, 1, 0 );
         // keySpotlight.castShadow = true;
@@ -320,14 +322,14 @@ class App {
         this.scene.add( keySpotlight.target );
         this.scene.add( keySpotlight );
 
-        let fillSpotlight = new THREE.SpotLight( 0xffffff, 0.2, 0, 45 * (Math.PI/180), 0.5, 1 );
+        let fillSpotlight = new THREE.SpotLight( 0xffffff, 2.0, 0, 45 * (Math.PI/180), 0.5, 2 );
         fillSpotlight.position.set( -0.5, 2, 1.5 );
         fillSpotlight.target.position.set( 0, 1, 0 );
         // fillSpotlight.castShadow = true;
         this.scene.add( fillSpotlight.target );
         this.scene.add( fillSpotlight );
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 0.2 );
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
         dirLight.position.set( 1.5, 5, 2 );
         // dirLight.shadow.mapSize.width = 1024;
         // dirLight.shadow.mapSize.height = 1024;
@@ -340,18 +342,19 @@ class App {
         this.scene.add( dirLight );
 
         // add entities
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x141414, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x4f4f4f, depthWrite: true, roughness: 1, metalness: 0 } ) );
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 9 ), new THREE.MeshStandardMaterial( {color: 0x141455, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
         this.scene.add( backPlane );
 
         // so the screen is not black while loading
+        this.onModeChange( window.debugMode ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
@@ -450,10 +453,10 @@ class App {
         
         delta *= this.signingSpeed;
         this.elapsedTime += delta;
-        if ( this.ECAcontroller ){ this.ECAcontroller.update(delta, this.elapsedTime ); }
+        if ( this.ECAcontroller ) { this.ECAcontroller.update(delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
-
+        this.controls.update();
     }
     
     onWindowResize() {
@@ -462,6 +465,30 @@ class App {
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    onModeChange( mode ) {
+
+        if ( mode ) {
+            this.controls.minDistance = 0.1;
+            this.controls.maxDistance = 10;
+            this.controls.minAzimuthAngle = THREE.Infinity;
+            this.controls.maxAzimuthAngle = THREE.Infinity;
+            this.controls.minPolarAngle = 0.0;
+            this.controls.maxPolarAngle = Math.PI;     
+            this.scene.getObjectByName('Chroma').material.color.set( 0x4f4f9c );
+        } else {
+            this.controls.enablePan = false;
+            this.controls.minDistance = 0.7;
+            this.controls.maxDistance = 2;
+            this.controls.minAzimuthAngle = -2;
+            this.controls.maxAzimuthAngle = 2;
+            this.controls.minPolarAngle = 0.6;
+            this.controls.maxPolarAngle = 2.1;
+            this.scene.getObjectByName('Chroma').material.color.set( 0x175e36 );
+        }
+        this.controls.update();
+        console.log("[INFO] debugMode set to:" , window.debugMode);
     }
 
 }

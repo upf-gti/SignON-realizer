@@ -35,7 +35,7 @@ function build() {
             "../js/sigml/LocationBodyArm.js",
             "../js/sigml/HandConstellation.js",
             "../js/sigml/Motion.js",
-            "../js/sigml/ShouldersBodyNMF.js",
+            "../js/sigml/ElbowShouldersBodyNMF.js",
             "../js/sigml/SigmlUtils.js"
         ],
         "CharacterController.js": [

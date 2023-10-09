@@ -27,6 +27,12 @@
 			"LHandRing": "mixamorig_LeftHandRing1",
 			"LHandPinky": "mixamorig_LeftHandPinky1"
 		},
+		
+		"_commentsDefaultAngles": "elbow added. shoulder=[ added angle, min angle, max angle ]",
+		"elbowRaise": 0,
+		"shoulderRaise": [ 0, 0, 45 ],
+		"shoulderHunch": [ 0, 0, 40 ],
+
 		"bodyLocations": {
 			"HEAD_SideLL": [
 				"mixamorig_Head",
@@ -3342,6 +3348,7 @@
 				}
 			]
 		},
+
 		"fingerAxes": {
 			"_comments": "axes in mesh space. Quats = quats from where axes where computed (tpose). Thumb has a correction Thumb quat = qCorrection * qBind",
 			"R": {
