@@ -25,24 +25,20 @@ class AppGUI{
 
             let chroma = this.app.scene.getObjectByName("Chroma");
             if ( chroma ){
-                color.copyLinearToSRGB(chroma.material.color);
+                color.copy(chroma.material.color);
                 let backPlaneColor = "#" + color.getHexString();
                 p.addColor("Color Chroma", backPlaneColor, (value, event) => {
-                    let color = this.app.scene.getObjectByName("Chroma").material.color; // css works in sRGB
-                    color.set(value);
-                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                    this.app.scene.getObjectByName("Chroma").material.color.set(value); // css works in sRGB
                 });
             }
         
             let modelShirt = this.app.model.getObjectByName("Tops");
             if ( modelShirt ){
-                color.copyLinearToSRGB(this.app.model.getObjectByName("Tops").material.color);
+                color.copy(this.app.model.getObjectByName("Tops").material.color);
                 let topsColor = "#" + color.getHexString();
     
                 p.addColor("Color Clothes", topsColor, (value, event) => {
-                    let color = this.app.scene.getObjectByName("Tops").material.color; // css works in sRGB
-                    color.set(value);
-                    color.copySRGBToLinear(color); // material.color needs to be in linearSpace
+                    this.app.scene.getObjectByName("Tops").material.color.set(value); // css works in sRGB
                 });
             }
 
@@ -216,6 +212,37 @@ class AppGUI{
                 let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
                 this.app.ECAcontroller.processMsg(JSON.stringify(msg));
             });
+
+            ///Debug Illumination
+            // p.addNumber("exposure", this.app.renderer.toneMappingExposure, (value, event) => {
+            //     this.app.renderer.toneMappingExposure = value;
+            // }, { min: 0, max: 3, step: 0.1});
+
+            // let objs = this.app.scene.children.length;
+            // for (let i = 0; i < objs; i++) {
+            //     let ob = this.app.scene.children[i];
+            //     if (ob.isLight) {
+            //         p.addNumber(ob.type, ob.intensity, (value, event) => {
+            //             ob.intensity = value;
+            //         }, { min: 0, max: 10, step: 0.5});
+            //     }
+            // }
+
+            // if ( this.app.scene.fog ) {
+            //     let f = this.app.scene.fog;
+            //     let fc = "#" + f.color.getHexString();
+            //     p.addColor("color", fc, (value, event) => {
+            //         this.app.scene.background.set(value);
+            //         this.app.scene.fog.color.set(value);
+            //     });
+
+            //     p.addNumber("near", f.near, (value, event) => {
+            //         this.app.scene.fog.near = value;
+            //     }, { min: 0, max: 10, step: 0.5});
+            //     p.addNumber("far", f.far, (value, event) => {
+            //         this.app.scene.fog.far = value;
+            //     }, { min: 10, max: 100, step: 2});
+            // }   
 
             p.merge(); // end of customization
 

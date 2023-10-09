@@ -8,7 +8,6 @@ import {
 	InterleavedBufferAttribute,
 	Mesh,
 	MeshBasicMaterial,
-	RGBFormat,
 	RawShaderMaterial,
 	Vector2,
 	Vector3,
@@ -21,6 +20,8 @@ class Lensflare extends Mesh {
 
 		super( Lensflare.Geometry, new MeshBasicMaterial( { opacity: 0, transparent: true } ) );
 
+		this.isLensflare = true;
+
 		this.type = 'Lensflare';
 		this.frustumCulled = false;
 		this.renderOrder = Infinity;
@@ -32,8 +33,8 @@ class Lensflare extends Mesh {
 
 		// textures
 
-		const tempMap = new FramebufferTexture( 16, 16, RGBFormat );
-		const occlusionMap = new FramebufferTexture( 16, 16, RGBFormat );
+		const tempMap = new FramebufferTexture( 16, 16 );
+		const occlusionMap = new FramebufferTexture( 16, 16 );
 
 		// material
 
@@ -264,8 +265,6 @@ class Lensflare extends Mesh {
 	}
 
 }
-
-Lensflare.prototype.isLensflare = true;
 
 //
 

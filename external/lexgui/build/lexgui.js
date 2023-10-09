@@ -31,6 +31,14 @@
     }
 
     LX.setThemeColor = setThemeColor;
+    
+    function getThemeColor(color_name)
+    {
+        var r = getComputedStyle(document.querySelector(':root'));
+        return r.getPropertyValue("--" + color_name);
+    }
+
+    LX.getThemeColor = getThemeColor;
 
     function hexToRgb(string) {
         const red = parseInt(string.substring(1, 3), 16) / 255;
@@ -53,6 +61,15 @@
            return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
         };
         return (S4()+"-"+S4());
+    }
+
+    let ASYNC_ENABLED = true;
+
+    function doAsync( fn, ms ) {
+        if( ASYNC_ENABLED )
+            setTimeout( fn, ms ?? 0 );
+        else
+            fn();
     }
 
     function set_as_draggable(domEl) {
@@ -768,7 +785,7 @@
             this.type = type;
 
             // Update sizes
-            this.#update();
+            this._update();
 
             if(!resize)
             {
@@ -817,7 +834,8 @@
                 that.split_bar.classList.remove("nocursor");
             }
 
-            this._moveSplit(0);
+            // Is this necessary?..
+            // setTimeout( () => this._moveSplit(0), 100);
 
             return this.sections;
         }
@@ -1079,6 +1097,14 @@
         addTabs( options = {} ) {
 
             const tabs = new Tabs( this, options );
+
+            if( options.folding )
+            {
+                this.parentArea._disableSplitResize();
+                // Compensate split bar...
+                this.root.style.paddingTop = "4px"; 
+            }
+
             return tabs;
         }
 
@@ -1093,14 +1119,10 @@
             var a1 = this.sections[0];
             var a2 = this.sections[1];
             var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE +"px";
-            const min_size = 10;
 
             if(this.type == "horizontal") {
 
                 var size = (a2.root.offsetWidth + dt);
-				if(size < min_size)
-					size = min_size;
-
 				a1.root.style.width = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "calc( 100% - " + size + "px " + splitinfo + " )";
@@ -1109,35 +1131,47 @@
             else {
 
                 var size = (a2.root.offsetHeight + dt) + a2.offset;
-				if(size < min_size)
-					size = min_size;
 				a1.root.style.height = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "calc( 100% - " + size + "px " + splitinfo + " )";
 				a2.root.style.height = ( size - a2.offset ) + "px"; //other split
             }
                 
-            this.#update();
+            this._update();
 
             // Resize events   
             this.propagateEvent( 'onresize' );
         }
 
-        #update()
-        {
+        _disableSplitResize() {
+
+            this.resize = false;
+            this.split_bar.remove();
+            delete this.split_bar;
+        }
+
+        _update() {
+
             const rect = this.root.getBoundingClientRect();
 
             this.size = [ rect.width, rect.height ];
 
             for(var i = 0; i < this.sections.length; i++) {
-                this.sections[i].#update();
+                this.sections[i]._update();
             }
         }
     };
 
     LX.Area = Area;
 
-     /**
+    function flushCss(element) {
+        // By reading the offsetHeight property, we are forcing
+        // the browser to flush the pending CSS changes (which it
+        // does to ensure the value obtained is accurate).
+        element.offsetHeight;
+    }
+
+    /**
      * @class Tabs
      */
 
@@ -1235,8 +1269,7 @@
                 });
 
                 resizeObserver.observe(this.area.root);
-
-                this.area.hide();
+                this.area.root.classList.add('folded');
             }
         }
 
@@ -1295,7 +1328,7 @@
                 if( this.folding )
                 {
                     this.folded = tabEl.selected;
-                    this.area.toggle(!this.folded);
+                    this.area.root.classList.toggle('folded', !this.folded);
                 }
 
                 if(options.onSelect) 
@@ -2310,7 +2343,7 @@
                     actionEl.className = "itemicon " + a.icon;
                     actionEl.title = a.name;
                     actionEl.addEventListener("click", function(e) {
-                        a.callback(this, node);
+                        a.callback(node);
                         e.stopPropagation();
                     });
                     item.appendChild(actionEl);
@@ -2597,6 +2630,9 @@
                 element.style.width = "calc(100% - " + (this.current_branch || type == Widget.FILE ? 10 : 20) + "px)";
                 if( options.width ) {
                     element.style.width = element.style.minWidth = options.width;
+                }
+                if( options.height ) {
+                    element.style.height = element.style.minHeight = options.height;
                 }
             }
 
@@ -3025,11 +3061,13 @@
             let container = document.createElement('div');
             container.className = "lextextarea";
             container.style.width = options.inputWidth || "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + " )";
+            container.style.height = options.height;
             container.style.display = "flex";
 
             let wValue = document.createElement('textarea');
             wValue.value = wValue.iValue = value || "";
             wValue.style.width = "100%";
+            Object.assign(wValue.style, options.style ?? {});
 
             if(options.disabled ?? false) wValue.setAttribute("disabled", true);
             if(options.placeholder) wValue.setAttribute("placeholder", options.placeholder);
@@ -3076,7 +3114,7 @@
             }
 
             // Do this after creating the DOM element
-            setTimeout( () => {
+            doAsync( () => {
                 if( options.fitHeight )
                 {
                     // Update height depending on the content
@@ -3144,7 +3182,7 @@
             // Remove branch padding and margins
             if(!widget.name) {
                 wValue.className += " noname";
-                wValue.style.width =  options.width || "100%";
+                wValue.style.width = "100%";
             }
 
             return element;
@@ -3414,13 +3452,14 @@
             if(options.filter ?? false)
                 filter = this.#add_filter("Search option", {container: list, callback: this.#search_options.bind(list, values)});
 
-            if(filter)
-                list.appendChild(filter);
-
             // Create option list to empty it easily..
             const list_options = document.createElement('span');
             list.appendChild(list_options);
-
+            
+            if(filter)  {
+                list.prepend(filter);
+                list_options.style.height = "calc(100% - 25px)";
+            }
             // Add dropdown options list
             list.refresh = (options) => {
 
@@ -4983,7 +5022,7 @@
             function inner_mouseup(e)
             {
                 if (lastX != e.pageX)
-                    that.#updateWidgets();
+                    that._updateWidgets();
                 lastX = e.pageX;
                 lastXLine = e.pageX;
                 line.style.height = "0px";
@@ -4997,7 +5036,7 @@
             this.content.appendChild( element );
         }
 
-        #updateWidgets() {
+        _updateWidgets() {
 
             var size = this.grabber.style.marginLeft;
 
