@@ -470,6 +470,7 @@ class App {
     onModeChange( mode ) {
 
         if ( mode ) {
+            this.controls.enablePan = true;
             this.controls.minDistance = 0.1;
             this.controls.maxDistance = 10;
             this.controls.minAzimuthAngle = THREE.Infinity;

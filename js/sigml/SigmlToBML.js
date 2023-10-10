@@ -452,11 +452,11 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
             case "tight": obj.secondtco = -0.4; break;
             default: break;
         }
-        obj.bend1 = attributes.bend1;
-        obj.bend2 = attributes.bend2;
-        obj.bend3 = attributes.bend3;
-        obj.bend4 = attributes.bend4;
-        obj.bend5 = attributes.bend5;
+        obj.bend1 = attributes.bend1 ? attributes.bend1.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.bend2 = attributes.bend2 ? attributes.bend2.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.bend3 = attributes.bend3 ? attributes.bend3.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.bend4 = attributes.bend4 ? attributes.bend4.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
+        obj.bend5 = attributes.bend5 ? attributes.bend5.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
         obj.specialfingers = attributes.specialfingers;
         // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
 

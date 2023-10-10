@@ -1,7 +1,7 @@
 # BML Instructions
 Data sent to processMsg
 
-``` json
+``` jsonc
 { 
     "type": "behaviours", 
     "composition": "MERGE", 
@@ -10,14 +10,14 @@ Data sent to processMsg
 ```
 
 Composition Types: 
-``` json
+``` jsonc
 "composition": "MERGE" //default if not specified
 "composition": "APPEND" // block will be added at the end of the list
 "composition": "REPLACE" // removes overlapping blocks
 ```
 
 Example of objects inside the  "data" array
-``` json
+``` jsonc
 {
     "type": "faceLexeme",
     "start": 0.1,
@@ -36,7 +36,7 @@ The attribute ```shift``` indicates whether the action should be interpreted as 
 
 ## Blink
 Blink is automatically executed by the realizer. However, a blink can be forced with this instruction. For a more controlled eyelid movement, use lexemes instead.
-``` json
+``` jsonc
 {
     "type": "blink",
     "start": 0.1
@@ -46,7 +46,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 ---
 
 ## Eye Lookat
-``` json
+``` jsonc
 {
     "type": "gaze" || "gazeShift", // shift automatically set to true
     "start": 0.1,
@@ -68,7 +68,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 ---
 
 ## Head NOD / SHAKE / TILT / FORWARD / BACKWARD
-``` json
+``` jsonc
 {
     "type": "head",
 	"start": 0.1,
@@ -90,7 +90,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 
 ## Speech
 Mouthing.
-``` json
+``` jsonc
 {
     "type": "speech",
     "start": 0,
@@ -108,7 +108,7 @@ Mouthing.
 ---
 
 ## Face Emotion
-``` json
+``` jsonc
 {
     "type": "faceEmotion" || "faceVA", 
     "start": 0.1,
@@ -129,7 +129,7 @@ Mouthing.
 ---
 
 ## Face Lexeme
-``` json
+``` jsonc
 {
     "type": "face" || "faceLexeme" || "faceFACS" || "faceShift", // faceShift = shift automatically set to true
     "start": 0.1,
@@ -223,7 +223,7 @@ U=up, D=down, L=left, R=right, I=in, O=out,
 ```
 
 All gestures share some optional attributes 
-``` json
+``` jsonc
 {
     "hand": "RIGHT" || "LEFT" || "BOTH", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT"
     "lrSym": true,  // bool, left-right symmetry. Only applied to the non-dominant hand
@@ -233,7 +233,7 @@ All gestures share some optional attributes
 ```
 
 The dominant hand can be set through the following attribute.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "config": { 
@@ -246,7 +246,7 @@ Attributes with the ```second``` prefix are usually optional and combines the ef
 
 All gesture intructions can be packed into a single BML instruction. Caution must be taken as attributes may overlap between different gesture types. This can be useful to to reuse the same timing for several gestures  
 The following example using a single BML, instructs the avatar the handshape, palmor, extfidir and the shoulder raise with the same timing variables
-``` json
+``` jsonc
 { 
     "type": "gesture",
     "start": 0,   "attackPeak": 0.5,   "relax": 1,   "end": 2, 
@@ -260,7 +260,7 @@ The following example using a single BML, instructs the avatar the handshape, pa
 
 ## Elbow Raise
 Raises the elbow (added to the elbow raise automatically computed while moving the arm)
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -278,7 +278,7 @@ Raises the elbow (added to the elbow raise automatically computed while moving t
 ---
 ## Shoulder Raise
 Raises the shoulder (added to the shoulder raise automatically computed while moving the arm)
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -296,7 +296,7 @@ Raises the shoulder (added to the shoulder raise automatically computed while mo
 ---
 ## Shoulder Hunch
 Moves the shoulder forward (added to the shoulder hunch automatically computed while moving the arm)
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -314,7 +314,7 @@ Moves the shoulder forward (added to the shoulder hunch automatically computed w
 ---
 ## Body Movement
 Moves the body (trunk). Tilt forward-backward, tilt left-right and rotate left-right. New gestures are added to the previuos one, they are not replaced.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -332,7 +332,7 @@ Moves the body (trunk). Tilt forward-backward, tilt left-right and rotate left-r
 ---
 ## Body Location
 Moves the arm (wrist) to a location of the body (face + trunk).
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -402,7 +402,7 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 
 ## Palm Orientation
 Roll of the wrist joint.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -422,7 +422,7 @@ Roll of the wrist joint.
 
 ## Extfidir
 Yaw and Pitch of the wrist joint.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -440,7 +440,7 @@ Yaw and Pitch of the wrist joint.
 ---
 ## Handshape
 Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) to 5 (pinky)
-``` json
+``` jsonc
 { 
     "type": "gesture",
     "start": 0.1,
@@ -514,7 +514,7 @@ i.e. BENT = "900", HOOKED = "099"
 Moves the hand position with respect to each other.
 
 The motion is stopped if an arm location is executed afterwards.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -581,7 +581,7 @@ Moves the arm (wrist) in a linear direction.
 ``distance`` and ``curveSize`` attributes are concurrent and not exclusive. Meaning one attribute can be 0 while the other different from 0.
 
 The motion is stopped if an arm location is executed afterwards.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -609,7 +609,7 @@ The motion is stopped if an arm location is executed afterwards.
 Moves the arm (wrist) in a circular motion.
 
 The motion is stopped if an arm location is executed afterwards.
-``` json
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,
@@ -655,7 +655,7 @@ Wiggle fingers of the hand.
 ---
 ## Wrist Motion
 Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
-``` yaml
+``` jsonc
 {
     "type": "gesture",
     "start": 0.1,

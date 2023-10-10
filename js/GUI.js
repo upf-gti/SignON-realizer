@@ -16,8 +16,8 @@ class AppGUI{
 
     createPanel(){
 
-        this.gui = new LX.PocketDialog( "Controls", p => {
-
+        new LX.PocketDialog( "Controls", p => {
+            this.gui = p;
             // --------- Customization ---------
             p.branch( "Customization" );
             // get color set on the actual objects and set them as default values to the colorpicker

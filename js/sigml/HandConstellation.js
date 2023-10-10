@@ -201,11 +201,12 @@ class HandConstellation {
         }
         if ( typeof( side ) != "string" || side.length < 1 ){ side = ""; }
         else{ 
-            side = "_" + side.toUpperCase();
+            side = side.toUpperCase();
             if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
-                if ( side == "RIGHT" ){ side = "_" + (hand == "R" ? "ULNAR" : "RADIAL"); }
-                else if ( side == "LEFT" ){ side = "_" + (hand == "R" ? "RADIAL" : "ULNAR"); }
+                if ( side == "RIGHT" ){ side = (hand == "R" ? "ULNAR" : "RADIAL"); }
+                else if ( side == "LEFT" ){ side = (hand == "R" ? "RADIAL" : "ULNAR"); }
             }
+            side = "_" + side;
         }
         let name = finger + location + side; 
 
