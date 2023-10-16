@@ -134,86 +134,93 @@ Blink.prototype.computeWeight = function (dt) {
 FacialExpr.NMF = {}; // lookup table for lexeme-blendshape relation
 
 // SignON actions units
-FacialExpr.NMF.NMF_FROWN =                  [[2, 3, 4, 5], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_ARCH =                   [[6, 7, 8, 9], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[12, 13], [1, 1]];
-FacialExpr.NMF.NMF_SQUINT =                 [[43, 44], [1, 1]];
-FacialExpr.NMF.NMF_BLINK =                  [[0, 1], [1, 1]];
-FacialExpr.NMF.NMF_CLOSED =                 [[0, 1], [1, 1]];
-FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[11], [-1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[10], [-1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[10, 11], [-1, -1]]; // missing new blendshapes
-FacialExpr.NMF.NMF_BLOW_RIGHT =             [[11], [1]];
-FacialExpr.NMF.NMF_BLOW_LEFT =              [[10], [1]];
-FacialExpr.NMF.NMF_BLOW_BOTH =              [[10, 11], [1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[35], [1]];
-FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[28, 33, 34, 47], [1, 1, 1, -1]];
-FacialExpr.NMF.NMF_SMILE_TEETH =            [[41, 42, 35], [0.5, 0.5, 0.2]];
-FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[41, 42, 35], [1, 1, 0.2]];
-FacialExpr.NMF.NMF_SMILE_CLOSED =           [[41, 42], [1, 1]];
-FacialExpr.NMF.NMF_ROUND_OPEN =             [[33, 34, 35], [0.7, 0.7, 0.7]];// missing new blendshape
-FacialExpr.NMF.NMF_ROUND_CLOSED =           [[33, 34], [1, 1]];
+FacialExpr.NMF.NMF_FROWN =                  [[3, 4], [1, 1]];
+FacialExpr.NMF.NMF_ARCH =                   [[1, 2, 0], [1, 1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[45, 46], [1, 1]];
+FacialExpr.NMF.NMF_SQUINT =                 [[49, 50], [1, 1]];
+FacialExpr.NMF.NMF_BLINK =                  [[51, 52], [1, 1]];
+FacialExpr.NMF.NMF_CLOSED =                 [[48], [1]];
+FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[44], [1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[43], [1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[43, 44], [1, 1]]; // missing new blendshapes
+FacialExpr.NMF.NMF_BLOW_RIGHT =             [[42], [1]];
+FacialExpr.NMF.NMF_BLOW_LEFT =              [[41], [1]];
+FacialExpr.NMF.NMF_BLOW_BOTH =              [[41, 42], [1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[33], [1]];
+FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[29, 19, 20, 28], [1, 1, 1, 1]];
+FacialExpr.NMF.NMF_SMILE_TEETH =            [[13, 14, 33], [0.5, 0.5, 0.2]];
+FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[13, 14, 33], [1, 1, 0.2]];
+FacialExpr.NMF.NMF_SMILE_CLOSED =           [[13, 14], [1, 1]];
+FacialExpr.NMF.NMF_ROUND_OPEN =             [[19, 20, 33], [0.7, 0.7, 0.7]];// missing new blendshape
+FacialExpr.NMF.NMF_ROUND_CLOSED =           [[19, 20], [1, 1]];
 FacialExpr.NMF.NMF_OUT_POINTED =            [[], []];       // missing new blendshapes
 FacialExpr.NMF.NMF_OUT_ROUND =              [[], []];       // missing new blendshapes
-FacialExpr.NMF.NMF_CRINKLE =                [[39, 40], [1, 1]];
-FacialExpr.NMF.NMF_FLARE =                  [[], []];       // missing new blendshape
-FacialExpr.NMF.NMF_MOUTH_DOWN =             [[32], [1]];
+FacialExpr.NMF.NMF_CRINKLE =                [[5, 6], [1, 1]];
+FacialExpr.NMF.NMF_FLARE =                  [[7], [1]];       // AU38 - nostril dilator
+// extra
+FacialExpr.NMF.NMF_NOSTRIL_COMPRESSOR =     [[8], [1]];       // AU39 - nostril compressor
+FacialExpr.NMF.NMF_TONGUE_BULGE =           [[32], [1]];       // AU36
+FacialExpr.NMF.NMF_LIP_WIPE =               [[30], [1]];       // AU37
+FacialExpr.NMF.NMF_NECK_TIGHTENER =         [[55], [1]];       // AU21
 // others (legacy mainly)
-FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[14,15], [1,1]]; // AU15 sad
-FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[14], [1]]; // LAU15 sad
-FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[15], [1]]; // RAU15 sad
-FacialExpr.NMF.LIP_CORNER_PULLER =          [[41,42], [1,1]]; // AU12 happy
-FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[41], [1]]; // LAU12 happy
-FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[42], [1]]; // RAU12 happy
-FacialExpr.NMF.LIP_STRECHER =               [[14,15,32], [1,1,1]];// AU20
-FacialExpr.NMF.LIP_FUNNELER =               [[37,38], [1,1]];     // AU22
-FacialExpr.NMF.LIP_TIGHTENER =              [[30,31], [1,1]];     // AU23
-FacialExpr.NMF.LIP_PUCKERER =               [[33,34], [1,1]]; // AU18 mouth narrow
-FacialExpr.NMF.LIP_PUCKERER_LEFT =          [[33], [1]]; // AU18L mouth narrow left
-FacialExpr.NMF.LIP_PUCKERER_RIGHT =         [[34], [1]]; // AU18R mouth narrow right
-FacialExpr.NMF.LIP_PRESSOR =                [[25,28,46], [1,1,1]];// AU24
-FacialExpr.NMF.LIPS_PART =                  [[29, 33, 34, 35, 47], [0.2, -0.05, -0.05, 0.1, 0.2]]; //AU25
-FacialExpr.NMF.LIP_SUCK =                   [[28, 46], [1,1]];// AU28
-FacialExpr.NMF.LIP_SUCK_UPPER =             [[46], [1]];// AU28U upper lip in
-FacialExpr.NMF.LIP_SUCK_LOWER =             [[28], [1]];// AU28D lower lip in
-FacialExpr.NMF.LOWER_LIP_DEPRESSOR =        [[26,27], [1,1]]; // AU16
-FacialExpr.NMF.UPPER_LIP_RAISER =           [[48,49], [1,1]]; // AU10
-FacialExpr.NMF.UPPER_LIP_RAISER_LEFT =      [[48], [1]]; // AU10L
-FacialExpr.NMF.UPPER_LIP_RAISER_RIGHT =     [[49], [1]]; // AU10R
-FacialExpr.NMF.CHIN_RAISER =                [[36], [1]]; // AU17 mouth up
-FacialExpr.NMF.DIMPLER =                    [[33,34,26,27,48,49,28,46], [-0.753,-0.753,-0.35,-0.35,-0.15,-0.15,1,0.1]]; // AU14 -- MouthNarrow + LowerLipDown + UpperLipUp + LowerLipIn + UpperLipIn 
-FacialExpr.NMF.DIMPLER_LEFT =               [[33,26,48,28,46], [-0.753,-0.25,-0.15,1.0,0.1]]; // LAU14
-FacialExpr.NMF.DIMPLER_RIGHT =              [[34,26,27,48,49,28,46], [-0.753,-0.25,-0.25,-0.15,-0.15,1.0,0.1]]; // RAU14 -- for some reason right side looks different
+FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[15, 16], [1,1]]; // AU15 sad 
+FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[15], [1]]; // LAU15 sad
+FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[16], [1]]; // RAU15 sad
+FacialExpr.NMF.LIP_CORNER_PULLER =          [[13, 14], [1,1]]; // AU12 happy
+FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[13], [1]]; // LAU12 happy
+FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[14], [1]]; // RAU12 happy
+FacialExpr.NMF.LIP_STRECHER =               [[21, 22], [1,1]];// AU20
+FacialExpr.NMF.LIP_FUNNELER =               [[23], [1]];     // AU22
+FacialExpr.NMF.LIP_TIGHTENER =              [[24], [1]];     // AU23
+FacialExpr.NMF.LIP_PUCKERER =               [[19, 20], [1,1]]; // AU18 mouth narrow
+FacialExpr.NMF.LIP_PUCKERER_LEFT =          [[19], [1]]; // AU18L mouth narrow left
+FacialExpr.NMF.LIP_PUCKERER_RIGHT =         [[20], [1]]; // AU18R mouth narrow right
+FacialExpr.NMF.LIP_PRESSOR =                [[25, 26], [1,1]];// AU24
+FacialExpr.NMF.LIPS_PART =                  [[27], [1.0]]; //AU25
+FacialExpr.NMF.LIP_SUCK =                   [[28, 29], [1,1]];// AU28
+FacialExpr.NMF.LIP_SUCK_UPPER =             [[28], [1]];// AU28U upper lip in
+FacialExpr.NMF.LIP_SUCK_LOWER =             [[29], [1]];// AU28D lower lip in 
+FacialExpr.NMF.LOWER_LIP_DEPRESSOR =        [[17, 18], [1,1]]; // AU16
+FacialExpr.NMF.LOWER_LIP_DEPRESSOR_LEFT =   [[17], [1]]; // LAU16
+FacialExpr.NMF.LOWER_LIP_DEPRESSOR_RIGHT =  [[18], [1]]; // RAU16
+FacialExpr.NMF.UPPER_LIP_RAISER =           [[11, 12], [1,1]]; // AU10
+FacialExpr.NMF.UPPER_LIP_RAISER_LEFT =      [[11], [1]]; // AU10L
+FacialExpr.NMF.UPPER_LIP_RAISER_RIGHT =     [[12], [1]]; // AU10R
+FacialExpr.NMF.CHIN_RAISER =                [[38], [1]]; // AU17 mouth up
+FacialExpr.NMF.DIMPLER =                    [[9, 10], [1, 1]]; // AU14
+FacialExpr.NMF.DIMPLER_LEFT =               [[9], [1]]; // LAU14
+FacialExpr.NMF.DIMPLER_RIGHT =              [[10], [1]]; // RAU14
+FacialExpr.NMF.LIP_BITE =                   [[29, 33, 34], [1, 0.1, 0.05]]; // AU32
 
-FacialExpr.NMF.NOSE_WRINKLER =              [[39,40], [1,1]]; // AU9
-FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27
-FacialExpr.NMF.MOUTH_OPEN =                 [[35], [1]]; // jaw
-FacialExpr.NMF.JAW_DROP =                   [[22], [1]]; // AU26
-FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[18], [1]]; // AU30L
-FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[19], [1]]; // AU30R
-FacialExpr.NMF.JAW_THRUST =                 [[17], [1]]; // AU29
-FacialExpr.NMF.TONGUE_SHOW =                [[45], [1]]; // AU19
-FacialExpr.NMF.CHEEK_BLOW =                 [[10, 11, 33, 34], [1, 1, -0.3, -0.3]]; //AU33
-FacialExpr.NMF.CHEEK_SUCK =                 [[10, 11, 33, 34, 35, 37, 38], [-0.8, -0.8, 0.6, 0.6, -0.1, 0.4, 0.4]]; //AU35
+FacialExpr.NMF.NOSE_WRINKLER =              [[5, 6], [1,1]]; // AU9
+FacialExpr.NMF.MOUTH_STRETCH =              [[33], [1]]; // AU27 
+FacialExpr.NMF.MOUTH_OPEN =                 [[33] , [1]]; // jaw // TODO: keep this?
+FacialExpr.NMF.JAW_DROP =                   [[34], [1]]; // AU26
+FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[36], [1]]; // AU30L
+FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[37], [1]]; // AU30R
+FacialExpr.NMF.JAW_THRUST =                 [[35], [1]]; // AU29
+FacialExpr.NMF.TONGUE_SHOW =                [[31], [1]]; // AU19
+FacialExpr.NMF.CHEEK_BLOW =                 [[41, 42], [1, 1]]; //AU33
+FacialExpr.NMF.CHEEK_SUCK =                 [[41, 42], [1, 1]]; //AU35
 
-FacialExpr.NMF.BROW_LOWERER =               [[2,3,4,5], [1,1,1,1]]; // AU4 
-FacialExpr.NMF.BROW_LOWERER_LEFT =          [[2,4], [1,1]]; // 
-FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[3,4], [1,1]]; // brows down
-FacialExpr.NMF.BROW_RAISER =                [[8,9], [1,1]]; //  brow up
-FacialExpr.NMF.BROW_RAISER_LEFT =           [[8], [1]]; // left brow up
-FacialExpr.NMF.BROW_RAISER_RIGHT =          [[9], [1]]; // right brow up
-FacialExpr.NMF.INNER_BROW_RAISER =          [[6,7], [1,1]]; // AU1 rows rotate outwards
-FacialExpr.NMF.OUTER_BROW_RAISER =          [[8,9], [1,1]]; // AU2 brows up (right)
+FacialExpr.NMF.BROW_LOWERER =               [[3, 4], [1,1]]; // AU4 
+FacialExpr.NMF.BROW_LOWERER_LEFT =          [[3], [1]]; //
+FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[4], [1]]; // brows down
+FacialExpr.NMF.BROW_RAISER =                [[1, 2], [1,1]]; //  brow up
+FacialExpr.NMF.BROW_RAISER_LEFT =           [[1], [1]]; // left brow up
+FacialExpr.NMF.BROW_RAISER_RIGHT =          [[2], [1]]; // right brow up
+FacialExpr.NMF.INNER_BROW_RAISER =          [[0], [1]]; // AU1 rows rotate outwards
+FacialExpr.NMF.OUTER_BROW_RAISER =          [[1, 2], [1,1]]; // AU2 brows up (right)
 
-FacialExpr.NMF.UPPER_LID_RAISER =           [[12,13], [1,1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[12], [1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[13], [1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.CHEEK_RAISER =               [[43,44], [1,1]]; // AU6 squint
-FacialExpr.NMF.LID_TIGHTENER =              [[43,44], [1,1]]; // AU7 or AU44 squint
-FacialExpr.NMF.EYES_CLOSED =                [[0,1], [1,1]]; // AU43 eyelids closed
-FacialExpr.NMF.BLINK =                      [[0,1], [1,1]]; // AU45 eyelids closed
-FacialExpr.NMF.WINK_LEFT =                  [[0], [1]]; // AU46   
-FacialExpr.NMF.WINK_RIGHT =                 [[1], [1]]; // AU46   
+FacialExpr.NMF.UPPER_LID_RAISER =           [[45, 46], [1,1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[45], [1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[46], [1]]; // AU5 negative eyelids closed /wide eyes 
+FacialExpr.NMF.CHEEK_RAISER =               [[39, 40], [1,1]]; // AU6 squint 
+FacialExpr.NMF.LID_TIGHTENER =              [[47], [1]]; // AU7 or AU44 squint 
+FacialExpr.NMF.EYES_CLOSED =                [[48], [1]]; // AU43 eyelids closed
+FacialExpr.NMF.BLINK =                      [[51, 52], [1,1]]; // AU45 eyelids closed 
+FacialExpr.NMF.WINK_LEFT =                  [[53], [1]]; // AU46
+FacialExpr.NMF.WINK_RIGHT =                 [[54], [1]]; // AU46
 
 
 // Constructor
@@ -388,28 +395,28 @@ UPPER_LID_RAISER", "JAW_DROP","LID_TIGHTENER", "LIP_STRECHER","NOSE_WRINKLER", "
 FacialEmotion.prototype.VALexemes = ["BLINK", "CHEEK_RAISER", "LIP_CORNER_PULLER", "BROW_LOWERER", "DIMPLER", "OUTER_BROW_RAISER", "UPPER_LID_RAISER", "JAW_DROP", "LID_TIGHTENER", "LIP_STRECHER", "NOSE_WRINKLER", "LIP_CORNER_DEPRESSOR", "CHIN_RAISER", "LIP_CORNER_PULLER_RIGHT", "DIMPLER_RIGHT"]
 FacialEmotion.prototype._pit = [
     [//ANGRY 
-        -0.76, 0.64, 0, 0, 0.37735849056603776, 0.37735849056603776, 0.660377358490566, 0.660377358490566, 0, 0, 0.006777392958909609, 0.006174350308024318, 0, 0, 0.008490566037735849, 0.008490566037735849, 0.3113207547169812, 0.3113207547169812, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.009433962264150943, 0.007983478260680202, 0.018497328267128684, 0, 0, 0.2655452832234524, 0.27559599407154056, 0.038135610804944806, 0.038135610804944806, 0.2358490566037736, 0.2358490566037736, 0, 0, 0, 0, 0
+        -0.76, 0.64, 0, 0.006777392958909609, 0.006174350308024318, 0.660377358490566, 0.660377358490566, 0.2655452832234524, 0.27559599407154056, 0, 0, 0, 0, 0, 0, 0.038135610804944806, 0.038135610804944806, 0.3113207547169812, 0.3113207547169812, 0, 0, 0, 0.009433962264150943, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.007983478260680202, 0, 0, 0, 0, 0.018497328267128684, 0, 0, 0, 0, 0, 0, 0.008490566037735849, 0.008490566037735849, 0, 0, 0.2358490566037736, 0.2358490566037736, 0, 0, 0, 0, 0
     ],
     [//HAPPY
-        0.95, 0.23, 0, 0, -0.18916378536627232, -0.179660980579041, 0, 0, 0, 0, 0, 0, 0, 0, 0.24764010809164083, 0.24764010809164083, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.20502509409574698, 0, 0, 0, 0, 0, 0.7803277830403155, 0.8111380948254938, 0, 0, 0, 0, 0, 0, 0
+        0.95, 0.23, 0, 0, 0, -0.18916378536627232, -0.179660980579041, 0, 0, 0, 0, 0, 0, 0, 0, 0.7803277830403155, 0.8111380948254938, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.20502509409574698, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.24764010809164083, 0.24764010809164083, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ],
     [//SAD
-        -0.81, -0.57, 0, 0, 0, 0, 0, 0, 0.769674029541342, 0.8122890435372361, 0, 0, 0, 0, 0, 0, 0.5033301920670048, 0.46071517807111073, 0, 0.5565989595618721, 0, 0, 0, 0, 0, 0, 0, 0.3861389035782963, 0.02391128461319747, 0, 0, 0.5992139735577662, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        -0.81, -0.57, 0.8122890435372361, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5033301920670048, 0.46071517807111073, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0.5565989595618721, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ],
     [//SURPRISED
-        0.22, 0.98, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.21567884759472045, 0.3754851500793228, 0.3541776430813759, 0, 0, 0.5779064665598193, 0.5779064665598193, 0, 0, 0, 0, 0, 0, 0, 0, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0.13044881960293253, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0.22, 0.98, 0.21567884759472045, 0.3754851500793228, 0.3541776430813759, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.13044881960293253, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5779064665598193, 0.5779064665598193, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ],
     [//SACRED
-        -0.25, 0.98, 0, 0, 0.21567884759472045, 0.1943713405967733, 0.5, 0.5, 0.5246376990649517, 0.5, 0, 0, 0, 0, 0.15, 0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        -0.25, 0.98, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.15, 0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ],
     [//DISGUSTED
-        -0.96, 0.23, 0, 0, 0, 0, 0.42875391757419035, 0.49267643856803134, 0, 0, 0, 0, 0, 0, 0, 0, 0.23698635459266737, 0.15175632660087945, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.21567884759472045, 0, 0, 0.3104116803737398, 0.3541776430813759, 0, 0, 0.7, 0.7, 0, 0, 0, 0.4713689315700842, 0.3435238895824022
+        -0.96, 0.23, 0, 0, 0, 0.42875391757419035, 0.49267643856803134, 0.3104116803737398, 0.3541776430813759, 0, 0, 0, 0, 0.4713689315700842, 0.3435238895824022, 0, 0, 0.23698635459266737, 0.15175632660087945, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.21567884759472045, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0, 0, 0, 0, 0
     ],
     [//CONTEMPT
-        -0.98, -0.21, 0.1, 0.1, 0, 0, 0, 0, 0, 0, 0.24764010809164083, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.4981226368365037, 0, 0, 0, 0, 0, 0, 0, 0.10914131260498539, 0, 0, 0, 0, 0, 0, 0, 0
+        -0.98, -0.21, 0, 0.24764010809164083, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.20914131260498539, 0, 0, 0, 0, 0, -0.4981226368365037, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0, 0, 0
     ],
     [//NEUTRAL
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ]
 ]
 

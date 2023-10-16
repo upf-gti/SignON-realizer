@@ -3,6 +3,8 @@
 import { Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, Text2LipInterface, T2LTABLES } from '../bml/BehaviourRealizer.js';
 import * as THREE from 'three';
 
+import { findIndexOfBone } from "../sigml/SigmlUtils.js"
+
 function FacialController(config = null) {
     
     // define some properties
@@ -21,14 +23,15 @@ function FacialController(config = null) {
         "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
     };
 
+    // TODO: updatet2l names ?
     this.squintBSName = "Squint";
     this.eyelidsBSName = "Blink";
     this.smileBSName = "Smile";
     this.sadBSName = "Sad";
     this.kissBSName = "MouthWhistle";
     this.lipsPressedBSName = "Jaw_Up";
-    this.lowerLipINBSName = "LowerLipIn";
-    this.lowerLipDownBSName = "LowerLipDown";
+    this.lowerLipINBSName = "Lip_Suck_Lower"; //"LowerLipIn";
+    this.lowerLipDownBSName = "Lower_Lip_Depressor_Left"; //"LowerLipDown";
     this.mouthNarrowBSName = "MouthNarrow";
     this.mouthOpenBSName = "MouthOpen";
     this.tongueBSName = "Tongue";
@@ -38,30 +41,53 @@ function FacialController(config = null) {
     this.browsUpBSName = "BrowsUp";
 
     this._morphTargets = {}; // current avatar morph targets
-    this._mappingBS = {}; // mappings of current avatar BS to default morph deformers
+    this._mappingBS = {}; // mappings of current (target) avatar BS to default (source) morph deformers
+    this._body = "BodyMesh"; // name of the avatar's body mesh
+    this._boneMap = {}; // bone name to index mapper
     
     // default morph deformers
     this._morphDeformers = {
         "Body": {
             "morphTargetDictionary": {
-                "Blink_Left": 0, "Blink_Right": 1, "BrowsDown_Left": 2, "BrowsDown_Right": 3, "BrowsIn_Left": 4, "BrowsIn_Right": 5, "BrowsOuterLower_Left": 6, "BrowsOuterLower_Right": 7, "BrowsUp_Left": 8, "BrowsUp_Right": 9,
-                "CheekPuff_Left": 10, "CheekPuff_Right": 11, "EyesWide_Left": 12, "EyesWide_Right": 13, "Frown_Left": 14, "Frown_Right": 15, "JawBackward": 16, "JawForeward": 17, "JawRotateY_Left": 18, "JawRotateY_Right": 19,
-                "JawRotateZ_Left": 20, "JawRotateZ_Right": 21, "Jaw_Down": 22, "Jaw_Left": 23, "Jaw_Right": 24, "Jaw_Up": 25, "LowerLipDown_Left": 26, "LowerLipDown_Right": 27, "LowerLipIn": 28, "LowerLipOut": 29, "Midmouth_Left": 30,
-                "Midmouth_Right": 31, "MouthDown": 32, "MouthNarrow_Left": 33, "MouthNarrow_Right": 34, "MouthOpen": 35, "MouthUp": 36, "MouthWhistle_NarrowAdjust_Left": 37, "MouthWhistle_NarrowAdjust_Right": 38, "NoseScrunch_Left": 39,
-                "NoseScrunch_Right": 40, "Smile_Left": 41, "Smile_Right": 42, "Squint_Left": 43, "Squint_Right": 44, "TongueUp": 45, "UpperLipIn": 46, "UpperLipOut": 47, "UpperLipUp_Left": 48, "UpperLipUp_Right": 49
+                "Inner_Brow_Raiser": 0, "Outer_Brow_Raiser_Left": 1, "Outer_Brow_Raiser_Right": 2, "Brow_Lowerer_Left": 3, "Brow_Lowerer_Right": 4, "Nose_Wrinkler_Left": 5, "Nose_Wrinkler_Right": 6, "Nostril_Dilator": 7, "Nostril_Compressor": 8,
+                "Dimpler_Left": 9, "Dimpler_Right": 10, "Upper_Lip_Raiser_Left": 11, "Upper_Lip_Raiser_Right": 12, "Lip_Corner_Puller_Left": 13, "Lip_Corner_Puller_Right": 14, "Lip_Corner_Depressor_Left": 15, "Lip_Corner_Depressor_Right": 16,
+                "Lower_Lip_Depressor_Left": 17, "Lower_Lip_Depressor_Right": 18, "Lip_Puckerer_Left": 19, "Lip_Puckerer_Right": 20, "Lip_Stretcher_Left": 21, "Lip_Stretcher_Right": 22, "Lip_Funneler": 23, "Lip_Tightener": 24, "Lip_Pressor_Left": 25,
+                "Lip_Pressor_Right": 26, "Lips_Part": 27, "Lip_Suck_Upper": 28, "Lip_Suck_Lower": 29, "Lip_Wipe": 30, "Tongue_Show": 31, "Tongue_Bulge": 32, "Mouth_Stretch": 33, "Jaw_Drop": 34, "Jaw_Thrust": 35, "Jaw_Sideways_Left": 36, "Jaw_Sideways_Right": 37,
+                "Chin_Raiser": 38, "Cheek_Raiser_Left": 39, "Cheek_Raiser_Right": 40, "Cheek_Blow_Left": 41, "Cheek_Blow_Right": 42, "Cheek_Suck_Left": 43, "Cheek_Suck_Right": 44, "Upper_Lid_Raiser_Left": 45, "Upper_Lid_Raiser_Right": 46, "Lid_Tightener": 47,
+                "Eyes_Closed": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54, "Neck_Tightener": 55
             },
-            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         },
         "Eyelashes": {
             "morphTargetDictionary": {
-                "Blink_Left": 0, "Blink_Right": 1, "BrowsDown_Left": 2, "BrowsDown_Right": 3, "BrowsIn_Left": 4, "BrowsIn_Right": 5, "BrowsOuterLower_Left": 6, "BrowsOuterLower_Right": 7, "BrowsUp_Left": 8, "BrowsUp_Right": 9,
-                "CheekPuff_Left": 10, "CheekPuff_Right": 11, "EyesWide_Left": 12, "EyesWide_Right": 13, "Frown_Left": 14, "Frown_Right": 15, "JawBackward": 16, "JawForeward": 17, "JawRotateY_Left": 18, "JawRotateY_Right": 19,
-                "JawRotateZ_Left": 20, "JawRotateZ_Right": 21, "Jaw_Down": 22, "Jaw_Left": 23, "Jaw_Right": 24, "Jaw_Up": 25, "LowerLipDown_Left": 26, "LowerLipDown_Right": 27, "LowerLipIn": 28, "LowerLipOut": 29, "Midmouth_Left": 30,
-                "Midmouth_Right": 31, "MouthDown": 32, "MouthNarrow_Left": 33, "MouthNarrow_Right": 34, "MouthOpen": 35, "MouthUp": 36, "MouthWhistle_NarrowAdjust_Left": 37, "MouthWhistle_NarrowAdjust_Right": 38, "NoseScrunch_Left": 39,
-                "NoseScrunch_Right": 40, "Smile_Left": 41, "Smile_Right": 42, "Squint_Left": 43, "Squint_Right": 44, "TongueUp": 45, "UpperLipIn": 46, "UpperLipOut": 47, "UpperLipUp_Left": 48, "UpperLipUp_Right": 49
+                "Upper_Lid_Raiser_Left": 45, "Upper_Lid_Raiser_Right": 46, "Eyes_Closed": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54
             },
-            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]    
+            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }
+    };
+    
+    // weighting factor for t2l interface
+    this._t2lFactor = {
+        "kiss": {
+            "Lip_Tightener": 1.0,
+            "Lip_Puckerer_Left": 1.0,
+            "Lip_Puckerer_Right": 1.0
+        },
+        "upperLipClosed": {
+            "Lip_Stretcher_Left": 1.0,
+            "Lip_Stretcher_Right": 1.0,
+            "Lip_Corner_Depressor_Left": -1.0,
+            "Lip_Corner_Depressor_Right": -1.0,
+            "Upper_Lip_Raiser_Left": -0.3,
+            "Upper_Lip_Raiser_Right": -0.3
+        }, 
+        "lowerLipClosed": {
+            "Lower_Lip_Depressor_Left": -0.8,
+            "Lower_Lip_Depressor_Right": -0.8,
+            "Lip_Suck_Lower": 1.0
+        },
+        "jawOpen": { "Mouth_Stretch": 1.0 },
+        "tongueFrontUp": { "Tongue_Show": 1.0 },
     };
         
     this.lipsyncModule = new Lipsync();
@@ -74,26 +100,38 @@ function FacialController(config = null) {
 
 FacialController.prototype.configure = function (o) {
 
-    if (o.character)
+    if (o.character) {
         this.character = o.character;
-    if (o.headNode)
-        this.headNode = o.headNode;
-    if (o.lookAt)
-        this.lookAt = o.lookAt;
-    if (o.lookAtEyes)
-        this.lookAtEyes = o.lookAtEyes;
-    if (o.lookAtHead)
-        this.lookAtHead = o.lookAtHead;
-    if (o.lookAtNeck)
-        this.lookAtNeck = o.lookAtNeck;
-    if (o.gazePositions)
-        this._gazePositions = o.gazePositions;
-    // if (o.morphTargets)
-        // this._morphDeformers = o.morphTargets;
-    if (o.morphTargets)
-        this._morphTargets = o.morphTargets;
-    if(o.characterConfig)
+     
+        // get skeleton
+        let skeleton = this.skeleton = null;
+        this.character.traverse( ob => {
+            if ( ob.isSkinnedMesh ) {
+                skeleton = this.skeleton = ob.skeleton;
+            }
+        } );
+
+    }
+    if (o.headNode) this.headNode = o.headNode;
+    if (o.lookAt) this.lookAt = o.lookAt;
+    if (o.lookAtEyes) this.lookAtEyes = o.lookAtEyes;
+    if (o.lookAtHead) this.lookAtHead = o.lookAtHead;
+    if (o.lookAtNeck) this.lookAtNeck = o.lookAtNeck;
+    if (o.gazePositions) this._gazePositions = o.gazePositions;
+    // if (o.morphTargets) this._morphDeformers = o.morphTargets;
+    if (o.morphTargets) this._morphTargets = o.morphTargets;
+
+    if(o.characterConfig) {
         this._mappingBS = o.characterConfig.faceController.blendshapeMap;
+        this._body = o.characterConfig.Body;
+        this._boneMap = o.characterConfig.faceController.boneMap;
+    
+        /** BoneMap */
+        // name to index map
+        for ( let p in this._boneMap ){
+            this._boneMap[ p ] = findIndexOfBone( this.skeleton, this._boneMap[ p ] );            
+        }
+    }
 }
 
 FacialController.prototype.start = function (morphTargets) {
@@ -102,7 +140,7 @@ FacialController.prototype.start = function (morphTargets) {
     if (!morphTargets) {
         // Get morph targets
         morphTargets = {
-            Body: this.character.getObjectByName("BodyMesh") || this.character.getObjectByName("Body"),
+            Body: this.character.getObjectByName(this._body),
             Eyelashes: this.character.getObjectByName("Eyelashes")
         }
         this._morphTargets = morphTargets;
@@ -111,7 +149,6 @@ FacialController.prototype.start = function (morphTargets) {
     this._facialBSAcc = {};
     this._facialBSFinal = {};
     
-    // this._morphDeformers = { "Body": morphTargets.Body, "Eyelashes": morphTargets.Eyelashes };
     this._facialBS = {};
     this._eyeLidsBS = [];
     this._squintBS = [];
@@ -128,10 +165,16 @@ FacialController.prototype.start = function (morphTargets) {
             let BSnames = Object.keys(this._morphDeformers[part].morphTargetDictionary);
 
             for (let i = 0; i < BSnames.length; ++i) {
-                let name = BSnames[i].replaceAll("mesh_morph_", "");
+                let name = BSnames[i];
                 
                 // Eyelashes things
-                if (name.toLocaleLowerCase().includes(this.eyelidsBSName.toLocaleLowerCase())) // get blendshape indices of eyelids
+                // if (name.toLocaleLowerCase().includes(this.eyelidsBSName.toLocaleLowerCase())) // get blendshape indices of eyelids
+                // eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
+                if (name.toLocaleLowerCase().includes("blink")) // get blendshape indices of eyelids
+                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
+                if (name.toLocaleLowerCase().includes("eyes_closed")) // get blendshape indices of eyelids
+                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
+                if (name.toLocaleLowerCase().includes("wink")) // get blendshape indices of eyelids
                 eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
 
                 if (name.toLocaleLowerCase().includes(this.squintBSName.toLocaleLowerCase())) // get blendshape indices of squint
@@ -156,10 +199,10 @@ FacialController.prototype.start = function (morphTargets) {
     
     // Gaze
     // Get head bone node
-    if (!this.headNode)
+    if (!this._boneMap.Head)
     console.error("Head bone node not found with id: ");
     else if (!this._gazePositions["HEAD"]) {
-        let headNode = this.character.getObjectByName(this.headNode)
+        let headNode = this.skeleton.bones[this._boneMap.Head] // let headNode = this.character.getObjectByName(this.headNode)
         this._gazePositions["HEAD"] = headNode.getWorldPosition(new THREE.Vector3());
     }
 
@@ -214,29 +257,62 @@ FacialController.prototype.resetFace = function () {
             this._facialBSAcc[part][i] = 0;
             this._facialBSFinal[part][i] = 0;
             this._morphDeformers[part].morphTargetInfluences[i] = 0;
+            // this._morphTargets[part].morphTargetInfluences[i] = 0;
         }
     }
 }
 
-//public update function
+/**  public update function (update inner BS and map them to current avatar) */ 
 FacialController.prototype.update = function (dt) {
-    
+
     // Update Facial BlendShapes
-    this.defaultUpdate(dt);
+    this.innerUpdate(dt);
 
     // Map facialBS to current model BS
     for (let part in this._morphDeformers) {
-        for (const BSName in this._mappingBS[part]) {
-            let nameBS = this._mappingBS[part][BSName]; // current avatar BS name to default BS name
-            let idx = this._morphDeformers[part].morphTargetDictionary[nameBS] // dictionary of BS to idx
-            let value = this._morphDeformers[part].morphTargetInfluences[idx] // values
-            this._morphTargets[part].morphTargetInfluences[[this._morphTargets[part].morphTargetDictionary[BSName]]] = value;   
+        let targetAccumulatedValues = {}; // store multiple value for each target
+
+        for (let defBSName in this._mappingBS[part]) {
+            let currBSnames = this._mappingBS[part][defBSName]; // array of target avatar BS [names, factor]
+            
+            let idx = this._morphDeformers[part].morphTargetDictionary[defBSName]; // index of source blendshape
+            let value = this._morphDeformers[part].morphTargetInfluences[idx]; // value of source blendshape
+
+            // map source value to all target BS
+            for (let i = 0; i < currBSnames.length; i++) {
+                let targetBSName = currBSnames[i][0];
+                let targetBSFactor = currBSnames[i][1];
+                
+                if (!targetAccumulatedValues[targetBSName]) { targetAccumulatedValues[targetBSName] = []; }
+                targetAccumulatedValues[targetBSName].push(value * targetBSFactor); // store the value in the array for this target
+            }
+        }
+        
+        // compute the mean influence value for each target
+        for (let targetBSName in targetAccumulatedValues) {
+            let values = targetAccumulatedValues[targetBSName];
+            let meanValue = 0;
+            let acc = 0;
+            let final = 0;
+
+            for (let i = 0; i < values.length; i++) {
+                acc += Math.abs(values[i]);
+                final += values[i] * Math.abs(values[i]);
+            }
+
+            if (acc > 0.0001) meanValue = final / acc;
+    
+            // update the target blendshape with the mean value
+            let targetIdx = this._morphTargets[part].morphTargetDictionary[targetBSName];
+            if (targetIdx !== undefined) {
+                this._morphTargets[part].morphTargetInfluences[targetIdx] = meanValue;
+            }
         }
     }
 }
-
+    
 //example of one method called for ever update event
-FacialController.prototype.defaultUpdate = function (dt) {
+FacialController.prototype.innerUpdate = function (dt) {
 
     // Update facial expression
     this.faceUpdate(dt);
@@ -245,12 +321,12 @@ FacialController.prototype.defaultUpdate = function (dt) {
     let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
     let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
     
-    this.character.getObjectByName("mixamorig_Neck").lookAt(lookAtNeck);
-    this.character.getObjectByName("mixamorig_Head").lookAt(lookAtHead);
+    this.skeleton.bones[this._boneMap.Neck].lookAt(lookAtNeck);
+    this.skeleton.bones[this._boneMap.Head].lookAt(lookAtHead);
     
     // HEAD (nod, shake, tilt, tiltleft, tiltright, forward, backward)
-    let headQuat = this.character.getObjectByName("mixamorig_Head").quaternion; // Not a copy, but a reference
-    let neckQuat = this.character.getObjectByName("mixamorig_Neck").quaternion; // Not a copy, but a reference
+    let headQuat = this.skeleton.bones[this._boneMap.Head].quaternion; // Not a copy, but a reference
+    let neckQuat = this.skeleton.bones[this._boneMap.Neck].quaternion; // Not a copy, but a reference
     for( let i = 0; i< this.headBML.length; ++i){
         let head = this.headBML[i];
         if( !head.transition ){
@@ -267,9 +343,9 @@ FacialController.prototype.defaultUpdate = function (dt) {
         else
             headQuat.multiply( head.currentStrokeQuat );
     }
-    
-    this.character.getObjectByName("mixamorig_LeftEye").lookAt(lookAtEyes);
-    this.character.getObjectByName("mixamorig_RightEye").lookAt(lookAtEyes);
+
+    this.skeleton.bones[this._boneMap.LEye].lookAt(lookAtEyes);
+    this.skeleton.bones[this._boneMap.REye].lookAt(lookAtEyes);
 }
 
 // Update facial expressions
@@ -424,6 +500,8 @@ FacialController.prototype.faceUpdate = function (dt) {
             target[i] = source[i];
         }
     }
+
+
 }
 
 
@@ -437,30 +515,15 @@ FacialController.prototype.newTextToLip = function (bml) {
         this.textToLip.start(); // keep started but idle
         this.textToLipBSMapping = []; // array of [ MeshBSIndex, T2Lindex, factor ]
 
-        let BS = Object.keys(this._morphDeformers["Body"].morphTargetDictionary);
         let t2lBSWMap = T2LTABLES.BlendshapeMapping;
 
-        // determine which blendshapes exist and map them to text2lip output
-        for(let i = 0; i<BS.length; i++) {
-            if(BS[i].includes("Midmouth_Left"))         this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 0.4 ]); // morphTargets["Body"]
-            if(BS[i].includes("Midmouth_Right"))        this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 0.4 ]);
-            if(BS[i].includes("MouthNarrow_Left"))      this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 1.0 ]);
-            if(BS[i].includes("MouthNarrow_Right"))     this.textToLipBSMapping.push([ i, t2lBSWMap.kiss, 1.0 ]);
-            
-            if (BS[i].includes("MouthDown"))            this.textToLipBSMapping.push([i, t2lBSWMap.upperLipClosed, 0.4]);
-            if (BS[i].includes("UpperLipOut"))          this.textToLipBSMapping.push([i, t2lBSWMap.upperLipClosed, -1.5]);
-            if (BS[i].includes("UpperLipUp_Left"))      this.textToLipBSMapping.push([i, t2lBSWMap.upperLipClosed, -0.3]);
-            if (BS[i].includes("UpperLipUp_Right"))     this.textToLipBSMapping.push([i, t2lBSWMap.upperLipClosed, -0.3]);
-
-            if (BS[i].includes("LowerLipDown_Left"))    this.textToLipBSMapping.push([i, t2lBSWMap.lowerLipClosed, -0.8]);
-            if (BS[i].includes("LowerLipDown_Right"))   this.textToLipBSMapping.push([i, t2lBSWMap.lowerLipClosed, -0.8]);
-            if (BS[i].includes("LowerLipIn"))           this.textToLipBSMapping.push([i, t2lBSWMap.lowerLipClosed, 1.0]);
-
-            if (BS[i].includes("MouthOpen"))            this.textToLipBSMapping.push([i, t2lBSWMap.jawOpen, 1.0]);
-
-            if (BS[i].includes("TongueBackUp"))         this.textToLipBSMapping.push([i, t2lBSWMap.tongueBackUp, 1.0]);
-            if (BS[i].includes("TongueUp"))             this.textToLipBSMapping.push([i, t2lBSWMap.tongueFrontUp, 1.0]);
-            if (BS[i].includes("TongueOut"))            this.textToLipBSMapping.push([i, t2lBSWMap.tongueOut, 1.0]);
+        // map blendshapes to text2lip output
+        for(const part in this._t2lFactor) {
+            for(const BSName in this._t2lFactor[part]) {
+                // instead of looping through all BS, access directly the index of the desired blendshape
+                let idx = this._morphDeformers["Body"].morphTargetDictionary[BSName];
+                if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part], this._t2lFactor[part][BSName]]);
+            }
         }
     }
 
@@ -570,8 +633,9 @@ FacialController.prototype.headDirectionShift = function (headData, cmdId) {
 // New head behavior
 FacialController.prototype.newHeadBML = function (headData) {
     
-    let node = headData.lexeme == "FORWARD" || headData.lexeme == "BACKWARD" ? this.neckNode : this.headNode;
-    let bone = this.character.getObjectByName(node);
+    // work with indexes instead of names
+    let node = headData.lexeme == "FORWARD" || headData.lexeme == "BACKWARD" ? this._boneMap.Neck : this._boneMap.Head;
+    let bone = this.skeleton.bones[node]; // let bone = this.character.getObjectByName(node);
     if (bone) {
         this.headBML.push(new HeadBML(headData, bone, bone.quaternion.clone()));
     }
