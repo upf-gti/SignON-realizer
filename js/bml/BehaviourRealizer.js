@@ -201,7 +201,7 @@ FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[37], [1]]; // AU30R
 FacialExpr.NMF.JAW_THRUST =                 [[35], [1]]; // AU29
 FacialExpr.NMF.TONGUE_SHOW =                [[31], [1]]; // AU19
 FacialExpr.NMF.CHEEK_BLOW =                 [[41, 42], [1, 1]]; //AU33
-FacialExpr.NMF.CHEEK_SUCK =                 [[41, 42], [1, 1]]; //AU35
+FacialExpr.NMF.CHEEK_SUCK =                 [[43, 44], [1, 1]]; //AU35
 
 FacialExpr.NMF.BROW_LOWERER =               [[3, 4], [1,1]]; // AU4 
 FacialExpr.NMF.BROW_LOWERER_LEFT =          [[3], [1]]; //
@@ -271,9 +271,9 @@ FacialExpr.prototype.initFaceLexeme = function (faceData, shift, lexemes) {
     let j = 0; // index of accepted lexemes
     for (let i = 0; i < lexemes.length; i++) {
 
-        if (typeof (lexemes[i].lexeme) !== "string") { lexemes[i].lexeme = "NO_LEXEME"; }
-
         let lexemeStr = lexemes[i].lexeme || lexemes[i].au;
+
+        if (typeof (lexemeStr) !== "string") { lexemeStr = "NO_LEXEME"; }
 
         // does lexeme exist?
         if ( !FacialExpr.NMF[lexemeStr] ) {
@@ -2234,7 +2234,7 @@ let t2lLowerBound = [
   [ 0.0,   0,     0,     0.1,   0.0,   1,     0   ], // 12
   [ 0.3,   0,     0,     0.1,   1,     0,     0   ],
   [ 0,     0,     0.0,   0.1,   0.35,  0,     0.3 ],
-  [ 0.3,   0,     0,     0.13,   0.8,   0,     0   ],
+  [ 0.3,   0,     0,     0.13,   0.8,   0,     0  ],
 ];
 
 let t2lUpperBound = [
@@ -2248,7 +2248,6 @@ let t2lUpperBound = [
   [ 0.0,   0.15,  0,     0.4,   1,     0,     0.5 ],
   [ 0,     1,     1,     0.4,   0,     0,     0   ], // 8
   [ 0,     0.0,   1,     0.4,   0,     0,     0   ],
-
   [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
   [ 0.0,   0,     0,     0.4,   0.0,   0.3,   0   ],
   [ 0.1,   0,     0,     0.2,   0.0,   1,     0   ], // 12

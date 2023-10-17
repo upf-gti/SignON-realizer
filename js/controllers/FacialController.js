@@ -69,23 +69,11 @@ function FacialController(config = null) {
     // weighting factor for t2l interface
     this._t2lFactor = {
         "kiss": {
-            "Lip_Tightener": 1.0,
             "Lip_Puckerer_Left": 1.0,
             "Lip_Puckerer_Right": 1.0
         },
-        "upperLipClosed": {
-            "Lip_Stretcher_Left": 1.0,
-            "Lip_Stretcher_Right": 1.0,
-            "Lip_Corner_Depressor_Left": -1.0,
-            "Lip_Corner_Depressor_Right": -1.0,
-            "Upper_Lip_Raiser_Left": -0.3,
-            "Upper_Lip_Raiser_Right": -0.3
-        }, 
-        "lowerLipClosed": {
-            "Lower_Lip_Depressor_Left": -0.8,
-            "Lower_Lip_Depressor_Right": -0.8,
-            "Lip_Suck_Lower": 1.0
-        },
+        "upperLipClosed": { "Lip_Suck_Upper": 1.0 }, 
+        "lowerLipClosed": {"Lip_Suck_Lower": 1.0 },
         "jawOpen": { "Mouth_Stretch": 1.0 },
         "tongueFrontUp": { "Tongue_Show": 1.0 },
     };
