@@ -236,7 +236,7 @@ BehaviourPlanner.prototype.createBlock = function(){
         if (Math.random() < 0.85)
         {
           var start = Math.random();
-          var offsetDirections = ["CAMERA","DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
+          var offsetDirections = ["CAMERA","DOWN_RIGHT", "DOWN_LEFT", "LEFT", "RIGHT"]; // Upper and sides
           var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
           // block.headDirectionShift = {
           //   start: start,
@@ -287,7 +287,7 @@ BehaviourPlanner.prototype.createBlock = function(){
     case BehaviourPlanner.PROCESSING:
       this.nextBlockIn = 2 + Math.random() * 2;
       // gaze
-      var offsetDirections = ["UPRIGHT", "UPLEFT", "LEFT", "RIGHT"]; // Upper and sides
+      var offsetDirections = ["UP_RIGHT", "UP_LEFT", "LEFT", "RIGHT"]; // Upper and sides
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
       if(Math.random() < 0.8)
       {
@@ -354,7 +354,7 @@ BehaviourPlanner.prototype.createBlock = function(){
       
       this.nextBlockIn = 2 + Math.random() * 3;
       // gaze
-      var offsetDirections = ["CAMERA","DOWN", "DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
+      var offsetDirections = ["CAMERA","DOWN", "DOWN_RIGHT", "DOWN_LEFT", "LEFT", "RIGHT"]; // Upper and sides
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
       // block.gazeShift = {
       //   start: 0,
@@ -413,7 +413,7 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function(dt){
   this.saccCountdown += dt;
   if (this.saccCountdown > this.saccIdle){
     // Random direction
-    var opts = ["RIGHT", "LEFT", "DOWN","DOWNRIGHT", "DOWNLEFT", "UP", "UPLEFT", "UPRIGHT"]; // If you are looking at the eyes usually don't look at the hair
+    var opts = ["RIGHT", "LEFT", "DOWN","DOWN_RIGHT", "DOWN_LEFT", "UP", "UP_LEFT", "UP_RIGHT"]; // If you are looking at the eyes usually don't look at the hair
     var randDir = opts[Math.floor(Math.random()*opts.length)];
     
     // Fixed point to saccade around?
@@ -464,7 +464,7 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
 	// }
   
 	// headDirectionShift
-	var offsetDirections = ["CAMERA","DOWN", "DOWNLEFT", "DOWNRIGHT"]; // Submissive? Listening?
+	var offsetDirections = ["CAMERA","DOWN", "DOWN_LEFT", "DOWN_RIGHT"]; // Submissive? Listening?
   var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
 	var startDir = -Math.random()*0.3;
 	// var headDir = {

@@ -1,21 +1,9 @@
 import * as THREE from "three";
-import { cubicBezierVec3, directionStringSymmetry, nlerpQuats, stringToDirection } from "./SigmlUtils.js";
+import { cubicBezierVec3, stringToDirection } from "./SigmlUtils.js";
 
 let _tempVec3_0 = new THREE.Vector3(0,0,0);
 let _tempVec3_1 = new THREE.Vector3(0,0,0);
 let _tempQuat_0 = new THREE.Quaternion(0,0,0,1);
-
-// in x,y plane -> angle with respect to +y axis
-let motionCurveTable = {
-    'u'     : 0 * Math.PI / 180,   
-    'ul'    : 315 * Math.PI / 180,   
-    'l'     : 270 * Math.PI / 180,   
-    'dl'    : 225 * Math.PI / 180,   
-    'd'     : 180 * Math.PI / 180,   
-    'dr'    : 135 * Math.PI / 180,  
-    'r'     : 90 * Math.PI / 180,  
-    'ur'    : 45 * Math.PI / 180,  
-}
 
 class DirectedMotion {
     constructor(){
@@ -23,7 +11,7 @@ class DirectedMotion {
         this.bezier = [ new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3() ]
 
         this.distance = 0.05; // metres
-        this.steepness = 0.5; // [0,1] curve steepness
+        this.curveSize = 0.5; // [0,1] curve curveSize
 
         this.zigzagDir = new THREE.Vector3(0,0,1);
         this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
@@ -83,9 +71,9 @@ class DirectedMotion {
      * direction: string from 26 directions
      * secondDirection: (optional)
      * distance: (optional) size in metres of the displacement. Default 0.2 m (20 cm)
-     * curve: (optional) string from motionCurveTable. Default to none
+     * curve: (optional) string from 6 basic directions. Default to none
      * secondCurve: (optional)
-     * curveSteepness: (optional) number from [0,1] meaning the sharpness of the curve
+     * curveSize: (optional) number from [0,1] meaning the amplitude of the curve
      * zigzag: (optional) string from 26 directions
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
@@ -94,51 +82,36 @@ class DirectedMotion {
         this.finalOffset.set(0,0,0);
           
         this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
-        this.steepness = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
+        this.curveSize = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
         
-        // fetch curve direction and adjust steepness if not present
-        let curveDir = bml.curve;
-        if ( curveDir && symmetry ){ curveDir = directionStringSymmetry( curveDir, symmetry ); }
-        curveDir = motionCurveTable[ curveDir ];
-        if ( isNaN( curveDir ) ){ this.steepness = 0; }
-        else{
-            //second curve direction
-            let secondCurveDir = bml.secondCurve;
-            if ( secondCurveDir && symmetry ){ secondCurveDir = directionStringSymmetry( secondCurveDir, symmetry ); }
-            secondCurveDir = motionCurveTable[ secondCurveDir ];
-            if ( isNaN( secondCurveDir ) ){ secondCurveDir = curveDir; }
-            else{
-                // find shortest path in circle
-                if ( ( curveDir - secondCurveDir ) < -Math.PI ){ secondCurveDir -= 2 * Math.PI; }
-                else if ( ( curveDir - secondCurveDir ) > Math.PI ){ secondCurveDir += 2 * Math.PI; }
+        // THE FOLLOWING CODE TRIES TO MIMIC JASIGNING/HAMNOSYS BEHAVIOUR. IT COULD BE MUCH SIMPLER OTHERWISE
+
+        // fetch curve direction and adjust curveSize if not present
+        let curveDir = _tempVec3_0.set(0,0,0);
+        if ( stringToDirection( bml.curve, curveDir, symmetry, true ) ){
+            curveDir.z = 0;
+            if ( stringToDirection( bml.secondCurve, _tempVec3_1, symmetry, true ) ){
+                _tempVec3_1.z = 0;
+                curveDir.lerp( _tempVec3_1, 0.5 );
             }
-            curveDir = 0.5 * curveDir + 0.5 * secondCurveDir;
+            if ( curveDir.lengthSq() > 0.00001 ){ curveDir.normalize(); }
         }
+        curveDir.multiplyScalar( this.curveSize * 0.5 );
 
-
-        // set default direction (+z), default curve direction (+y) and ajust with size and curve steepness
-        this.bezier[0].set(0,0,0);
-        this.bezier[3].set(0,0,1).multiplyScalar( this.distance );
-        this.bezier[1].set(0,1,0.5).multiplyScalar( this.distance * this.steepness );
-        this.bezier[2].set(0,1,-0.5).multiplyScalar( this.distance * this.steepness ).add( this.bezier[3] );
-                
-        // rotate default curve direction (+y) to match user's one
-        if ( !isNaN( curveDir ) ){
-            _tempVec3_0.set(0,0,1);        
-            this.bezier[1].applyAxisAngle( _tempVec3_0, curveDir );
-            this.bezier[2].applyAxisAngle( _tempVec3_0, curveDir );
-        }
-
+        // set default direction (+z), default curve direction (+y) and ajust with size and curve curveSize       
+        this.bezier[0].set( 0, 0, 0 );
+        this.bezier[1].set( curveDir.x, curveDir.y, 0 );
+        this.bezier[2].set( curveDir.x, curveDir.y, this.distance );
+        this.bezier[3].set( 0, 0, this.distance );
+         
         // fetch direction and secondDirection
         let finalDir = _tempVec3_0;
-        if ( !stringToDirection( bml.direction, finalDir, symmetry ) ){
-            console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
-            return;
-        }
-        if ( stringToDirection( bml.secondDirection, _tempVec3_1, symmetry ) ){
-            finalDir.lerpVectors( finalDir, _tempVec3_1, 0.5 );
-            if( finalDir.lengthSq() < 0.0001 ){ finalDir.set( 1,0,0 ); }
-            finalDir.normalize();
+        stringToDirection( bml.direction, finalDir, symmetry, true );
+        if( finalDir.lengthSq() > 0.0001 ){ finalDir.normalize(); }
+        if ( stringToDirection( bml.secondDirection, _tempVec3_1, symmetry, true ) ){
+            if( _tempVec3_1.lengthSq() > 0.0001 ){ _tempVec3_1.normalize(); }
+            finalDir.lerp( _tempVec3_1, 0.5 );
+            if( finalDir.lengthSq() > 0.0001 ){ finalDir.normalize(); }
         }
 
         // default looks at +z. If direction falls in -z, change default to -z to avoid accidental left-right, up-down mirror
@@ -556,10 +529,10 @@ class WristMotion {
      * bml info
      * start, attackPeak, relax, end
      * mode = either a: 
-     *          - string from [ "nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all" ]
-     *          - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
-     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
-     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
+     *          - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
+     *          - or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
+     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = STIR_CW
+     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = STIR_CW
      * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
      * intensity = (optional) [0,1]. Default 0.3
      */
@@ -570,12 +543,12 @@ class WristMotion {
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
         
         if ( typeof( bml.mode ) == "string" ){
-            switch( bml.mode ){
+            switch( bml.mode.toLowerCase() ){
                 case "nod": case "nodding": this.mode = 0x02; break;
                 case "swing": case "swinging": this.mode = 0x04; break;
                 case "twist": case "twisting": this.mode = 0x01; break;
-                case "stirCW": case "stircw": this.mode = 0x06; break; // 0x02 | 0x04
-                case "stirCCW": case "stirccw":this.mode = 0x06; this.speed *= -1; break;
+                case "stir_CW": case "stir_cw": this.mode = 0x06; break; // 0x02 | 0x04
+                case "stir_CCW": case "stir_ccw":this.mode = 0x06; this.speed *= -1; break;
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );

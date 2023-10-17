@@ -80,16 +80,18 @@ CharacterController.prototype.update = function (dt, et) {
     if ( newBlock ){ this.BehaviourManager.newBlock(newBlock, et); }
 
     // lipsync stuff????
-    if (this.BehaviourManager.lgStack.length && this.BehaviourManager.time <= this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime) {
-        this.endSpeakingTime = this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime + 1
-        this.speaking = true;
-    }
-    else if (this.endSpeakingTime > -1 && this.BehaviourManager.time <= this.endSpeakingTime || this.facialController.lipsyncModule.working) {
-        this.speaking = true;
-    }
-    else {
-        this.endSpeakingTime = -1;
-        this.speaking = false;
+    if ( this.facialController ){
+        if (this.BehaviourManager.lgStack.length && this.BehaviourManager.time <= this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime) {
+            this.endSpeakingTime = this.BehaviourManager.lgStack[this.BehaviourManager.lgStack.length - 1].endGlobalTime + 1
+            this.speaking = true;
+        }
+        else if (this.endSpeakingTime > -1 && this.BehaviourManager.time <= this.endSpeakingTime || this.facialController.lipsyncModule.working) {
+            this.speaking = true;
+        }
+        else {
+            this.endSpeakingTime = -1;
+            this.speaking = false;
+        }
     }
 
 }
@@ -106,8 +108,8 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
 
     // Add new block to stack
     //this.BehaviourManager.newBlock(msg, thiscene.time);
-    data = JSON.parse(data);
-    if (data.type == "behaviours") data = data.data;
+    if(typeof(data) == "string"){ data = JSON.parse(data); }
+    if (data.type == "behaviours"){ data = data.data; }
 
     // Add new blocks to stack
     let msg = {};

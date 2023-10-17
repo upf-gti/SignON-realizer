@@ -15,13 +15,18 @@ class LocationBodyArm {
         
         let boneMap = config.boneMap;
         let handName = isLeftHand ? "L" : "R";
-        this.idx = boneMap[ handName + "Shoulder" ]// shoulder (back) index 
+        this.idx = {
+            shoulder: boneMap[ handName + "Shoulder" ],
+            arm: boneMap[ handName + "Arm" ],
+            elbow: boneMap[ handName + "Elbow" ],
+            wrist: boneMap[ handName + "Wrist" ]
+        }
         
         // p : without offset. Raw location interpolation
-        this.cur = { p: new THREE.Vector3(), e: 0, offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
-        this.src = { p: new THREE.Vector3(), e: 0, offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
-        this.trg = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
-        this.def = { p: new THREE.Vector3(), e: 0 }; // { world point, elbow raise }
+        this.cur = { p: new THREE.Vector3(), offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
+        this.src = { p: new THREE.Vector3(), offset: new THREE.Vector3() }; // { world point, elbow raise, offset due to previous motions+handconstellation }
+        this.trg = new THREE.Vector3();
+        this.def = new THREE.Vector3();
 
         // if not null, this will be de point that tries to reach the target. Otherwise, the wrist is assumed
         this.contactFinger = null;
@@ -51,9 +56,7 @@ class LocationBodyArm {
         this.transition = false;
         this.contactFinger = null;
         this.cur.p.set(0,0,0);
-        this.cur.e = 0;
-        this.def.p.set(0,0,0);
-        this.def.e = 0;
+        this.def.set(0,0,0);
 
         this.keepUpdatingContact = false;
         this.contactUpdateDone = false;
@@ -68,22 +71,20 @@ class LocationBodyArm {
         // wait in same pose
         if ( this.time < this.start ){ 
             // this.cur.p.copy( this.src.p ); 
-            // this.cur.e = this.src.e;
         }
         else if ( this.time >= this.end ){
-            this.cur.p.copy( this.def.p );
+            this.cur.p.copy( this.def );
             this.cur.offset.set(0,0,0); // just in case
-            this.cur.e = this.def.e;
             this.transition = false; // flag as "nothing to do"
         }
         else{
-            let newTarget = this._tempV3_0.copy( this.trg.p );
+            let newTarget = this._tempV3_0.copy( this.trg );
 
             if ( this.contactFinger && !this.contactUpdateDone ){ // use some finger instead of the wrist
                 this.contactFinger.updateWorldMatrix( true ); // self and parents
                 
                 this._tempV3_1.setFromMatrixPosition( this.contactFinger.matrixWorld );
-                this._tempV3_2.setFromMatrixPosition( this.skeleton.bones[ this.idx + 3 ].matrixWorld );
+                this._tempV3_2.setFromMatrixPosition( this.skeleton.bones[ this.idx.wrist ].matrixWorld );
 
                 let dir = this._tempV3_1.sub( this._tempV3_2 );
                 newTarget.sub( dir );
@@ -91,7 +92,7 @@ class LocationBodyArm {
                 // stop updating after peak, if keepUpdating is disabled. Hold last newTarget value as target
                 if ( !this.keepUpdatingContact && this.time >= this.attackPeak ){
                     this.contactUpdateDone = true;
-                    this.trg.p.copy( newTarget );
+                    this.trg.copy( newTarget );
                 }
             }
             
@@ -100,8 +101,6 @@ class LocationBodyArm {
             if ( this.time > this.attackPeak && this.time < this.relax ){ 
                 this.cur.p.copy( newTarget );
                 this.cur.offset.set(0,0,0);
-                this.cur.e = this.trg.e;
-
             }            
             else if ( this.time <= this.attackPeak ){
                 let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
@@ -109,7 +108,6 @@ class LocationBodyArm {
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
                 this.cur.offset.copy( this.src.offset ).multiplyScalar( 1 - t );
-                this.cur.e = this.src.e * ( 1 - t ) + this.trg.e * t;
                 this.cur.p.lerpVectors( this.src.p, newTarget, t );
                 
                 // overwriting newTarget ( aka this._tempV3_0 ). Add curve on the z axis (slightly better visually)
@@ -123,11 +121,10 @@ class LocationBodyArm {
                 t = Math.sin(Math.PI * t - Math.PI * 0.5) * 0.5 + 0.5;
     
                 this.cur.offset.set(0,0,0);
-                this.cur.e = this.trg.e * ( 1 - t ) + this.def.e * t;
-                this.cur.p.lerpVectors( newTarget, this.def.p, t );
+                this.cur.p.lerpVectors( newTarget, this.def, t );
 
                 // overwriting newTarget ( aka this._tempV3_0 ). Add curve on the z axis (slightly better visually)
-                let extraZSizeFactor = Math.min( 1, newTarget.sub( this.def.p ).lengthSq() / (this.worldArmSize * this.worldArmSize * 0.5) );
+                let extraZSizeFactor = Math.min( 1, newTarget.sub( this.def ).lengthSq() / (this.worldArmSize * this.worldArmSize * 0.5) );
                 let extraZsize = this.worldArmSize * 0.3 * extraZSizeFactor; // depending on how far the next objective
                 let extra =  2 * extraZsize * t * (1-t); // bezier simplified    [ 0 | size | 0 ]
                 this.cur.p.z += extra;
@@ -147,8 +144,11 @@ class LocationBodyArm {
         //     if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
         //     else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
         // }
-        if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "eyebrow" || location == "shoulder" ){
-            location += this.isLeftHand ? "L" : "R";
+        if ( typeof( location ) != "string" ){ return false; }
+        location = location.toUpperCase();
+
+        if ( location == "EAR" || location == "EARLOBE" || location == "CHEEK" || location == "EYE" || location == "EYEBROW" || location == "SHOULDER" ){
+            location += this.isLeftHand ? "_LEFT" : "_RIGHT";
         }
        
         let side = isSecond ? bml.secondSide : bml.side;
@@ -204,7 +204,7 @@ class LocationBodyArm {
      * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. Default false
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
      *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
@@ -214,27 +214,23 @@ class LocationBodyArm {
         this.keepUpdatingContact = !!bml.keepUpdatingContact;
         this.contactUpdateDone = false;
 
-        if ( !this._newGestureLocationComposer( bml, symmetry, this.trg.p, false ) ){
+        if ( !this._newGestureLocationComposer( bml, symmetry, this.trg, false ) ){
             console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationBodyArm + "\"" );
             return;
         };
         if( this._newGestureLocationComposer( bml, symmetry, this.src.p, true ) ){ // use src as temporal buffer
-            this.trg.p.lerp( this.src.p, 0.5 );
+            this.trg.lerp( this.src.p, 0.5 );
         }
 
         // displacement
-        if ( stringToDirection( bml.displace, this._tempV3_0, symmetry ) ){
+        if ( stringToDirection( bml.displace, this._tempV3_0, symmetry, true ) ){
+            this._tempV3_0.normalize();
             let sideDist = parseFloat( bml.displaceDistance );
             sideDist = isNaN( sideDist ) ? 0 : sideDist;
-            this.trg.p.x += this._tempV3_0.x * sideDist;
-            this.trg.p.y += this._tempV3_0.y * sideDist;
-            this.trg.p.z += this._tempV3_0.z * sideDist;
+            this.trg.x += this._tempV3_0.x * sideDist;
+            this.trg.y += this._tempV3_0.y * sideDist;
+            this.trg.z += this._tempV3_0.z * sideDist;
         }
-
-        // elbow raise in degrees (in bml)
-        let elbowRaise = parseInt( bml.elbowRaise );
-        elbowRaise = isNaN( elbowRaise ) ? 0 : elbowRaise;  
-        this.trg.e = elbowRaise * Math.PI / 180;
 
         // source: Copy current arm state
         if ( lastFrameWorldPosition ){
@@ -245,12 +241,10 @@ class LocationBodyArm {
             this.src.offset.copy( this.cur.offset );
             this.src.p.copy( this.cur.p );
         }
-        this.src.e = this.cur.e;
         
         // change arm's default pose if necesary
         if ( bml.shift ){
-            this.def.p.copy( this.trg.p );
-            this.def.e = this.trg.e;
+            this.def.copy( this.trg );
         }
 
         // in case the user selects a specific finger bone as end effector. Not affected by shift
@@ -259,8 +253,10 @@ class LocationBodyArm {
         let srcSide = bml.srcSide; 
         let srcLocation = bml.srcLocation;
         // check all-in-one variable first. Only hand locations allowed as contact
-        let srcContact = this.handLocations[ bml.srcContact ]; 
-        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "Elbow" ) ){
+        
+        let srcContact = typeof( bml.srcContact ) == "string" ? bml.srcContact.toUpperCase() : "";
+        srcContact = this.handLocations[ srcContact ]; 
+        if ( srcContact && !bml.srcContact.includes( "ARM" ) && !bml.srcContact.includes( "ELBOW" ) ){
             this.contactFinger = srcContact;
         }
         else if ( srcFinger || srcSide || srcLocation ){ 
@@ -268,22 +264,20 @@ class LocationBodyArm {
             if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
             if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
             else{ 
-                srcLocation = srcLocation.toLowerCase(); 
-                srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
+                srcLocation = ( srcFinger > 0 ? "_": "" ) + srcLocation.toUpperCase(); 
             }
             if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
             else{ 
-                srcSide = srcSide.toLowerCase();
-                srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
+                srcSide = "_" + srcSide.toUpperCase();
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "Right" ){ srcSide = this.isLeftHand ? "Radial" : "Ulnar"; }
-                    else if ( srcSide == "Left" ){ srcSide = this.isLeftHand ? "Ulnar" : "Radial"; }
+                    if ( srcSide == "_RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
+                    else if ( srcSide == "_LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 
          
             // only hand locations allowed as contact
-            if ( !srcName.includes( "Arm" ) && !srcName.includes( "Elbow" ) ){
+            if ( !srcName.includes( "ARM" ) && !srcName.includes( "ELBOW" ) ){
                 this.contactFinger = this.handLocations[ srcName ];
             }
         }

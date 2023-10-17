@@ -14,18 +14,21 @@ class GeometricArmIK{
 
         this.skeleton = skeleton;
         this.config = config;
-        this.shoulderIndex = isLeftHand ? config.boneMap.LShoulder : config.boneMap.RShoulder;
         this.isLeftHand = !!isLeftHand;
 
-        this.shoulderBone = this.skeleton.bones[ this.shoulderIndex ];
-        this.armBone = this.skeleton.bones[ this.shoulderIndex + 1 ];
-        this.elbowBone = this.skeleton.bones[ this.shoulderIndex + 2 ];
-        this.wristBone = this.skeleton.bones[ this.shoulderIndex + 3 ];
+        let handName = isLeftHand ? "L" : "R";
+        this.shoulderIndex = this.config.boneMap[ handName + "Shoulder" ];
+
+        this.shoulderBone = this.skeleton.bones[ this.config.boneMap[ handName + "Shoulder" ] ];
+        this.armBone = this.skeleton.bones[ this.config.boneMap[ handName + "Arm" ] ];
+        this.elbowBone = this.skeleton.bones[ this.config.boneMap[ handName + "Elbow" ] ];
+        this.wristBone = this.skeleton.bones[ this.config.boneMap[ handName + "Wrist" ] ];
 
         this.bindQuats = {
             shoulder: new THREE.Quaternion(), 
             arm: new THREE.Quaternion(),
             elbow: new THREE.Quaternion(),
+            wrist: new THREE.Quaternion(),
         }
         this.beforeBindAxes = {
             shoulderRaise: new THREE.Vector3(),
@@ -43,7 +46,7 @@ class GeometricArmIK{
         let m3 = this._tempM3_0.setFromMatrix4( this.skeleton.boneInverses[ this.shoulderIndex ] );
         this._tempV3_0.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // convert mesh front axis to local coord
         this.beforeBindAxes.shoulderHunch.crossVectors( this.skeleton.bones[ this.shoulderIndex + 1 ].position, this._tempV3_0 ).normalize(); 
-        this.beforeBindAxes.shoulderRaise.crossVectors( this.beforeBindAxes.shoulderHunch, this.skeleton.bones[ this.shoulderIndex + 1 ].position ).normalize(); 
+        this.beforeBindAxes.shoulderRaise.crossVectors( this.skeleton.bones[ this.shoulderIndex + 1 ].position, this.beforeBindAxes.shoulderHunch ).multiplyScalar( isLeftHand ? -1: 1 ).normalize(); 
 
         // arm
         m1 = this.skeleton.boneInverses[ this.shoulderIndex + 1 ].clone().invert();
@@ -64,6 +67,12 @@ class GeometricArmIK{
         this._tempV3_0.addVectors( this.config.axes[2], this.config.axes[1] ).applyMatrix3( m3 ).normalize(); // convert mesh front axis to local coord
         this.beforeBindAxes.elbow.crossVectors( this.skeleton.bones[ this.shoulderIndex + 3 ].position, this._tempV3_0 ).normalize();
         
+        // wrist
+        m1 = this.skeleton.boneInverses[ this.shoulderIndex + 3 ].clone().invert();
+        m2 = this.skeleton.boneInverses[ this.shoulderIndex + 2 ];
+        m1.premultiply(m2);
+        this.bindQuats.wrist.setFromRotationMatrix( m1 );
+
         // put in tpose
         this.shoulderBone.quaternion.copy( this.bindQuats.shoulder );
         this.armBone.quaternion.copy( this.bindQuats.arm );
@@ -98,20 +107,23 @@ class GeometricArmIK{
         let meshToWorldMat3 = this._tempM3_0.setFromMatrix4( this._tempM4_0 ); // just for directions
         this._tempV3_0.copy( this.config.axes[0] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert horizontal axis from mesh to world coords from shoulder perspective
         this._tempV3_0.multiplyScalar( this.isLeftHand ? -1: 1 );
-        let shoulderHunchFactor = ( 0.5 + this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize ) / 1.5;
+        let shoulderHunchFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
         this._tempV3_0.copy( this.config.axes[1] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert vertical axis from mesh to world coords from shoulder perspective
-        let shoulderRaiseFactor = ( 0.5 + this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize ) /  1.5;
-
-        let shoulderHunchAngle = Math.max( -10, Math.min( 40, 40 * ( shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) ) ) ) * Math.PI/180;
-        shoulderHunchAngle += forcedShoulderHunch; 
-        let shoulderRaiseAngle = Math.max( -10, Math.min( 45, 45 * ( shoulderRaiseFactor * shoulderRaiseFactor * Math.sign( shoulderRaiseFactor ) ) ) ) * Math.PI/180;
-        shoulderRaiseAngle += forcedShoulderRaise; 
-        shoulderRaiseAngle *= this.isLeftHand ? 1 : -1;
+        let shoulderRaiseFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
+        
+        let shoulderHunchAngle = ( this.config.shoulderHunch[2] - this.config.shoulderHunch[1] ) * ( shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) )
+        shoulderHunchAngle = Math.max( this.config.shoulderHunch[1], Math.min( this.config.shoulderHunch[2], shoulderHunchFactor ) );
+        shoulderHunchAngle += forcedShoulderHunch + this.config.shoulderHunch[0]; 
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.shoulderHunch,  shoulderHunchAngle );
         this.shoulderBone.quaternion.multiply( this._tempQ_0 );
+
+        let shoulderRaiseAngle = ( this.config.shoulderRaise[2] - this.config.shoulderRaise[1] ) * ( shoulderRaiseFactor * shoulderRaiseFactor * Math.sign( shoulderRaiseFactor ) );
+        shoulderRaiseAngle = Math.max( this.config.shoulderRaise[1], Math.min( this.config.shoulderRaise[2], shoulderRaiseFactor ) );
+        shoulderRaiseAngle += forcedShoulderRaise + this.config.shoulderRaise[0]; 
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.shoulderRaise, shoulderRaiseAngle );
         this.shoulderBone.quaternion.multiply( this._tempQ_0 );
         
+        // prepare variables for elbow
         wristBone.updateWorldMatrix( true, false ); // TODO should be only wrist, elbow, arm, shoulder
         armWPos = this._tempV3_1.setFromMatrixPosition( armBone.matrixWorld ); // update arm position 
         let wristArmAxis = this._tempV3_1;
@@ -124,15 +136,15 @@ class GeometricArmIK{
         let a = this.forearmWSize; let b = this.upperarmWSize; let cc = this._tempV3_0.lengthSq(); 
         let elbowAngle = Math.acos( Math.max( -1, Math.min( 1, ( cc - a*a - b*b ) / ( -2 * a * b ) ) ) );
         cc = this.armWorldSize * this.armWorldSize;
-        let defaultAngle = Math.acos( Math.max( -1, Math.min( 1, ( cc - a*a - b*b ) / ( -2 * a * b ) ) ) ); // angle from forearm-upperarm tpose misalignment
-        this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.elbow, defaultAngle - elbowAngle ); // ( Math.PI - elbowAngle ) - ( Math.PI - defaultAngle )
+        let misalignmentAngle = Math.acos( Math.max( -1, Math.min( 1, ( cc - a*a - b*b ) / ( -2 * a * b ) ) ) ); // angle from forearm-upperarm tpose misalignment
+        this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.elbow, misalignmentAngle - elbowAngle ); // ( Math.PI - elbowAngle ) - ( Math.PI - misalignmentAngle )
         elbowBone.quaternion.multiply( this._tempQ_0 )
 
         /** ElbowRaise Computation */
         elbowBone.updateMatrix();
         wristArmAxis.copy( wristBone.position ).applyMatrix4( elbowBone.matrix ).normalize(); // axis in "before bind" space
-        let elbowRaiseAngle = ( -40 * Math.PI/180 ) * ( 1 - elbowAngle / Math.PI ); // default angle 
-        elbowRaiseAngle += forcedElbowRaiseDelta;
+        let elbowRaiseAngle = -0.7 * ( 1 - elbowAngle / Math.PI ); // default angle. 45º 
+        elbowRaiseAngle += forcedElbowRaiseDelta + this.config.elbowRaise;
         elbowRaiseAngle *= ( this.isLeftHand ? 1 : -1 ); // due to how axis is computed, angle for right arm is inverted
         elbowRaiseQuat.setFromAxisAngle( wristArmAxis, elbowRaiseAngle );
 
@@ -172,15 +184,16 @@ class GeometricArmIK{
         // remove arm twisting and insert it into elbow
         // (quaternions) R = S * T ---> T = normalize( [ Wr, proj(Vr) ] ) where proj(Vr) projection into some arbitrary twist axis
         let twistq = this._tempQ_0;
-        let armQuat = this._tempQ_1.copy( this.bindQuats.arm ).invert().multiply( this.armBone.quaternion ); // armbone = ( bind * armMovement ). Remove bind
+        let armQuat = this._tempQ_1.copy( this.bindQuats.arm ).invert().multiply( this.armBone.quaternion ); // armbone = ( bind * armMovement ). Do not take into account bind
         let twistAxis = this._tempV3_0.copy( this.elbowBone.position ).normalize();
         getTwistQuaternion( armQuat, twistAxis, twistq );
         this.elbowBone.quaternion.premultiply( twistq );
         this.armBone.quaternion.multiply( twistq.invert() );
 
         // previous fix might induce some twisting in forearm. remove forearm twisting. Keep only swing rotation
+        armQuat = this._tempQ_1.copy( this.bindQuats.elbow ).invert().multiply( this.elbowBone.quaternion ); // elbowBone = ( bind * armMovement ). Do not take into account bind
         twistAxis = this._tempV3_0.copy( this.wristBone.position ).normalize();
-        getTwistQuaternion( this.elbowBone.quaternion, twistAxis, twistq );
+        getTwistQuaternion( armQuat, twistAxis, twistq );
         this.elbowBone.quaternion.multiply( twistq.invert() );
     }
 }

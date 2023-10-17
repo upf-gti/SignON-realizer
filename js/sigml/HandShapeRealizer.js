@@ -6,27 +6,27 @@ import * as THREE from "three";
 let handshapes = {
 
     // basic handshapes    
-    fist:           { selected: [0,0,0,0,0], shape: [ [0,0.5,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    finger2:        { selected: [0,1,0,0,0], shape: [ [0.5,0.75,0.6,0.5],[0,0,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    finger23:       { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0,0,0,0],[0,0,0,0],[0,1,1,1],[0,1,1,1] ] },
-    finger23spread: { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0.8,0,0,0],[-0.2,0,0,0],[0,1,1,1],[0,1,1,1] ] },
-    finger2345:     { selected: [0,1,1,1,1], shape: [ [0,0.3,0,0],[0.8,0,0,0],[0,0,0,0],[0.8,0,0,0],[0.8,0,0,0] ] },
-    flat:           { selected: [0,1,1,1,1], shape: [ [0,0.3,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0] ] },
+    FIST:           { selected: [0,0,0,0,0], shape: [ [0,0.5,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_2:        { selected: [0,1,0,0,0], shape: [ [0.5,0.75,0.6,0.5],[0,0,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_23:       { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0,0,0,0],[0,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_23_SPREAD: { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0.8,0,0,0],[-0.2,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_2345:     { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0.8,0,0,0],[0,0,0,0],[0.8,0,0,0],[0.8,0,0,0] ] },
+    FLAT:           { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0] ] },
     // thumb combinations - could be reduced to only pinch. Cee are basically pinch but with selected fingers open
-    pinch12:        { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    pinch12open:    { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
-    pinchall:       { selected: [2,2,2,2,2], shape: [ [1, 0.95, 0.1, 0.4],[0,0.67,0.44,0.56],[0,0.56,0.44,0.56],[0,0.67,0.33,0.33],[0,0.89,0.22,0.22] ] },
-    cee12:          { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.41,0.51,0.21],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    cee12open:      { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.5,0.2],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
-    ceeall:         { selected: [3,3,3,3,3], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2] ] }
+    PINCH_12:        { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    PINCH_12_OPEN:    { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    PINCH_ALL:       { selected: [2,2,2,2,2], shape: [ [1, 0.95, 0.1, 0.4],[0,0.67,0.44,0.56],[0,0.56,0.44,0.56],[0,0.67,0.33,0.33],[0,0.89,0.22,0.22] ] },
+    CEE_12:          { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.41,0.51,0.21],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    CEE_12_OPEN:      { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.5,0.2],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    CEE_ALL:         { selected: [3,3,3,3,3], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2] ] }
 };
 
 let thumbshapes = {
-    out:     [0,0,0,0], 
-    default: [0,0.5,0,0],
-    touch:   [0,0.5,0,0],
-    opposed: [1,1,0,0],
-    across:  [0.5,0.77,0.55,0.77]
+    OUT:     [0,0,0,0], 
+    DEFAULT: [0,0.5,0,0],
+    TOUCH:   [0,0.5,0,0],
+    OPPOSED: [1,1,0,0],
+    ACROSS:  [0.5,0.77,0.55,0.77]
 }
 
 
@@ -35,13 +35,13 @@ let thumbshapes = {
     2 - bending on a thumb combination. t= thumb, f=rest of fingers 
 */
 let handBendings = {
-    straight: { 1: [0,0,0], 2:{ t:[0.45,0,0], f:[0,0,0] } }, 
-    halfbent: { 1: [0.5,0,0], 2:{ t:[8/9,0,0], f:[0.5,0,0] } }, 
-    bent:     { 1: [1,0,0], 2:{ t:[8/9,0,0], f:[1,0,0] } }, 
-    round:    { 1: [0.5,0.5,0.5], 2:{ t:[6/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
-    hooked:   { 1: [0,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
-    dblbent:  { 1: [1,1,0], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
-    dblhooked:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
+    STRAIGHT: { 1: [0,0,0], 2:{ t:[0.45,0,0], f:[0,0,0] } }, 
+    HALF_BENT: { 1: [0.5,0,0], 2:{ t:[8/9,0,0], f:[0.5,0,0] } }, 
+    BENT:     { 1: [1,0,0], 2:{ t:[8/9,0,0], f:[1,0,0] } }, 
+    ROUND:    { 1: [0.5,0.5,0.5], 2:{ t:[6/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
+    HOOKED:   { 1: [0,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
+    DOUBLE_BENT:  { 1: [1,1,0], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
+    DOUBLE_HOOKED:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
 }
 
 
@@ -218,10 +218,10 @@ class HandShapeRealizer {
 
     _stringToMainBend( mainbend, handArray, selectedFingers ){        
         // thumb combinations + mainbend. Do not need to change splay
-        // bent  "bend1":"800" fingers:"900"
-        // round "bend1":"434" fingers:"569"
-        // hooked "bend1":"818","bend2":"966" 
-        // dblhooked and dblbent do not exist in hamnosys. Assume hooked
+        // BENT  "bend1":"800" fingers:"900"
+        // ROUND "bend1":"434" fingers:"569"
+        // HOOKED "bend1":"818","bend2":"966" 
+        // DOUBLE_HOOKED and DOUBLE_BENT do not exist in hamnosys. Assume HOOKED
         
         let b = this.handBendings[ mainbend ];
         if ( !b ){ return; }
@@ -325,28 +325,28 @@ class HandShapeRealizer {
             else {
 
                 switch (bml.handshape) {
-                    case "fist":
+                    case "FIST":
                         for (let i = 1; i < selectedFingers.length; i++) {
                             if (!selectedFingers[i]) outHand[i] = [0,0,0,0]; // non-selected fingers into flat
                             selectedFingers[i] = 1 - selectedFingers[i];
                         }
                         break;
                         
-                    case "flat": case "ceeall": case "pinchall":
+                    case "FLAT": case "CEE_ALL": case "PINCH_ALL":
                         for (let i = 1; i < selectedFingers.length; i++) {
                             if (!selectedFingers[i]) outHand[i] = [0,1,1,1]; // non-selected fingers into fist
                         }
                         break;
                         
-                    case "pinch12": case "pinch12open": case "cee12": case "cee12open":
+                    case "PINCH_12": case "PINCH_12_OPEN": case "CEE_12": case "CEE_12_OPEN":
                         for (let i = 0; i < specFing.length; i++) {
-                            outHand[specFing[i]] = [...handshapes[(bml.handshape.includes("cee") ? "ceeall" : "pinchall")].shape[specFing[i]]];
+                            outHand[specFing[i]] = [...handshapes[(bml.handshape.includes("CEE_") ? "CEE_ALL" : "PINCH_ALL")].shape[specFing[i]]];
                         }
                         break;
                         
                     default:
                         // get default fingers (handshapes: fingerX)
-                        let defFing = bml.handshape.match(/\d+/g); // ['finger23spread'] -> ['23']
+                        let defFing = bml.handshape.match(/\d+/g); // ['FINGER_23_SPREAD'] -> ['23']
                         if (defFing) {
                             defFing = defFing[0].split(''); // ['23'] -> ['2','3']
                             defFing = defFing.map(function(str) {
@@ -368,14 +368,14 @@ class HandShapeRealizer {
                     }
                     
                     // change default to open or fist
-                    var isOpen = bml.handshape.includes("open", 5);
+                    var isOpen = bml.handshape.includes("_OPEN", 5);
                     for (let i = 1; i < selectedFingers.length; i++) {
                         if (!selectedFingers[i]) { outHand[i] = (isOpen ? [0,0.2,0.2,0.2] : [0,1,1,1]); }
                     }
                     
                     // relocate thumb
-                    if ( bml.handshape.includes("pinch") ) { outHand[0] = [...handshapes["pinchall"].shape[0]]; }
-                    else if ( bml.handshape.includes("cee") ) { outHand[0] = [...handshapes["ceeall"].shape[0]]; }
+                    if ( bml.handshape.includes("PINCH_") ) { outHand[0] = [...handshapes["PINCH_ALL"].shape[0]]; }
+                    else if ( bml.handshape.includes("CEE_") ) { outHand[0] = [...handshapes["CEE_ALL"].shape[0]]; }
                 }    
         }
 

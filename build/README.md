@@ -4,10 +4,10 @@ This code is packed into fewer files for easy integration into other application
 
 To embed all the realizer application into your app, you must include the following files and folders:
 
-- [index.html](/index.html)
+- [build/index.html](index.html)
 - [build/js/](js) --> put the files inside into a folder named "js"
 - [data/](/data) --> (Eva_Y.glb is not required)
-- [external/](/external)
+- [external/](/external) --> (lexgui is not required)
 
 The organisation of folders and files should be as follows:
 
@@ -25,6 +25,7 @@ The organisation of folders and files should be as follows:
             - hdrs/
             - imgs/
             - EvaHandsEyesFixed.glb
+            - EvaConfig.json
 
         - external/ 
             - three/

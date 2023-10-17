@@ -30,11 +30,12 @@ function build() {
             "../js/bml/BehaviourManager.js",
             "../js/bml/BehaviourPlanner.js", 
             "../js/bml/BehaviourRealizer.js", 
-            "../js/sigml/Extfidir.js",
             "../js/sigml/HandShapeRealizer.js",
-            "../js/sigml/LocationArmIK.js",
+            "../js/sigml/ExtfidirPalmor.js",
+            "../js/sigml/LocationBodyArm.js",
+            "../js/sigml/HandConstellation.js",
             "../js/sigml/Motion.js",
-            "../js/sigml/Palmor.js",
+            "../js/sigml/ElbowShouldersBodyNMF.js",
             "../js/sigml/SigmlUtils.js"
         ],
         "CharacterController.js": [
@@ -42,7 +43,7 @@ function build() {
             "../js/controllers/FacialController.js",
             "../js/sigml/BodyController.js",
         ],
-        "IKSolver.js" : ["../js/sigml/IKSolver.js"],
+        "IKSolver.js" : ["../js/sigml/GeometricArmIK.js"],
         "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
         "App.js": ["../js/App.js"]
     };
