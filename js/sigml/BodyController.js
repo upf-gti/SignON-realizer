@@ -113,23 +113,23 @@ class BodyController{
         /** default elbow raise, shoulder raise, shoulder hunch */
         let correctedDefaultAngles = {
             elbowRaise: 0,
-            shoulderRaise: [ 0, 0 * Math.PI/180, 45 * Math.PI/180 ], // always present angle, min angle, max angle
-            shoulderHunch: [ 0, 0 * Math.PI/180, 40 * Math.PI/180 ], // always present angle, min angle, max angle
+            shoulderRaise: [ 0, -5 * Math.PI/180, 45 * Math.PI/180 ], // always present angle, min angle, max angle
+            shoulderHunch: [ 0, -10 * Math.PI/180, 55 * Math.PI/180 ], // always present angle, min angle, max angle
         }
         if ( typeof( this.config.elbowRaise ) == "number" ){ correctedDefaultAngles.elbowRaise = this.config.elbowRaise * Math.PI/180; }
         if ( Array.isArray( this.config.shoulderRaise ) ){ 
             for( let i = 0; i < 3 && i < this.config.shoulderRaise.length; ++i ){ 
                 correctedDefaultAngles.shoulderRaise[i] = this.config.shoulderRaise[i] * Math.PI/180; 
             } 
-            // swap min-max values if necessary
-            if ( correctedDefaultAngles.shoulderRaise[1] > correctedDefaultAngles.shoulderRaise[2] ){ let temp = correctedDefaultAngles.shoulderRaise[1]; correctedDefaultAngles.shoulderRaise[1] = correctedDefaultAngles.shoulderRaise[2]; correctedDefaultAngles.shoulderRaise[1] = temp;}
+            if ( correctedDefaultAngles.shoulderRaise[1] > 0 ){ correctedDefaultAngles.shoulderRaise[1] = 0; }
+            if ( correctedDefaultAngles.shoulderRaise[2] < 0 ){ correctedDefaultAngles.shoulderRaise[2] = 0; }
         }
         if ( Array.isArray( this.config.shoulderHunch ) ){ 
             for( let i = 0; i < 3 && i < this.config.shoulderHunch.length; ++i ){ 
                 correctedDefaultAngles.shoulderHunch[i] = this.config.shoulderHunch[i] * Math.PI/180; 
             } 
-            // swap min-max values if necessary
-            if ( correctedDefaultAngles.shoulderHunch[1] > correctedDefaultAngles.shoulderHunch[2] ){ let temp = correctedDefaultAngles.shoulderHunch[1]; correctedDefaultAngles.shoulderHunch[1] = correctedDefaultAngles.shoulderHunch[2]; correctedDefaultAngles.shoulderHunch[1] = temp;}
+            if ( correctedDefaultAngles.shoulderHunch[1] > 0 ){ correctedDefaultAngles.shoulderHunch[1] = 0; }
+            if ( correctedDefaultAngles.shoulderHunch[2] < 0 ){ correctedDefaultAngles.shoulderHunch[2] = 0; }
         }
         this.config.elbowRaise = correctedDefaultAngles.elbowRaise;
         this.config.shoulderRaise = correctedDefaultAngles.shoulderRaise;
@@ -317,6 +317,7 @@ class BodyController{
 
         let dot =  wq.x * wa.x + wq.y * wa.y + wq.z * wa.z;
         q0.set( fa.x * dot, fa.y * dot, fa.z * dot, q0.w ).normalize();
+        if ( arm == this.left ){ q0.set( -q0.x, -q0.y, -q0.z, -q0.w )}
         q1.set( 0,0,0,1 );
         nlerpQuats( q0, q1, q0, 0.67 );
         
@@ -380,6 +381,8 @@ class BodyController{
         symmetryFlags |= ( ( !!bml.udSym ) << 1 );
         symmetryFlags |= ( ( !!bml.ioSym ) << 2 );
 
+        if ( typeof( bml.hand ) == "string" ){ bml.hand = bml.hand.toUpperCase(); }
+        
         if ( bml.config ){
             let c = bml.config;
             if ( c.dominant ){ this.setDominantHand( c.dominant == "RIGHT" ); }

@@ -394,8 +394,8 @@ class App {
             } );
 
             // correct hand's size
-            model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
-            model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
+            let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); }
+            b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); }
             
             this.scene.add(model);
 
@@ -427,7 +427,6 @@ class App {
                 if ( !this.ECAcontroller ){ return; }
                 
                 let data = event.data;
-                console.log( event );
 
                 if ( typeof( data ) == "string" ){ 
                     try{ 

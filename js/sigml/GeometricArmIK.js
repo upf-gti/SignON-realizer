@@ -103,6 +103,7 @@ class GeometricArmIK{
 
         /** Shoulder Raise and Hunch */
         this._tempV3_1.subVectors( targetWorldPoint, armWPos ); // direction with respect to arm Bone. World coords
+        if ( this._tempV3_1.lengthSq() > this.armWorldSize*this.armWorldSize ){ this._tempV3_1.normalize().multiplyScalar( this.armWorldSize ); }
         this._tempM4_0.multiplyMatrices( this.shoulderBone.matrixWorld, this.skeleton.boneInverses[ this.shoulderIndex ] ); // mesh to world coordinates
         let meshToWorldMat3 = this._tempM3_0.setFromMatrix4( this._tempM4_0 ); // just for directions
         this._tempV3_0.copy( this.config.axes[0] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert horizontal axis from mesh to world coords from shoulder perspective
@@ -111,15 +112,18 @@ class GeometricArmIK{
         this._tempV3_0.copy( this.config.axes[1] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert vertical axis from mesh to world coords from shoulder perspective
         let shoulderRaiseFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
         
-        let shoulderHunchAngle = ( this.config.shoulderHunch[2] - this.config.shoulderHunch[1] ) * ( shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) )
-        shoulderHunchAngle = Math.max( this.config.shoulderHunch[1], Math.min( this.config.shoulderHunch[2], shoulderHunchFactor ) );
-        shoulderHunchAngle += forcedShoulderHunch + this.config.shoulderHunch[0]; 
+        shoulderHunchFactor = Math.max( -1, Math.min( 1, shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) ) );
+        shoulderRaiseFactor = Math.max( -1, Math.min( 1, shoulderRaiseFactor ) );
+
+        let shoulderHunchAngle = forcedShoulderHunch + this.config.shoulderHunch[0];
+        if ( shoulderHunchFactor < 0 ){ shoulderHunchAngle += this.config.shoulderHunch[1] * (-1) * shoulderHunchFactor; }
+        else { shoulderHunchAngle += this.config.shoulderHunch[2] * shoulderHunchFactor; }            
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.shoulderHunch,  shoulderHunchAngle );
         this.shoulderBone.quaternion.multiply( this._tempQ_0 );
 
-        let shoulderRaiseAngle = ( this.config.shoulderRaise[2] - this.config.shoulderRaise[1] ) * ( shoulderRaiseFactor * shoulderRaiseFactor * Math.sign( shoulderRaiseFactor ) );
-        shoulderRaiseAngle = Math.max( this.config.shoulderRaise[1], Math.min( this.config.shoulderRaise[2], shoulderRaiseFactor ) );
-        shoulderRaiseAngle += forcedShoulderRaise + this.config.shoulderRaise[0]; 
+        let shoulderRaiseAngle = forcedShoulderRaise + this.config.shoulderRaise[0]; 
+        if ( shoulderRaiseFactor < 0 ){ shoulderRaiseAngle += this.config.shoulderRaise[1] * (-1) * shoulderRaiseFactor; }
+        else { shoulderRaiseAngle += this.config.shoulderRaise[2] * shoulderRaiseFactor; }            
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.shoulderRaise, shoulderRaiseAngle );
         this.shoulderBone.quaternion.multiply( this._tempQ_0 );
         
@@ -190,11 +194,11 @@ class GeometricArmIK{
         this.elbowBone.quaternion.premultiply( twistq );
         this.armBone.quaternion.multiply( twistq.invert() );
 
-        // previous fix might induce some twisting in forearm. remove forearm twisting. Keep only swing rotation
-        armQuat = this._tempQ_1.copy( this.bindQuats.elbow ).invert().multiply( this.elbowBone.quaternion ); // elbowBone = ( bind * armMovement ). Do not take into account bind
-        twistAxis = this._tempV3_0.copy( this.wristBone.position ).normalize();
-        getTwistQuaternion( armQuat, twistAxis, twistq );
-        this.elbowBone.quaternion.multiply( twistq.invert() );
+        // // previous fix might induce some twisting in forearm. remove forearm twisting. Keep only swing rotation
+        // armQuat = this._tempQ_1.copy( this.bindQuats.elbow ).invert().multiply( this.elbowBone.quaternion ); // elbowBone = ( bind * armMovement ). Do not take into account bind
+        // twistAxis = this._tempV3_0.copy( this.wristBone.position ).normalize();
+        // getTwistQuaternion( armQuat, twistAxis, twistq );
+        // this.elbowBone.quaternion.multiply( twistq.invert() );
     }
 }
 

@@ -12,6 +12,10 @@ class AppGUI{
 
         this.gui = null;
         this.createPanel();
+
+        this.bmlInputData = { dialog: null, codeObj: null };
+        this.sigmlInputData = { dialog: null, codeObj: null };
+        this.glosInputData = { dialog: null, glosses: "", textArea: null };
     }
 
     createPanel(){
@@ -53,8 +57,10 @@ class AppGUI{
             
             p.addButton( null, "BML Input", (value, event) =>{
 
-                
-                new LX.PocketDialog( "BML Instruction", p => {
+                if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
+
+                this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
+                    this.bmlInputData.dialog = p;
 
                     let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
                     p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
@@ -73,13 +79,15 @@ class AppGUI{
                     const area = new LX.Area({ height: "59%" });
                     p.attach( area.root );
         
-                    window.editor = new LX.CodeEditor(area, {
+                    let editor = new LX.CodeEditor(area, {
                         highlight: 'JSON',
                         skip_info: true,
                         allow_add_scripts: false, 
                         name : "BML"
                     });
-        
+                    if ( this.bmlInputData.codeObj ){ editor.setText( this.bmlInputData.codeObj.getText() ); }
+                    this.bmlInputData.codeObj = editor;
+
                     p.addButton(null, "Send", () => {
                         let msg = {
                             type: "behaviours",
@@ -87,7 +95,7 @@ class AppGUI{
                         };
                         // JSON
                         try {
-                            let text = window.editor.getText().replaceAll("\n", "").replaceAll("\r", "");
+                            let text = this.bmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
                             msg.data = JSON.parse( "[" + text + "]" ); 
                         } catch (error) {
                             alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
@@ -119,19 +127,24 @@ class AppGUI{
             });
 
             p.addButton( null, "SiGML Input", (value, event) =>{
-                new LX.PocketDialog( "SiGML Instruction", p => {
+
+                if ( this.sigmlInputData.dialog ){ this.sigmlInputData.dialog.close(); }
+
+                this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
                     let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
                     p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
         
                     const area = new LX.Area({ height: "85%" });
                     p.attach( area.root );
         
-                    window.editor = new LX.CodeEditor(area, {
+                    let editor = new LX.CodeEditor(area, {
                         highlight: 'xml',
                         skip_info: true,
                         allow_add_scripts: false, 
                         name : "XML"
                     });
+                    if ( this.sigmlInputData.codeObj ){ editor.setText( this.sigmlInputData.codeObj.getText() ); }
+                    this.sigmlInputData.codeObj = editor;
         
                     p.addButton(null, "Send", () => {
             
@@ -139,7 +152,7 @@ class AppGUI{
                             type: "behaviours",
                             data: []
                         };
-                        let text = window.editor.getText().replaceAll("\n", "").replaceAll("\r", "");
+                        let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
                         msg.data = sigmlStringToBML( text ).data;
                         this.app.ECAcontroller.processMsg(JSON.stringify(msg));  
                     });
@@ -148,7 +161,7 @@ class AppGUI{
             
 
             });
-            this.glosses = "";
+
             let languages = Object.keys(this.app.languageDictionaries);
             let glossesDictionary = {};
             this.language = languages[0];
@@ -162,8 +175,9 @@ class AppGUI{
             }
             p.addButton( null, "Glosses Input", (value, event) =>{
 
-                
-                new LX.PocketDialog( "Glosses Input", p => {
+                if ( this.glosInputData.dialog ){ this.glosInputData.dialog.close(); }
+
+                this.glosInputData.dialog = new LX.PocketDialog( "Glosses Input", p => {
                     p.refresh = () => {
                         p.clear();
                         let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
@@ -172,25 +186,23 @@ class AppGUI{
                         const area = new LX.Area({ height: "85%" });
                         p.attach( area.root );
                         
-                        p.addDropdown("Language", languages, this.language, (value, event) => {
-                            this.language = value;
+                        p.addDropdown("Language", languages, this.app.selectedLanguage, (value, event) => {
+                            this.app.selectedLanguage = value;
                             p.refresh();
                         } );
 
-                        
-                        p.addDropdown("Select glosses", glossesDictionary[this.language], "", (value, event) => {
-                            this.glosses+= " " + value;
-                            p.refresh();
+                        p.addDropdown("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
+                            this.glosInputData.glosses += " " + value;
+                            this.glosInputData.textArea.set( this.glosInputData.glosses );
                         }, {filter: true});
                         
-                        p.addTextArea("Write glosses", this.glosses, (value, event) => {
-                            this.glosses = value;
-                            p.refresh();
+                        this.glosInputData.textArea = p.addTextArea("Write glosses", this.glosInputData.glosses, (value, event) => {
+                            this.glosInputData.glosses = value;
                         }, {placeholder: "Hallo Leuk"});
 
                         p.addButton(null, "Send", () => {
             
-                            let glosses = this.glosses.replaceAll( "\n", " ").split( " " );
+                            let glosses = this.glosInputData.glosses.replaceAll( "\n", " ").split( " " );
                             for ( let i = 0; i < glosses.length; ++i ){
                                 if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
                                     glosses.splice( i, 1 ); 

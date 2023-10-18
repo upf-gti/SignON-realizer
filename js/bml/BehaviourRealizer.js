@@ -221,22 +221,16 @@ function FacialExpr(faceData, shift) {
     
     this.transition = false;
 
-    let thing = faceData.lexeme;
-    thing = (!thing) ? faceData.au : thing;
+    let lexemes = faceData.lexeme;
 
     // Init face lexemes 
-    if (thing) {
-        // faceLexeme
-        if (typeof (thing) == "string") //(lexeme/au = "STRING")
-            this.initFaceLexeme(faceData, shift, [faceData])
-        // One lexeme object inside face/faceShift (faceData.lexeme = {lexeme:"RAISE_BROWS"; amount: 0.1})
-        else if (typeof (thing) == "object" && thing.length === undefined)
-            this.initFaceLexeme(faceData, shift, [thing]);
-        // Several lexemes/au inside face/faceShift (faceData.lexeme = [{}, {}]...)
-        else if (typeof (thing) == "object" && thing.length !== undefined)
-            this.initFaceLexeme(faceData, shift, thing);
-        return;
-    }
+    if ( !lexemes ) { return; }
+
+    // faceLexeme
+    if ( typeof (lexemes) == "string" ){ this.initFaceLexeme(faceData, shift, [faceData]); }
+    else if( Array.isArray( lexemes ) ){ this.initFaceLexeme(faceData, shift, lexemes); } // Several lexemes inside face/faceShift (faceData.lexeme = [{}, {}]...)
+    else if ( typeof( lexemes ) == "object" ){ this.initFaceLexeme(faceData, shift, [lexemes]); } // One lexeme object inside face/faceShift (faceData.lexeme = {lexeme:"RAISE_BROWS"; amount: 0.1})
+
 }
 
 // There can be several facelexemes working at the same time then? lexemes is an array of lexeme objects
@@ -264,9 +258,9 @@ FacialExpr.prototype.initFaceLexeme = function (faceData, shift, lexemes) {
     let j = 0; // index of accepted lexemes
     for (let i = 0; i < lexemes.length; i++) {
 
-        if (typeof (lexemes[i].lexeme) !== "string") { lexemes[i].lexeme = "NO_LEXEME"; }
-
-        let lexemeStr = lexemes[i].lexeme || lexemes[i].au;
+        let lexemeStr = lexemes[i].lexeme;
+        if (typeof (lexemeStr) !== "string") { lexemeStr = "NO_LEXEME"; }
+        else{ lexemeStr = lexemeStr.toUpperCase(); }
 
         // does lexeme exist?
         if ( !FacialExpr.NMF[lexemeStr] ) {
@@ -287,8 +281,8 @@ FacialExpr.prototype.initFaceLexeme = function (faceData, shift, lexemes) {
 
         // ensure lexeme has an intensity
         let lexemeAmount = lexemes[i].amount;
-        lexemeAmount = (isNaN(lexemeAmount)) ? faceData.amount : lexemeAmount;
-        lexemeAmount = (isNaN(lexemeAmount)) ? 1 : lexemeAmount;
+        lexemeAmount = (isNaN(lexemeAmount) || lexemeAmount == null ) ? faceData.amount : lexemeAmount;
+        lexemeAmount = (isNaN(lexemeAmount) || lexemeAmount == null ) ? 1 : lexemeAmount;
 
         // set initial and target blendshape values for this lexeme
         for (let e = 0; e < indices.length; ++e) {
