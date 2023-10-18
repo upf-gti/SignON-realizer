@@ -68,14 +68,11 @@ function FacialController(config = null) {
     
     // weighting factor for t2l interface
     this._t2lFactor = {
-        "kiss": {
-            "Lip_Puckerer_Left": 1.0,
-            "Lip_Puckerer_Right": 1.0
-        },
-        "upperLipClosed": { "Lip_Suck_Upper": 1.0 }, 
-        "lowerLipClosed": {"Lip_Suck_Lower": 1.0 },
-        "jawOpen": { "Mouth_Stretch": 1.0 },
-        "tongueFrontUp": { "Tongue_Show": 1.0 },
+        "kiss": ["Lip_Puckerer_Left", "Lip_Puckerer_Right"],
+        "upperLipClosed": ["Lip_Suck_Upper"], 
+        "lowerLipClosed": ["Lip_Suck_Lower"],
+        "jawOpen": ["Mouth_Stretch"],
+        "tongueFrontUp": ["Tongue_Show"],
     };
         
     this.lipsyncModule = new Lipsync();
@@ -352,7 +349,7 @@ FacialController.prototype.faceUpdate = function (dt) {
         let t2lBSW = this.textToLip.getBSW(); // reference, not a copy
         for (let i = 0; i < this.textToLipBSMapping.length; i++) {
             let mapping = this.textToLipBSMapping[i];
-            let value = Math.min(1, Math.max(-1, t2lBSW[mapping[1]] * mapping[2]));
+            let value = Math.min(1, Math.max(-1, t2lBSW[mapping[1]]));
             let index = mapping[0];
             // for this model, some blendshapes need to be negative
             this._facialBSAcc["Body"][index] += Math.abs(value); // denominator of biased average
@@ -501,16 +498,16 @@ FacialController.prototype.newTextToLip = function (bml) {
 
         this.textToLip = new Text2LipInterface();
         this.textToLip.start(); // keep started but idle
-        this.textToLipBSMapping = []; // array of [ MeshBSIndex, T2Lindex, factor ]
+        this.textToLipBSMapping = []; // array of [ MeshBSIndex, T2Lindex ]
 
         let t2lBSWMap = T2LTABLES.BlendshapeMapping;
 
         // map blendshapes to text2lip output
         for(const part in this._t2lFactor) {
-            for(const BSName in this._t2lFactor[part]) {
+            for(let i = 0; i < this._t2lFactor[part].length; i++) {
                 // instead of looping through all BS, access directly the index of the desired blendshape
-                let idx = this._morphDeformers["Body"].morphTargetDictionary[BSName];
-                if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part], this._t2lFactor[part][BSName]]);
+                let idx = this._morphDeformers["Body"].morphTargetDictionary[this._t2lFactor[part][i]];
+                if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part]]);
             }
         }
     }
