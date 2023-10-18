@@ -48,17 +48,17 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
 ## Eye Lookat
 ``` jsonc
 {
-    "type": "gaze" || "gazeShift", // shift automatically set to true
+    "type": "gaze", // other types: "gazeShift" - shift automatically set to true
     "start": 0.1,
     "ready": 0.2,
     "relax": 0.3,
     "end": 0.4,
 
-    "influence": "NECK" || "HEAD" || "EYES",
-    "target": "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT",
+    "influence": "NECK", // available values: [ "NECK", "HEAD", "EYES" ]
+    "target": "UP_RIGHT", // available values: ["UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT" ]
 
     // optionals
-    "offsetDirection": "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN",
+    "offsetDirection": "UP_RIGHT", // available values: [ "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT", "RIGHT", "LEFT", "UP", "DOWN" ]
     "offsetAngle": 0, // degrees
     "headOnly": true, // whether to move the eyes with a head movement
     "shift": false
@@ -81,7 +81,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
     "amount": 1,  
 	"repetition": 3,       //amount of times to REPEAT. Default 0 (meaning only moves once)
 
-    "lexeme": "NOD" || "SHAKE" || "TILT" || "TILT_LEFT" || "TILT_RIGHT" || "TILT_FORWARD" || "TILT_BACKWARD" || "FORWARD" || "BACKWARD"
+    "lexeme": "NOD", // available values: [ "NOD", "SHAKE", "TILT", "TILT_LEFT", "TILT_RIGHT", "TILT_FORWARD", "TILT_BACKWARD", "FORWARD", "BACKWARD" ]
 
 }
 ```
@@ -110,7 +110,7 @@ Mouthing.
 ## Face Emotion
 ``` jsonc
 {
-    "type": "faceEmotion" || "faceVA", 
+    "type": "faceEmotion", // synonyms: "faceVA" 
     "start": 0.1,
     "attackPeak": 0.2, // reaches target/amount
     "relax": 0.3,  // starts undoing blink
@@ -118,7 +118,7 @@ Mouthing.
 
     // choose one: either "valaro" or "emotion"
     "valaro": [ 0.8, 0.6 ], // [ valence, arousal ] 
-    "emotion": "ANGER" || "HAPPINESS" || "SADNESS" || "SURPRISE" || "FEAR" || "DISGUST" || "CONTEMPT",
+    "emotion": "HAPPINESS", // available values: ["HAPPINESS", "ANGER", "SADNESS", "SURPRISE", "FEAR", "DISGUST", "CONTEMPT" ]
 
     // optionals
     "amount": 1,
@@ -131,18 +131,15 @@ Mouthing.
 ## Face Lexeme
 ``` jsonc
 {
-    "type": "face" || "faceLexeme" || "faceFACS" || "faceShift", // faceShift = shift automatically set to true
+    "type": "face", // synonyms: [ ]"faceLexeme", "faceFACS" ],  other types: "faceShift" - shift automatically set to true
     "start": 0.1,
     "attackPeak": 0.2, 
     "relax": 0.3,  
     "end": 0.4, 
 
-    // choose one, either "lexeme" or "au" ( they are synonyms )
-	"lexeme": string  ||   { "lexeme": "RAISE_BROWS", "amount": 0.1 }   ||   [{...}, {...}, ...],
-    "au": string  ||   { "au": "RAISE_BROWS", "amount": 0.1 }   ||   [{...}, {...}, ...],
-
+	"lexeme": "BROW_RAISER", // string or array of objects such as [ { "lexeme": "BROW_RAISER" }, { "lexeme": "BLINK", "amount": 2 } ]. The latter, uses the amount defined outside for BROW_RAISER, and amount=2 for BLINK
     // optionals
-    "amount": 1,
+    "amount": 1, // defaults to 1
 }
 ```
 <details>
@@ -225,7 +222,7 @@ U=up, D=down, L=left, R=right, I=in, O=out,
 All gestures share some optional attributes 
 ``` jsonc
 {
-    "hand": "RIGHT" || "LEFT" || "BOTH", // hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT"
+    "hand": "RIGHT", // available values: [ "RIGHT", "LEFT", "BOTH", "DOMINANT", "NON_DOMINANT" ] - hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT". Defaults to dominant hand
     "lrSym": true,  // bool, left-right symmetry. Only applied to the non-dominant hand
     "udSym": false, // bool, up-down  symmetry. Only applied to the non-dominant hand
     "ioSym": false, // bool, in-out  symmetry. Only applied to the non-dominant hand
@@ -237,7 +234,7 @@ The dominant hand can be set through the following attribute.
 {
     "type": "gesture",
     "config": { 
-        "dominant": "RIGHT" || "LEFT", // which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+        "dominant": "RIGHT", // available values: ["RIGHT", "LEFT" ] - which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
     },
 }
 ```
@@ -322,7 +319,7 @@ Moves the body (trunk). Tilt forward-backward, tilt left-right and rotate left-r
     "relax": 0.3,  
     "end": 0.4,
     
-    "bodyMovement": "TILT_FORWARD" || "TILT_BACKWARD" || "TILT_LEFT" || "TILT_RIGHT" || "ROTATE_LEFT" || "ROTATE_RIGHT",
+    "bodyMovement": "TILT_FORWARD", // available valuse: [ "TILT_FORWARD", "TILT_BACKWARD", "TILT_LEFT", "TILT_RIGHT", "ROTATE_LEFT", "ROTATE_RIGHT" ]
     
     //optional
     "amount": 0.5, // default to 1 
@@ -344,7 +341,7 @@ Moves the arm (wrist) to a location of the body (face + trunk).
    
     // optionals
     "secondLocationBodyArm": "CHEST", // string
-    "side": "RR" || "R" || "L" || "LL", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
+    "side": "RR", // available values: ["RR", "R", "L", "LL"]. string, chooses a point to the right, slightly right, slightly left or left of the chosen point
     "secondSide": "L", // string
 
     "distance": 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
@@ -533,7 +530,7 @@ The motion is stopped if an arm location is executed afterwards.
     "dstLocation": "BASE", // string from hand locations or arm locations
     "dstSide": "PALMAR", // ULNAR, RADIAL, PALMAR, BACK 
     
-    "hand": "DOMINANT" || "NON_DOMINANT" || "LEFT" || "RIGHT" || "BOTH", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
+    "hand": "DOMINANT", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move towards the unspecified hand.
 
     // optionals
     "distance": 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 

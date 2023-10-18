@@ -378,7 +378,7 @@
         const dialog = new Dialog(title, p => {
             p.addTextArea(null, text, null, { disabled: true });
             if(options.input != false)
-                p.addText(null, value, (v) => value = v, {placeholder: "..."} );
+                p.addText(null, options.input || value, (v) => value = v, {placeholder: "..."} );
             p.sameLine(2);
             p.addButton(null, "OK", () => { callback.call(this, value); dialog.close() }, { buttonClass: "accept" });
             p.addButton(null, "Cancel", () => {if(options.on_cancel) options.on_cancel(); dialog.close();} );
@@ -447,7 +447,7 @@
 
         if( target )
         {
-            target[signal_name].call(target, value);
+            if(target[signal_name]) target[signal_name].call(target, value);
             return;
         }
 
@@ -717,6 +717,38 @@
                 data = LX.DEFAULT_SPLITBAR_SIZE/2 + "px"; // updates
             }
 
+            let minimizable = options.minimizable ?? false;
+            this.offset = 0;
+            if(minimizable) {
+                this.min = document.createElement("div");
+                this.min.className = "lexmin  " + type + " fa-solid";
+                if(type == "horizontal") 
+                    this.min.classList.add("fa-angle-right");
+                else
+                    this.min.classList.add("fa-angle-down");
+
+                this.min.addEventListener("mousedown", (e) => {
+                    // Fade out to down
+                    if(this.min.classList.contains("fa-angle-down")) {
+                        this.minimize();
+                    }
+                    // Fade in from down
+                    else if(this.min.classList.contains("fa-angle-up")) {
+                        
+                        this.maximize();
+                    }
+                    //Fade out to right
+                    else if(this.min.classList.contains("fa-angle-right")) {
+                        this.minimize();
+                    }
+                    //Fade in from right
+                    else if(this.min.classList.contains("fa-angle-left")) {
+                        this.maximize();
+                    }
+                    
+                });
+            }
+
             if(type == "horizontal")
             {
                 var width1 = sizes[0],
@@ -780,6 +812,8 @@
             this.root.appendChild( area1.root );
             if(resize) 
                 this.root.appendChild(this.split_bar);
+            if(minimizable)
+                this.root.appendChild(this.min);
             this.root.appendChild( area2.root );
             this.sections = [area1, area2];
             this.type = type;
@@ -861,6 +895,66 @@
             this.size = [this.root.clientWidth, this.root.clientHeight];
 
             this.propagateEvent("onresize");
+        }
+
+         /**
+        * @method minimize
+        * Hide element
+        */
+        minimize() {
+            if(!this.min)
+                return;
+
+            if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-down")) {
+
+                this.min.classList.remove("fa-angle-down");
+                this.min.classList.add("fa-angle-up");
+                this.offset = this.sections[1].root.offsetHeight;
+                this.sections[1].root.classList.remove("fadein-vertical");
+                this.sections[1].root.classList.add("fadeout-vertical");
+                setTimeout(() => {
+                    this.sections[1].hide();
+                    this._moveSplit(20);
+                }, 200);
+            }
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")){
+
+                this.min.classList.remove("fa-angle-right");
+                this.min.classList.add("fa-angle-left");
+                this.offset = this.sections[1].root.offsetWidth;
+                this.sections[1].root.classList.remove("fadein-horizontal");
+                this.sections[1].root.classList.add("fadeout-horizontal");
+                
+                setTimeout(() => {
+                    this.sections[1].hide();
+                    this._moveSplit(20);
+                }, 200);
+            }
+        }
+
+        /**
+        * @method maximize
+        * Show element if it is hidden
+        */
+        maximize() {
+            if(!this.min)
+                return;
+            if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-up")) {
+                this.min.classList.remove("fa-angle-up");
+                this.min.classList.add("fa-angle-down");
+                this.sections[1].show();
+                this.sections[1].root.classList.remove("fadeout-vertical");
+                this.sections[1].root.classList.add("fadein-vertical");
+                this._moveSplit(this.offset);
+            }
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")){
+                this.min.classList.remove("fa-angle-left");
+                this.min.classList.add("fa-angle-right");
+                this.sections[1].show();
+                this.sections[1].root.classList.remove("fadeout-horizontal");
+                this.sections[1].root.classList.add("fadein-horizontal");
+                this._moveSplit(this.offset);
+            }
         }
 
         /**
@@ -965,7 +1059,7 @@
             this.root.style.position = "relative";
 
             options.className = "lexoverlaybuttons";
-            options.width = "calc( 100% - 12px )";
+            options.width = "calc( 100% - 24px )";
             options.height = "auto";
 
             const float = options.float;
@@ -992,7 +1086,7 @@
             let overlayPanel = this.addPanel( options );
             let overlaygroup;
             
-            const add_button = function(b, group) {
+            const add_button = function(b, group, last) {
 
                 const _options = { 
                     width: "auto", 
@@ -1011,13 +1105,6 @@
                     }
 
                     _options.parent = overlaygroup;
-                }
-                // ends the group
-                else if(overlaygroup)
-                {
-                    overlayPanel.root.appendChild( overlaygroup );
-                    overlaygroup = null;
-                    delete overlayPanel.queuedContainer;
                 }
 
                 let callback = b.callback;
@@ -1049,6 +1136,14 @@
                     }
                     callback( value, event );
                 }, _options );
+
+                // ends the group
+                if(overlaygroup && last)
+                {
+                    overlayPanel.root.appendChild( overlaygroup );
+                    overlaygroup = null;
+                    overlayPanel.clearQueue();
+                }
             }
 
             const refresh_panel = function() {
@@ -1059,10 +1154,11 @@
                 {
                     if( b.constructor === Array )
                     {
-                        for( let sub of b )
+                        for( let i = 0; i < b.length; ++i )
                         {
+                            let sub = b[i];
                             sub.group = b;
-                            add_button(sub, true);
+                            add_button(sub, true, i == (b.length - 1));
                         }
                     }else
                     {
@@ -1120,6 +1216,11 @@
             var a2 = this.sections[1];
             var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE +"px";
 
+            // Remove transitions for this change..
+            const transition = a1.root.style.transition;
+            a1.root.style.transition = "none";
+            flushCss(a1.root);
+
             if(this.type == "horizontal") {
 
                 var size = (a2.root.offsetWidth + dt);
@@ -1137,6 +1238,8 @@
 				a2.root.style.height = ( size - a2.offset ) + "px"; //other split
             }
                 
+            a1.root.style.transition = transition;
+
             this._update();
 
             // Resize events   
@@ -1985,8 +2088,9 @@
 
                 let buttonName = "<a class='fa-solid " + (options.icon ?? "fa-cube")  + "' style='float:left'></a>";
                 buttonName += custom_widget_name + (!instance ? " [empty]" : "");
-                if(instance)
-                    buttonName += "<a class='fa-solid fa-bars-staggered menu' style='float:right; width:5%;'></a>";
+                // Add alwayis icon to keep spacing right
+                buttonName += "<a class='fa-solid " + (instance ? "fa-bars-staggered" : " ") + " menu' style='float:right; width:5%;'></a>";
+                
                 let buttonEl = this.addButton(null, buttonName, (value, event) => {
 
                     if( instance ) {
@@ -2473,6 +2577,28 @@
             this.branch_open = false;
             this.branches = [];
             this.current_branch = null;
+            for(let w in this.widgets) {
+                if(this.widgets[w].options && this.widgets[w].options.signal)
+                {
+                    const signal = this.widgets[w].options.signal;
+                    for(let i = 0; i < LX.signals[signal].length; i++) {
+                        if(LX.signals[signal][i] == this.widgets[w]) {
+                            LX.signals[signal] = [...LX.signals[signal].slice(0, i), ...LX.signals[signal].slice(i+1)];
+                        }
+                    }
+                }
+            }
+            if(this.signals) {
+                for(let w = 0; w < this.signals.length; w++) {
+                    let widget = Object.values(this.signals[w])[0];
+                    let signal = widget.options.signal;
+                    for(let i = 0; i < LX.signals[signal].length; i++) {
+                        if(LX.signals[signal][i] == widget) {
+                            LX.signals[signal] = [...LX.signals[signal].slice(0, i), ...LX.signals[signal].slice(i+1)];
+                        }
+                    }
+                }
+            }
             this.widgets = {};
 
             this.root.innerHTML = "";
@@ -2659,6 +2785,11 @@
 
             if(options.signal)
             {
+                if(!name) {
+                    if(!this.signals)
+                        this.signals = [];
+                    this.signals.push({[options.signal]: widget})
+                }
                 LX.addSignal( options.signal, widget );
             }
 
@@ -3215,6 +3346,7 @@
 
                 let buttonEl = document.createElement('button');
                 buttonEl.className = "lexbutton combo";
+                buttonEl.title = b.icon ? b.value : "";
                 if(options.buttonClass)
                     buttonEl.classList.add(options.buttonClass);
 
@@ -3424,7 +3556,10 @@
             selectedOption.style.width = "100%";   
 
             selectedOption.refresh = (v) => {
-                selectedOption.querySelector("span").innerHTML = selectedOption.querySelector("span").innerHTML.replaceAll(selectedOption.querySelector("span").innerText, v); 
+                if(selectedOption.querySelector("span").innerText == "")
+                    selectedOption.querySelector("span").innerText = v;
+                else
+                    selectedOption.querySelector("span").innerHTML = selectedOption.querySelector("span").innerHTML.replaceAll(selectedOption.querySelector("span").innerText, v); 
             }
 
             //Add dropdown options container
@@ -3495,7 +3630,7 @@
                     });
 
                     // Add string option
-                    if(typeof iValue == 'string') {
+                    if(typeof iValue == 'string' || !iValue) {
                         option.style.flexDirection = 'unset';
                         option.innerHTML = "<a class='fa-solid fa-check'></a><span>" + iValue + "</span>";
                         option.value = iValue;
@@ -5173,6 +5308,7 @@
             if( options.closable ?? true)
             {
                 this.close = () => {
+                    that.panel.clear();
                     root.remove();
                     if(modal)
                         LX.modal.toggle();
@@ -5615,6 +5751,10 @@
             element.defaulty = options.defaulty != null ? options.defaulty : 0.0;
             element.no_trespassing = options.no_trespassing || false;
             element.show_samples = options.show_samples || 0;
+            element.allow_add_values = options.allow_add_values ?? true;
+            element.draggable_x = options.draggable_x ?? true;
+            element.draggable_y = options.draggable_y ?? true;
+
             element.options = options;
             element.style.minWidth = "50px";
             element.style.minHeight = "20px";
@@ -5773,7 +5913,7 @@
 
                 selected = computeSelected(mousex,canvas.height-mousey);
 
-                if(selected == -1) {
+                if(selected == -1 && element.allow_add_values) {
                     var v = unconvert([mousex,canvas.height-mousey]);
                     element.value.push(v);
                     sortValues();
@@ -5804,8 +5944,8 @@
                     return;
                 }
 
-                var dx = last_mouse[0] - mousex;
-                var dy = last_mouse[1] - mousey;
+                var dx = element.draggable_x ? last_mouse[0] - mousex : 0;
+                var dy = element.draggable_y ? last_mouse[1] - mousey : 0;
                 var delta = unconvert([-dx,dy]);
                 if(selected != -1) {
                     var minx = element.xrange[0];
@@ -5978,7 +6118,7 @@
         }
 
         /**
-        * @method _process_data
+        * @method load
         */
 
         load( data, onevent ) {
@@ -5996,6 +6136,18 @@
             this._refresh_content();
 
             this.onevent = onevent;
+        }
+
+        /**
+        * @method clear
+        */
+        clear() {
+            if(this.previewPanel)
+                this.previewPanel.clear();
+            if(this.leftPanel)
+                this.leftPanel.clear();
+            if(this.rightPanel)
+             this.rightPanel.clear()
         }
 
         /**
@@ -6438,6 +6590,7 @@
                 this._process_data(this.data);
             }
         }
+
     }
 
     LX.AssetView = AssetView;
@@ -6681,7 +6834,7 @@
 	LX.UTILS = {
         getTime() { return new Date().getTime() },
         compareThreshold( v, p, n, t ) { return Math.abs(v - p) >= t || Math.abs(v - n) >= t },
-        compareThresholdRange( v0, v1, t0, t1 ) { return v0 > t0 && v0 <= t1 || v1 > t0 && v1 <= t1 },
+        compareThresholdRange( v0, v1, t0, t1 ) { return v0 >= t0 && v0 <= t1 || v1 >= t0 && v1 <= t1 || v0 <= t0 && v1 >= t1},
         clamp (num, min, max) { return Math.min(Math.max(num, min), max) }
     };
     
