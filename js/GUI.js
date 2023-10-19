@@ -10,12 +10,38 @@ class AppGUI{
         let main_area = LX.init();
         main_area.attach( this.app.renderer.domElement );
 
-        this.gui = null;
-        this.createPanel();
+        this.bmlInputData = { dialog: null, codeObj: null, prevInstanceText: "" };
+        this.sigmlInputData = { dialog: null, codeObj: null, prevInstanceText:"" };
+        this.glossInputData = { dialog: null, textArea: null,  glosses: "" };
 
-        this.bmlInputData = { dialog: null, codeObj: null };
-        this.sigmlInputData = { dialog: null, codeObj: null };
-        this.glosInputData = { dialog: null, glosses: "", textArea: null };
+        this.gui = null;
+        
+        // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
+        // localStorage: only for this domain. New tabs will see that memory
+        if ( window.sessionStorage ){
+            let text;
+            text = window.sessionStorage.getItem( "bmlInput" ); 
+            this.bmlInputData.prevInstanceText = text ? text : "";
+            text = window.sessionStorage.getItem( "sigmlInput" ); 
+            this.sigmlInputData.prevInstanceText = text ? text : "";
+            text = window.sessionStorage.getItem( "glossInput" ); 
+            this.glossInputData.glosses = text ? text : "";
+            
+            window.addEventListener("beforeunload", (event) => {
+                // event.returnValue = "\\o/";
+                if( this.bmlInputData && this.bmlInputData.codeObj ){
+                    window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
+                }
+                if( this.sigmlInputData && this.sigmlInputData.codeObj ){
+                    window.sessionStorage.setItem( "sigmlInput", this.sigmlInputData.codeObj.getText() );
+                }
+                if( this.glossInputData && this.glossInputData.glosses ){
+                    window.sessionStorage.setItem( "glossInput", this.glossInputData.glosses );
+                }
+            });
+        }
+
+        this.createPanel();
     }
 
     createPanel(){
@@ -58,7 +84,10 @@ class AppGUI{
             
             p.addButton( null, "BML Input", (value, event) =>{
 
-                if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
+                if ( this.bmlInputData.dialog ){ 
+                    this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
+                    this.bmlInputData.dialog.close(); 
+                }
 
                 this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
                     this.bmlInputData.dialog = p;
@@ -86,7 +115,7 @@ class AppGUI{
                         allow_add_scripts: false, 
                         name : "BML"
                     });
-                    if ( this.bmlInputData.codeObj ){ editor.setText( this.bmlInputData.codeObj.getText() ); }
+                    editor.setText( this.bmlInputData.prevInstanceText );
                     this.bmlInputData.codeObj = editor;
 
                     p.addButton(null, "Send", () => {
@@ -129,7 +158,10 @@ class AppGUI{
 
             p.addButton( null, "SiGML Input", (value, event) =>{
 
-                if ( this.sigmlInputData.dialog ){ this.sigmlInputData.dialog.close(); }
+                if ( this.sigmlInputData.dialog ){ 
+                    this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
+                    this.sigmlInputData.dialog.close(); 
+                }
 
                 this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
                     let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
@@ -144,7 +176,7 @@ class AppGUI{
                         allow_add_scripts: false, 
                         name : "XML"
                     });
-                    if ( this.sigmlInputData.codeObj ){ editor.setText( this.sigmlInputData.codeObj.getText() ); }
+                    editor.setText( this.sigmlInputData.prevInstanceText );
                     this.sigmlInputData.codeObj = editor;
         
                     p.addButton(null, "Send", () => {
@@ -176,9 +208,9 @@ class AppGUI{
             }
             p.addButton( null, "Glosses Input", (value, event) =>{
 
-                if ( this.glosInputData.dialog ){ this.glosInputData.dialog.close(); }
+                if ( this.glossInputData.dialog ){ this.glossInputData.dialog.close(); }
 
-                this.glosInputData.dialog = new LX.PocketDialog( "Glosses Input", p => {
+                this.glossInputData.dialog = new LX.PocketDialog( "Glosses Input", p => {
                     p.refresh = () => {
                         p.clear();
                         let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
@@ -193,17 +225,17 @@ class AppGUI{
                         } );
 
                         p.addDropdown("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
-                            this.glosInputData.glosses += " " + value;
-                            this.glosInputData.textArea.set( this.glosInputData.glosses );
+                            this.glossInputData.glosses += " " + value;
+                            this.glossInputData.textArea.set( this.glossInputData.glosses );
                         }, {filter: true});
                         
-                        this.glosInputData.textArea = p.addTextArea("Write glosses", this.glosInputData.glosses, (value, event) => {
-                            this.glosInputData.glosses = value;
+                        this.glossInputData.textArea = p.addTextArea("Write glosses", this.glossInputData.glosses, (value, event) => {
+                            this.glossInputData.glosses = value;
                         }, {placeholder: "Hallo Leuk"});
 
                         p.addButton(null, "Send", () => {
             
-                            let glosses = this.glosInputData.glosses.replaceAll( "\n", " ").split( " " );
+                            let glosses = this.glossInputData.glosses.replaceAll( "\n", " ").split( " " );
                             for ( let i = 0; i < glosses.length; ++i ){
                                 if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
                                     glosses.splice( i, 1 ); 
