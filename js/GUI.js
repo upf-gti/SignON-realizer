@@ -52,6 +52,7 @@ class AppGUI{
             }, { min: "0", max: 2, step: 0.01});
             
             p.addButton( null, "Reset Pose", (value, event) =>{
+                this.gui.setValue( "Mood", "Neutral" ); 
                 this.app.ECAcontroller.reset();
             });
             
