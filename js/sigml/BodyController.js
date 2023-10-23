@@ -349,13 +349,13 @@ class BodyController{
         if ( bml.handshape ){
             arm.handshape.newGestureBML( bml, symmetry );
         } 
-        if ( bml.shoulderRaise ){
+        if ( bml.hasOwnProperty( "shoulderRaise" ) ){
             arm.shoulderRaise.newGestureBML( bml, symmetry );
         }
-        if ( bml.shoulderHunch ){
+        if ( bml.hasOwnProperty( "shoulderHunch" ) ){
             arm.shoulderHunch.newGestureBML( bml, symmetry );
         }
-        if ( bml.elbowRaise ){
+        if ( bml.hasOwnProperty( "elbowRaise" ) ){
             arm.elbowRaise.newGestureBML( bml, symmetry );
         }
 
