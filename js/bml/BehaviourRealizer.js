@@ -136,22 +136,22 @@ FacialExpr.NMF = {}; // lookup table for lexeme-blendshape relation
 // SignON actions units
 FacialExpr.NMF.NMF_FROWN =                  [[3, 4], [1, 1]];
 FacialExpr.NMF.NMF_ARCH =                   [[1, 2, 0], [1, 1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[45, 46], [1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[47, 48], [1, 1]];
 FacialExpr.NMF.NMF_SQUINT =                 [[49, 50], [1, 1]];
 FacialExpr.NMF.NMF_BLINK =                  [[51, 52], [1, 1]];
-FacialExpr.NMF.NMF_CLOSED =                 [[48], [1]];
-FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[44], [1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[43], [1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[43, 44], [1, 1]]; // missing new blendshapes
-FacialExpr.NMF.NMF_BLOW_RIGHT =             [[42], [1]];
-FacialExpr.NMF.NMF_BLOW_LEFT =              [[41], [1]];
-FacialExpr.NMF.NMF_BLOW_BOTH =              [[41, 42], [1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[33], [1]];
-FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[29, 19, 20, 28], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_SMILE_TEETH =            [[13, 14, 33], [0.5, 0.5, 0.2]];
-FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[13, 14, 33], [1, 1, 0.2]];
+FacialExpr.NMF.NMF_CLOSED =                 [[51, 52], [1, 1]];
+FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[46], [1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[45], [1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[45, 46], [1, 1]]; // missing new blendshapes
+FacialExpr.NMF.NMF_BLOW_RIGHT =             [[44], [1]];
+FacialExpr.NMF.NMF_BLOW_LEFT =              [[43], [1]];
+FacialExpr.NMF.NMF_BLOW_BOTH =              [[43, 44], [1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[35], [1]];
+FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[28, 19, 20, 27], [1, 1, 1, 1]];
+FacialExpr.NMF.NMF_SMILE_TEETH =            [[13, 14, 35], [0.5, 0.5, 0.2]];
+FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[13, 14, 35], [1, 1, 0.2]];
 FacialExpr.NMF.NMF_SMILE_CLOSED =           [[13, 14], [1, 1]];
-FacialExpr.NMF.NMF_ROUND_OPEN =             [[19, 20, 33], [0.7, 0.7, 0.7]];// missing new blendshape
+FacialExpr.NMF.NMF_ROUND_OPEN =             [[19, 20, 35], [0.7, 0.7, 0.7]];// missing new blendshape
 FacialExpr.NMF.NMF_ROUND_CLOSED =           [[19, 20], [1, 1]];
 FacialExpr.NMF.NMF_OUT_POINTED =            [[], []];       // missing new blendshapes
 FacialExpr.NMF.NMF_OUT_ROUND =              [[], []];       // missing new blendshapes
@@ -159,8 +159,12 @@ FacialExpr.NMF.NMF_CRINKLE =                [[5, 6], [1, 1]];
 FacialExpr.NMF.NMF_FLARE =                  [[7], [1]];       // AU38 - nostril dilator
 // extra
 FacialExpr.NMF.NMF_NOSTRIL_COMPRESSOR =     [[8], [1]];       // AU39 - nostril compressor
-FacialExpr.NMF.NMF_TONGUE_BULGE =           [[32], [1]];       // AU36
-FacialExpr.NMF.NMF_LIP_WIPE =               [[30], [1]];       // AU37
+FacialExpr.NMF.NMF_TONGUE_BULGE_LEFT =      [[32], [1]];       // LAU36
+FacialExpr.NMF.NMF_TONGUE_BULGE_RIGHT =     [[33], [1]];       // RAU36
+FacialExpr.NMF.NMF_TONGUE_UP =              [[30], [1]];       // 
+FacialExpr.NMF.NMF_TONGUE_SHOW =            [[31], [1]];       // AU19
+FacialExpr.NMF.NMF_TONGUE_WIDE =            [[34], [1]];       // 
+FacialExpr.NMF.NMF_LIP_WIPE =               [[29], [1]];       // AU37
 FacialExpr.NMF.NMF_NECK_TIGHTENER =         [[55], [1]];       // AU21
 // others (legacy mainly)
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[15, 16], [1,1]]; // AU15 sad 
@@ -171,37 +175,37 @@ FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[13], [1]]; // LAU12 happy
 FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[14], [1]]; // RAU12 happy
 FacialExpr.NMF.LIP_STRECHER =               [[21, 22], [1,1]];// AU20
 FacialExpr.NMF.LIP_FUNNELER =               [[23], [1]];     // AU22
-FacialExpr.NMF.LIP_TIGHTENER =              [[24], [1]];     // AU23
+FacialExpr.NMF.LIP_TIGHTENER =              [[19, 20, 24, 25], [1, 1, 0.3, 0.3]];     // AU23 TODO: PUCKERER + PRESSOR
 FacialExpr.NMF.LIP_PUCKERER =               [[19, 20], [1,1]]; // AU18 mouth narrow
 FacialExpr.NMF.LIP_PUCKERER_LEFT =          [[19], [1]]; // AU18L mouth narrow left
 FacialExpr.NMF.LIP_PUCKERER_RIGHT =         [[20], [1]]; // AU18R mouth narrow right
-FacialExpr.NMF.LIP_PRESSOR =                [[25, 26], [1,1]];// AU24
-FacialExpr.NMF.LIPS_PART =                  [[27], [1.0]]; //AU25
-FacialExpr.NMF.LIP_SUCK =                   [[28, 29], [1,1]];// AU28
-FacialExpr.NMF.LIP_SUCK_UPPER =             [[28], [1]];// AU28U upper lip in
-FacialExpr.NMF.LIP_SUCK_LOWER =             [[29], [1]];// AU28D lower lip in 
+FacialExpr.NMF.LIP_PRESSOR =                [[24, 25], [1,1]]; // AU24
+FacialExpr.NMF.LIPS_PART =                  [[26], [1.0]]; //AU25
+FacialExpr.NMF.LIP_SUCK =                   [[27, 28], [1,1]];// AU28
+FacialExpr.NMF.LIP_SUCK_UPPER =             [[27], [1]];// AU28U upper lip in
+FacialExpr.NMF.LIP_SUCK_LOWER =             [[28], [1]];// AU28D lower lip in 
 FacialExpr.NMF.LOWER_LIP_DEPRESSOR =        [[17, 18], [1,1]]; // AU16
 FacialExpr.NMF.LOWER_LIP_DEPRESSOR_LEFT =   [[17], [1]]; // LAU16
 FacialExpr.NMF.LOWER_LIP_DEPRESSOR_RIGHT =  [[18], [1]]; // RAU16
 FacialExpr.NMF.UPPER_LIP_RAISER =           [[11, 12], [1,1]]; // AU10
 FacialExpr.NMF.UPPER_LIP_RAISER_LEFT =      [[11], [1]]; // AU10L
 FacialExpr.NMF.UPPER_LIP_RAISER_RIGHT =     [[12], [1]]; // AU10R
-FacialExpr.NMF.CHIN_RAISER =                [[38], [1]]; // AU17 mouth up
+FacialExpr.NMF.CHIN_RAISER =                [[40], [1]]; // AU17 mouth up
 FacialExpr.NMF.DIMPLER =                    [[9, 10], [1, 1]]; // AU14
 FacialExpr.NMF.DIMPLER_LEFT =               [[9], [1]]; // LAU14
 FacialExpr.NMF.DIMPLER_RIGHT =              [[10], [1]]; // RAU14
-FacialExpr.NMF.LIP_BITE =                   [[29, 33, 34], [1, 0.1, 0.05]]; // AU32
+FacialExpr.NMF.LIP_BITE =                   [[28, 35, 36], [1, 0.1, 0.05]]; // AU32
 
 FacialExpr.NMF.NOSE_WRINKLER =              [[5, 6], [1,1]]; // AU9
-FacialExpr.NMF.MOUTH_STRETCH =              [[33], [1]]; // AU27 
-FacialExpr.NMF.MOUTH_OPEN =                 [[33] , [1]]; // jaw // TODO: keep this?
-FacialExpr.NMF.JAW_DROP =                   [[34], [1]]; // AU26
-FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[36], [1]]; // AU30L
-FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[37], [1]]; // AU30R
-FacialExpr.NMF.JAW_THRUST =                 [[35], [1]]; // AU29
+FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27 
+FacialExpr.NMF.MOUTH_OPEN =                 [[35] , [1]]; // jaw // TODO: keep this?
+FacialExpr.NMF.JAW_DROP =                   [[36], [1]]; // AU26
+FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[38], [1]]; // AU30L
+FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[39], [1]]; // AU30R
+FacialExpr.NMF.JAW_THRUST =                 [[37], [1]]; // AU29
 FacialExpr.NMF.TONGUE_SHOW =                [[31], [1]]; // AU19
-FacialExpr.NMF.CHEEK_BLOW =                 [[41, 42], [1, 1]]; //AU33
-FacialExpr.NMF.CHEEK_SUCK =                 [[43, 44], [1, 1]]; //AU35
+FacialExpr.NMF.CHEEK_BLOW =                 [[43, 44], [1, 1]]; //AU33
+FacialExpr.NMF.CHEEK_SUCK =                 [[45, 46], [1, 1]]; //AU35
 
 FacialExpr.NMF.BROW_LOWERER =               [[3, 4], [1,1]]; // AU4 
 FacialExpr.NMF.BROW_LOWERER_LEFT =          [[3], [1]]; //
@@ -212,12 +216,12 @@ FacialExpr.NMF.BROW_RAISER_RIGHT =          [[2], [1]]; // right brow up
 FacialExpr.NMF.INNER_BROW_RAISER =          [[0], [1]]; // AU1 rows rotate outwards
 FacialExpr.NMF.OUTER_BROW_RAISER =          [[1, 2], [1,1]]; // AU2 brows up (right)
 
-FacialExpr.NMF.UPPER_LID_RAISER =           [[45, 46], [1,1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[45], [1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[46], [1]]; // AU5 negative eyelids closed /wide eyes 
-FacialExpr.NMF.CHEEK_RAISER =               [[39, 40], [1,1]]; // AU6 squint 
-FacialExpr.NMF.LID_TIGHTENER =              [[47], [1]]; // AU7 or AU44 squint 
-FacialExpr.NMF.EYES_CLOSED =                [[48], [1]]; // AU43 eyelids closed
+FacialExpr.NMF.UPPER_LID_RAISER =           [[47, 48], [1,1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[47], [1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[48], [1]]; // AU5 negative eyelids closed /wide eyes 
+FacialExpr.NMF.CHEEK_RAISER =               [[41, 42], [1,1]]; // AU6 squint 
+FacialExpr.NMF.LID_TIGHTENER =              [[51, 52, 49, 50], [0.2, 0.2, 0.8, 0.8]]; // AU7 or AU44 squint TODO NEW MAPPING: SQUINT + BLINK
+FacialExpr.NMF.EYES_CLOSED =                [[51, 52], [1, 1]]; // AU43 eyelids closed
 FacialExpr.NMF.BLINK =                      [[51, 52], [1,1]]; // AU45 eyelids closed 
 FacialExpr.NMF.WINK_LEFT =                  [[53], [1]]; // AU46
 FacialExpr.NMF.WINK_RIGHT =                 [[54], [1]]; // AU46
@@ -430,7 +434,7 @@ function FacialEmotion(sceneBSW) {
     this.targetVABSW = [];
     this.currentVABSW = [];
     if (sceneBSW) {
-        this.currentVABSW = this.sceneBSW["Body"].slice();
+        this.currentVABSW = this.sceneBSW.slice();
     }
     else {
         this.currentVABSW = this._pit[0].slice(2); // first two elements of emotions are valence and arousal
@@ -2221,7 +2225,7 @@ let t2lLowerBound = [
   [ 0.25,  0.15,  0.15,  0.2,   0,     0,     0   ],
   [ 0.35,  0.15,  0.15,  0.2,   0,     0,     0   ],
   [ 0.0,   0.15,  0,     0.1,   1,     0,     0   ],
-  [ 0,     0.5,   0.2,   0.1,   0,     0,     0   ], // 8
+  [ 0,     0.5,   0.2,   0.0,   0,     0,     0   ], // 8
   [ 0,     0.0,   0.2,   0.1,   0,     0,     0   ],
   [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
   [ 0.0,   0,     0,     0.2,   0.0,   0.3,   0   ],
@@ -2240,7 +2244,7 @@ let t2lUpperBound = [
   [ 0.45,  0.15,  0.15,  0.6,   0,     0,     0   ],
   [ 0.85,  0.3,   0.3,   0.3,   0,     0,     0   ],
   [ 0.0,   0.15,  0,     0.4,   1,     0,     0.5 ],
-  [ 0,     1,     1,     0.4,   0,     0,     0   ], // 8
+  [ 0,     1,     1,     0.0,   0,     0,     0   ], // 8
   [ 0,     0.0,   1,     0.4,   0,     0,     0   ],
   [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
   [ 0.0,   0,     0,     0.4,   0.0,   0.3,   0   ],
@@ -2260,7 +2264,7 @@ let t2lCoarts = [
   [ 0.2,   0.3,   0.3,   0.3,   0.3,   0.3,   0.5 ],
   [ 0.2,   0.3,   0.3,   0.3,   0.3,   0.3,   0.5 ],
   [ 1,     0.4,   0.4,   0.9,   0,     0.5,   0.5 ],
-  [ 1,     0,     0,     0.2,   1,     0.8,   0.5 ], //8 
+  [ 1,     0,     0,     0.0,   1,     0.8,   0.5 ], //8 
   [ 1,     0,     0,     0.2,   1,     0.5,   0.5 ],
   [ 1,     0.6,   0.6,   0.6,   0,     0.5,   0.5 ],
   [ 1,     1,     1,     0.7,   0.5,   0.5,   0.5 ],

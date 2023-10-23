@@ -41,30 +41,25 @@ function FacialController(config = null) {
     this.browsUpBSName = "BrowsUp";
 
     this._morphTargets = {}; // current avatar morph targets
-    this._mappingBS = {}; // mappings of current (target) avatar BS to default (source) morph deformers
-    this._body = "BodyMesh"; // name of the avatar's body mesh
+    this._mappingAU2BS = {}; // mappings of current (target) avatar BS to default (source) morph deformers
     this._boneMap = {}; // bone name to index mapper
+    this._avatarParts = {}; // list of BS in each mesh of the avatar
     
     // default morph deformers
     this._morphDeformers = {
-        "Body": {
-            "morphTargetDictionary": {
+        "morphTargetDictionary": {
                 "Inner_Brow_Raiser": 0, "Outer_Brow_Raiser_Left": 1, "Outer_Brow_Raiser_Right": 2, "Brow_Lowerer_Left": 3, "Brow_Lowerer_Right": 4, "Nose_Wrinkler_Left": 5, "Nose_Wrinkler_Right": 6, "Nostril_Dilator": 7, "Nostril_Compressor": 8,
                 "Dimpler_Left": 9, "Dimpler_Right": 10, "Upper_Lip_Raiser_Left": 11, "Upper_Lip_Raiser_Right": 12, "Lip_Corner_Puller_Left": 13, "Lip_Corner_Puller_Right": 14, "Lip_Corner_Depressor_Left": 15, "Lip_Corner_Depressor_Right": 16,
-                "Lower_Lip_Depressor_Left": 17, "Lower_Lip_Depressor_Right": 18, "Lip_Puckerer_Left": 19, "Lip_Puckerer_Right": 20, "Lip_Stretcher_Left": 21, "Lip_Stretcher_Right": 22, "Lip_Funneler": 23, "Lip_Tightener": 24, "Lip_Pressor_Left": 25,
-                "Lip_Pressor_Right": 26, "Lips_Part": 27, "Lip_Suck_Upper": 28, "Lip_Suck_Lower": 29, "Lip_Wipe": 30, "Tongue_Show": 31, "Tongue_Bulge": 32, "Mouth_Stretch": 33, "Jaw_Drop": 34, "Jaw_Thrust": 35, "Jaw_Sideways_Left": 36, "Jaw_Sideways_Right": 37,
-                "Chin_Raiser": 38, "Cheek_Raiser_Left": 39, "Cheek_Raiser_Right": 40, "Cheek_Blow_Left": 41, "Cheek_Blow_Right": 42, "Cheek_Suck_Left": 43, "Cheek_Suck_Right": 44, "Upper_Lid_Raiser_Left": 45, "Upper_Lid_Raiser_Right": 46, "Lid_Tightener": 47,
-                "Eyes_Closed": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54, "Neck_Tightener": 55
+                "Lower_Lip_Depressor_Left": 17, "Lower_Lip_Depressor_Right": 18, "Lip_Puckerer_Left": 19, "Lip_Puckerer_Right": 20, "Lip_Stretcher_Left": 21, "Lip_Stretcher_Right": 22, "Lip_Funneler": 23, "Lip_Pressor_Left": 24, "Lip_Pressor_Right": 25,
+                "Lips_Part": 26, "Lip_Suck_Upper": 27, "Lip_Suck_Lower": 28, "Lip_Wipe": 29, "Tongue_Up": 30, "Tongue_Show": 31, "Tongue_Bulge_Left": 32, "Tongue_Bulge_Right": 33, "Tongue_Wide": 34, "Mouth_Stretch": 35, "Jaw_Drop": 36, "Jaw_Thrust": 37,
+                "Jaw_Sideways_Left": 38, "Jaw_Sideways_Right": 39, "Chin_Raiser": 40, "Cheek_Raiser_Left": 41, "Cheek_Raiser_Right": 42, "Cheek_Blow_Left": 43, "Cheek_Blow_Right": 44, "Cheek_Suck_Left": 45, "Cheek_Suck_Right": 46, "Upper_Lid_Raiser_Left": 47,
+                "Upper_Lid_Raiser_Right": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54, "Neck_Tightener": 55
             },
-            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        },
-        "Eyelashes": {
-            "morphTargetDictionary": {
-                "Upper_Lid_Raiser_Left": 45, "Upper_Lid_Raiser_Right": 46, "Eyes_Closed": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54
-            },
-            "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        }
+        "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     };
+
+    this._eyeLidsAU = [51, 52]; // idx number of eyelids related AU - gaze and blink easy access
+    this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
     // weighting factor for t2l interface
     this._t2lFactor = {
@@ -72,7 +67,8 @@ function FacialController(config = null) {
         "upperLipClosed": ["Lip_Suck_Upper"], 
         "lowerLipClosed": ["Lip_Suck_Lower"],
         "jawOpen": ["Mouth_Stretch"],
-        "tongueFrontUp": ["Tongue_Show"],
+        "tongueFrontUp": ["Tongue_Up"],
+        "tongueOut": ["Tongue_Show"],
     };
         
     this.lipsyncModule = new Lipsync();
@@ -95,21 +91,20 @@ FacialController.prototype.configure = function (o) {
                 skeleton = this.skeleton = ob.skeleton;
             }
         } );
-
     }
+    
     if (o.headNode) this.headNode = o.headNode;
     if (o.lookAt) this.lookAt = o.lookAt;
     if (o.lookAtEyes) this.lookAtEyes = o.lookAtEyes;
     if (o.lookAtHead) this.lookAtHead = o.lookAtHead;
     if (o.lookAtNeck) this.lookAtNeck = o.lookAtNeck;
     if (o.gazePositions) this._gazePositions = o.gazePositions;
-    // if (o.morphTargets) this._morphDeformers = o.morphTargets;
     if (o.morphTargets) this._morphTargets = o.morphTargets;
 
     if(o.characterConfig) {
-        this._mappingBS = o.characterConfig.faceController.blendshapeMap;
-        this._body = o.characterConfig.Body;
+        this._mappingAU2BS = o.characterConfig.faceController.blendshapeMap;
         this._boneMap = o.characterConfig.faceController.boneMap;
+        this._avatarParts = o.characterConfig.faceController.parts;
     
         /** BoneMap */
         // name to index map
@@ -123,56 +118,18 @@ FacialController.prototype.start = function (morphTargets) {
     // console.log(this._facialBS);
     
     if (!morphTargets) {
+        morphTargets = {};
         // Get morph targets
-        morphTargets = {
-            Body: this.character.getObjectByName(this._body),
-            Eyelashes: this.character.getObjectByName("Eyelashes")
+        for (const part in this._avatarParts) {
+            morphTargets[part] = this.character.getObjectByName(part);
         }
         this._morphTargets = morphTargets;
     }
-    
-    this._facialBSAcc = {};
-    this._facialBSFinal = {};
-    
-    this._facialBS = {};
-    this._eyeLidsBS = [];
-    this._squintBS = [];
-    
-    if (morphTargets) {
-        for (let part in this._morphDeformers) {
+        
+    this._facialAUAcc = this._morphDeformers.morphTargetInfluences.slice(); // clone array;
+    this._facialAUFinal = this._morphDeformers.morphTargetInfluences.slice(); // clone array;
 
-            let eyelidsIdx = [];
-            let squintIdx = [];
-            this._facialBS[part] = this._morphDeformers[part].morphTargetInfluences.slice(); // clone array
-            this._facialBSAcc[part] = this._morphDeformers[part].morphTargetInfluences.slice(); // clone array;
-            this._facialBSFinal[part] = this._morphDeformers[part].morphTargetInfluences.slice(); // clone array;
-
-            let BSnames = Object.keys(this._morphDeformers[part].morphTargetDictionary);
-
-            for (let i = 0; i < BSnames.length; ++i) {
-                let name = BSnames[i];
-                
-                // Eyelashes things
-                // if (name.toLocaleLowerCase().includes(this.eyelidsBSName.toLocaleLowerCase())) // get blendshape indices of eyelids
-                // eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
-                if (name.toLocaleLowerCase().includes("blink")) // get blendshape indices of eyelids
-                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
-                if (name.toLocaleLowerCase().includes("eyes_closed")) // get blendshape indices of eyelids
-                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
-                if (name.toLocaleLowerCase().includes("wink")) // get blendshape indices of eyelids
-                eyelidsIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
-
-                if (name.toLocaleLowerCase().includes(this.squintBSName.toLocaleLowerCase())) // get blendshape indices of squint
-                squintIdx.push(this._morphDeformers[part].morphTargetDictionary[name]);
-
-            }
-            this._eyeLidsBS.push(eyelidsIdx);
-            this._squintBS.push(squintIdx);
-
-        }
-    }
-
-    if (!this._morphDeformers) {
+    if (!this._morphTargets) {
         console.error("Morph deformer not found");
         return;
     }
@@ -180,7 +137,7 @@ FacialController.prototype.start = function (morphTargets) {
     this.resetFace();
 
     this._FacialLexemes = [];
-    this.FA = new FacialEmotion(this._facialBS);
+    this.FA = new FacialEmotion(this._facialAUFinal);
     
     // Gaze
     // Get head bone node
@@ -235,15 +192,10 @@ FacialController.prototype.reset = function ( keepEmotion = false ) {
 }
 
 FacialController.prototype.resetFace = function () {
-    
-    for (let part in this._facialBS) {
-        for (let i = 0; i < this._facialBS[part].length; i++) {
-            this._facialBS[part][i] = 0;
-            this._facialBSAcc[part][i] = 0;
-            this._facialBSFinal[part][i] = 0;
-            this._morphDeformers[part].morphTargetInfluences[i] = 0;
-            // this._morphTargets[part].morphTargetInfluences[i] = 0;
-        }
+    for (let i = 0; i < this._facialAUFinal.length; i++) {
+        this._facialAUAcc[i] = 0;
+        this._facialAUFinal[i] = 0;
+        this._morphDeformers.morphTargetInfluences[i] = 0;
     }
 }
 
@@ -254,43 +206,49 @@ FacialController.prototype.update = function (dt) {
     this.innerUpdate(dt);
 
     // Map facialBS to current model BS
-    for (let part in this._morphDeformers) {
-        let targetAccumulatedValues = {}; // store multiple value for each target
-
-        for (let defBSName in this._mappingBS[part]) {
-            let currBSnames = this._mappingBS[part][defBSName]; // array of target avatar BS [names, factor]
-            
-            let idx = this._morphDeformers[part].morphTargetDictionary[defBSName]; // index of source blendshape
-            let value = this._morphDeformers[part].morphTargetInfluences[idx]; // value of source blendshape
-
-            // map source value to all target BS
-            for (let i = 0; i < currBSnames.length; i++) {
-                let targetBSName = currBSnames[i][0];
-                let targetBSFactor = currBSnames[i][1];
-                
-                if (!targetAccumulatedValues[targetBSName]) { targetAccumulatedValues[targetBSName] = []; }
-                targetAccumulatedValues[targetBSName].push(value * targetBSFactor); // store the value in the array for this target
-            }
-        }
-        
-        // compute the mean influence value for each target
-        for (let targetBSName in targetAccumulatedValues) {
-            let values = targetAccumulatedValues[targetBSName];
-            let meanValue = 0;
-            let acc = 0;
-            let final = 0;
-
-            for (let i = 0; i < values.length; i++) {
-                acc += Math.abs(values[i]);
-                final += values[i] * Math.abs(values[i]);
-            }
-
-            if (acc > 0.0001) meanValue = final / acc;
+    let targetAccumulatedValues = {}; // store multiple value for each target
     
-            // update the target blendshape with the mean value
-            let targetIdx = this._morphTargets[part].morphTargetDictionary[targetBSName];
-            if (targetIdx !== undefined) {
-                this._morphTargets[part].morphTargetInfluences[targetIdx] = meanValue;
+    for (let AUName in this._mappingAU2BS) {
+        let avatarBSnames = this._mappingAU2BS[AUName]; // array of target avatar BS [names, factor]
+        
+        let idx = this._morphDeformers.morphTargetDictionary[AUName]; // index of source blendshape
+        let value = this._morphDeformers.morphTargetInfluences[idx]; // value of source blendshape
+        
+        // map source value to all target BS
+        for (let i = 0; i < avatarBSnames.length; i++) {
+            let targetBSName = avatarBSnames[i][0];
+            let targetBSFactor = avatarBSnames[i][1];
+            
+            if (!targetAccumulatedValues[targetBSName]) { targetAccumulatedValues[targetBSName] = []; }
+            targetAccumulatedValues[targetBSName].push(value * targetBSFactor); // store the value in the array for this target
+        }
+    }
+    
+    // compute the mean influence value for each target
+    for (let part in this._avatarParts) {
+        // get AU names that influence current mesh (if null uses all AUs)
+        let AUnames = this._avatarParts[part] ? this._avatarParts[part] : Object.keys(this._morphDeformers.morphTargetDictionary);
+        for (let i = 0; i < AUnames.length; i++) {
+            let avatarBSnames = this._mappingAU2BS[AUnames[i]];
+            for (let i = 0; i < avatarBSnames.length; i++) {
+                let targetBSName = avatarBSnames[i][0];
+                let values = targetAccumulatedValues[targetBSName] ? targetAccumulatedValues[targetBSName] : [];
+                let meanValue = 0;
+                let acc = 0;
+                let final = 0;
+
+                // compute biased average
+                for (let i = 0; i < values.length; i++) {
+                    acc += Math.abs(values[i]);
+                    final += values[i] * Math.abs(values[i]);
+                }
+                if (acc > 0.0001) meanValue = final / acc;
+        
+                // update the target blendshape with the mean value
+                let targetIdx = this._morphTargets[part].morphTargetDictionary[targetBSName];
+                if (targetIdx !== undefined) {
+                    this._morphTargets[part].morphTargetInfluences[targetIdx] = meanValue;
+                }
             }
         }
     }
@@ -336,13 +294,10 @@ FacialController.prototype.innerUpdate = function (dt) {
 // Update facial expressions
 FacialController.prototype.faceUpdate = function (dt) {
     
-    let keys = Object.keys(this._facialBSAcc);
-    // for each part (body, eyelashes), reset accumulators for biased average
-    for (let i = 0; i < keys.length; ++i) {
-        this._facialBSAcc[keys[i]].fill(0);
-        this._facialBSFinal[keys[i]].fill(0);
-    }
-
+    // reset accumulators for biased average
+    this._facialAUAcc.fill(0);
+    this._facialAUFinal.fill(0);
+    
     // Text to lip
     if (this.textToLip && this.textToLip.getCompactState() == 0) { // when getCompactState==0 lipsync is working, not paused and has sentences to process
         this.textToLip.update(dt);
@@ -352,8 +307,8 @@ FacialController.prototype.faceUpdate = function (dt) {
             let value = Math.min(1, Math.max(-1, t2lBSW[mapping[1]]));
             let index = mapping[0];
             // for this model, some blendshapes need to be negative
-            this._facialBSAcc["Body"][index] += Math.abs(value); // denominator of biased average
-            this._facialBSFinal["Body"][index] += value * Math.abs(value); // numerator of biased average
+            this._facialAUAcc[index] += Math.abs(value); // denominator of biased average
+            this._facialAUFinal[index] += value * Math.abs(value); // numerator of biased average
         }
     }
 
@@ -365,10 +320,10 @@ FacialController.prototype.faceUpdate = function (dt) {
         if (facialLexemes) {
 
             let smooth = 0.66;
-            let BSAcc = this._facialBSAcc["Body"];
-            let BSFin = this._facialBSFinal["Body"];
-            let BS = this._morphDeformers["Body"].morphTargetInfluences; // for smoothing purposes
-            let morphDict = this._morphDeformers["Body"].morphTargetDictionary;
+            let BSAcc = this._facialAUAcc;
+            let BSFin = this._facialAUFinal;
+            let BS = this._morphDeformers.morphTargetInfluences; // for smoothing purposes
+            let morphDict = this._morphDeformers.morphTargetDictionary;
             // search every morphTarget to find the proper ones
             let names = Object.keys(morphDict);
             for (let i = 0; i < names.length; i++) {
@@ -403,8 +358,8 @@ FacialController.prototype.faceUpdate = function (dt) {
 
     for (let j = 0; j < this.FA.currentVABSW.length; j++) {
         let value = this.FA.currentVABSW[j];
-        this._facialBSAcc["Body"][j] += Math.abs(value); // denominator of biased average
-        this._facialBSFinal["Body"][j] += value * Math.abs(value); // numerator of biased average
+        this._facialAUAcc[j] += Math.abs(value); // denominator of biased average
+        this._facialAUFinal[j] += value * Math.abs(value); // numerator of biased average
     }
 
     // FacialExpr lexemes
@@ -417,8 +372,8 @@ FacialController.prototype.faceUpdate = function (dt) {
                 for (let j = 0; j < lexeme.indicesLex[i].length; j++) {
                     let value = lexeme.currentLexBSW[i][j];
                     let index = lexeme.indicesLex[i][j];
-                    this._facialBSAcc["Body"][index] += Math.abs(value); // denominator of biased average
-                    this._facialBSFinal["Body"][index] += value * Math.abs(value); // numerator of biased average
+                    this._facialAUAcc[index] += Math.abs(value); // denominator of biased average
+                    this._facialAUFinal[index] += value * Math.abs(value); // numerator of biased average
                 }
             }
         }
@@ -435,14 +390,14 @@ FacialController.prototype.faceUpdate = function (dt) {
         let weights = this.gazeManager.update(dt);
 
         // eyelids update
-        for(let i = 0; i< this._eyeLidsBS[0].length; i++){         
-            this._facialBSAcc[ "Body" ][ this._eyeLidsBS[0][i] ] += Math.abs(weights.eyelids);
-            this._facialBSFinal[ "Body" ][ this._eyeLidsBS[0][i] ] += weights.eyelids * Math.abs(weights.eyelids);
+        for(let i = 0; i< this._eyeLidsAU.length; i++){         
+            this._facialAUAcc[ this._eyeLidsAU[i] ] += Math.abs(weights.eyelids);
+            this._facialAUFinal[ this._eyeLidsAU[i] ] += weights.eyelids * Math.abs(weights.eyelids);
         }
         // squint update
-        for(let i = 0; i< this._squintBS[0].length; i++){         
-            this._facialBSAcc[ "Body" ][ this._squintBS[0][i] ] += Math.abs(weights.squint);
-            this._facialBSFinal[ "Body" ][ this._squintBS[0][i] ] += weights.squint * Math.abs(weights.squint);
+        for(let i = 0; i< this._squintAU.length; i++){         
+            this._facialAUAcc[ this._squintAU[i] ] += Math.abs(weights.squint);
+            this._facialAUFinal[ this._squintAU[i] ] += weights.squint * Math.abs(weights.squint);
         }
     }
 
@@ -450,42 +405,31 @@ FacialController.prototype.faceUpdate = function (dt) {
     // Second pass, compute mean (division)
     // result = ( val1 * |val1|/|sumVals| ) + ( val2 * |val2|/|sumVals| ) + ...
     // copy blendshape arrays back to real arrays and compute biased average  
-    let target = this._facialBS["Body"];
-    let numerator = this._facialBSFinal["Body"];
-    let acc = this._facialBSAcc["Body"];
+    let target = this._facialAUFinal;
+    let numerator = this._facialAUFinal;
+    let acc = this._facialAUAcc;
     for (let i = 0; i < target.length; ++i) {
         if (acc[i] < 0.0001) { target[i] = 0; }
         else { target[i] = numerator[i] / acc[i]; }
     }
 
     // --- UPDATE POST BIASED AVERAGE --- 
-    // this._facialBS has all the valid values
+    // this._facialAUFinal has all the valid values
 
     // Eye blink
     if (!this.autoBlink.between) {
-        this.autoBlink.update(dt, this._facialBS["Body"][this._eyeLidsBS[0][0]], this._facialBS["Body"][this._eyeLidsBS[0][1]]);
-        this._facialBS["Body"][this._eyeLidsBS[0][0]] = this.autoBlink.weights[0];
-        this._facialBS["Body"][this._eyeLidsBS[0][1]] = this.autoBlink.weights[1];
+        this.autoBlink.update(dt, this._facialAUFinal[this._eyeLidsAU[0]], this._facialAUFinal[this._eyeLidsAU[1]]);
+        this._facialAUFinal[this._eyeLidsAU[0]] = this.autoBlink.weights[0];
+        this._facialAUFinal[this._eyeLidsAU[1]] = this.autoBlink.weights[1];
     }
 
-    // fix eyelashes after all facial is done
-    for (let i = 0; i < this._eyeLidsBS[0].length; i++) {
-        this._facialBS["Eyelashes"][this._eyeLidsBS[1][i]] = this._facialBS["Body"][this._eyeLidsBS[0][i]];
+    // "Render" final facial (body) blendshapes
+    // copy blendshape arrays back to real arrays
+    let tar = this._morphDeformers.morphTargetInfluences;
+    let source = this._facialAUFinal;
+    for (let i = 0; i < tar.length; ++i) {
+        tar[i] = source[i];
     }
-    for (let i = 0; i < this._squintBS[0].length; i++) {
-        this._facialBS["Eyelashes"][this._squintBS[1][i]] = this._facialBS["Body"][this._squintBS[0][i]];
-    }
-
-    // "Render" final facial (body && eyelashes) blendshapes
-    // copy blendshape arrays back to real arrays 
-    for (let part in this._morphDeformers) {
-        let target = this._morphDeformers[part].morphTargetInfluences;
-        let source = this._facialBS[part];
-        for (let i = 0; i < target.length; ++i) {
-            target[i] = source[i];
-        }
-    }
-
 
 }
 
@@ -506,7 +450,7 @@ FacialController.prototype.newTextToLip = function (bml) {
         for(const part in this._t2lFactor) {
             for(let i = 0; i < this._t2lFactor[part].length; i++) {
                 // instead of looping through all BS, access directly the index of the desired blendshape
-                let idx = this._morphDeformers["Body"].morphTargetDictionary[this._t2lFactor[part][i]];
+                let idx = this._morphDeformers.morphTargetDictionary[this._t2lFactor[part][i]];
                 if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part]]);
             }
         }
@@ -551,20 +495,19 @@ FacialController.prototype.newLipsync = function (bml) {
 // face/faceShift can contain several sons of type faceLexeme without sync attr
 // valaro Range [-1, 1]
 
+// TODO: THIS CAUSES PROBLEMS????
 // Declare new facial expression
 FacialController.prototype.newFA = function (faceData, shift) {
     
     // Use BSW of the agent
-    for (let morph in this._facialBS) {
-        for (let i = 0; i < this._facialBS[morph].length; i++) {
-            this._facialBS[morph][i] = this._morphDeformers[morph].morphTargetInfluences[i];
-        }
+    for (let i = 0; i < this._facialAUFinal.length; i++) {
+        this._facialAUFinal[i] = this._morphDeformers.morphTargetInfluences[i];
     }
     if (faceData.emotion || faceData.valaro) {
-        this.FA.initFaceValAro(faceData, shift, this._facialBS); // new FacialExpr (faceData, shift, this._facialBS);
+        this.FA.initFaceValAro(faceData, shift, this._facialAUFinal); // new FacialExpr (faceData, shift, this._facialAUFinal);
     }
     else if (faceData.lexeme) {
-        this._FacialLexemes.push(new FacialExpr(faceData, shift, this._facialBS));
+        this._FacialLexemes.push(new FacialExpr(faceData, shift, this._facialAUFinal));
     }
 
 }
@@ -587,10 +530,9 @@ FacialController.prototype.newBlink = function ( bml ){
 FacialController.prototype.newGaze = function (gazeData, shift, gazePositions = null) {
 
     // TODO: recicle gaze in gazeManager
-    let keys = Object.keys(this._facialBS);
-    let blinkW = this._facialBS[keys[0]][0]
-    let eyelidsW = this._facialBS[keys[0]][this._eyeLidsBS[0][0]]
-    let squintW = this._facialBS[keys[0]][this._squintBS[0][0]]
+    let blinkW = this._facialAUFinal[0]
+    let eyelidsW = this._facialAUFinal[this._eyeLidsAU[0]]
+    let squintW = this._facialAUFinal[this._squintAU[0]]
     gazeData.eyelidsWeight = eyelidsW;
     gazeData.squintWeight = squintW;
     gazeData.blinkWeight = blinkW;
