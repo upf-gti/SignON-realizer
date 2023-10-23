@@ -1462,14 +1462,14 @@ let shoulderMovementTable = {
 };
 
 let bodyMovementTable = {
-    RL: { type: "gesture", bodyMovement: "RL", amount: 0.7 }, // _rotated_left
-    RR: { type: "gesture", bodyMovement: "RR", amount: 0.7 }, // _rotated_right
-    TL: { type: "gesture", bodyMovement: "TL", amount: 0.5 }, // _tilted_left
-    TR: { type: "gesture", bodyMovement: "TR", amount: 0.5 }, // _tilted_right
-    TF: { type: "gesture", bodyMovement: "TF", amount: 0.5 }, // _tilted_forwards
-    TB: { type: "gesture", bodyMovement: "TB", amount: 0.5 }, // _tilted_backwards
-    RD: { type: "gesture", bodyMovement: "TF", amount: 0.4 }, // _round  sligthly tilted forwards
-    SI: { type: "gesture", bodyMovement: "TB", amount: 0.3 }, // _sigh  slightly tilted backwards
+    RL: { type: "gesture", bodyMovement: "ROTATE_LEFT", amount: 0.7 }, // _rotated_left
+    RR: { type: "gesture", bodyMovement: "ROTATE_RIGHT", amount: 0.7 }, // _rotated_right
+    TL: { type: "gesture", bodyMovement: "TILT_LEFT", amount: 0.5 }, // _tilted_left
+    TR: { type: "gesture", bodyMovement: "TILT_RIGHT", amount: 0.5 }, // _tilted_right
+    TF: { type: "gesture", bodyMovement: "TILT_FORWARD", amount: 0.5 }, // _tilted_forwards
+    TB: { type: "gesture", bodyMovement: "TILT_BACKWARD", amount: 0.5 }, // _tilted_backwards
+    RD: { type: "gesture", bodyMovement: "TILT_FORWARD", amount: 0.4 }, // _round  sligthly tilted forwards
+    SI: { type: "gesture", bodyMovement: "TILT_BACKWARD", amount: 0.3 }, // _sigh  slightly tilted backwards
     // HE: { type: "gesture", bodyMovement: "HE", amount: 1 }, // _heave   does not work
     // ST: { type: "gesture", bodyMovement: "ST", amount: 1 }, // _straight 
 }
