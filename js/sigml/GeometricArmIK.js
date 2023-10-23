@@ -114,12 +114,12 @@ class GeometricArmIK{
         this._tempV3_0.copy( this.config.axes[1] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert vertical axis from mesh to world coords from shoulder perspective
         let shoulderRaiseFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
         
-        shoulderRaiseFactor = Math.max( -1, Math.min( 1, shoulderRaiseFactor ) );
+        shoulderRaiseFactor = Math.max( -1, Math.min( 1, shoulderRaiseFactor * shoulderRaiseFactor * Math.sign( shoulderRaiseFactor ) ) );
         shoulderHunchFactor = Math.max( -1, Math.min( 1, shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) ) );
         
         let shoulderRaiseAngle = forcedShoulderRaise + this.config.shoulderRaise[0]; 
         if ( shoulderRaiseFactor < 0 ){ shoulderRaiseAngle += this.config.shoulderRaise[1] * (-1) * shoulderRaiseFactor; }
-        else if ( shoulderRaiseFactor > 0.25 ) { shoulderRaiseAngle += this.config.shoulderRaise[2] * (shoulderRaiseFactor-0.25)/0.75; }            
+        else { shoulderRaiseAngle += this.config.shoulderRaise[2] * shoulderRaiseFactor; }            
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.shoulderRaise, shoulderRaiseAngle );
 
         let shoulderHunchAngle = forcedShoulderHunch + this.config.shoulderHunch[0];
