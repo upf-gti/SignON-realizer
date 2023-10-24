@@ -48,8 +48,8 @@ class AppGUI{
 
         new LX.PocketDialog( "Controls", p => {
             this.gui = p;
-            // --------- Customization ---------
-            p.branch( "Customization" );
+            // // --------- Customization ---------
+            // p.branch( "Customization" );
             // get color set on the actual objects and set them as default values to the colorpicker
             let color = new THREE.Color();
 
@@ -258,7 +258,7 @@ class AppGUI{
                 this.app.ECAcontroller.processMsg(JSON.stringify(msg));
             });
 
-            p.merge(); // end of customization
+            // p.merge(); // end of customization
 
         }, { size: ["20%", null], float:"left", draggable:false});
 

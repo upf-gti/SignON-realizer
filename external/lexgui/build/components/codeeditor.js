@@ -75,7 +75,7 @@
             domEl._top = 4 + y * this.editor.lineHeight;
             domEl.style.top = (domEl._top - this.editor.getScrollTop()) + "px";
             domEl._left = x * this.editor.charWidth;
-            domEl.style.left = "calc(" + (domEl._left - this.editor.getScrollLeft()) + "px + 0.25em)";
+            domEl.style.left = "calc(" + (domEl._left - this.editor.getScrollLeft()) + "px + " + this.editor.xPadding + ")";
             domEl.style.width = width + "px";
             this.editor.selections.appendChild(domEl);
         }
@@ -140,13 +140,16 @@
             this.selections.className = 'selections';
             this.tabs.area.attach(this.selections);
 
+            // Css char synchronization
+            this.xPadding = "0.25em";
+
             // Add main cursor
             {
                 var cursor = document.createElement('div');
                 cursor.className = "cursor";
                 cursor.innerHTML = "&nbsp;";
                 cursor._left = 0;
-                cursor.style.left = "0.25em";
+                cursor.style.left = this.xPadding;
                 cursor._top = 4;
                 cursor.style.top = "4px";
                 cursor.position = 0;
@@ -172,11 +175,11 @@
             this.tabSpaces = 4;
             this.maxUndoSteps = 16;
             this.lineHeight = 22;
-            this.charWidth = this.measureChar();
+            this.charWidth = 9;//this.measureChar();
             this._lastTime = null;
 
             this.languages = [
-                'Plain Text', 'JavaScript', 'GLSL', 'WGSL', 'JSON', 'XML' 
+                'Plain Text', 'JavaScript', 'CSS', 'GLSL', 'WGSL', 'JSON', 'XML' 
             ];
             this.specialKeys = [
                 'Backspace', 'Enter', 'ArrowUp', 'ArrowDown', 
@@ -186,14 +189,16 @@
             this.keywords = {
                 'JavaScript': ['var', 'let', 'const', 'this', 'in', 'of', 'true', 'false', 'new', 'function', 'NaN', 'static', 'class', 'constructor', 'null', 'typeof'],
                 'GLSL': ['true', 'false', 'function', 'int', 'float', 'vec2', 'vec3', 'vec4', 'mat2x2', 'mat3x3', 'mat4x4', 'struct'],
+                'CSS': ['body', 'html', 'canvas', 'div', 'input', 'span', '.'],
                 'WGSL': ['var', 'const', 'let', 'true', 'false', 'fn', 'bool', 'u32', 'i32', 'f16', 'f32', 'vec2f', 'vec3f', 'vec4f', 'mat2x2f', 'mat3x3f', 'mat4x4f', 'array', 'atomic', 'struct',
                         'sampler', 'sampler_comparison', 'texture_depth_2d', 'texture_depth_2d_array', 'texture_depth_cube', 'texture_depth_cube_array', 'texture_depth_multisampled_2d',
                         'texture_external', 'texture_1d', 'texture_2d', 'texture_2d_array', 'texture_3d', 'texture_cube', 'texture_cube_array', 'texture_storage_1d', 'texture_storage_2d',
                         'texture_storage_2d_array', 'texture_storage_3d'],
             };
-            this.builtin = [
-                'console', 'window', 'navigator'
-            ];
+            this.builtin = {
+                'JavaScript': ['console', 'window', 'navigator'],
+                'CSS': ['*', '!important']
+            };
             this.literals = {
                 'JavaScript': ['for', 'if', 'else', 'case', 'switch', 'return', 'while', 'continue', 'break', 'do'],
                 'GLSL': ['for', 'if', 'else', 'return', 'continue', 'break'],
@@ -203,7 +208,8 @@
                 'JavaScript': ['<', '>', '[', ']', '{', '}', '(', ')', ';', '=', '|', '||', '&', '&&', '?', '??'],
                 'JSON': ['[', ']', '{', '}', '(', ')'],
                 'GLSL': ['[', ']', '{', '}', '(', ')'],
-                'WGSL': ['[', ']', '{', '}', '(', ')', '->']
+                'WGSL': ['[', ']', '{', '}', '(', ')', '->'],
+                'CSS': ['{', '}', '(', ')', '*']
             };
 
             // Action keys
@@ -231,7 +237,7 @@
                         // Move line on top
                         this.code.lines[ln - 1] += this.code.lines[ln];
                         this.code.lines.splice(ln, 1);
-                        this.processLines(ln);
+                        this.processLines(ln - 1);
                     }
                 }
             });
@@ -611,6 +617,7 @@
             {
                 case 'js': return this._change_language('JavaScript');
                 case 'glsl': return this._change_language('GLSL');
+                case 'css': return this._change_language('CSS');
                 case 'json': return this._change_language('JSON');
                 case 'xml': return this._change_language('XML');
                 case 'wgsl': return this._change_language('WGSL');
@@ -656,8 +663,8 @@
                 doAsync( () => {
 
                     // Change css a little bit...
-                    this.gutter.style.height = "calc(100% - 31px)";
-                    this.root.querySelectorAll('.code').forEach( e => e.style.height = "100%" );
+                    this.gutter.style.height = "calc(100% - 38px)";
+                    this.root.querySelectorAll('.code').forEach( e => e.style.height = "calc(100% - 6px)" );
                     this.root.querySelector('.lexareatabscontent').style.height = "calc(100% - 23px)";
 
                 }, 100);
@@ -713,12 +720,12 @@
                 // Update cursor
                 var cursor = this.cursors.children[0];
                 cursor.style.top = (cursor._top - code.scrollTop) + "px";
-                cursor.style.left = "calc( " + (cursor._left - code.scrollLeft) + "px + 0.25em)";
+                cursor.style.left = "calc( " + (cursor._left - code.scrollLeft) + "px + " + this.xPadding + ")";
 
                 // Update selection
                 for( let s of this.selections.childNodes ) {
                     s.style.top = (s._top - code.scrollTop) + "px";
-                    s.style.left = "calc( " + (s._left - code.scrollLeft) + "px + 0.25em)";
+                    s.style.left = "calc( " + (s._left - code.scrollLeft) + "px + " + this.xPadding + ")";
                 }
             });
 
@@ -787,14 +794,17 @@
             var cursor = this.cursors.children[0];
 
             // Discard out of lines click...
-            var code_rect = this.code.getBoundingClientRect();
-            var mouse_pos = [(e.clientX - code_rect.x) + this.getScrollLeft(), (e.clientY - code_rect.y) + this.getScrollTop()];
-            var ln = (mouse_pos[1] / this.lineHeight)|0;
-            if(this.code.lines[ln] == undefined) return;
+            if( e.type != 'contextmenu' )
+            {
+                var code_rect = this.code.getBoundingClientRect();
+                var mouse_pos = [(e.clientX - code_rect.x) + this.getScrollLeft(), (e.clientY - code_rect.y) + this.getScrollTop()];
+                var ln = (mouse_pos[1] / this.lineHeight)|0;
+                if(this.code.lines[ln] == undefined) return;
+            }
 
             if( e.type == 'mousedown' )
             {
-                if( mouse_pos[0] > this.code.clientWidth || mouse_pos[1] > this.code.clientHeight )
+                if( mouse_pos[0] > this.code.scrollWidth || mouse_pos[1] > this.code.scrollHeight )
                     return; // Scrollbar click
                 this.lastMouseDown = time.getTime();
                 this.state.selectingText = true;
@@ -827,7 +837,6 @@
                 {
                     case CodeEditor.MOUSE_DOUBLE_CLICK:
                         const [word, from, to] = this.getWordAtPos( cursor );
-
                         this.resetCursorPos( CodeEditor.CURSOR_LEFT );
                         this.cursorToPosition( cursor, from );
                         this.startSelection( cursor );
@@ -928,13 +937,13 @@
                         if(deltaY == 0) string = !reverse ? this.code.lines[i].substring(fromX, toX) : this.code.lines[i].substring(toX, fromX);
                         else string = this.code.lines[i].substr(fromX);
                         const pixels = ((reverse && deltaY == 0 ? toX : fromX) * this.charWidth) - this.getScrollLeft();
-                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
+                        domEl.style.left = "calc(" + pixels + "px + " + this.xPadding + ")";
                     }
                     else
                     {
                         string = (i == toY) ? this.code.lines[i].substring(0, toX) : this.code.lines[i]; // Last line, any multiple line...
                         const pixels = -this.getScrollLeft();
-                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
+                        domEl.style.left = "calc(" + pixels + "px + " + this.xPadding + ")";
                     }
                     
                     const stringWidth = this.measureString(string);
@@ -969,12 +978,12 @@
                     {
                         string = this.code.lines[i].substr(toX);
                         const pixels = (toX * this.charWidth) - this.getScrollLeft();
-                        domEl.style.left = "calc(" + pixels + "px + 0.25em)";
+                        domEl.style.left = "calc(" + pixels + "px + " + this.xPadding + ")";
                     }
                     else
                     {
                         string = (i == fromY) ? this.code.lines[i].substring(0, fromX) : this.code.lines[i]; // Last line, any multiple line...
-                        domEl.style.left = "calc(" + (-this.getScrollLeft()) + "px + 0.25em)";
+                        domEl.style.left = "calc(" + (-this.getScrollLeft()) + "px + " + this.xPadding + ")";
                     }
                     
                     const stringWidth = this.measureString(string);
@@ -1361,6 +1370,7 @@
         processToken(token, linespan, prev, next) {
 
             let sString = false;
+            let highlight = this.highlight.replace(/\s/g, '').toLowerCase();
 
             if(token == '"' || token == "'")
             {
@@ -1386,7 +1396,7 @@
                 else if( this.keywords[this.highlight] && this.keywords[this.highlight].indexOf(token) > -1 )
                     span.classList.add("cm-kwd");
 
-                else if( this.builtin.indexOf(token) > -1 )
+                else if( this.builtin[this.highlight] && this.builtin[this.highlight].indexOf(token) > -1 )
                     span.classList.add("cm-bln");
 
                 else if( this.literals[this.highlight] && this.literals[this.highlight].indexOf(token) > -1 )
@@ -1404,24 +1414,41 @@
                 else if( token.substr(token.length - 2) == '*/' )
                     span.classList.add("cm-com");
 
-                else if( !Number.isNaN(+token) )
+                else if(  this.isNumber(token) || this.isNumber( token.replace(/[px]|[em]|%/g,'') ) )
                     span.classList.add("cm-dec");
+
+                else if( this.isCSSClass(token, prev, next) )
+                    span.classList.add("cm-kwd");
 
                 else if ( this.isType(token, prev, next) )
                     span.classList.add("cm-typ");
-                
+
                 else if ( token[0] != '@' && next == '(' )
                     span.classList.add("cm-mtd");
 
-                let highlight = this.highlight.replace(/\s/g, '');
-                span.classList.add(highlight.toLowerCase());
+                else if ( highlight == 'css' && prev == ':' && (next == ';' || next == '!important') ) // CSS value
+                    span.classList.add("cm-str");
+
+                else if ( highlight == 'css' && prev == undefined && next == ':' ) // CSS attribute
+                    span.classList.add("cm-typ");
+
+                
+                span.classList.add(highlight);
                 linespan.appendChild(span);
             }
 
             if(sString) delete this._building_string;
         }
 
-        isType( token, prev, next) {
+        isCSSClass( token, prev, next ) {
+            return this.highlight == 'CSS' && prev == '.';
+        }
+
+        isNumber( token ) {
+            return token.length && !Number.isNaN(+token);
+        }
+
+        isType( token, prev, next ) {
             
             if( this.highlight == 'JavaScript' )
             {
@@ -1567,7 +1594,7 @@
             if(!key) return;
             cursor = cursor ?? this.cursors.children[0];
             cursor._left += this.charWidth;
-            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + " + this.xPadding + ")";
             cursor.position++;
             this.restartBlink();
             this._refresh_code_info( cursor.line + 1, cursor.position );
@@ -1587,7 +1614,7 @@
             cursor = cursor ?? this.cursors.children[0];
             cursor._left -= this.charWidth;
             cursor._left = Math.max(cursor._left, 0);
-            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + " + this.xPadding + ")";
             cursor.position--;
             cursor.position = Math.max(cursor.position, 0);
             this.restartBlink();
@@ -1650,7 +1677,7 @@
 
             cursor.position = position;
             cursor._left = position * this.charWidth;
-            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + " + this.xPadding + ")";
         }
 
         cursorToLine( cursor, line, resetLeft = false ) {
@@ -1678,7 +1705,7 @@
             cursor.position = state.charPos ?? 0;
 
             cursor._left = state.left ?? 0;
-            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + 0.25em)";
+            cursor.style.left = "calc(" + (cursor._left - this.getScrollLeft()) + "px + " + this.xPadding + ")";
             cursor._top = state.top ?? 4;
             cursor.style.top = "calc(" + (cursor._top - this.getScrollTop()) + "px)";
         }
@@ -1690,7 +1717,7 @@
             if( flag & CodeEditor.CURSOR_LEFT )
             {
                 cursor._left = 0;
-                cursor.style.left = "calc(" + (-this.getScrollLeft()) + "px + 0.25em)";
+                cursor.style.left = "calc(" + (-this.getScrollLeft()) + "px + " + this.xPadding + ")";
                 cursor.position = 0;
             }
 

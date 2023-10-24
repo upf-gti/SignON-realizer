@@ -351,7 +351,7 @@
 
         options.modal = true;
 
-        new Dialog(title, p => {
+        return new Dialog(title, p => {
             p.addTextArea(null, text, null, { disabled: true });
         }, options);
     }
@@ -387,6 +387,8 @@
         // Focus text prompt
         if(options.input != false)
             dialog.root.querySelector('input').focus();
+        
+        return dialog;
     }
 
     LX.prompt = prompt;
@@ -408,12 +410,13 @@
 
         static NONE                 = 0;
         static NODE_SELECTED        = 1;
-        static NODE_DBLCLICKED      = 2;
-        static NODE_CONTEXTMENU     = 3;
-        static NODE_DRAGGED         = 4;
-        static NODE_RENAMED         = 5;
-        static NODE_VISIBILITY      = 6;
-        static NODE_CARETCHANGED    = 7;
+        static NODE_DELETED         = 2;
+        static NODE_DBLCLICKED      = 3;
+        static NODE_CONTEXTMENU     = 4;
+        static NODE_DRAGGED         = 5;
+        static NODE_RENAMED         = 6;
+        static NODE_VISIBILITY      = 7;
+        static NODE_CARETCHANGED    = 8;
 
         constructor( type, node, value ) {
             this.type = type || TreeEvent.NONE;
@@ -426,6 +429,7 @@
             switch(this.type) {
                 case TreeEvent.NONE: return "tree_event_none";
                 case TreeEvent.NODE_SELECTED: return "tree_event_selected";
+                case TreeEvent.NODE_DELETED: return "tree_event_deleted";
                 case TreeEvent.NODE_DBLCLICKED:  return "tree_event_dblclick";
                 case TreeEvent.NODE_CONTEXTMENU:  return "tree_event_contextmenu";
                 case TreeEvent.NODE_DRAGGED: return "tree_event_dragged";
@@ -698,6 +702,8 @@
 
             var resize = options.resize ?? true;
             var data = "0px";
+            
+            this.offset = 0;
 
             if(resize)
             {
@@ -718,10 +724,19 @@
             }
 
             let minimizable = options.minimizable ?? false;
-            this.offset = 0;
+
             if(minimizable) {
+
+                // Keep state of the animation when ends...
+                area2.root.addEventListener('animationend', e => {
+                    const opacity = getComputedStyle(area2.root).opacity;
+                    area2.root.classList.remove( e.animationName + "-" + type );
+                    area2.root.style.opacity = opacity;
+                    flushCss(area2.root);
+                });
+
                 this.min = document.createElement("div");
-                this.min.className = "lexmin  " + type + " fa-solid";
+                this.min.className = "lexmin " + type + " fa-solid";
                 if(type == "horizontal") 
                     this.min.classList.add("fa-angle-right");
                 else
@@ -729,23 +744,13 @@
 
                 this.min.addEventListener("mousedown", (e) => {
                     // Fade out to down
-                    if(this.min.classList.contains("fa-angle-down")) {
-                        this.minimize();
-                    }
+                    if(this.min.classList.contains("fa-angle-down")) this.minimize();
                     // Fade in from down
-                    else if(this.min.classList.contains("fa-angle-up")) {
-                        
-                        this.maximize();
-                    }
-                    //Fade out to right
-                    else if(this.min.classList.contains("fa-angle-right")) {
-                        this.minimize();
-                    }
-                    //Fade in from right
-                    else if(this.min.classList.contains("fa-angle-left")) {
-                        this.maximize();
-                    }
-                    
+                    else if(this.min.classList.contains("fa-angle-up")) this.maximize();
+                    // Fade out to right
+                    else if(this.min.classList.contains("fa-angle-right")) this.minimize();
+                    // Fade in from right
+                    else if(this.min.classList.contains("fa-angle-left")) this.maximize();
                 });
             }
 
@@ -810,10 +815,17 @@
             }
 
             this.root.appendChild( area1.root );
+
             if(resize) 
+            {
                 this.root.appendChild(this.split_bar);
+            }
+
             if(minimizable)
-                this.root.appendChild(this.min);
+            {
+                area2.root.appendChild(this.min);
+            }
+
             this.root.appendChild( area2.root );
             this.sections = [area1, area2];
             this.type = type;
@@ -902,34 +914,33 @@
         * Hide element
         */
         minimize() {
+
             if(!this.min)
                 return;
 
-            if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-down")) {
+            let [area1, area2] = this.sections;
 
+            if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-down")) {
                 this.min.classList.remove("fa-angle-down");
                 this.min.classList.add("fa-angle-up");
-                this.offset = this.sections[1].root.offsetHeight;
-                this.sections[1].root.classList.remove("fadein-vertical");
-                this.sections[1].root.classList.add("fadeout-vertical");
-                setTimeout(() => {
-                    this.sections[1].hide();
-                    this._moveSplit(20);
-                }, 200);
-            }
-            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")){
+                this.offset = area2.root.offsetHeight - this.min.offsetHeight;
+                area2.root.classList.add("fadeout-vertical");
+                this._moveSplit(-Infinity, true, this.min.offsetHeight); // Force some height here...
 
+            }
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")) {
                 this.min.classList.remove("fa-angle-right");
                 this.min.classList.add("fa-angle-left");
-                this.offset = this.sections[1].root.offsetWidth;
-                this.sections[1].root.classList.remove("fadein-horizontal");
-                this.sections[1].root.classList.add("fadeout-horizontal");
-                
-                setTimeout(() => {
-                    this.sections[1].hide();
-                    this._moveSplit(20);
-                }, 200);
+                this.offset = area2.root.offsetWidth;
+                area2.root.classList.add("fadeout-horizontal");
+                this._moveSplit(-Infinity, true);
             }
+
+            // Set min icon to the parent
+            this.root.insertChildAtIndex( this.min, 2 );
+
+            // Async resize in some ms...
+            doAsync( () => this.propagateEvent('onresize'), 150 );
         }
 
         /**
@@ -937,24 +948,30 @@
         * Show element if it is hidden
         */
         maximize() {
+
             if(!this.min)
                 return;
+            
+            let [area1, area2] = this.sections;
+
             if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-up")) {
                 this.min.classList.remove("fa-angle-up");
                 this.min.classList.add("fa-angle-down");
-                this.sections[1].show();
-                this.sections[1].root.classList.remove("fadeout-vertical");
-                this.sections[1].root.classList.add("fadein-vertical");
+                area2.root.classList.add("fadein-vertical");
                 this._moveSplit(this.offset);
             }
-            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")){
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")) {
                 this.min.classList.remove("fa-angle-left");
                 this.min.classList.add("fa-angle-right");
-                this.sections[1].show();
-                this.sections[1].root.classList.remove("fadeout-horizontal");
-                this.sections[1].root.classList.add("fadein-horizontal");
+                area2.root.classList.add("fadein-horizontal");
                 this._moveSplit(this.offset);
             }
+
+            // Set min icon to the minimizable area
+            area2.root.insertChildAtIndex( this.min, 0 );
+
+            // Async resize in some ms...
+            doAsync( () => this.propagateEvent('onresize'), 150 );
         }
 
         /**
@@ -1204,7 +1221,7 @@
             return tabs;
         }
 
-        _moveSplit( dt ) {
+        _moveSplit( dt, force_animation = false, force_width = 0 ) {
 
             if(!this.type)
                 throw("No split area");
@@ -1214,16 +1231,22 @@
 
             var a1 = this.sections[0];
             var a2 = this.sections[1];
-            var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE +"px";
+            var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE + "px";
 
-            // Remove transitions for this change..
-            const transition = a1.root.style.transition;
-            a1.root.style.transition = "none";
-            flushCss(a1.root);
+            let transition = null;
+            if( !force_animation )
+            {
+                // Remove transitions for this change..
+                transition = a1.root.style.transition;
+                a1.root.style.transition = a2.root.style.transition = "none";
+                flushCss(a1.root);
+                flushCss(a2.root);
+            }
 
             if(this.type == "horizontal") {
 
-                var size = (a2.root.offsetWidth + dt);
+                var size = Math.max(a2.root.offsetWidth + dt,  0);
+                if( force_width ) size = force_width;
 				a1.root.style.width = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "calc( 100% - " + size + "px " + splitinfo + " )";
@@ -1231,14 +1254,19 @@
             }
             else {
 
-                var size = (a2.root.offsetHeight + dt) + a2.offset;
+                var size = Math.max((a2.root.offsetHeight + dt) + a2.offset,  0);
+                if( force_width ) size = force_width;
 				a1.root.style.height = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "calc( 100% - " + size + "px " + splitinfo + " )";
 				a2.root.style.height = ( size - a2.offset ) + "px"; //other split
             }
                 
-            a1.root.style.transition = transition;
+            if( !force_animation )
+            {
+                // Reapply transitions
+                a1.root.style.transition = a2.root.style.transition = transition;
+            }
 
             this._update();
 
@@ -1347,7 +1375,7 @@
                 this.folded = true;
                 this.folding = folding;
                 
-                if(folding == "up") area.root.insertBefore(area.sections[1].root, area.sections[0].root);
+                if(folding == "up") area.root.insertChildAtIndex(area.sections[1].root, 0);
 
                 // // Add fold back button
 
@@ -2225,6 +2253,7 @@
             let item = document.createElement('li');
             item.className = "lextreeitem " + "datalevel" + level + (is_parent ? " parent" : "") + (is_selected ? " selected" : "");
             item.id = node.id;
+            item.tabIndex = "0";
 
             // Select hierarchy icon
             let icon = "fa-solid fa-square"; // Default: no childs
@@ -2264,13 +2293,16 @@
                 }
 
                 // Only Show children...
-                if(is_parent) {
+                if(is_parent && node.id.length > 1 /* Strange case... */) {
                     node.closed = false;
                     if(that.onevent) {
                         const event = new TreeEvent(TreeEvent.NODE_CARETCHANGED, node, node.closed);
                         that.onevent( event );
                     }
                     that.refresh();
+                    // Focus the element so we can read events...
+                    var el = this.domEl.querySelector("#" + node.id);
+                    if(el) el.focus();
                 }
 
                 if(that.onevent) {
@@ -2297,6 +2329,37 @@
                     const event = new TreeEvent(TreeEvent.NODE_CONTEXTMENU, this.selected.length > 1 ? this.selected : node, e);
                     event.multiple = this.selected.length > 1;
                     that.onevent( event );
+                }
+            });
+
+            item.addEventListener("keydown", e => {
+                e.preventDefault();
+                if( e.key == "Delete" )
+                {
+                    // Send event now so we have the info in selected array..
+                    if(that.onevent) {
+                        const event = new TreeEvent(TreeEvent.NODE_DELETED, this.selected.length > 1 ? this.selected : node, e);
+                        event.multiple = this.selected.length > 1;
+                        that.onevent( event );
+                    }
+
+                    // Delete nodes now
+                    for( let _node of this.selected )
+                    {
+                        let childs = _node.parent.children;
+                        const index = childs.indexOf( _node );
+                        childs.splice( index, 1 );
+                    }
+
+                    this.selected.length = 0;
+                    this.refresh();
+                }
+                else if( e.key == "ArrowUp" || e.key == "ArrowDown" ) // Unique or zero selected
+                {
+                    var selected = this.selected.length > 1 ? (e.key == "ArrowUp" ? this.selected.shift() : this.selected.pop()) : this.selected[0];
+                    var el = this.domEl.querySelector("#" + selected.id);
+                    var sibling = e.key == "ArrowUp" ? el.previousSibling : el.nextSibling;
+                    if( sibling ) sibling.click();
                 }
             });
 
@@ -2447,7 +2510,7 @@
                     actionEl.className = "itemicon " + a.icon;
                     actionEl.title = a.name;
                     actionEl.addEventListener("click", function(e) {
-                        a.callback(node);
+                        a.callback(node, actionEl);
                         e.stopPropagation();
                     });
                     item.appendChild(actionEl);
@@ -3056,6 +3119,7 @@
                 Object.assign(link_el.style, options.style ?? {});
                 element.replaceWith(link_el);
             }
+            return element;
         }
 
         /**
@@ -3865,7 +3929,7 @@
 
             // Add dropdown array button
 
-            const itemNameWidth = "10%";
+            const itemNameWidth = "3%";
 
             var container = document.createElement('div');
             container.className = "lexarray";
@@ -3917,13 +3981,13 @@
                             this.addText(i+"", value, function(value, event) {
                                 values[i] = value;
                                 callback( values );
-                            }, { nameWidth: itemNameWidth, inputWidth: "90%", noreset: true });
+                            }, { nameWidth: itemNameWidth, inputWidth: "95%", noreset: true });
                             break;
                         case Number:
                             this.addNumber(i+"", value, function(value, event) {
                                 values[i] = value;
                                 callback( values );
-                            }, { nameWidth: itemNameWidth, inputWidth: "90%", noreset: true });
+                            }, { nameWidth: itemNameWidth, inputWidth: "95%", noreset: true });
                             break;
                     }
 
@@ -4073,10 +4137,9 @@
                 }
 
                 let tag_input = document.createElement('input');
-                tag_input.style.width = "64px";
                 tag_input.value = "";
                 tag_input.placeholder = "Tag...";
-                tags_container.appendChild(tag_input);
+                tags_container.insertChildAtIndex(tag_input, 0);
 
                 tag_input.onkeydown = function(e) {
                     const val = this.value.replace(/\s/g, '');
@@ -4364,6 +4427,10 @@
             vecinput.value = vecinput.iValue = value;
             box.appendChild(vecinput);
 
+            let drag_icon = document.createElement('a');
+            drag_icon.className = "fa-solid fa-arrows-up-down drag-icon hidden";
+            box.appendChild(drag_icon);
+
             if(options.disabled) {
                 vecinput.disabled = true;
             }
@@ -4428,6 +4495,7 @@
                 doc.addEventListener("mouseup",inner_mouseup);
                 lastY = e.pageY;
                 document.body.classList.add('nocursor');
+                drag_icon.classList.remove('hidden');
             }
 
             function inner_mousemove(e) {
@@ -4452,6 +4520,7 @@
                 doc.removeEventListener("mousemove",inner_mousemove);
                 doc.removeEventListener("mouseup",inner_mouseup);
                 document.body.classList.remove('nocursor');
+                drag_icon.classList.add('hidden');
             }
             
             container.appendChild(box);
@@ -4492,6 +4561,13 @@
                     Panel.#dispatch_event(inputs[i], "change");
                 }
             };
+            widget.setValue = (new_value) => {
+                const inputs = element.querySelectorAll(".vecinput");
+                for( var i = 0; i < inputs.length; ++i ) {
+                    inputs[i].value = new_value[i] ?? 0;
+                }
+            }
+
             let element = widget.domEl;
 
             // Add reset functionality
@@ -4524,6 +4600,10 @@
                 vecinput.id = "vec"+num_components+"_"+simple_guidGenerator();
                 vecinput.idx = i;
                 vecinput.value = vecinput.iValue = value[i];
+
+                let drag_icon = document.createElement('a');
+                drag_icon.className = "fa-solid fa-arrows-up-down drag-icon hidden";
+                box.appendChild(drag_icon);
 
                 if(options.disabled) {
                     vecinput.disabled = true;
@@ -4584,6 +4664,7 @@
                     doc.addEventListener("mouseup",inner_mouseup);
                     lastY = e.pageY;
                     document.body.classList.add('nocursor');
+                    drag_icon.classList.remove('hidden');
                 }
 
                 function inner_mousemove(e) {
@@ -4615,6 +4696,7 @@
                     doc.removeEventListener("mousemove",inner_mousemove);
                     doc.removeEventListener("mouseup",inner_mouseup);
                     document.body.classList.remove('nocursor');
+                    drag_icon.classList.add('hidden');
                 }
                 
                 box.appendChild(vecinput);
@@ -5308,8 +5390,16 @@
             if( options.closable ?? true)
             {
                 this.close = () => {
-                    that.panel.clear();
-                    root.remove();
+
+                    if( !options.onclose )
+                    {
+                        that.panel.clear();
+                        root.remove();
+                    } else
+                    {
+                        options.onclose( this.root );
+                    }
+
                     if(modal)
                         LX.modal.toggle();
                 };
@@ -5351,6 +5441,8 @@
 
             root.style.width = size[0] ? (size[0]) : "25%";
             root.style.height = size[1] ? (size[1]) : "auto";
+
+            if(options.size) this.size = size;
             
             let rect = root.getBoundingClientRect();
             root.style.left = position[0] ? (position[0]) : "calc( 50% - " + (rect.width * 0.5) + "px )";
@@ -5406,11 +5498,22 @@
             this.panel.root.style.height = "calc( 100% - 40px )";
             this.dock_pos = PocketDialog.TOP;
 
+            this.minimized = false;
             this.title.tabIndex = -1;
             this.title.addEventListener("click", e => {
-                this.root.classList.toggle("closed");
+
+                // Sized dialogs have to keep their size 
+                if( this.size )
+                {
+                    if( !this.minimized ) this.root.style.height = "auto";
+                    else this.root.style.height = this.size[1];
+                }
+
+                this.root.classList.toggle("minimized");
+                this.minimized = !this.minimized;
+
                 if( this.dock_pos == PocketDialog.BOTTOM )
-                    that.root.style.top = this.root.classList.contains("closed") ? 
+                    that.root.style.top = this.root.classList.contains("minimized") ? 
                     "calc(100% - " + (that.title.offsetHeight + 6) + "px)" : "calc(100% - " + (that.root.offsetHeight + 6) + "px)";
             });
 
@@ -6364,6 +6467,7 @@
                     let preview = document.createElement('img');
                     const has_image = item.src && ['png', 'jpg'].indexOf( getExtension( item.src ) ) > -1;
                     preview.src = has_image ? item.src : "../images/" + item.type.toLowerCase() + ".png";
+                    if(item.unknown_extension) preview.src = "../images/file.png";
                     itemEl.appendChild(preview);
                 }
 
@@ -6506,22 +6610,29 @@
                 fr.onload = e => { 
                     
                     let ext = file.name.substr(file.name.lastIndexOf('.') + 1).toLowerCase();
-                    let type = 'Resource';
+
+                    let item = {
+                        "id": file.name,
+                        "src": e.currentTarget.result,
+                        "extension": ext
+                    };
 
                     switch(ext)
                     {
                     case 'png':
                     case 'jpg':
-                        type = "image";
+                        item.type = "image"; break;
+                    case 'js': 
+                        item.type = "script"; break;
+                    case 'json': 
+                        item.type = "json"; break;
+                    default:
+                        item.type = ext;
+                        item.unknown_extension = true;
                         break;
                     }
 
-                    this.current_data.push({
-                        "id": file.name,
-                        "src": e.currentTarget.result,
-                        "extension": ext,
-                        "type": type
-                    });
+                    this.current_data.push( item );
                     
                     if(i == (num_files - 1)) {
                         this._refresh_content();
@@ -6830,6 +6941,11 @@
             setTimeout( function(){ URL.revokeObjectURL( url ); }, 1000*60 ); //wait one minute to revoke url
         }
     });
+
+    Element.prototype.insertChildAtIndex = function(child, index = Infinity) {
+        if (index >= this.children.length) this.appendChild(child);
+        else this.insertBefore(child, this.children[index]);
+    }
 
 	LX.UTILS = {
         getTime() { return new Date().getTime() },
