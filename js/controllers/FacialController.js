@@ -8,13 +8,6 @@ import { findIndexOfBone } from "../sigml/SigmlUtils.js"
 function FacialController(config = null) {
     
     // define some properties
-    this.headNode = "mixamorig_Head";
-    this.neckNode = "mixamorig_Neck";
-    this.lookAt = "target";
-    this.lookAtEyes = "eyesTarget";
-    this.lookAtHead = "headTarget";
-    this.lookAtNeck = "neckTarget";
-
     this._gazePositions = {
         "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
         "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
@@ -23,31 +16,14 @@ function FacialController(config = null) {
         "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
     };
 
-    // TODO: updatet2l names ?
-    this.squintBSName = "Squint";
-    this.eyelidsBSName = "Blink";
-    this.smileBSName = "Smile";
-    this.sadBSName = "Sad";
-    this.kissBSName = "MouthWhistle";
-    this.lipsPressedBSName = "Jaw_Up";
-    this.lowerLipINBSName = "Lip_Suck_Lower"; //"LowerLipIn";
-    this.lowerLipDownBSName = "Lower_Lip_Depressor_Left"; //"LowerLipDown";
-    this.mouthNarrowBSName = "MouthNarrow";
-    this.mouthOpenBSName = "MouthOpen";
-    this.tongueBSName = "Tongue";
-
-    this.browsDownBSName = "BrowsDown";
-    this.browsInnerUpBSName = "BrowsIn";
-    this.browsUpBSName = "BrowsUp";
-
     this._morphTargets = {}; // current avatar morph targets
-    this._mappingAU2BS = {}; // mappings of current (target) avatar BS to default (source) morph deformers
+    this._avatarParts = {}; // list of AU in each mesh of the avatar
     this._boneMap = {}; // bone name to index mapper
-    this._avatarParts = {}; // list of BS in each mesh of the avatar
+    this._mappingAU2BS = {}; // mappings of current (target) avatar BS to default (source) action units
     
-    // default morph deformers
-    this._morphDeformers = {
-        "morphTargetDictionary": {
+    // default action units
+    this._actionUnits = {
+        "dictionary": {
                 "Inner_Brow_Raiser": 0, "Outer_Brow_Raiser_Left": 1, "Outer_Brow_Raiser_Right": 2, "Brow_Lowerer_Left": 3, "Brow_Lowerer_Right": 4, "Nose_Wrinkler_Left": 5, "Nose_Wrinkler_Right": 6, "Nostril_Dilator": 7, "Nostril_Compressor": 8,
                 "Dimpler_Left": 9, "Dimpler_Right": 10, "Upper_Lip_Raiser_Left": 11, "Upper_Lip_Raiser_Right": 12, "Lip_Corner_Puller_Left": 13, "Lip_Corner_Puller_Right": 14, "Lip_Corner_Depressor_Left": 15, "Lip_Corner_Depressor_Right": 16,
                 "Lower_Lip_Depressor_Left": 17, "Lower_Lip_Depressor_Right": 18, "Lip_Puckerer_Left": 19, "Lip_Puckerer_Right": 20, "Lip_Stretcher_Left": 21, "Lip_Stretcher_Right": 22, "Lip_Funneler": 23, "Lip_Pressor_Left": 24, "Lip_Pressor_Right": 25,
@@ -55,14 +31,14 @@ function FacialController(config = null) {
                 "Jaw_Sideways_Left": 38, "Jaw_Sideways_Right": 39, "Chin_Raiser": 40, "Cheek_Raiser_Left": 41, "Cheek_Raiser_Right": 42, "Cheek_Blow_Left": 43, "Cheek_Blow_Right": 44, "Cheek_Suck_Left": 45, "Cheek_Suck_Right": 46, "Upper_Lid_Raiser_Left": 47,
                 "Upper_Lid_Raiser_Right": 48, "Squint_Left": 49, "Squint_Right": 50, "Blink_Left": 51, "Blink_Right": 52, "Wink_Left": 53, "Wink_Right": 54, "Neck_Tightener": 55
             },
-        "morphTargetInfluences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        "influences": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     };
 
     this._eyeLidsAU = [51, 52]; // idx number of eyelids related AU - gaze and blink easy access
     this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
     // weighting factor for t2l interface
-    this._t2lFactor = {
+    this._t2lMap = {
         "kiss": ["Lip_Puckerer_Left", "Lip_Puckerer_Right"],
         "upperLipClosed": ["Lip_Suck_Upper"], 
         "lowerLipClosed": ["Lip_Suck_Lower"],
@@ -70,6 +46,13 @@ function FacialController(config = null) {
         "tongueFrontUp": ["Tongue_Up"],
         "tongueOut": ["Tongue_Show"],
     };
+
+    // TODO: update a2l names ?
+    this.lipsPressedBSName = "Jaw_Up";
+    this.lowerLipINBSName = "Lip_Suck_Lower";
+    this.lowerLipDownBSName = "Lower_Lip_Depressor_Left";
+    this.mouthNarrowBSName = "MouthNarrow";
+    this.mouthOpenBSName = "MouthOpen";
         
     this.lipsyncModule = new Lipsync();
 
@@ -93,11 +76,6 @@ FacialController.prototype.configure = function (o) {
         } );
     }
     
-    if (o.headNode) this.headNode = o.headNode;
-    if (o.lookAt) this.lookAt = o.lookAt;
-    if (o.lookAtEyes) this.lookAtEyes = o.lookAtEyes;
-    if (o.lookAtHead) this.lookAtHead = o.lookAtHead;
-    if (o.lookAtNeck) this.lookAtNeck = o.lookAtNeck;
     if (o.gazePositions) this._gazePositions = o.gazePositions;
     if (o.morphTargets) this._morphTargets = o.morphTargets;
 
@@ -115,8 +93,7 @@ FacialController.prototype.configure = function (o) {
 }
 
 FacialController.prototype.start = function (morphTargets) {
-    // console.log(this._facialBS);
-    
+
     if (!morphTargets) {
         morphTargets = {};
         // Get morph targets
@@ -126,8 +103,8 @@ FacialController.prototype.start = function (morphTargets) {
         this._morphTargets = morphTargets;
     }
         
-    this._facialAUAcc = this._morphDeformers.morphTargetInfluences.slice(); // clone array;
-    this._facialAUFinal = this._morphDeformers.morphTargetInfluences.slice(); // clone array;
+    this._facialAUAcc = this._actionUnits.influences.slice(); // clone array;
+    this._facialAUFinal = this._actionUnits.influences.slice(); // clone array;
 
     if (!this._morphTargets) {
         console.error("Morph deformer not found");
@@ -144,7 +121,7 @@ FacialController.prototype.start = function (morphTargets) {
     if (!this._boneMap.Head)
     console.error("Head bone node not found with id: ");
     else if (!this._gazePositions["HEAD"]) {
-        let headNode = this.skeleton.bones[this._boneMap.Head] // let headNode = this.character.getObjectByName(this.headNode)
+        let headNode = this.skeleton.bones[this._boneMap.Head];
         this._gazePositions["HEAD"] = headNode.getWorldPosition(new THREE.Vector3());
     }
 
@@ -153,20 +130,9 @@ FacialController.prototype.start = function (morphTargets) {
     let lookAtNeckNode = this.character.neckTarget;
     let lookAtHeadNode = this.character.headTarget;
 
-    if (!this.lookAtEyes)
-    console.error("LookAt Eyes not found");
-    else if (!this._gazePositions["EYESTARGET"])
-    this._gazePositions["EYESTARGET"] = lookAtEyesNode.getWorldPosition(new THREE.Vector3());
-
-    if (!this.lookAtHead)
-    console.error("LookAt Head not found");
-    else if (!this._gazePositions["HEADTARGET"])
-    this._gazePositions["HEADTARGET"] = lookAtHeadNode.getWorldPosition(new THREE.Vector3());
-
-    if (!this.lookAtNeck)
-    console.error("LookAt Neck not found");
-    else if (!this._gazePositions["NECKTARGET"])
-    this._gazePositions["NECKTARGET"] = lookAtNeckNode.getWorldPosition(new THREE.Vector3());
+    if (!this._gazePositions["EYESTARGET"]){ this._gazePositions["EYESTARGET"] = lookAtEyesNode.getWorldPosition(new THREE.Vector3()); }
+    if (!this._gazePositions["HEADTARGET"]){ this._gazePositions["HEADTARGET"] = lookAtHeadNode.getWorldPosition(new THREE.Vector3()); }
+    if (!this._gazePositions["NECKTARGET"]){ this._gazePositions["NECKTARGET"] = lookAtNeckNode.getWorldPosition(new THREE.Vector3()); }
 
     // Gaze manager
     this.gazeManager = new GazeManager(lookAtNeckNode, lookAtHeadNode, lookAtEyesNode, this._gazePositions);
@@ -174,7 +140,6 @@ FacialController.prototype.start = function (morphTargets) {
     this.headBML = []; //null;
 
     this.autoBlink = new Blink();
-
 }
 
 FacialController.prototype.reset = function ( keepEmotion = false ) {
@@ -195,7 +160,7 @@ FacialController.prototype.resetFace = function () {
     for (let i = 0; i < this._facialAUFinal.length; i++) {
         this._facialAUAcc[i] = 0;
         this._facialAUFinal[i] = 0;
-        this._morphDeformers.morphTargetInfluences[i] = 0;
+        this._actionUnits.influences[i] = 0;
     }
 }
 
@@ -211,8 +176,8 @@ FacialController.prototype.update = function (dt) {
     for (let AUName in this._mappingAU2BS) {
         let avatarBSnames = this._mappingAU2BS[AUName]; // array of target avatar BS [names, factor]
         
-        let idx = this._morphDeformers.morphTargetDictionary[AUName]; // index of source blendshape
-        let value = this._morphDeformers.morphTargetInfluences[idx]; // value of source blendshape
+        let idx = this._actionUnits.dictionary[AUName]; // index of source blendshape
+        let value = this._actionUnits.influences[idx]; // value of source blendshape
         
         // map source value to all target BS
         for (let i = 0; i < avatarBSnames.length; i++) {
@@ -227,9 +192,9 @@ FacialController.prototype.update = function (dt) {
     // compute the mean influence value for each target
     for (let part in this._avatarParts) {
         // get AU names that influence current mesh (if null uses all AUs)
-        let AUnames = this._avatarParts[part] ? this._avatarParts[part] : Object.keys(this._morphDeformers.morphTargetDictionary);
+        let AUnames = this._avatarParts[part] ? this._avatarParts[part] : Object.keys(this._actionUnits.dictionary);
         for (let i = 0; i < AUnames.length; i++) {
-            let avatarBSnames = this._mappingAU2BS[AUnames[i]];
+            let avatarBSnames = this._mappingAU2BS[AUnames[i]] ? this._mappingAU2BS[AUnames[i]] : [];
             for (let i = 0; i < avatarBSnames.length; i++) {
                 let targetBSName = avatarBSnames[i][0];
                 let values = targetAccumulatedValues[targetBSName] ? targetAccumulatedValues[targetBSName] : [];
@@ -322,8 +287,8 @@ FacialController.prototype.faceUpdate = function (dt) {
             let smooth = 0.66;
             let BSAcc = this._facialAUAcc;
             let BSFin = this._facialAUFinal;
-            let BS = this._morphDeformers.morphTargetInfluences; // for smoothing purposes
-            let morphDict = this._morphDeformers.morphTargetDictionary;
+            let BS = this._actionUnits.influences; // for smoothing purposes
+            let morphDict = this._actionUnits.dictionary;
             // search every morphTarget to find the proper ones
             let names = Object.keys(morphDict);
             for (let i = 0; i < names.length; i++) {
@@ -425,7 +390,7 @@ FacialController.prototype.faceUpdate = function (dt) {
 
     // "Render" final facial (body) blendshapes
     // copy blendshape arrays back to real arrays
-    let tar = this._morphDeformers.morphTargetInfluences;
+    let tar = this._actionUnits.influences;
     let source = this._facialAUFinal;
     for (let i = 0; i < tar.length; ++i) {
         tar[i] = source[i];
@@ -447,10 +412,10 @@ FacialController.prototype.newTextToLip = function (bml) {
         let t2lBSWMap = T2LTABLES.BlendshapeMapping;
 
         // map blendshapes to text2lip output
-        for(const part in this._t2lFactor) {
-            for(let i = 0; i < this._t2lFactor[part].length; i++) {
+        for(const part in this._t2lMap) {
+            for(let i = 0; i < this._t2lMap[part].length; i++) {
                 // instead of looping through all BS, access directly the index of the desired blendshape
-                let idx = this._morphDeformers.morphTargetDictionary[this._t2lFactor[part][i]];
+                let idx = this._actionUnits.dictionary[this._t2lMap[part][i]];
                 if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part]]);
             }
         }
@@ -501,7 +466,7 @@ FacialController.prototype.newFA = function (faceData, shift) {
     
     // Use BSW of the agent
     for (let i = 0; i < this._facialAUFinal.length; i++) {
-        this._facialAUFinal[i] = this._morphDeformers.morphTargetInfluences[i];
+        this._facialAUFinal[i] = this._actionUnits.influences[i];
     }
     if (faceData.emotion || faceData.valaro) {
         this.FA.initFaceValAro(faceData, shift, this._facialAUFinal); // new FacialExpr (faceData, shift, this._facialAUFinal);

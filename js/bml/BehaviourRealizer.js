@@ -134,39 +134,39 @@ Blink.prototype.computeWeight = function (dt) {
 FacialExpr.NMF = {}; // lookup table for lexeme-blendshape relation
 
 // SignON actions units
-FacialExpr.NMF.NMF_FROWN =                  [[3, 4], [1, 1]];
-FacialExpr.NMF.NMF_ARCH =                   [[1, 2, 0], [1, 1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[47, 48], [1, 1]];
-FacialExpr.NMF.NMF_SQUINT =                 [[49, 50], [1, 1]];
-FacialExpr.NMF.NMF_BLINK =                  [[51, 52], [1, 1]];
-FacialExpr.NMF.NMF_CLOSED =                 [[51, 52], [1, 1]];
-FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[46], [1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[45], [1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[45, 46], [1, 1]]; // missing new blendshapes
-FacialExpr.NMF.NMF_BLOW_RIGHT =             [[44], [1]];
-FacialExpr.NMF.NMF_BLOW_LEFT =              [[43], [1]];
-FacialExpr.NMF.NMF_BLOW_BOTH =              [[43, 44], [1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[35], [1]];
-FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[28, 19, 20, 27], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_SMILE_TEETH =            [[13, 14, 35], [0.5, 0.5, 0.2]];
-FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[13, 14, 35], [1, 1, 0.2]];
-FacialExpr.NMF.NMF_SMILE_CLOSED =           [[13, 14], [1, 1]];
-FacialExpr.NMF.NMF_ROUND_OPEN =             [[19, 20, 35], [0.7, 0.7, 0.7]];// missing new blendshape
-FacialExpr.NMF.NMF_ROUND_CLOSED =           [[19, 20], [1, 1]];
-FacialExpr.NMF.NMF_OUT_POINTED =            [[], []];       // missing new blendshapes
-FacialExpr.NMF.NMF_OUT_ROUND =              [[], []];       // missing new blendshapes
-FacialExpr.NMF.NMF_CRINKLE =                [[5, 6], [1, 1]];
-FacialExpr.NMF.NMF_FLARE =                  [[7], [1]];       // AU38 - nostril dilator
-// extra
-FacialExpr.NMF.NMF_NOSTRIL_COMPRESSOR =     [[8], [1]];       // AU39 - nostril compressor
-FacialExpr.NMF.NMF_TONGUE_BULGE_LEFT =      [[32], [1]];       // LAU36
-FacialExpr.NMF.NMF_TONGUE_BULGE_RIGHT =     [[33], [1]];       // RAU36
-FacialExpr.NMF.NMF_TONGUE_UP =              [[30], [1]];       // 
-FacialExpr.NMF.NMF_TONGUE_SHOW =            [[31], [1]];       // AU19
-FacialExpr.NMF.NMF_TONGUE_WIDE =            [[34], [1]];       // 
-FacialExpr.NMF.NMF_LIP_WIPE =               [[29], [1]];       // AU37
-FacialExpr.NMF.NMF_NECK_TIGHTENER =         [[55], [1]];       // AU21
-// others (legacy mainly)
+// BROWS
+FacialExpr.NMF.ARCH =                       [[1, 2, 0], [1, 1, 1]];
+FacialExpr.NMF.BROW_LOWERER =               [[3, 4], [1,1]]; // AU4 brows down
+FacialExpr.NMF.BROW_LOWERER_LEFT =          [[3], [1]]; // LAU4
+FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[4], [1]]; // RAU4 
+FacialExpr.NMF.BROW_RAISER =                [[1, 2], [1,1]]; //  brow up
+FacialExpr.NMF.BROW_RAISER_LEFT =           [[1], [1]]; // left brow up
+FacialExpr.NMF.BROW_RAISER_RIGHT =          [[2], [1]]; // right brow up
+FacialExpr.NMF.INNER_BROW_RAISER =          [[0], [1]]; // AU1 rows rotate outwards
+FacialExpr.NMF.OUTER_BROW_RAISER =          [[1, 2], [1,1]]; // AU2 brows up (right)
+// EYES
+FacialExpr.NMF.SQUINT =                     [[49, 50], [1, 1]];
+FacialExpr.NMF.BLINK =                      [[51, 52], [1, 1]]; // AU45 eyelids closed 
+FacialExpr.NMF.EYES_CLOSED =                [[51, 52], [1, 1]]; // AU43 eyelids closed
+FacialExpr.NMF.UPPER_LID_RAISER =           [[47, 48], [1,1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[47], [1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[48], [1]]; // AU5 negative eyelids closed /wide eyes 
+FacialExpr.NMF.CHEEK_RAISER =               [[41, 42], [1,1]]; // AU6 squint 
+FacialExpr.NMF.LID_TIGHTENER =              [[51, 52, 49, 50], [0.2, 0.2, 0.8, 0.8]]; // AU7 or AU44 squint TODO NEW MAPPING: SQUINT + BLINK
+FacialExpr.NMF.WINK_LEFT =                  [[53], [1]]; // AU46
+FacialExpr.NMF.WINK_RIGHT =                 [[54], [1]]; // AU46
+// CHEEKS
+FacialExpr.NMF.CHEEK_SUCK =                 [[45, 46], [1, 1]]; // AU35
+FacialExpr.NMF.CHEEK_SUCK_LEFT =            [[45], [1]]; // LAU35
+FacialExpr.NMF.CHEEK_SUCK_RIGHT =           [[46], [1]]; // RAU35
+FacialExpr.NMF.CHEEK_BLOW =                 [[43, 44], [1, 1]]; // AU33
+FacialExpr.NMF.CHEEK_BLOW_LEFT =            [[43], [1]]; // LAU33
+FacialExpr.NMF.CHEEK_BLOW_RIGHT =           [[44], [1]]; // RAU33
+// NOSE
+FacialExpr.NMF.NOSE_WRINKLER =              [[5, 6], [1, 1]]; // AU9
+FacialExpr.NMF.NOSTRIL_DILATOR =            [[7], [1]];       // AU38 - nostril dilator
+FacialExpr.NMF.NOSTRIL_COMPRESSOR =         [[8], [1]];       // AU39 - nostril compressor
+// LIPS
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[15, 16], [1,1]]; // AU15 sad 
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[15], [1]]; // LAU15 sad
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[16], [1]]; // RAU15 sad
@@ -195,36 +195,27 @@ FacialExpr.NMF.DIMPLER =                    [[9, 10], [1, 1]]; // AU14
 FacialExpr.NMF.DIMPLER_LEFT =               [[9], [1]]; // LAU14
 FacialExpr.NMF.DIMPLER_RIGHT =              [[10], [1]]; // RAU14
 FacialExpr.NMF.LIP_BITE =                   [[28, 35, 36], [1, 0.1, 0.05]]; // AU32
-
-FacialExpr.NMF.NOSE_WRINKLER =              [[5, 6], [1,1]]; // AU9
-FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27 
-FacialExpr.NMF.MOUTH_OPEN =                 [[35] , [1]]; // jaw // TODO: keep this?
+// MOUTH-JAW
+FacialExpr.NMF.SMILE_TEETH =                [[13, 14, 35], [0.5, 0.5, 0.2]];
+FacialExpr.NMF.SMILE_TEETH_WIDE =           [[13, 14, 35], [1, 1, 0.2]];
+FacialExpr.NMF.SMILE_CLOSED =               [[13, 14], [1, 1]]; // same as LIP_CORNER_DEPRESSOR
+FacialExpr.NMF.ROUND_OPEN =                 [[19, 20, 35], [0.7, 0.7, 0.7]];
+FacialExpr.NMF.ROUND_CLOSED =               [[19, 20], [1, 1]]; // same as LIP_PUCKERER
+FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27
+FacialExpr.NMF.CLOSE_TIGHT =                [[28, 19, 20, 27], [1, 1, 1, 1]];
 FacialExpr.NMF.JAW_DROP =                   [[36], [1]]; // AU26
+FacialExpr.NMF.JAW_THRUST =                 [[37], [1]]; // AU29
 FacialExpr.NMF.JAW_SIDEWAYS_LEFT =          [[38], [1]]; // AU30L
 FacialExpr.NMF.JAW_SIDEWAYS_RIGHT =         [[39], [1]]; // AU30R
-FacialExpr.NMF.JAW_THRUST =                 [[37], [1]]; // AU29
-FacialExpr.NMF.TONGUE_SHOW =                [[31], [1]]; // AU19
-FacialExpr.NMF.CHEEK_BLOW =                 [[43, 44], [1, 1]]; //AU33
-FacialExpr.NMF.CHEEK_SUCK =                 [[45, 46], [1, 1]]; //AU35
-
-FacialExpr.NMF.BROW_LOWERER =               [[3, 4], [1,1]]; // AU4 
-FacialExpr.NMF.BROW_LOWERER_LEFT =          [[3], [1]]; //
-FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[4], [1]]; // brows down
-FacialExpr.NMF.BROW_RAISER =                [[1, 2], [1,1]]; //  brow up
-FacialExpr.NMF.BROW_RAISER_LEFT =           [[1], [1]]; // left brow up
-FacialExpr.NMF.BROW_RAISER_RIGHT =          [[2], [1]]; // right brow up
-FacialExpr.NMF.INNER_BROW_RAISER =          [[0], [1]]; // AU1 rows rotate outwards
-FacialExpr.NMF.OUTER_BROW_RAISER =          [[1, 2], [1,1]]; // AU2 brows up (right)
-
-FacialExpr.NMF.UPPER_LID_RAISER =           [[47, 48], [1,1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[47], [1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[48], [1]]; // AU5 negative eyelids closed /wide eyes 
-FacialExpr.NMF.CHEEK_RAISER =               [[41, 42], [1,1]]; // AU6 squint 
-FacialExpr.NMF.LID_TIGHTENER =              [[51, 52, 49, 50], [0.2, 0.2, 0.8, 0.8]]; // AU7 or AU44 squint TODO NEW MAPPING: SQUINT + BLINK
-FacialExpr.NMF.EYES_CLOSED =                [[51, 52], [1, 1]]; // AU43 eyelids closed
-FacialExpr.NMF.BLINK =                      [[51, 52], [1,1]]; // AU45 eyelids closed 
-FacialExpr.NMF.WINK_LEFT =                  [[53], [1]]; // AU46
-FacialExpr.NMF.WINK_RIGHT =                 [[54], [1]]; // AU46
+// TONGUE
+FacialExpr.NMF.TONGUE_BULGE_LEFT =          [[32], [1]];       // LAU36
+FacialExpr.NMF.TONGUE_BULGE_RIGHT =         [[33], [1]];       // RAU36
+FacialExpr.NMF.TONGUE_UP =                  [[30], [1]];       // 
+FacialExpr.NMF.TONGUE_SHOW =                [[31], [1]];       // AU19
+FacialExpr.NMF.TONGUE_WIDE =                [[34], [1]];       // 
+FacialExpr.NMF.LIP_WIPE =                   [[29], [1]];       // AU37
+// NECK
+FacialExpr.NMF.NECK_TIGHTENER =             [[55], [1]];       // AU21
 
 
 // Constructor
@@ -365,7 +356,7 @@ FacialExpr.prototype.updateLexemesBSW = function (dt) {
 // Variables for Valence Arousal
 
 // Psyche Interpolation Table
-/*FacialExpr.prototype._pit = [0.000, 0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,
+/*FacialExpr.prototype._emotionsVAE = [0.000, 0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.000,
                             0.000,  1.000,  0.138,  1.00,  0.000,  0.675,  0.000,  0.056,  0.200,  0.116,  0.100,
                             0.500,  0.866,  0.000,  0.700,  0.000,  0.000,  0.000,  0.530,  0.000,  0.763,  0.000,
                             0.866,  0.500,  0.000,  1.000,  0.000,  0.000,  0.600,  0.346,  0.732,  0.779,  0.000,
@@ -379,7 +370,7 @@ FacialExpr.prototype.updateLexemesBSW = function (dt) {
 
 /* "valence", "arousal" ,"BLINK","CHEEK_RAISER", "LIP_CORNER_PULLER", "BROW_LOWERER", "DIMPLER", "OUTER_BROW_RAISER", "
 UPPER_LID_RAISER", "JAW_DROP","LID_TIGHTENER", "LIP_STRECHER","NOSE_WRINKLER", "LIP_CORNER_DEPRESSOR", "CHIN_RAISER", "LIP_CORNER_PULLER_RIGHT", "DIMPLER_RIGHT"*/
-/*FacialExpr.prototype._pit = [
+/*FacialExpr.prototype._emotionsVAE = [
   [0.95, 0.23 ,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0 ],//HAPPINESS
   [-0.81, -0.57, 0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0 ], //SADNESS
   [0.22, 0.98, 0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,0 ], //SURPRISED
@@ -390,31 +381,61 @@ UPPER_LID_RAISER", "JAW_DROP","LID_TIGHTENER", "LIP_STRECHER","NOSE_WRINKLER", "
   [0, 0 ,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ] //NEUTRAL
   ]*/
 
-FacialEmotion.prototype.VALexemes = ["BLINK", "CHEEK_RAISER", "LIP_CORNER_PULLER", "BROW_LOWERER", "DIMPLER", "OUTER_BROW_RAISER", "UPPER_LID_RAISER", "JAW_DROP", "LID_TIGHTENER", "LIP_STRECHER", "NOSE_WRINKLER", "LIP_CORNER_DEPRESSOR", "CHIN_RAISER", "LIP_CORNER_PULLER_RIGHT", "DIMPLER_RIGHT"]
-FacialEmotion.prototype._pit = [
-    [//ANGRY 
-        -0.76, 0.64, 0, 0.006777392958909609, 0.006174350308024318, 0.660377358490566, 0.660377358490566, 0.2655452832234524, 0.27559599407154056, 0, 0, 0, 0, 0, 0, 0.038135610804944806, 0.038135610804944806, 0.3113207547169812, 0.3113207547169812, 0, 0, 0, 0.009433962264150943, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.007983478260680202, 0, 0, 0, 0, 0.018497328267128684, 0, 0, 0, 0, 0, 0, 0.008490566037735849, 0.008490566037735849, 0, 0, 0.2358490566037736, 0.2358490566037736, 0, 0, 0, 0, 0
+// VAE - Valence, Arousal, Expression(s)
+FacialEmotion.prototype._emotionsVAE = [
+    [//ANGRY
+        -0.76, 0.64,
+        [FacialExpr.NMF.BROW_LOWERER, 0.9],
+        [FacialExpr.NMF.UPPER_LID_RAISER, 0.1],
+        [FacialExpr.NMF.LID_TIGHTENER, 0.25],
+        [FacialExpr.NMF.LIP_CORNER_DEPRESSOR, 0.3],
+        [FacialExpr.NMF.NOSE_WRINKLER, 0.2]
     ],
     [//HAPPY
-        0.95, 0.23, 0, 0, 0, -0.18916378536627232, -0.179660980579041, 0, 0, 0, 0, 0, 0, 0, 0, 0.7803277830403155, 0.8111380948254938, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.20502509409574698, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.24764010809164083, 0.24764010809164083, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0.95, 0.23,
+        [FacialExpr.NMF.CHEEK_RAISER, 0.4],
+        [FacialExpr.NMF.BROW_RAISER, 0.1],
+        [FacialExpr.NMF.SMILE_CLOSED, 0.75]
     ],
     [//SAD
-        -0.81, -0.57, 0.8122890435372361, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5033301920670048, 0.46071517807111073, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0.5565989595618721, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        -0.81, -0.57,
+        [FacialExpr.NMF.INNER_BROW_RAISER, 0.8],
+        [FacialExpr.NMF.BROW_LOWERER, 0.5],
+        [FacialExpr.NMF.LIP_CORNER_DEPRESSOR, 0.5],
     ],
     [//SURPRISED
-        0.22, 0.98, 0.21567884759472045, 0.3754851500793228, 0.3541776430813759, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.13044881960293253, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5779064665598193, 0.5779064665598193, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0.22, 0.98,
+        [FacialExpr.NMF.INNER_BROW_RAISER, 0.5],
+        [FacialExpr.NMF.OUTER_BROW_RAISER, 0.5],
+        [FacialExpr.NMF.UPPER_LID_RAISER, 0.3],
+        [FacialExpr.NMF.LIP_PUCKERER, 0.3],
+        [FacialExpr.NMF.JAW_DROP, 0.35],
+        [FacialExpr.NMF.MOUTH_STRETCH, 0.1]
     ],
     [//SACRED
-        -0.25, 0.98, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2582938615906143, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.3435238895824022, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.15, 0.15, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        -0.25, 0.98,
+        [FacialExpr.NMF.INNER_BROW_RAISER, 1.0],
+        [FacialExpr.NMF.BROW_LOWERER, 0.5],
+        [FacialExpr.NMF.UPPER_LID_RAISER, 0.3],
+        [FacialExpr.NMF.LIP_STRECHER, 0.3],
+        [FacialExpr.NMF.JAW_DROP, 0.3]
     ],
     [//DISGUSTED
-        -0.96, 0.23, 0, 0, 0, 0.42875391757419035, 0.49267643856803134, 0.3104116803737398, 0.3541776430813759, 0, 0, 0, 0, 0.4713689315700842, 0.3435238895824022, 0, 0, 0.23698635459266737, 0.15175632660087945, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.21567884759472045, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0, 0, 0, 0, 0
+        -0.96, 0.23,
+        [FacialExpr.NMF.NOSE_WRINKLER, 0.35],
+        [FacialExpr.NMF.BROW_LOWERER, 0.35],
+        [FacialExpr.NMF.SQUINT, 0.5],
+        [FacialExpr.NMF.LIP_CORNER_DEPRESSOR, 0.2],
+        [FacialExpr.NMF.UPPER_LIP_RAISER, 0.3],
+        [FacialExpr.NMF.LOWER_LIP_DEPRESSOR, 0.1]
     ],
     [//CONTEMPT
-        -0.98, -0.21, 0, 0.24764010809164083, 0.26894761508958775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.20914131260498539, 0, 0, 0, 0, 0, -0.4981226368365037, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0, 0, 0
+        -0.98, -0.21,
+        [FacialExpr.NMF.LIP_CORNER_PULLER_LEFT, 0.7],
+        [FacialExpr.NMF.DIMPLER_LEFT, 0.5]
     ],
-    [//NEUTRAL
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    [
+        0,0
     ]
 ]
 
@@ -437,7 +458,7 @@ function FacialEmotion(sceneBSW) {
         this.currentVABSW = this.sceneBSW.slice();
     }
     else {
-        this.currentVABSW = this._pit[0].slice(2); // first two elements of emotions are valence and arousal
+        this.currentVABSW = this._emotionsVAE[0].slice(2); // first two elements of emotions are valence and arousal
     }
     this.currentVABSW.fill(0);
     this.initialVABSW = this.currentVABSW.slice();
@@ -461,8 +482,8 @@ FacialEmotion.prototype.precomputeVAWeights = function (gridsize = 100) {
 
     // each emotion's valaro as point
     let valAroPoints = [];
-    for (let count = 0; count < this._pit.length; count++) {
-        let point = new THREE.Vector2(this._pit[count][0], this._pit[count][1]); 
+    for (let count = 0; count < this._emotionsVAE.length; count++) {
+        let point = new THREE.Vector2(this._emotionsVAE[count][0], this._emotionsVAE[count][1]); 
         valAroPoints.push(point);
     }
     let num_points = valAroPoints.length;
@@ -510,28 +531,28 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
     if (faceData.emotion) {
         switch (faceData.emotion) {
             case "ANGER":
-                this.valaro.fromArray(this._pit[0].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[0].slice(0, 2));
                 break;
             case "HAPPINESS":
-                this.valaro.fromArray(this._pit[1].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[1].slice(0, 2));
                 break;
             case "SADNESS":
-                this.valaro.fromArray(this._pit[2].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[2].slice(0, 2));
                 break;
             case "SURPRISE":
-                this.valaro.fromArray(this._pit[3].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[3].slice(0, 2));
                 break;
             case "FEAR":
-                this.valaro.fromArray(this._pit[4].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[4].slice(0, 2));
                 break;
             case "DISGUST":
-                this.valaro.fromArray(this._pit[5].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[5].slice(0, 2));
                 break;
             case "CONTEMPT":
-                this.valaro.fromArray(this._pit[6].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[6].slice(0, 2));
                 break;
             default: // "NEUTRAL"
-                this.valaro.fromArray(this._pit[7].slice(0, 2));
+                this.valaro.fromArray(this._emotionsVAE[7].slice(0, 2));
                 break;
         }
     }
@@ -567,8 +588,8 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
 FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
 
     let gridsize = this.gridSize;
-    let blendValues = [];
-    blendValues.length = this._pit[0].length - 2;
+    let blendValues = this.currentVABSW.slice();
+    // blendValues.length = this._emotionsVAE[0].length - 2;
     blendValues.fill(0);
 
     // position in grid to check
@@ -579,7 +600,7 @@ FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
 
     // one entry for each emotion
     let weights = [];
-    weights.length = this._pit.length;
+    weights.length = this._emotionsVAE.length;
     weights.fill(0);
 
     let total_inside = 0;
@@ -608,18 +629,21 @@ FacialEmotion.prototype.VA2BSW = function (valAro, shift) {
     // average each emotion with respect to amount of points near this.valAro
     for (let i = 0; i < weights.length; ++i) {
         weights[i] /= total_inside;
-        for (let j = 0; j < blendValues.length; j++) {
-            blendValues[j] += this._pit[i][j + 2] * weights[i];
+        let emotion = this._emotionsVAE[i]; // [ val, aro, [FacialExpr.NMF.BROW_LOWERER, 0.5],[FacialExpr.NMF.BROW_LOWERER, 0.5],[FacialExpr.NMF.BROW_LOWERER, 0.5], .. ]
+        for( let j = 2; j < emotion.length; j++ ){ 
+            // [FacialExpr.NMF.BROW_LOWERER, 0.5]
+            let expression = emotion[j][0]; // FacialExpr.NMF.BROW_LOWERER == [ [1,2], [1,1] ]
+            let exprAmount = emotion[j][1];
+            for( let k = 0; k < expression[0].length; k++ ){ // [1,2]
+                blendValues[ expression[0][k] ] += expression[1][k] * exprAmount * weights[i]; 
+            }
         }
     }
 
     // swap initial state and current state arrays
-    let temp = this.initialVABSW;
-    this.initialVABSW = this.currentVABSW; // set initial state as current state (it might be neutral or some other emotion that was cut mid transition)
-    this.currentVABSW = temp;
     for (let j = 0; j < blendValues.length; j++) {
         this.targetVABSW[j] = blendValues[j] * this.amount;
-        this.currentVABSW[j] = this.initialVABSW[j]; // initial and current should be the same
+        this.initialVABSW[j] = this.currentVABSW[j]; // initial and current should be the same
         if ( shift ){ // change default pose if shift
             this.defaultVABSW[j] = this.targetVABSW[j]; 
         }
