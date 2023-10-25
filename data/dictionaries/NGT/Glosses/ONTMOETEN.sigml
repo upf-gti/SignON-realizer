@@ -16,10 +16,10 @@
         <location_bodyarm contact="armextended" location="shoulders" second_location="chest"/>
       </split_location>
       <tgt_motion>
-        <split_motion>
+        <!-- <split_motion>
           <directedmotion direction="o" size="small"/>
           <directedmotion direction="i" size="small"/>
-        </split_motion>
+        </split_motion> -->
         <handconstellation contact="touch">
           <location_hand digits="3" location="midjoint" side="dorsal"/>
           <location_hand digits="3" location="midjoint" side="dorsal"/>

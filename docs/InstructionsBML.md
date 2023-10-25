@@ -663,7 +663,7 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
     "motion": "WRIST",
     "mode": "NOD",
     /* either a: 
-        - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
+        - string from [ "NOD", "SWING", "TWIST", "STIR_CW", "STIR_CCW", "ALL" ]
         - or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
     Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = STIR_CW
     Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = STIR_CW

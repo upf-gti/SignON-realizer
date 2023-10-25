@@ -82,7 +82,7 @@ class DirectedMotion {
         this.finalOffset.set(0,0,0);
           
         this.distance = isNaN( bml.distance ) ? 0.2 : bml.distance; // metres
-        this.curveSize = isNaN( bml.curveSteepness ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSteepness ) );
+        this.curveSize = isNaN( bml.curveSize ) ? 0.5 : Math.max( 0, Math.min( 1, bml.curveSize ) );
         
         // THE FOLLOWING CODE TRIES TO MIMIC JASIGNING/HAMNOSYS BEHAVIOUR. IT COULD BE MUCH SIMPLER OTHERWISE
 
