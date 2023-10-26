@@ -36,7 +36,7 @@ function build() {
             "../js/sigml/HandConstellation.js",
             "../js/sigml/Motion.js",
             "../js/sigml/ElbowShouldersBodyNMF.js",
-            "../js/sigml/SigmlUtils.js"
+            "../js/sigml/Utils.js"
         ],
         "CharacterController.js": [
             "../js/controllers/CharacterController.js",
@@ -112,6 +112,14 @@ function build() {
                 newPaths[newPath] = [...newPaths[newPath], ...classes];
             else
                 newPaths[newPath] = classes;
+            
+            let temp = [];
+            for (let i = 0; i < newPaths[newPath].length; i++) {
+                if ( !temp.includes( newPaths[newPath][i] ) ){
+                    temp.push( newPaths[newPath][i] );
+                }
+            }
+            newPaths[newPath] = temp;
         }
         let data = "";
         for(let newPath in newPaths) {
