@@ -171,7 +171,7 @@ class App {
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
-    loadMouthingDictinoary( language ){
+    loadMouthingDictionary( language ){
         let that = this;
                
         fetch("./data/dictionaries/" + language + "/IPA/ipa.txt").then(x => x.text()).then(function(text){ 
@@ -254,7 +254,7 @@ class App {
     loadLanguageDictionaries( language ){
         this.languageDictionaries[ language ] = { glosses: null, wordsToArpa: null };
 
-        this.loadMouthingDictinoary( language );
+        this.loadMouthingDictionary( language );
 
         fetch( "./data/dictionaries/" + language + "/Glosses/_glossesDictionary.txt").then( (x)=>x.text() ).then( (file) =>{
             let glossesDictionary = this.languageDictionaries[ language ].glosses = {};
