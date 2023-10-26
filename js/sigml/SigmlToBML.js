@@ -1197,9 +1197,9 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.seconDirection = attributes.second_direction;
     
         result.curve = attributes.curve;
-        if ( attributes.curve_size == "big" ){ result.curveSteepness = 0.5; }
-        else if ( attributes.curve_size == "small" ){ result.curveSteepness = 0.05; }
-        else { result.curveSteepness = 0.15; }
+        if ( attributes.curve_size == "big" ){ result.curveSize = 0.5; }
+        else if ( attributes.curve_size == "small" ){ result.curveSize = 0.05; }
+        else { result.curveSize = 0.15; }
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ result.zigzag = "l"; result.zigzagSpeed = 5; }
         if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; } // "small" == default value
