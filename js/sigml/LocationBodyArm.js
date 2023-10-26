@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { stringToDirection } from './SigmlUtils.js';
+import { stringToDirection } from './Utils.js';
 
 class LocationBodyArm {
     constructor( config, skeleton, isLeftHand = false ) {

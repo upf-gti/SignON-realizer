@@ -71,7 +71,9 @@ class App {
         // for each gloss, fetch its sigml file, convert it into bml
         let orders = [];
         for( let i = 0; i < glosses.length; ++i ){
-            orders.push( { type: "glossName", data: glosses[i] } );
+            let name = glosses[i];
+            if ( typeof( name ) !== "string" ){ continue; }
+            orders.push( { type: "glossName", data: name.toUpperCase() } );
         }
 
         // give the orders to the avatar controller 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getTwistQuaternion } from "./SigmlUtils.js";
+import { getTwistQuaternion } from "./Utils.js";
 
 class GeometricArmIK{
     constructor( skeleton, config, isLeftHand = false ){

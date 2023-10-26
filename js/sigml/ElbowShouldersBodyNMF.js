@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { findIndexOfBone } from "./SigmlUtils.js";
+import { findIndexOfBone } from "./Utils.js";
 
 class BasicBMLValueInterpolator {
     constructor( config, skeleton, isLeftHand = false ){

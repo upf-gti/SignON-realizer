@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { stringToDirection, nlerpQuats } from "./SigmlUtils.js";
+import { stringToDirection, nlerpQuats } from "./Utils.js";
 
 
 class ExtfidirPalmor { 

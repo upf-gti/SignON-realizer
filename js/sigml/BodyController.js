@@ -7,7 +7,7 @@ import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motio
 import { HandConstellation } from "./HandConstellation.js";
 import { ElbowRaise, ShoulderRaise, ShoulderHunch, BodyMovement } from "./ElbowShouldersBodyNMF.js";
 
-import { findIndexOfBone, getTwistQuaternion, nlerpQuats } from "./SigmlUtils.js";
+import { findIndexOfBone, getTwistQuaternion, nlerpQuats } from "./Utils.js";
 import { GeometricArmIK } from "./GeometricArmIK.js";
 
 // characterConfig is modified by bodyController

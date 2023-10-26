@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { cubicBezierVec3, stringToDirection } from "./SigmlUtils.js";
+import { cubicBezierVec3, stringToDirection } from "./Utils.js";
 
 let _tempVec3_0 = new THREE.Vector3(0,0,0);
 let _tempVec3_1 = new THREE.Vector3(0,0,0);
