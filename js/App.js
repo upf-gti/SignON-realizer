@@ -32,6 +32,7 @@ class App {
         this.controls = null;
         
         this.model = null;
+        this.controllers = {}; // store avatar controllers
         this.ECAcontroller = null;
         this.eyesTarget = null;
         this.headTarget = null;
@@ -266,6 +267,64 @@ class App {
 
     }
 
+    changeAvatar( avatarName ) {
+        if (this.model) this.scene.remove(this.model); // delete from scene current model
+        this.scene.add(this.controllers[avatarName].character); // add model to scene
+        this.model = this.controllers[avatarName].character;
+        this.ECAcontroller = this.controllers[avatarName];
+    }
+
+    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null ) {
+        this.loaderGLB.load( modelFilePath, (glb) => {
+            if (this.model) this.scene.remove(this.model); // delete from scene current model
+
+            let model = this.model = glb.scene;
+            model.quaternion.premultiply( modelRotation );
+            model.castShadow = true;
+            
+            model.traverse( (object) => {
+                if ( object.isMesh || object.isSkinnedMesh ) {
+                    object.material.side = THREE.FrontSide;
+                    object.frustumCulled = false;
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                    if (object.name == "Eyelashes") // eva
+                    object.castShadow = false;
+                    if(object.material.map) 
+                    object.material.map.anisotropy = 16;
+            } else if (object.isBone) {
+                object.scale.set(1.0, 1.0, 1.0);
+                }
+            } );
+
+            // correct hand's size
+            let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
+            b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
+            
+            this.scene.add(model);
+            
+            // this.scene.add( new THREE.SkeletonHelper( model ) );
+
+            model.eyesTarget = this.eyesTarget;
+            model.headTarget = this.headTarget;
+            model.neckTarget = this.neckTarget;
+            
+            model.name = avatarName;
+
+            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
+                let config = JSON.parse( text );
+                let ECAcontroller = this.ECAcontroller = new CharacterController( {character: this.model, characterConfig: config} );
+                ECAcontroller.start();
+                ECAcontroller.reset();
+                ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking mode
+
+                this.controllers[avatarName] = ECAcontroller;
+                
+                if ( callback ){ callback(); }
+            })
+        });
+    }
+
     init() {
 
         this.loadLanguageDictionaries( "NGT" );
@@ -373,51 +432,12 @@ class App {
         this.scene.add(this.neckTarget);
 
         let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
-        this.loaderGLB.load( modelFilePath, (glb) => {
-            let model = this.model = glb.scene;
-            model.quaternion.premultiply( modelRotation );
-            model.castShadow = true;
-            
-            model.traverse( (object) => {
-                if ( object.isMesh || object.isSkinnedMesh ) {
-                    object.material.side = THREE.FrontSide;
-                    object.frustumCulled = false;
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                    if (object.name == "Eyelashes")
-                        object.castShadow = false;
-                    if(object.material.map) 
-                        object.material.map.anisotropy = 16;
-                } else if (object.isBone) {
-                    object.scale.set(1.0, 1.0, 1.0);
-                }
-            } );
-
-            // correct hand's size
-            let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); }
-            b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); }
-            
-            this.scene.add(model);
-
-            // this.scene.add( new THREE.SkeletonHelper( model ) );
-
-            model.eyesTarget = this.eyesTarget;
-            model.headTarget = this.headTarget;
-            model.neckTarget = this.neckTarget;
-
-            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
-                let config = JSON.parse( text );
-                let ECAcontroller = this.ECAcontroller = new CharacterController( {character: this.model, characterConfig: config} );
-                ECAcontroller.start();
-                ECAcontroller.reset();
-                ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking mode
-    
-                if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
-                this.animate();
-                $('#loading').fadeOut(); //hide();
-            })
+        this.loadAvatar(modelFilePath, configFilePath, modelRotation, "Eva", ()=>{
+            if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
+            this.animate();
+            $('#loading').fadeOut(); //hide();
         });
-
+        
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
         window.addEventListener(
