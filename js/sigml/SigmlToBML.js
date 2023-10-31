@@ -619,7 +619,10 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
 
         if ( shouldBeFingerSelected ){
             // actually should be the selected finger but let's keep it simple for now
-            result.srcFinger = "2";
+            result.srcFinger = "1";
+            if ( handshape == "FINGER_2" || handshape == "FINGER_23" || handshape == "FINGER_23_SPREAD" || handshape == "FINGER_2345" ){
+                result.srcFinger = "2";
+            }
             result.srcLocation = "TIP";
         }else{
             result.srcLocation = "HAND";
