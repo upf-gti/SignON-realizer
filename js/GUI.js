@@ -84,6 +84,10 @@ class AppGUI{
                     this.app.signingSpeed = value;
                 }, { min: "0", max: 2, step: 0.01});
                 
+                p.addButton( null, "Replay", (value, event) =>{
+                    this.app.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); 
+                });
+
                 p.addButton( null, "Reset Pose", (value, event) =>{
                     this.gui.setValue( "Mood", "Neutral" ); 
                     this.app.ECAcontroller.reset();
@@ -155,7 +159,8 @@ class AppGUI{
                                     msg.data[i].text = result + ".";
                                 }
                             }
-            
+
+                            this.app.msg = JSON.parse(JSON.stringify(msg));
                             this.app.ECAcontroller.processMsg(JSON.stringify(msg));
                         });
             
@@ -187,14 +192,8 @@ class AppGUI{
                         this.sigmlInputData.codeObj = editor;
             
                         p.addButton(null, "Send", () => {
-                
-                            let msg = {
-                                type: "behaviours",
-                                data: []
-                            };
                             let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
-                            msg.data = sigmlStringToBML( text ).data;
-                            this.app.ECAcontroller.processMsg(JSON.stringify(msg));  
+                            this.app.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                         });
             
                     }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});

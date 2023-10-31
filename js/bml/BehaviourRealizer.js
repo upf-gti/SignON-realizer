@@ -2130,8 +2130,8 @@ Text2Lip.prototype.pushSentence = function ( text, options = {} ) {
     if ( !text || !text.length ) { return null; }
 
     // clean input
-    if ( !( phT instanceof Float32Array ) ) phT = null;
-    if ( !( phInt instanceof Float32Array ) ) phInt = null;
+    phT = phT ? new Float32Array( phT ) : null;
+    phInt = phInt ? new Float32Array( phInt ) : null;
 
     if ( copyArrays ) {
         text = Array.from( text ); // create new array from

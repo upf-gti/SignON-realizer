@@ -53,11 +53,13 @@ function sigmlStringToBML( str, timeOffset = 0 ) {
 
     let lastRelaxEndDuration = 0
     let lastPeakRelaxDuration = 0;
+    let isFirstValidSign = true;
     // for each hamnosis sign
     for( let i = 0; i < xmlDoc.children.length ; ++i ){
         if( xmlDoc.children[i].tagName != "hns_sign" && xmlDoc.children[i].tagName != "hamgestural_sign" ){ continue; }
         
-        time = time - lastRelaxEndDuration - lastPeakRelaxDuration + 0.2 ; // if not last, remove relax-end stage and partially remove the peak-relax 
+        time = time - lastRelaxEndDuration - lastPeakRelaxDuration + 0.2; // if not last, remove relax-end stage and partially remove the peak-relax 
+        if( isFirstValidSign ){ time -= 0.2; }
         let result = hnsSignParser( xmlDoc.children[i], time );
         time = result.end;
         msg = msg.concat( result.data );

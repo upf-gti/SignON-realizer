@@ -165,6 +165,7 @@ class App {
             type: "behaviours",
             data: orders
         };
+        this.msg = JSON.parse(JSON.stringify(msg));
         this.ECAcontroller.processMsg( msg );
 
         return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
@@ -438,26 +439,29 @@ class App {
             if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
+            if ( this.pendingMessageReceived ){
+                this.ECAcontroller.reset();
+                this.processMessageRawBlocks( data );  
+                delete this.pendingMessageReceived; 
+            }
         });
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
         window.addEventListener(
             "message",
-            (event) => {
-            //   if (event.origin !== "http://example.org:8080") return;
-                if ( !this.ECAcontroller ){ return; }
-                
+            (event) => {         
                 let data = event.data;
-
+                
                 if ( typeof( data ) == "string" ){ 
                     try{ 
                         data =  JSON.parse( data ); 
                     }catch( e ){ console.error("Error while parsing an external message: ", event ); };
                 }
-
+                
                 if ( !Array.isArray(data) ){ return; }
-
+                
+                if ( !this.ECAcontroller ){ this.pendingMessageReceived = event.data; return; }
                 this.ECAcontroller.reset();
                 this.processMessageRawBlocks( data );          
             },

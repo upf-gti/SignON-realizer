@@ -188,6 +188,7 @@ class BodyController{
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
         this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "LEFT", mode: "local", shift:true } );
 
+        this.update( 1 );
     }
 
     setDominantHand( isRightHandDominant ){
