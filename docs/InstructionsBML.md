@@ -160,10 +160,10 @@ EYES_CLOSED
 UPPER_LID_RAISER                      
 UPPER_LID_RAISER_LEFT                      
 UPPER_LID_RAISER_RIGHT                      
-CHEEK_RAISER                      
 LID_TIGHTENER                      
 WINK_LEFT                      
 WINK_RIGHT                      
+CHEEK_RAISER                      
 CHEEK_SUCK                      
 CHEEK_SUCK_LEFT                      
 CHEEK_SUCK_RIGHT                      
@@ -379,27 +379,31 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 "HEAD"               
 "HEAD_TOP"    
 "FOREHEAD"    
-"NOSE"               
-"BELOW_NOSE"               
-"CHIN"               
-"UNDER_CHIN"               
-"MOUTH"               
-"EARLOBE" ``` // automatically assigns right or left from the incoming hand ```                    
-"EARLOBE_RIGHT"     
-"EARLOBE_LEFT"               
-"EAR"  ``` // automatically assigns right or left from the incoming hand ```                    
-"EAR_RIGHT"               
-"EAR_LEFT"    
-"CHEEK"  ``` // automatically assigns right or left from the incoming hand ```                    
-"CHEEK_RIGHT"               
-"CHEEK_LEFT"        
-"EYE" ``` // automatically assigns right or left from the incoming hand ```                    
-"EYE_RIGHT"               
-"EYE_LEFT"        
+"EYEBROWS_LINE"                     
 "EYEBROW" ``` // automatically assigns right or left from the incoming hand ```                    
 "EYEBROW_RIGHT"               
 "EYEBROW_LEFT"                       
+"EYES_LINE"                    
+"EYE" ``` // automatically assigns right or left from the incoming hand ```                    
+"EYE_RIGHT"               
+"EYE_LEFT"        
+"EAR"  ``` // automatically assigns right or left from the incoming hand ```                    
+"EAR_RIGHT"               
+"EAR_LEFT"    
+"EARLOBE" ``` // automatically assigns right or left from the incoming hand ```                    
+"EARLOBE_RIGHT"     
+"EARLOBE_LEFT"               
+"CHEEK"  ``` // automatically assigns right or left from the incoming hand ```                    
+"CHEEK_RIGHT"               
+"CHEEK_LEFT"        
+"NOSE"               
+"BELOW_NOSE"               
+"MOUTH"               
+"CHIN"               
+"UNDER_CHIN"               
+"NECK"                       
 "CHEST"               
+"SHOULDER_TOP"          
 "SHOULDER_LINE"          
 "SHOULDER" ``` // automatically assigns right or left from the incoming hand ```                    
 "SHOULDER_RIGHT"               
