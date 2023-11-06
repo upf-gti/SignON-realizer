@@ -476,7 +476,9 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     "secondMainBend": "HOOKED", // mainbend applied to secondHandshape
     "bend1": "099", // overrides any other bend applied for this handshape for this finger. bend1=thumb, bend2=index, and so on. The value is one from the bend table
     "mainSplay": 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
-    "splay1": 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent. splay1=thumb, splay2=index, and so on
+    "splay1": 0.5, // number [-1,1]. splay1=thumb, splay2=index, and so on. Sepparates laterally the specified finger. Splay diminishes the more the finger is bent. 
+
+    "specialFingers": "5", //string of numbers [2-5], the main characteristics of the handshape are applied to the fingers specified. This is done before the mainbend and the thumbshape since they are applied to the selected fingers, and these change when applying specialFingers.
     "shift": false,
 }
 ```
@@ -638,6 +640,8 @@ The motion is stopped if an arm location is executed afterwards.
     "distance": 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
     "startAngle": 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
     "endAngle": 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
+    "ellipseAxisDirection": "ul", // string, direction of the major axis of the ellipse if the direction were set as 'O' (out). 'I' and 'O' are ignored. If unspecified, defaults to 'L'. 
+    "ellipseAxisRatio": 0.5, // number. Sets the ellipse axes ratio minor/major, where 1 is a circle with radius "distance". If unspecified, defaults to 1. 
     "zigzag": "L", // string, combination of 6 directions
     "zigzagSize": 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     "zigzagSpeed": 3, // oscillations per second. Default 2

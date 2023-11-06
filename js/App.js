@@ -120,6 +120,7 @@ class App {
                 if ( gloss.type == "bml" ){ // BML
                     let result = gloss.data;
                     if( typeof( result ) == "string" ){ result = JSON.parse( result ) };
+                    if ( Array.isArray( result.behaviours ) ){ result = result.behaviours; }
                     if ( !Array.isArray( result ) ){ throw true; }
 
                     time = time - relaxEndDuration - peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
@@ -285,20 +286,55 @@ class App {
             model.quaternion.premultiply( modelRotation );
             model.castShadow = true;
             
-            model.traverse( (object) => {
-                if ( object.isMesh || object.isSkinnedMesh ) {
-                    object.material.side = THREE.FrontSide;
-                    object.frustumCulled = false;
-                    object.castShadow = true;
-                    object.receiveShadow = true;
-                    if (object.name == "Eyelashes") // eva
-                    object.castShadow = false;
-                    if(object.material.map) 
-                    object.material.map.anisotropy = 16;
-            } else if (object.isBone) {
-                object.scale.set(1.0, 1.0, 1.0);
-                }
-            } );
+            if(avatarName == "Witch") {
+                model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        if(!object.name.includes("Hat"))
+                           object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        if (object.name == "Eyelashes") // eva
+                        object.castShadow = false;
+                        if(object.material.map) 
+                        object.material.map.anisotropy = 16;
+                        if(object.name == "Hair") {
+                            object.material.map = null;
+                            object.material.color.set(0x6D1881);
+                        }
+                        if(object.name.includes("Bottom")) {
+                            object.material.map = null;
+                            object.material.color.set(0x000000);
+                        }
+                        if(object.name.includes("Top")) {
+                            object.material.map = null;
+                            object.material.color.set(0x000000);
+                        }
+                        if(object.name.includes("Shoes")) {
+                            object.material.map = null;
+                            object.material.color.set(0x19A7A3);
+                        }
+                } else if (object.isBone) {
+                    object.scale.set(1.0, 1.0, 1.0);
+                    }
+                } );
+            }else{
+                model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        if (object.name == "Eyelashes") // eva
+                        object.castShadow = false;
+                        if(object.material.map) 
+                        object.material.map.anisotropy = 16;
+                } else if (object.isBone) {
+                    object.scale.set(1.0, 1.0, 1.0);
+                    }
+                } );
+    
+            }
 
             // correct hand's size
             let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
@@ -409,7 +445,7 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 15, 15 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;

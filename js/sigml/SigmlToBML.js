@@ -459,7 +459,7 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
         obj.bend3 = attributes.bend3 ? attributes.bend3.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
         obj.bend4 = attributes.bend4 ? attributes.bend4.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
         obj.bend5 = attributes.bend5 ? attributes.bend5.toUpperCase().replace("HALF", "HALF_").replace("DBL", "DOUBLE_") : null;
-        obj.specialfingers = attributes.specialfingers;
+        obj.specialFingers = attributes.specialfingers;
         // if ( !obj.thumbshape ){ obj.thumbshape = attributes.second_thumbpos; }
 
         obj._bendRange = 4;

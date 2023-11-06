@@ -5,6 +5,13 @@ class AppGUI{
     constructor( app ){
         this.app = app;
 
+        // available model models paths - [model, config, rotation]
+        this.avatarOptions = {
+            "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
+            "Kevin": ['./data/kevin_finished_first_test_7.glb', './data/kevin_finished_first_test_7.json', 0],
+            "Witch": ['./data/EvaHalloween.glb', './data/EvaHalloweenConfig.json', -Math.PI/2],
+        }
+
         // take canvas from dom, detach from dom, attach to lexgui 
         this.app.renderer.domElement.remove(); // removes from dom
         let main_area = LX.init();
@@ -79,10 +86,10 @@ class AppGUI{
                     });
                 }
 
-                p.addNumber("Signing Speed", 1, (value, event) => {
+                p.addNumber("Signing Speed", this.app.signingSpeed, (value, event) => {
                     // this.app.signingSpeed = Math.pow( Math.E, (value - 1) );
                     this.app.signingSpeed = value;
-                }, { min: "0", max: 2, step: 0.01});
+                }, { min: 0, max: 2, step: 0.01});
                 
                 p.addButton( null, "Replay", (value, event) =>{
                     this.app.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); 
@@ -264,14 +271,8 @@ class AppGUI{
                     this.app.ECAcontroller.processMsg(JSON.stringify(msg));
                 });
 
-                p.addDropdown("Avatar", [ "Eva", "Kevin"], this.app.model.name, (value, event) => {
-                    this.gui.setValue( "Mood", "Neutral" );
-
-                    // available model models paths - [model, config, rotation]
-                    let avatarOptions = {
-                        "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
-                        "Kevin": ['./data/kevin_finished_first_test_7.glb', './data/kevin_finished_first_test_7.json', 0]
-                    }
+                p.addDropdown("Avatar", Object.keys( this.avatarOptions ), this.app.model.name, (value, event) => {
+                    this.gui.setValue( "Mood", "Neutral" );  
                     
                     // use controller if it has been already loaded in the past
                     if (this.app.controllers[value]) {
@@ -280,13 +281,29 @@ class AppGUI{
                     } // else load desired model
                     else {
                         $('#loading').fadeIn(); //hide();
-                        let modelFilePath = avatarOptions[value][0]; let configFilePath = avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), avatarOptions[value][2] ); 
+                        let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                         this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                             this.gui.refresh();             
                             $('#loading').fadeOut();
                         } );
                     }
                 });
+
+                // debug 
+                p.branch( "Random signs" );
+                p.addButton( "Send", "send", (v,e)=>{ 
+                    if (!this.randomSignAmount ){ return; }
+                    let k = Object.keys( this.app.languageDictionaries[this.app.selectedLanguage]["glosses"] );
+                    
+                    let m = [];
+                    for( let i = 0; i < this.randomSignAmount; ++i ){
+                        m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
+                    }
+                    console.log( JSON.parse(JSON.stringify(m)));
+                    this.app.processMessageRawBlocks( m );
+                } );
+                p.addNumber("amount", 0, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100 } );
+                p.merge(); // random signs
             }
 
             this.gui.refresh();

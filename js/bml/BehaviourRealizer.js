@@ -1991,21 +1991,25 @@ Text2Lip.prototype.update = function ( dt ) {
     if ( p > 0 ) {
 
         // copy target values to source Viseme. Several phonemes may have passed during this frame. Take the last real target phoneme
-        let lastPhonemeIndex = Math.max( 0.0, Math.min( this.text.length - 1, this.currTargetIdx - 1 ) ); // currTargetIdx here is always > 0. text.length here is always > 0
-        this.intensity = this.getIntensityAtIndex( lastPhonemeIndex ); // get last real target viseme with correct intensity, in case more than 1 phoneme change in the same frame
+        // let lastPhonemeIndex = Math.max( 0.0, Math.min( this.text.length - 1, this.currTargetIdx - 1 ) ); // currTargetIdx here is always > 0. text.length here is always > 0
+        // this.intensity = this.getIntensityAtIndex( lastPhonemeIndex ); // get last real target viseme with correct intensity, in case more than 1 phoneme change in the same frame
 
-        let lastPhoneme = this.text[ lastPhonemeIndex ];
+        // let lastPhoneme = this.text[ lastPhonemeIndex ];
             
-        if ( this.useCoarticulation ){
-            let lastPhonemeNext = ( lastPhonemeIndex == ( this.text.length - 1 ) ) ? null : ( this.text[ lastPhonemeIndex + 1 ] );
-            this.getCoarticulatedViseme( lastPhoneme, lastPhonemeNext, this.currV );
-        }
-        else{
-            this.getViseme( lastPhoneme, this.currV );
+        // if ( this.useCoarticulation ){
+        //     let lastPhonemeNext = ( lastPhonemeIndex == ( this.text.length - 1 ) ) ? null : ( this.text[ lastPhonemeIndex + 1 ] );
+        //     this.getCoarticulatedViseme( lastPhoneme, lastPhonemeNext, this.currV );
+        // }
+        // else{
+        //     this.getViseme( lastPhoneme, this.currV );
+        // }
+        for ( let i = 0; i < this.numShapes; ++i ) {
+            this.currV[ i ] = this.BSW[ i ];
         }
 
         // end of sentence reached
         if ( this.currTargetIdx >= this.text.length ) {
+            this.getViseme( this.text[ this.text.length-1 ], this.currV );
             for ( let i = 0; i < this.numShapes; ++i ) { this.BSW[ i ] = this.currV[ i ]; } // currV holds the last real target phoneme
             this.changeCurrentSentence();
             return;

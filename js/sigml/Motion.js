@@ -4,6 +4,7 @@ import { cubicBezierVec3, stringToDirection } from "./Utils.js";
 let _tempVec3_0 = new THREE.Vector3(0,0,0);
 let _tempVec3_1 = new THREE.Vector3(0,0,0);
 let _tempQuat_0 = new THREE.Quaternion(0,0,0,1);
+let _tempQuat_1 = new THREE.Quaternion(0,0,0,1);
 
 class DirectedMotion {
     constructor(){
@@ -160,11 +161,13 @@ class DirectedMotion {
 
 class CircularMotion {
     constructor(){
-        this.finalOffset = new THREE.Vector3(0,0,0);
-
+        this.yAxis = new THREE.Vector3(0,1,0);
+        this.xAxis = new THREE.Vector3(1,0,0);
         this.startPoint = new THREE.Vector3(0,0,0);
-        this.targetDeltaAngle = 0;
-        this.axis = new THREE.Vector3(0,0,0);
+        this.trgAngle = 0; // target delta angle
+        this.srcAngle = 0; 
+
+        this.finalOffset = new THREE.Vector3(0,0,0);
         
         this.zigzagDir = new THREE.Vector3(0,0,1);
         this.zigzagSize = 0.01; // metres. Complete amplitude. Motion will move half to dir and half to -dir
@@ -188,14 +191,16 @@ class CircularMotion {
         this.time += dt;
         if ( this.time < this.start ){ return this.finalOffset; }
         if ( this.time >= this.attackPeak && this.time <= this.relax ){ // necessary to update (at least once) or there might be a jump
-            this.finalOffset.copy( this.startPoint );
-            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
+            this.finalOffset.set(0,0,0);
+            this.finalOffset.addScaledVector( this.xAxis, Math.cos( this.trgAngle ) );
+            this.finalOffset.addScaledVector( this.yAxis, Math.sin( this.trgAngle ) );
             this.finalOffset.sub( this.startPoint );
             return this.finalOffset; 
         }
         if ( this.time >= this.relax && this.time <= this.end ){ 
-            this.finalOffset.copy( this.startPoint );
-            this.finalOffset.applyAxisAngle( this.axis, this.targetDeltaAngle );
+            this.finalOffset.set(0,0,0);
+            this.finalOffset.addScaledVector( this.xAxis, Math.cos( this.trgAngle ) );
+            this.finalOffset.addScaledVector( this.yAxis, Math.sin( this.trgAngle ) );
             this.finalOffset.sub( this.startPoint );
             this.finalOffset.multiplyScalar( ( this.end - this.time ) / ( this.end - this.relax ) );
             return this.finalOffset;
@@ -212,10 +217,10 @@ class CircularMotion {
         t = ( t > 1 ) ? 1 : t;
         
         // angle to rotate startPoint
-        let angle = this.targetDeltaAngle * t;
-        
-        this.finalOffset.copy( this.startPoint );
-        this.finalOffset.applyAxisAngle( this.axis, angle )
+        this.finalOffset.set(0,0,0);
+        this.finalOffset.addScaledVector( this.xAxis, Math.cos( this.srcAngle * ( 1 - t ) + this.trgAngle * t ) );
+        this.finalOffset.addScaledVector( this.yAxis, Math.sin( this.srcAngle * ( 1 - t ) + this.trgAngle * t ) );
+        this.finalOffset.sub( this.startPoint );
 
         // zigzag 
         if ( Math.abs(this.zigzagSize) > 0.0001 ){
@@ -225,8 +230,6 @@ class CircularMotion {
             this.finalOffset.y = this.finalOffset.y + this.zigzagDir.y * zigzagt;
             this.finalOffset.z = this.finalOffset.z + this.zigzagDir.z * zigzagt;
         }
-
-        this.finalOffset.sub( this.startPoint );
         return this.finalOffset;
     }
 
@@ -235,9 +238,11 @@ class CircularMotion {
      * start, attackPeak, relax, end
      * direction: string from 26 directions. Axis of rotation
      * secondDirection: (optional)
-     * distance: (optional) radius in metres of the circle. Default 0.05 m (5 cm)
+     * distance: (optional) radius in metres of the circle.  Default 0.05 m (5 cm)
      * startAngle: (optional) where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
      * endAngle: (optional) where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
+     * ellipseAxisDirection: (optional) string from u,d,l,r directions (i,o are ignored).
+     * ellipseAxisRatio: (optional) number in range [0,1]. Indicates the axis ratio of the ellipse ( minor / major ). Default to 1 (circle)
      * zigzag: (optional) string from 26 directions
      * zigzagSize: (optional) amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
      * zigzagSpeed: (optional) cycles per second. Default 2
@@ -245,45 +250,53 @@ class CircularMotion {
     newGestureBML( bml, symmetry ){
         this.finalOffset.set(0,0,0);
         
-        // axis
-        if ( !stringToDirection( bml.direction, _tempVec3_0, symmetry ) ){
+        // assume normal axis = (0,0,1). Set the ellipse shape 2D (x,y)
+        let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
+        let axisRatio = parseFloat( bml.ellipseAxisRatio ); // minor / major
+        if ( isNaN( axisRatio ) ){ axisRatio = 1; } // basically a circle
+
+        if ( stringToDirection( bml.ellipseAxisDirection, _tempVec3_0, symmetry, true ) ){
+            _tempVec3_0.z = 0;
+            if ( _tempVec3_0.lengthSq() < 0.0001 ){ _tempVec3_0.set(1,0,0); }
+            else{ _tempVec3_0.normalize(); }
+        }else{
+            _tempVec3_0.set(1,0,0);
+        }
+        this.xAxis.copy( _tempVec3_0 ).multiplyScalar( distance ); // set major axis
+        this.yAxis.set( -this.xAxis.y, this.xAxis.x, 0 ).multiplyScalar( axisRatio ); // set minor axis
+
+        // normal axis
+        if ( !stringToDirection( bml.direction, _tempVec3_0, symmetry, true ) ){
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
             return;
         }
-        if ( !stringToDirection( bml.secondDirection, _tempVec3_1, symmetry ) ){
+        if ( !stringToDirection( bml.secondDirection, _tempVec3_1, symmetry, true ) ){
             _tempVec3_1.copy( _tempVec3_0 );
         }
-        this.axis.lerpVectors( _tempVec3_0, _tempVec3_1, 0.5 );
-        if( this.axis.lengthSq() < 0.0001 ){ this.axis.copy( _tempVec3_0 ); }
-        this.axis.normalize();
+        _tempVec3_1.lerpVectors( _tempVec3_1, _tempVec3_0, 0.5 );
+        if( _tempVec3_1.lengthSq() < 0.0001 ){ _tempVec3_1.copy( _tempVec3_0 ); }
+        _tempVec3_1.normalize(); // final axis perpendicular to circle
 
+        // reorient ellipse normal from (0,0,1) to whatever axis the user specified
+        let elevation = Math.asin( _tempVec3_1.y );
+        let bearing = Math.atan2( _tempVec3_1.x, _tempVec3_1.z );
+        _tempQuat_0.setFromAxisAngle( _tempVec3_0.set(1,0,0), -elevation );
+        _tempQuat_1.setFromAxisAngle( _tempVec3_0.set(0,1,0), bearing );
+        _tempQuat_0.premultiply( _tempQuat_1 );
+        this.xAxis.applyQuaternion( _tempQuat_0 );
+        this.yAxis.applyQuaternion( _tempQuat_0 );
+        
         // angle computations
-        let startAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
-        let endAngle = isNaN( bml.endAngle ) ? ( startAngle + 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
-        this.targetDeltaAngle = endAngle - startAngle; //variable endAngle is no longer used
+        this.srcAngle = isNaN( bml.startAngle ) ? 0 : ( bml.startAngle * Math.PI / 180.0 );
+        this.trgAngle = isNaN( bml.endAngle ) ? ( this.srcAngle + 2 * Math.PI ) : ( bml.endAngle * Math.PI / 180.0 );
         if( symmetry ){ // all symmetries mirror the same
-            this.targetDeltaAngle *= -1;
-            startAngle = -startAngle;
+            this.trgAngle *= -1;
+            this.srcAngle *= -1;
         }
        
-        // rotate starting point from default plane (xy) to the user's specified (given by axis)
-        _tempVec3_0.set(0,0,1);        // default axis
-        let dot = _tempVec3_0.dot( this.axis );
-        if ( dot > 0.999 ){ _tempQuat_0.set(0,0,0,1); }
-        else if ( dot < -0.999 ){ _tempVec3_0.set(0,1,0); _tempQuat_0.setFromAxisAngle( _tempVec3_0, Math.PI ); }
-        else{
-            let angle = _tempVec3_0.angleTo( this.axis );
-            _tempVec3_0.crossVectors( _tempVec3_0, this.axis );
-            _tempVec3_0.normalize();
-            _tempQuat_0.setFromAxisAngle( _tempVec3_0, angle );
-        }
-
-        let distance = isNaN( bml.distance ) ? 0.05 : bml.distance;
-        this.startPoint.set(0,1,0).multiplyScalar( distance );
-        this.startPoint.applyQuaternion( _tempQuat_0 );
-
-        // apply starting angle to startPoint
-        this.startPoint.applyAxisAngle( this.axis, startAngle );
+        this.startPoint.set(0,0,0);
+        this.startPoint.addScaledVector( this.xAxis, Math.cos( this.srcAngle ) );
+        this.startPoint.addScaledVector( this.yAxis, Math.sin( this.srcAngle ) );
 
         // zig-zag
         if ( stringToDirection( bml.zigzag, this.zigzagDir ) ){
@@ -306,9 +319,6 @@ class CircularMotion {
         this.transition = true;
     }
 }
-
-
-
 
 class FingerPlay {
     constructor(){ 

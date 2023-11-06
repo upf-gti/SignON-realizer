@@ -310,7 +310,7 @@ class HandShapeRealizer {
         let selectedFingers = g.selected;
         
         // special fingers override default
-        let specFing = bml.specialfingers; // get special fingers
+        let specFing = bml.specialFingers; // get special fingers
         if (specFing && !isSecond) {
             selectedFingers = [selectedFingers[0],0,0,0,0];
             specFing = specFing.split(''); // ['23'] -> ['2','3']

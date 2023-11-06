@@ -199,10 +199,10 @@ class GeometricArmIK{
         this.armBone.quaternion.multiply( twistq.invert() );
 
         // // previous fix might induce some twisting in forearm. remove forearm twisting. Keep only swing rotation
-        // armQuat = this._tempQ_1.copy( this.bindQuats.elbow ).invert().multiply( this.elbowBone.quaternion ); // elbowBone = ( bind * armMovement ). Do not take into account bind
-        // twistAxis = this._tempV3_0.copy( this.wristBone.position ).normalize();
-        // getTwistQuaternion( armQuat, twistAxis, twistq );
-        // this.elbowBone.quaternion.multiply( twistq.invert() );
+        armQuat = this._tempQ_1.copy( this.bindQuats.elbow ).invert().multiply( this.elbowBone.quaternion ); // elbowBone = ( bind * armMovement ). Do not take into account bind
+        twistAxis = this._tempV3_0.copy( this.wristBone.position ).normalize();
+        getTwistQuaternion( armQuat, twistAxis, twistq );
+        this.elbowBone.quaternion.multiply( twistq.invert() );
     }
 }
 

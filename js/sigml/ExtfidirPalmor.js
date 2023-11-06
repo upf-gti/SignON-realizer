@@ -14,6 +14,7 @@ class ExtfidirPalmor {
         this.wristBone = bones[ boneMap[ handName + "Wrist" ] ];
         this.forearmBone = bones[ boneMap[ handName + "Elbow" ] ];
 
+        // before-bind axes
         this.twistAxisForearm = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "Wrist" ] ].position ).normalize(),
         this.twistAxisWrist = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize(),
         this.bearingAxis = ( new THREE.Vector3() ).crossVectors( bones[ boneMap[ handName + "HandRing" ] ].position, bones[ boneMap[ handName + "HandIndex" ] ].position ).multiplyScalar( isLeftHand ? -1: 1 ).normalize()
@@ -154,11 +155,12 @@ class ExtfidirPalmor {
     newGestureBMLExtfidir( bml, symmetry = false ){
         if( !bml.extfidir ){ return; }
         
-        if( !stringToDirection( bml.extfidir, this.extfidir.trgDir, symmetry ) ){ 
+        if( !stringToDirection( bml.extfidir, this.extfidir.trgDir, symmetry, true ) ){ 
             console.warn( "Gesture: Extfidir incorrect direction \"" + bml.extfidir + "\"" );
             return false; 
         }
-        if( stringToDirection( bml.secondExtfidir, this._tempV3_0, symmetry ) ){
+        this.extfidir.trgDir.normalize();
+        if( stringToDirection( bml.secondExtfidir, this._tempV3_0, symmetry, true ) ){
             this.extfidir.trgDir.lerpVectors( this.extfidir.trgDir, this._tempV3_0, 0.5 );
             this.extfidir.trgDir.normalize();
         }
@@ -180,7 +182,7 @@ class ExtfidirPalmor {
         if( !bml.palmor ){ return; }
 
         // TODO (?): solve atan2(0,-0) == up    
-        let result = new THREE.Vector3();
+        let result = this._tempV3_0;
         if ( !stringToDirection( bml.palmor, result, symmetry, true ) ){ return false; }
         let angle = Math.atan2( result.x, -result.y ); // -y so down is angle=0º
         

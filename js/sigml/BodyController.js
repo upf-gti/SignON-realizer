@@ -36,9 +36,10 @@ class BodyController{
         this.nonDominant = this.left;
 
         this._tempQ_0 = new THREE.Quaternion();
-        this._tempQ_1 = new THREE.Quaternion();
         this._tempV3_0 = new THREE.Vector3();
+        this._tempV3_1 = new THREE.Vector3();
 
+        this.foreArmFactor = 0.6;
     }
 
     computeConfig( jsonConfig ){
@@ -264,8 +265,8 @@ class BodyController{
             // using loc.cur.p, without the loc.cur.offset. Compute handConstellation with raw locBody
             this.right.ikSolver.reachTarget( this.right.loc.cur.p, this.right.elbowRaise.curValue, this.right.shoulderRaise.curValue, this.right.shoulderHunch.curValue, false ); //ik without aesthetics. Aesthetics might modify 
             this.left.ikSolver.reachTarget( this.left.loc.cur.p, this.left.elbowRaise.curValue, this.left.shoulderRaise.curValue, this.left.shoulderHunch.curValue, false );
-            this._fixArmQuats( this.right, true );
-            this._fixArmQuats( this.left, true );
+            this._fixArmQuats( this.right, false );
+            this._fixArmQuats( this.left, false );
 
             // handconstellation update, add motions and ik
             this.handConstellation.update( dt );
@@ -282,19 +283,19 @@ class BodyController{
         this.left.locUpdatePoint.add( this.left.loc.cur.offset );
         this.left.ikSolver.reachTarget( this.left.locUpdatePoint, this.left.elbowRaise.curValue, this.left.shoulderRaise.curValue, this.left.shoulderHunch.curValue, true ); // ik + aesthetics
     
-        this._fixArmQuats( this.right, false );   
-        this._fixArmQuats( this.left, false );  
+        this._fixArmQuats( this.right, true );   
+        this._fixArmQuats( this.left, true );  
         
         this.bodyMovement.update( dt );
     }
+
 
     /* TODO
         do not take into account bind quats
         Upperarm twist correction, forearm twist correction, wrist correction
     */
-    _fixArmQuats( arm, fixWristOnly = false ){
+    _fixArmQuats( arm, fixForearm = false ){
         let q0 = this._tempQ_0;
-        let q1 = this._tempQ_1;
         let bones = this.skeleton.bones;
         let fa = arm.extfidirPalmor.twistAxisForearm;       // forearm axis
         let fq = arm.extfidirPalmor.forearmBone.quaternion; // forearm quat
@@ -309,19 +310,26 @@ class BodyController{
         q0.invert();
         wq.copy( arm._tempWristQuat ).premultiply( q0 );  
         
-        if ( fixWristOnly ){ return } // whether to correct forearm twisting also
+        if ( !fixForearm ){ return } // whether to correct forearm twisting also
 
-        // --- Forearm ---
-        getTwistQuaternion( arm.ikSolver.bindQuats.wrist, wa, q1 );
+        // --- Forearm ---       
+        let poseV = this._tempV3_0;   
+        poseV.copy( arm.extfidirPalmor.elevationAxis );
         getTwistQuaternion( wq, wa, q0 );
-        q0.multiply( q1.invert() );
+        poseV.applyQuaternion( q0 ); // add current twisting
+        getTwistQuaternion( arm.ikSolver.bindQuats.wrist, wa, q0 );
+        poseV.applyQuaternion( q0.invert() ); // do not take into account possible bind twisting (could be removed if avatar is ensured to not have any twist in bind)
 
-        let dot =  wq.x * wa.x + wq.y * wa.y + wq.z * wa.z;
-        q0.set( fa.x * dot, fa.y * dot, fa.z * dot, q0.w ).normalize();
-        if ( arm == this.left ){ q0.set( -q0.x, -q0.y, -q0.z, -q0.w )}
-        q1.set( 0,0,0,1 );
-        nlerpQuats( q0, q1, q0, 0.67 );
+        // get angle, angle sign and ajust edge cases
+        let angle = Math.acos( poseV.dot( arm.extfidirPalmor.elevationAxis ) );
+        this._tempV3_1.crossVectors( arm.extfidirPalmor.elevationAxis, poseV );
+        if ( this._tempV3_1.dot( arm.extfidirPalmor.twistAxisWrist ) < 0 ){ angle *= -1; }
+        if ( arm == this.right && angle < -2.61 ){ angle = Math.PI*2 + angle; } // < -150
+        if ( arm == this.left && angle > 2.61 ){ angle = -Math.PI*2 + angle; } // > 150
         
+        // do not apply all twist to forearm as it may look bad on the elbow (assuming one-bone forearm)
+        angle *= this.foreArmFactor;
+        q0.setFromAxisAngle( fa, angle );
         fq.multiply( q0 ); // forearm
         wq.premultiply( q0.invert() ); // wrist did not know about this twist, undo it
     }
