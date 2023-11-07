@@ -179,7 +179,7 @@ LIP_CORNER_DEPRESSOR_RIGHT
 LIP_CORNER_PULLER                      
 LIP_CORNER_PULLER_LEFT                      
 LIP_CORNER_PULLER_RIGHT                      
-LIP_STRECHER                      
+LIP_STRETCHER                      
 LIP_FUNNELER                      
 LIP_TIGHTENER                      
 LIP_PUCKERER                      

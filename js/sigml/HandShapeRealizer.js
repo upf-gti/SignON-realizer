@@ -294,9 +294,11 @@ class HandShapeRealizer {
     // to avoid having duplicated code for main and second attributes. Fills outHand. Returns 0 on success, >0 otherwise
     _newGestureHandComposer( bml, outHand, isSecond ){
 
-        let g = this.handshapes[ isSecond ? bml.secondHandshape : bml.handshape ];
+        let shapeName = isSecond ? bml.secondHandshape : bml.handshape;
+        if ( shapeName.toUpperCase ){ shapeName = shapeName.toUpperCase(); }
+        let g = this.handshapes[ shapeName ];
         if ( !g ){ 
-            console.warn( "Gesture: HandShape incorrect handshape \"" + (isSecond ? bml.secondHandshape : bml.handshape) + "\"" );
+            console.warn( "Gesture: HandShape incorrect handshape \"" + shapeName + "\"" );
             return 1;
         }
             

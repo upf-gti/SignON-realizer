@@ -151,11 +151,11 @@ FacialExpr.NMF.EYES_CLOSED =                [[51, 52], [1, 1]]; // AU43 eyelids 
 FacialExpr.NMF.UPPER_LID_RAISER =           [[47, 48], [1,1]]; // AU5 negative eyelids closed /wide eyes
 FacialExpr.NMF.UPPER_LID_RAISER_LEFT =      [[47], [1]]; // AU5 negative eyelids closed /wide eyes
 FacialExpr.NMF.UPPER_LID_RAISER_RIGHT =     [[48], [1]]; // AU5 negative eyelids closed /wide eyes 
-FacialExpr.NMF.CHEEK_RAISER =               [[41, 42], [1,1]]; // AU6 squint 
 FacialExpr.NMF.LID_TIGHTENER =              [[51, 52, 49, 50], [0.2, 0.2, 0.8, 0.8]]; // AU7 or AU44 squint TODO NEW MAPPING: SQUINT + BLINK
 FacialExpr.NMF.WINK_LEFT =                  [[53], [1]]; // AU46
 FacialExpr.NMF.WINK_RIGHT =                 [[54], [1]]; // AU46
 // CHEEKS
+FacialExpr.NMF.CHEEK_RAISER =               [[41, 42], [1,1]]; // AU6 squint 
 FacialExpr.NMF.CHEEK_SUCK =                 [[45, 46], [1, 1]]; // AU35
 FacialExpr.NMF.CHEEK_SUCK_LEFT =            [[45], [1]]; // LAU35
 FacialExpr.NMF.CHEEK_SUCK_RIGHT =           [[46], [1]]; // RAU35
@@ -173,7 +173,7 @@ FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[16], [1]]; // RAU15 sad
 FacialExpr.NMF.LIP_CORNER_PULLER =          [[13, 14], [1,1]]; // AU12 happy
 FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[13], [1]]; // LAU12 happy
 FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[14], [1]]; // RAU12 happy
-FacialExpr.NMF.LIP_STRECHER =               [[21, 22], [1,1]];// AU20
+FacialExpr.NMF.LIP_STRETCHER =               [[21, 22], [1,1]];// AU20
 FacialExpr.NMF.LIP_FUNNELER =               [[23], [1]];     // AU22
 FacialExpr.NMF.LIP_TIGHTENER =              [[19, 20, 24, 25], [1, 1, 0.3, 0.3]];     // AU23 TODO: PUCKERER + PRESSOR
 FacialExpr.NMF.LIP_PUCKERER =               [[19, 20], [1,1]]; // AU18 mouth narrow
@@ -369,7 +369,7 @@ FacialExpr.prototype.updateLexemesBSW = function (dt) {
                             -0.707, 0.707,  0.138,  0.075,  0.000,  0.675,  0.300,  0.380,  0.050,  0.216,  0.300];*/
 
 /* "valence", "arousal" ,"BLINK","CHEEK_RAISER", "LIP_CORNER_PULLER", "BROW_LOWERER", "DIMPLER", "OUTER_BROW_RAISER", "
-UPPER_LID_RAISER", "JAW_DROP","LID_TIGHTENER", "LIP_STRECHER","NOSE_WRINKLER", "LIP_CORNER_DEPRESSOR", "CHIN_RAISER", "LIP_CORNER_PULLER_RIGHT", "DIMPLER_RIGHT"*/
+UPPER_LID_RAISER", "JAW_DROP","LID_TIGHTENER", "LIP_STRETCHER","NOSE_WRINKLER", "LIP_CORNER_DEPRESSOR", "CHIN_RAISER", "LIP_CORNER_PULLER_RIGHT", "DIMPLER_RIGHT"*/
 /*FacialExpr.prototype._emotionsVAE = [
   [0.95, 0.23 ,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0 ],//HAPPINESS
   [-0.81, -0.57, 0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0 ], //SADNESS
@@ -417,7 +417,7 @@ FacialEmotion.prototype._emotionsVAE = [
         [FacialExpr.NMF.INNER_BROW_RAISER, 1.0],
         [FacialExpr.NMF.BROW_LOWERER, 0.5],
         [FacialExpr.NMF.UPPER_LID_RAISER, 0.3],
-        [FacialExpr.NMF.LIP_STRECHER, 0.3],
+        [FacialExpr.NMF.LIP_STRETCHER, 0.3],
         [FacialExpr.NMF.JAW_DROP, 0.3]
     ],
     [//DISGUSTED

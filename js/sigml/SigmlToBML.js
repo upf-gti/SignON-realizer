@@ -159,13 +159,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
     if ( !oldPosture ){
         newPosture = {
             RIGHT: [
-                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" },
+                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "HAND_PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "RIGHT" }, 
             ],
             LEFT: [
-                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" },
+                { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "HAND_PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
                 { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "LEFT" }, 
@@ -303,16 +303,16 @@ function signManual( xml, start, signSpeed ){
         time += TIMESLOT.LOC / signSpeed; 
     }
 
-    // add default locations if necessary
+    // add default locations if necessary ( add to the beginning of array to avoid location cancelling any handconstellation or whatever)
     let checkHandsResult = checkHandsUsage( result );
     if ( checkHandsResult["RIGHT"].isHandUsed ){
         if ( checkHandsResult["RIGHT"].firstHandUsage + 0.05 < checkHandsResult["RIGHT"].firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "2_TIP" } );
+            result.unshift( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcContact: "HAND_PALMAR" } );
         }
     }
     if ( checkHandsResult["LEFT"].isHandUsed ){
         if ( checkHandsResult["LEFT"].firstHandUsage + 0.05 < checkHandsResult["LEFT"].firstLocationBody ){ 
-            result.push( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "2_TIP" } );
+            result.unshift( { type: "gesture",  start:start - 0.0001, attackPeak:start + TIMESLOT.LOC / signSpeed, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcContact: "HAND_PALMAR" } );
         }
     }
 
@@ -864,7 +864,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
             newResult.distance = result.distance;
             newResult.start = result.start;
             newResult.attackPeak = result.attackPeak;
-            if ( locBodyArm ){ return [ newResult, locBodyArm ]; }
+            if ( locBodyArm ){ return [ locBodyArm, newResult ]; }
             return [ newResult ];
         }
         if ( locBodyArm ){ return locBodyArm; }
@@ -899,7 +899,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         }
     }
 
-    if ( locBodyArm ){ return [ result, locBodyArm ]; }
+    if ( locBodyArm ){ return [ locBodyArm, result ]; }
     return [ result ];
 
 }
