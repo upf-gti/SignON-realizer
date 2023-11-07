@@ -1224,9 +1224,9 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.direction = attributes.axis;
         result.seconDirection = attributes.second_axis;
     
-        let anglesTable = { "u":0, "ur":45, "r":90, "dr":135, "d":180, "dl":225, "l":270, "ul":315 } 
+        let anglesTable = { "l":0, "ul":45, "u":90, "ur":135, "r":180, "dr":225, "d":270, "dl":315  } 
         result.startAngle = anglesTable[ attributes.start ]; 
-        if ( isNaN( result.startAngle ) ) { result.startAngle = 270; }
+        if ( isNaN( result.startAngle ) ) { result.startAngle = 0; }
         if ( isNaN( result.endAngle ) ) { result.endAngle = result.startAngle + 360; }
         if ( attributes.clockplus || attributes.second_clockplus ){ result.endAngle = result.startAngle + 2 * ( result.endAngle - result.startAngle );} 
         if ( typeof( result.direction ) == "string" && result.direction.includes( "i" ) ){
@@ -1239,6 +1239,15 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
             if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; }
             else { result.zigzagSize = 0.1; }
         }
+
+        switch( attributes.ellipse_direction ){
+            case "h": result.ellipseAxisDirection = "l"; result.ellipseAxisRatio = 0.5; break;
+            case "ur": result.ellipseAxisDirection = "ur"; result.ellipseAxisRatio = 0.5; break;
+            case "v": result.ellipseAxisDirection = "u"; result.ellipseAxisRatio = 0.5; break;
+            case "ul": result.ellipseAxisDirection = "ul"; result.ellipseAxisRatio = 0.5; break;
+            default: break;
+        }
+
         duration = TIMESLOT.MOTIONCIRC / signSpeed;
         result.start = start;
         result.attackPeak = start + duration;
