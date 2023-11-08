@@ -353,7 +353,7 @@ class FingerPlay {
         this.time += dt;
         let interpolator = 0;
         let introInterpolator = 1;
-        if ( this.time < this.start ){ interpolator = 0; }
+        if ( this.time < this.start ){ introInterpolator= 0; interpolator = 0; }
         else if ( this.time < this.attackPeak ){ 
             interpolator = ( this.time - this.start ) / ( this.attackPeak - this.start ); 
             introInterpolator = interpolator;
@@ -369,19 +369,19 @@ class FingerPlay {
 
         // interpolation -- cos(t + X) where X is different for each finger
         this.curUpdateIntensity[0] = ( (this.fingerEnabler & 0x01 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[0] * (1-introInterpolator);
-        this.curBends[0] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.25 ) ) * this.curUpdateIntensity[0];
+        this.curBends[0] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.25 ) * 0.5 + 0.5 ) * this.curUpdateIntensity[0];
 
         this.curUpdateIntensity[1] = ( (this.fingerEnabler & 0x02 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[1] * (1-introInterpolator);
-        this.curBends[1] = ( Math.cos( Math.PI * 2 * this.speed * this.clock ) ) * this.curUpdateIntensity[1];
+        this.curBends[1] = ( Math.cos( Math.PI * 2 * this.speed * this.clock ) * 0.5 + 0.5 ) * this.curUpdateIntensity[1];
 
         this.curUpdateIntensity[2] = ( (this.fingerEnabler & 0x04 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[2] * (1-introInterpolator);
-        this.curBends[2] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.65 ) ) * this.curUpdateIntensity[2];
+        this.curBends[2] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 0.65 ) * 0.5 + 0.5 ) * this.curUpdateIntensity[2];
 
         this.curUpdateIntensity[3] = ( (this.fingerEnabler & 0x08 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[3] * (1-introInterpolator); 
-        this.curBends[3] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.05 ) ) * this.curUpdateIntensity[3];
+        this.curBends[3] = ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.05 ) * 0.5 + 0.5 ) * this.curUpdateIntensity[3];
 
         this.curUpdateIntensity[4] = ( (this.fingerEnabler & 0x10 ? 1 : 0) * intensity ) + this.srcUpdateIntensity[4] * (1-introInterpolator);
-        this.curBends[4] =  ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.35 ) ) * this.curUpdateIntensity[4];
+        this.curBends[4] =  ( Math.cos( Math.PI * 2 * this.speed * this.clock + Math.PI * 1.35 ) * 0.5 + 0.5 ) * this.curUpdateIntensity[4];
     }
 
      /**
@@ -397,7 +397,7 @@ class FingerPlay {
         this.transition = true;
         this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
         this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
-        this.intensity = Math.min( 1, Math.max( 0, this.intensity ) ) * 0.5; // intensity will be the amplitude in a cos operation
+        this.intensity = Math.min( 1, Math.max( -1, this.intensity ) ) * 0.5;
 
         // swap pointers
         let temp = this.srcUpdateIntensity; 
