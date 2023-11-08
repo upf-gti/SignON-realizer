@@ -13,17 +13,9 @@ import { GeometricArmIK } from "./GeometricArmIK.js";
 // characterConfig is modified by bodyController
 class BodyController{
     
-    constructor( character, characterConfig ){
+    constructor( character, skeleton, characterConfig ){
         this.character = character;
-
-        // get skeleton
-        let skeleton = this.skeleton = null;
-        character.traverse( o => {
-            if ( o.isSkinnedMesh ) {
-                skeleton = this.skeleton = o.skeleton;
-            }
-        } );
-
+        this.skeleton = skeleton;
         this.computeConfig( characterConfig );
 
         // -------------- All modules --------------
@@ -46,12 +38,7 @@ class BodyController{
         // reference, not a copy. All changes also affect the incoming characterConfig
         this.config = jsonConfig.bodyController; 
 
-
-        /** BoneMap */
-        // name to index map. If model changes, only this map (and ik) names need to be changed
-        for ( let p in this.config.boneMap ){
-            this.config.boneMap[ p ] = findIndexOfBone( this.skeleton, this.config.boneMap[ p ] );            
-        }
+        this.config.boneMap = jsonConfig.boneMap; // reference, not a copy
 
         /** Main Avatar Axes */
         if ( this.config.axes ){ 

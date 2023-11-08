@@ -2,8 +2,8 @@
 import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
-
 import { BodyController } from '../sigml/BodyController.js';
+import { findIndexOfBone } from "../sigml/Utils.js";
 
 //States
 CharacterController.prototype.WAITING = 0;
@@ -18,7 +18,20 @@ function CharacterController(o) {
     this.time = 0;
     this.character = o.character;
     this.characterConfig = o.characterConfig;
+    
+    // get skeleton
+    this.skeleton = null;
+    this.character.traverse( ob => {
+        if ( ob.isSkinnedMesh ) { this.skeleton = ob.skeleton; }
+    } );
+    o.skeleton = this.skeleton;
 
+    /** BoneMap */
+    // config has a generic name to bone name map. Transform it into a mapping of generic name to bone index (in skeleton). 
+    for ( let p in this.characterConfig.boneMap ){
+        this.characterConfig.boneMap[ p ] = findIndexOfBone( this.skeleton, this.characterConfig.boneMap[ p ] );            
+    }
+    
     if (typeof BehaviourManager !== 'undefined') {
         this.BehaviourManager = new BehaviourManager();
     }else {
@@ -39,7 +52,7 @@ function CharacterController(o) {
     }
 
     if ( typeof(BodyController) !== 'undefined'){ 
-        this.bodyController = new BodyController( this.character, this.characterConfig );
+        this.bodyController = new BodyController( this.character, this.skeleton, this.characterConfig );
     } 
 }
 

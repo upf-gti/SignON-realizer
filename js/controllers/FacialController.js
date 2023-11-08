@@ -66,14 +66,7 @@ FacialController.prototype.configure = function (o) {
 
     if (o.character) {
         this.character = o.character;
-     
-        // get skeleton
-        let skeleton = this.skeleton = null;
-        this.character.traverse( ob => {
-            if ( ob.isSkinnedMesh ) {
-                skeleton = this.skeleton = ob.skeleton;
-            }
-        } );
+        this.skeleton = o.skeleton;
     }
     
     if (o.gazePositions) this._gazePositions = o.gazePositions;
@@ -81,14 +74,8 @@ FacialController.prototype.configure = function (o) {
 
     if(o.characterConfig) {
         this._mappingAU2BS = o.characterConfig.faceController.blendshapeMap;
-        this._boneMap = o.characterConfig.faceController.boneMap;
+        this._boneMap = o.characterConfig.boneMap;
         this._avatarParts = o.characterConfig.faceController.parts;
-    
-        /** BoneMap */
-        // name to index map
-        for ( let p in this._boneMap ){
-            this._boneMap[ p ] = findIndexOfBone( this.skeleton, this._boneMap[ p ] );            
-        }
     }
 }
 
