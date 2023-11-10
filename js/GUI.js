@@ -27,6 +27,8 @@ class AppGUI{
         // localStorage: only for this domain. New tabs will see that memory
         if ( window.sessionStorage ){
             let text;
+            text = window.sessionStorage.getItem( "msg" );
+            this.app.msg = text ? JSON.parse( text ) : null;
             text = window.sessionStorage.getItem( "bmlInput" ); 
             this.bmlInputData.prevInstanceText = text ? text : "";
             text = window.sessionStorage.getItem( "sigmlInput" ); 
@@ -36,6 +38,7 @@ class AppGUI{
             
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
+                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.msg) );
                 if( this.bmlInputData && this.bmlInputData.codeObj ){
                     window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
                 }

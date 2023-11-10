@@ -323,9 +323,11 @@ class BodyController{
 
     _newGestureArm( bml, arm, symmetry = 0x00 ){
         if ( bml.locationBodyArm ){ // when location change, cut directed and circular motions
+            this.bodyMovement.forceBindPose();
             arm.loc.newGestureBML( bml, symmetry, arm.locUpdatePoint );
             arm.locMotions = [];
             this.handConstellation.cancelArm( arm == this.right ? 'R' : 'L' );
+            this.bodyMovement.forceLastFramePose();
         }
         if ( bml.motion ){
             let m = null;

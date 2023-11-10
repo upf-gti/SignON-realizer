@@ -158,7 +158,7 @@ class BodyMovement {
         xAxis.crossVectors( yAxis, zAxis ).normalize(); // x
         zAxis.crossVectors( xAxis, yAxis ).normalize(); // Z ensure orthogonality
 
-        return { idx: boneIdx, bindQuat: bindQuat, beforeBindAxes: [ xAxis, yAxis, zAxis ] }; // tiltFB, rotateRL, tiltRL || x,y,z
+        return { idx: boneIdx, lastFrameQuat: new THREE.Quaternion(), bindQuat: bindQuat, beforeBindAxes: [ xAxis, yAxis, zAxis ] }; // tiltFB, rotateRL, tiltRL || x,y,z
     }
 
     reset (){
@@ -175,12 +175,18 @@ class BodyMovement {
         }
     }
 
-    update( dt ){
-        if ( !this.transition ){ return; }
+    forceLastFramePose(){
+        for( let part in this.jointsData ){
+            this.skeleton.bones[ this.jointsData[ part ].idx ].quaternion.copy( this.jointsData[ part ].lastFrameQuat );
+        }
+    }
+
+    update( dt, forceBearing, forceElevation, forceTilt ){
+        // if ( !this.transition ){ return; }
 
         let transition = false;
 
-        let tiltFBAngle = 0;
+        let tiltFBAngle = 0; //forceElevation;
         for ( let i = 0; i < this.tiltFB.length; ++i ){
             let o = this.tiltFB[i];
             o.update( dt );
@@ -189,7 +195,7 @@ class BodyMovement {
             transition |= o.transition;
         }
 
-        let tiltLRAngle = 0;
+        let tiltLRAngle = 0; //forceTilt;
         for ( let i = 0; i < this.tiltLR.length; ++i ){
             let o = this.tiltLR[i];
             o.update( dt );
@@ -198,7 +204,7 @@ class BodyMovement {
             transition |= o.transition;
         }
 
-        let rotateLRAngle = 0;
+        let rotateLRAngle = 0; //forceBearing;
         for ( let i = 0; i < this.rotateLR.length; ++i ){
             let o = this.rotateLR[i];
             o.update( dt );
@@ -220,6 +226,7 @@ class BodyMovement {
             bone.quaternion.premultiply( q );
             bone.quaternion.premultiply( data.bindQuat ); // probably should MULTIPLY bind quat (previously adjusting axes)
             bone.quaternion.normalize();
+            this.jointsData[part].lastFrameQuat.copy( bone.quaternion );
         }
     }
 
