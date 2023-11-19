@@ -697,4 +697,3 @@ Repetitive swinging, nodding and twisting of wrist (wiggle for the wrist).
 }
 ```
 
-
