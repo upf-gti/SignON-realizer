@@ -22,6 +22,7 @@ class ExtfidirPalmor {
         this.bearingAxis.crossVectors( this.twistAxisWrist, this.elevationAxis ).normalize(); // compute bearing
   
         this.palmor = {
+            srcAngle: 0, // aprox
             trgAngle: 0,
             defAngle: 0,
         };
@@ -31,6 +32,7 @@ class ExtfidirPalmor {
             defDir: new THREE.Vector3(0,-1,0),
         };
 
+        this.curAproxPalmor = 0;
         this.srcQuat = new THREE.Quaternion(0,0,0,1);
         this.curQuat = new THREE.Quaternion(0,0,0,1);
         
@@ -55,6 +57,8 @@ class ExtfidirPalmor {
         this.transition = false;
         this.curQuat.set(0,0,0,1);
         this.srcQuat.set(0,0,0,1);
+        this.curAproxPalmor = 0;
+        this.palmor.srcAngle = 0;
         this.palmor.trgAngle = 0;
         this.palmor.defAngle = 0;
         this.extfidir.trgDir.set(0,-1,0);
@@ -117,6 +121,7 @@ class ExtfidirPalmor {
             nlerpQuats( this.curQuat, this.srcQuat, this.curQuat, t );
             //this.curQuat.slerpQuaternions( this.srcQuat, this.curQuat, t );
 
+            this.curAproxPalmor = this.palmor.srcAngle * (1-t) + this.palmor.trgAngle * t;
             this.wristBone.quaternion.copy( this.curQuat );
         }
         else if ( this.time < this.relax ){ 
@@ -124,6 +129,7 @@ class ExtfidirPalmor {
             this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.curQuat.multiply( this._tempQ_0 );
             this.wristBone.quaternion.copy( this.curQuat );
+            this.curAproxPalmor = this.palmor.trgAngle;
         }
         else { 
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.srcQuat );
@@ -142,6 +148,8 @@ class ExtfidirPalmor {
             nlerpQuats( this.curQuat, this.srcQuat, this.curQuat, t );
             //this.curQuat.slerpQuaternions( this.srcQuat, this.curQuat, t ); 
             this.wristBone.quaternion.copy( this.curQuat );
+            this.curAproxPalmor = this.palmor.trgAngle * (1-t) + this.palmor.defAngle * t;
+
         }
     }
 
@@ -196,8 +204,10 @@ class ExtfidirPalmor {
             }
             angle = ( angle + secondAngle ) * 0.5
         }
-        if ( !this.isLeftHand && angle < -140 * Math.PI/180 ){ angle += Math.PI *2; }
-        else if ( this.isLeftHand && angle > 140 * Math.PI/180 ){ angle -= Math.PI *2; }
+        if ( !this.isLeftHand && angle < -120 * Math.PI/180 ){ angle += Math.PI *2; }
+        else if ( this.isLeftHand && angle > 120 * Math.PI/180 ){ angle -= Math.PI *2; }
+        // if ( !this.isLeftHand && angle < -140 * Math.PI/180 ){ angle += Math.PI *2; }
+        // else if ( this.isLeftHand && angle > 140 * Math.PI/180 ){ angle -= Math.PI *2; }
         
         this.palmor.trgAngle = angle;
 
@@ -212,6 +222,7 @@ class ExtfidirPalmor {
     newGestureBML( bml, symmetry = 0x00 ){
 
         this.srcQuat.copy( this.curQuat );
+        this.palmor.srcAngle = this.curAproxPalmor;
 
         if ( !this.newGestureBMLExtfidir( bml, symmetry ) ){
             if ( this.time > this.relax ){ this.extfidir.trgDir.copy( this.extfidir.defDir ); }
@@ -229,6 +240,8 @@ class ExtfidirPalmor {
         this.relax = bml.relax;
         this.end = bml.end;
         this.transition = true; 
+
+        return true;
     }
 }
 

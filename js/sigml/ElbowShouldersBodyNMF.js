@@ -99,21 +99,21 @@ class BasicBMLValueInterpolator {
 class ElbowRaise extends BasicBMLValueInterpolator {
     newGestureBML ( bml ){
         let value = parseFloat( bml.elbowRaise ) * ( 90 * Math.PI / 180 ); // shoulderRaise = [0,1]. where 1 == 90 Degrees
-        super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
+        return super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
 
 class ShoulderRaise extends BasicBMLValueInterpolator {
     newGestureBML ( bml ){
         let value =  parseFloat( bml.shoulderRaise ) * ( 30 * Math.PI / 180 ); // shoulderRaise = [0,1]. where 1 == 30 Degrees
-        super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
+        return super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
 
 class ShoulderHunch extends BasicBMLValueInterpolator {
     newGestureBML ( bml ){
         let value = parseFloat( bml.shoulderHunch ) * ( 30 * Math.PI / 180 ); // shoulderRaise = [0,1]. where 1 == 30 Degrees
-        super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
+        return super.newGestureBML( value, bml.start, bml.attackPeak, bml.relax, bml.end, bml.shift );
     }
 }
 
@@ -142,7 +142,7 @@ class BodyMovement {
         // compute bind quat
         let m1 = this.skeleton.boneInverses[ boneIdx ].clone().invert(); // LocalToMeshCoords:    parentParentBone * parentBone * bone * point
         // inv(parentBone) * inv(parentParentBone)    *    parentParentBone * parentBone * bone   --> 
-        m1.premultiply( this.skeleton.boneInverses[ findIndexOfBone( this.skeleton, this.skeleton.bones[ boneIdx ].parent.name ) ] ); 
+        m1.premultiply( this.skeleton.boneInverses[ findIndexOfBone( this.skeleton, this.skeleton.bones[ boneIdx ].parent ) ] ); 
         let bindQuat = (new THREE.Quaternion()).setFromRotationMatrix( m1 ).normalize();;
 
         // compute local axes of rotation based on bones boneIdx and upAxisReferenceBoneIdx.
@@ -182,7 +182,7 @@ class BodyMovement {
     }
 
     update( dt, forceBearing, forceElevation, forceTilt ){
-        // if ( !this.transition ){ return; }
+        if ( !this.transition ){ return; }
 
         let transition = false;
 
@@ -253,6 +253,8 @@ class BodyMovement {
             dstBuffer.push( b );
             this.transition = true;
         }
+
+        return true;
     }
 }
 

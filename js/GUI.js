@@ -1,5 +1,7 @@
 import * as THREE from "three"
-import { sigmlStringToBML } from "./sigml/SigmlToBML.js";
+import { LX } from 'lexgui';
+import 'lexgui/components/codeeditor.js';
+
 
 class AppGUI{
     constructor( app ){

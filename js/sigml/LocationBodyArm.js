@@ -216,7 +216,7 @@ class LocationBodyArm {
 
         if ( !this._newGestureLocationComposer( bml, symmetry, this.trg, false ) ){
             console.warn( "Gesture: Location Arm no location found with name \"" + bml.locationBodyArm + "\"" );
-            return;
+            return false;
         };
         if( this._newGestureLocationComposer( bml, symmetry, this.src.p, true ) ){ // use src as temporal buffer
             this.trg.lerp( this.src.p, 0.5 );
@@ -289,6 +289,8 @@ class LocationBodyArm {
         this.end = bml.end;
         this.time = 0;
         this.transition = true;
+
+        return true;
     }   
 }
 

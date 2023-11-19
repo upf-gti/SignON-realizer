@@ -293,6 +293,8 @@ class HandConstellation {
         this.end = bml.end;
         this.time = 0;
         this.transition = true;
+
+        return true;
     }   
 }
 

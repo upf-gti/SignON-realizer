@@ -7,7 +7,7 @@ import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motio
 import { HandConstellation } from "./HandConstellation.js";
 import { ElbowRaise, ShoulderRaise, ShoulderHunch, BodyMovement } from "./ElbowShouldersBodyNMF.js";
 
-import { findIndexOfBone, getTwistQuaternion, nlerpQuats } from "./Utils.js";
+import { findIndexOfBoneByName, forceBindPoseQuats, getTwistQuaternion, nlerpQuats } from "./Utils.js";
 import { GeometricArmIK } from "./GeometricArmIK.js";
 
 // characterConfig is modified by bodyController
@@ -19,6 +19,8 @@ class BodyController{
         this.computeConfig( characterConfig );
 
         // -------------- All modules --------------
+        forceBindPoseQuats( this.skeleton, true ); // so all modules can setup things in bind pose already
+        this.character.updateWorldMatrix( true, true );
         this.right = this._createArm( false );
         this.left = this._createArm( true );
         this.handConstellation = new HandConstellation( this.config.boneMap, this.skeleton, this.config.handLocationsR, this.config.handLocationsL );
@@ -28,6 +30,7 @@ class BodyController{
         this.nonDominant = this.left;
 
         this._tempQ_0 = new THREE.Quaternion();
+        this._tempQ_1 = new THREE.Quaternion();
         this._tempV3_0 = new THREE.Vector3();
         this._tempV3_1 = new THREE.Vector3();
 
@@ -40,7 +43,7 @@ class BodyController{
 
         this.config.boneMap = jsonConfig.boneMap; // reference, not a copy
 
-        /** Main Avatar Axes */
+        /** Main Avatar Axes in Mesh Coordinates */
         if ( this.config.axes ){ 
             for( let i = 0; i < this.config.axes.length; ++i ){ // probably axes are a simple js object {x:0,y:0,z:0}. Convert it to threejs
                 this.config.axes[i] = new THREE.Vector3(  this.config.axes[i].x, this.config.axes[i].y, this.config.axes[i].z ); 
@@ -71,7 +74,7 @@ class BodyController{
             for( let name in table ){
                 let l = table[ name ];
                 
-                let idx = findIndexOfBone( skeleton, symmetry ? l[0].replace( "Right", "Left" ) : l[0] );
+                let idx = findIndexOfBoneByName( skeleton, symmetry ? l[0].replace( "Right", "Left" ) : l[0] );
                 if ( idx < 0 ){ continue; }
                 
                 let o = new THREE.Object3D();
@@ -283,6 +286,7 @@ class BodyController{
     */
     _fixArmQuats( arm, fixForearm = false ){
         let q0 = this._tempQ_0;
+        let q1 = this._tempQ_1;
         let bones = this.skeleton.bones;
         let fa = arm.extfidirPalmor.twistAxisForearm;       // forearm axis
         let fq = arm.extfidirPalmor.forearmBone.quaternion; // forearm quat

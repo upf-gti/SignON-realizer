@@ -3,7 +3,7 @@ import { BehaviourPlanner } from '../bml/BehaviourPlanner.js';
 import { BehaviourManager } from '../bml/BehaviourManager.js';
 import { FacialController } from './FacialController.js';
 import { BodyController } from '../sigml/BodyController.js';
-import { findIndexOfBone } from "../sigml/Utils.js";
+import { findIndexOfBoneByName } from "../sigml/Utils.js";
 
 //States
 CharacterController.prototype.WAITING = 0;
@@ -29,7 +29,7 @@ function CharacterController(o) {
     /** BoneMap */
     // config has a generic name to bone name map. Transform it into a mapping of generic name to bone index (in skeleton). 
     for ( let p in this.characterConfig.boneMap ){
-        this.characterConfig.boneMap[ p ] = findIndexOfBone( this.skeleton, this.characterConfig.boneMap[ p ] );            
+        this.characterConfig.boneMap[ p ] = findIndexOfBoneByName( this.skeleton, this.characterConfig.boneMap[ p ] );            
     }
     
     if (typeof BehaviourManager !== 'undefined') {

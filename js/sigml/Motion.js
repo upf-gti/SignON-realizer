@@ -107,7 +107,10 @@ class DirectedMotion {
          
         // fetch direction and secondDirection
         let finalDir = _tempVec3_0;
-        stringToDirection( bml.direction, finalDir, symmetry, true );
+        if ( !stringToDirection( bml.direction, finalDir, symmetry, true ) ){
+            console.warn( "DirectedMotion has incorrect direction values" );
+            return false;
+        }
         if( finalDir.lengthSq() > 0.0001 ){ finalDir.normalize(); }
         if ( stringToDirection( bml.secondDirection, _tempVec3_1, symmetry, true ) ){
             if( _tempVec3_1.lengthSq() > 0.0001 ){ _tempVec3_1.normalize(); }
@@ -156,6 +159,8 @@ class DirectedMotion {
 
         // flag to start 
         this.transition = true;
+
+        return true;
     }
 }
 
@@ -268,7 +273,7 @@ class CircularMotion {
         // normal axis
         if ( !stringToDirection( bml.direction, _tempVec3_0, symmetry, true ) ){
             console.warn( "Gesture: Location Motion no direction found with name \"" + bml.direction + "\"" );
-            return;
+            return false;
         }
         if ( !stringToDirection( bml.secondDirection, _tempVec3_1, symmetry, true ) ){
             _tempVec3_1.copy( _tempVec3_0 );
@@ -317,6 +322,8 @@ class CircularMotion {
 
         // flag to start 
         this.transition = true;
+        
+        return true;
     }
 }
 
@@ -429,7 +436,9 @@ class FingerPlay {
         this.attackPeak = bml.attackPeak;
         this.relax = bml.relax;
         this.end = bml.end;
-        this.time = 0; 
+        this.time = 0;
+
+        return true;
     }
 
 };
@@ -562,12 +571,12 @@ class WristMotion {
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
-                    return;
+                    return false;
             }
         }
         else if ( isNaN( bml.mode ) ) {
             console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
-            return;
+            return false;
         }
         else{
             this.mode = bml.mode & 0x07; // take only the necessary bits
@@ -586,6 +595,8 @@ class WristMotion {
         this.time = 0; 
 
         this.transition = true;
+        
+        return true;
     }
 };
     

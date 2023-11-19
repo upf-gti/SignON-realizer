@@ -99,7 +99,18 @@ function stringToDirection( str, outV, symmetry = 0x00, accumulate = false ){
 // Skeleton
 
 // O(n)
-function findIndexOfBone( skeleton, name ){
+function findIndexOfBone( skeleton, bone ){
+    if ( !bone ){ return -1;}
+    let b = skeleton.bones;
+    for( let i = 0; i < b.length; ++i ){
+        if ( b[i] == bone ){ return i; }
+    }
+    return -1;
+}
+
+// O(nm)
+function findIndexOfBoneByName( skeleton, name ){
+    if ( !name ){ return -1; }
     let b = skeleton.bones;
     for( let i = 0; i < b.length; ++i ){
         if ( b[i].name == name ){ return i; }
@@ -107,4 +118,26 @@ function findIndexOfBone( skeleton, name ){
     return -1;
 }
 
-export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone }
+// sets bind quaternions only. Warning: Not the best function to call every frame.
+function forceBindPoseQuats( skeleton, skipRoot = false ){
+    let bones = skeleton.bones;
+    let inverses = skeleton.boneInverses;
+    if ( inverses.length < 1 ){ return; }
+    let boneMat = inverses[0].clone(); // to avoid new THREE.Matrix4() and an import of threejs
+    for( let i = 0; i < bones.length; ++i ){
+        boneMat.copy( inverses[i] ); // World to Local
+        boneMat.invert(); // Local to World
+
+        // get only the local matrix of the bone (root should not need any change)
+        let parentIdx = findIndexOfBone( skeleton, bones[i].parent );
+        if ( parentIdx > -1 ){ boneMat.premultiply( inverses[ parentIdx ] ); }
+        else{
+            if ( skipRoot ){ continue; }
+        }
+       
+        bones[i].quaternion.setFromRotationMatrix( boneMat );
+        bones[i].quaternion.normalize(); 
+    }
+}
+
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone, findIndexOfBoneByName, forceBindPoseQuats }

@@ -3,8 +3,6 @@
 import { Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, Text2LipInterface, T2LTABLES } from '../bml/BehaviourRealizer.js';
 import * as THREE from 'three';
 
-import { findIndexOfBone } from "../sigml/Utils.js"
-
 function FacialController(config = null) {
     
     // define some properties
