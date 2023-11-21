@@ -27,6 +27,7 @@ function build() {
     
     let files = {
         "BML.js": [
+            "../js/sigml/Utils.js",
             "../js/bml/BehaviourManager.js",
             "../js/bml/BehaviourPlanner.js", 
             "../js/bml/BehaviourRealizer.js", 
@@ -35,8 +36,7 @@ function build() {
             "../js/sigml/LocationBodyArm.js",
             "../js/sigml/HandConstellation.js",
             "../js/sigml/Motion.js",
-            "../js/sigml/ElbowShouldersBodyNMF.js",
-            "../js/sigml/Utils.js"
+            "../js/sigml/ElbowShouldersBodyNMF.js"
         ],
         "CharacterController.js": [
             "../js/controllers/CharacterController.js",

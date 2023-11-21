@@ -39,8 +39,14 @@ function mirrorQuatSelf( q ){
     //q.w = q.w;
 }
 
-// nlerp THREE.Quaternion. Good for interpolation between similar/close quaternions. Cheaper than slerp but might interpolate through the wrong/weird path. Use slerp (more expensive but finds shortest path)
+// nlerp THREE.Quaternion. Good for interpolation between similar/close quaternions. Cheaper than slerp
 function nlerpQuats( destQuat, qa, qb, t ){
+    // let bsign = ( qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w ) < 0 ? -1 : 1;    
+    // destQuat.x = qa.x * (1-t) + bsign * qb.x * t;
+    // destQuat.y = qa.y * (1-t) + bsign * qb.y * t;
+    // destQuat.z = qa.z * (1-t) + bsign * qb.z * t;
+    // destQuat.w = qa.w * (1-t) + bsign * qb.w * t;
+    // missing neighbourhood
     destQuat.x = qa.x * (1-t) + qb.x * t;
     destQuat.y = qa.y * (1-t) + qb.y * t;
     destQuat.z = qa.z * (1-t) + qb.z * t;
@@ -150,4 +156,4 @@ function forceBindPoseQuats( skeleton, skipRoot = false ){
     }
 }
 
-export{ quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone, findIndexOfBoneByName, getBindQuaternion, forceBindPoseQuats }
+export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone, findIndexOfBoneByName, getBindQuaternion, forceBindPoseQuats }
