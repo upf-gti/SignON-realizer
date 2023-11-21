@@ -89,6 +89,7 @@ class HandShapeRealizer {
     }
 
     _computeFingerAxesOfHand( isLeftHand = false ){
+        // assumes character is in tpose
         let bones = this.skeleton.bones;
         let fingers = this.fingerIdxs;
         let bendAxis = new THREE.Vector3();

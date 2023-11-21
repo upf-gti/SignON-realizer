@@ -77,15 +77,22 @@ FacialController.prototype.configure = function (o) {
     }
 }
 
-FacialController.prototype.start = function (morphTargets) {
+FacialController.prototype.start = function () {
 
-    if (!morphTargets) {
-        morphTargets = {};
-        // Get morph targets
-        for (const part in this._avatarParts) {
-            morphTargets[part] = this.character.getObjectByName(part);
+    this._morphTargets = {}; // map "name" of part to its scene obj
+    for (const part in this._avatarParts) {
+        let obj = this.character.getObjectByName(part);
+        if ( !obj || !obj.morphTargetDictionary || !obj.morphTargetInfluences ){
+            console.log( "FacialController: \"" + part + "\" object could not be found in the avatar" );
+            delete this._avatarParts[ part ];
+            continue;
         }
-        this._morphTargets = morphTargets;
+        this._morphTargets[part] = obj;
+
+        if ( !Array.isArray( this._avatarParts[part] ) ){ // if not array of AU provided for this part, use all AUs
+            this._avatarParts[part] = Object.keys(this._actionUnits.dictionary);
+        }
+
     }
         
     this._facialAUAcc = this._actionUnits.influences.slice(); // clone array;
@@ -212,7 +219,7 @@ FacialController.prototype.innerUpdate = function (dt) {
 
     let lookAtEyes = this.character.eyesTarget.getWorldPosition(new THREE.Vector3());
     let lookAtHead = this.character.headTarget.getWorldPosition(new THREE.Vector3());
-    let lookAtNeck = this.character.headTarget.getWorldPosition(new THREE.Vector3());
+    let lookAtNeck = this.character.neckTarget.getWorldPosition(new THREE.Vector3());
     
     this.skeleton.bones[this._boneMap.Neck].lookAt(lookAtNeck);
     this.skeleton.bones[this._boneMap.Head].lookAt(lookAtHead);

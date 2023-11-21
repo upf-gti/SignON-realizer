@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getTwistQuaternion } from "./Utils.js";
+import { getBindQuaternion, getTwistQuaternion } from "./Utils.js";
 
 class GeometricArmIK{
     constructor( skeleton, config, isLeftHand = false ){
@@ -17,7 +17,6 @@ class GeometricArmIK{
         this.isLeftHand = !!isLeftHand;
 
         let handName = isLeftHand ? "L" : "R";
-        this.shoulderIndex = this.config.boneMap[ handName + "Shoulder" ];
 
         this.shoulderBone = this.skeleton.bones[ this.config.boneMap[ handName + "Shoulder" ] ];
         this.armBone = this.skeleton.bones[ this.config.boneMap[ handName + "Arm" ] ];
@@ -40,40 +39,31 @@ class GeometricArmIK{
         }
 
         // shoulder
-        let m1 = this.skeleton.boneInverses[ this.shoulderIndex ].clone().invert(); 
-        let m2 = this.skeleton.boneInverses[ this.config.boneMap.ShouldersUnion ]; 
-        m1.premultiply(m2);
-        this.bindQuats.shoulder.setFromRotationMatrix( m1 );
-        let m3 = this._tempM3_0.setFromMatrix4( this.skeleton.boneInverses[ this.shoulderIndex ] );
-        this._tempV3_0.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // convert mesh front axis to local coord
-        this.beforeBindAxes.shoulderHunch.crossVectors( this.skeleton.bones[ this.shoulderIndex + 1 ].position, this._tempV3_0 ).normalize(); 
-        this.beforeBindAxes.shoulderRaise.crossVectors( this.skeleton.bones[ this.shoulderIndex + 1 ].position, this.beforeBindAxes.shoulderHunch ).multiplyScalar( isLeftHand ? -1: 1 ).normalize(); 
+        let boneIdx = this.config.boneMap[ handName + "Shoulder" ];
+        getBindQuaternion( this.skeleton, boneIdx, this.bindQuats.shoulder );
+        let m3 = this._tempM3_0.setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] );
+        this._tempV3_0.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // convert front axis from mesh coords to local coord
+        this.beforeBindAxes.shoulderHunch.crossVectors( this.skeleton.bones[ boneIdx + 1 ].position, this._tempV3_0 ).normalize(); 
+        this.beforeBindAxes.shoulderRaise.crossVectors( this.skeleton.bones[ boneIdx + 1 ].position, this.beforeBindAxes.shoulderHunch ).multiplyScalar( isLeftHand ? -1: 1 ).normalize(); 
 
         // arm
-        m1 = this.skeleton.boneInverses[ this.shoulderIndex + 1 ].clone().invert();
-        m2 = this.skeleton.boneInverses[ this.shoulderIndex ];
-        m1.premultiply(m2);
-        this.bindQuats.arm.setFromRotationMatrix( m1 );
-        m3.setFromMatrix4( this.skeleton.boneInverses[ this.shoulderIndex + 1 ] );
+        boneIdx = this.config.boneMap[ handName + "Arm" ];
+        getBindQuaternion( this.skeleton, boneIdx, this.bindQuats.arm );
+        m3.setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] );
         this._tempV3_0.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // convert mesh front axis to local coord
-        this.beforeBindAxes.armTwist.copy( this.skeleton.bones[ this.shoulderIndex + 2 ].position ).normalize();
+        this.beforeBindAxes.armTwist.copy( this.skeleton.bones[ boneIdx + 1 ].position ).normalize();
         this.beforeBindAxes.armBearing.crossVectors( this.beforeBindAxes.armTwist, this._tempV3_0 ).normalize(); 
         this.beforeBindAxes.armFront.crossVectors( this.beforeBindAxes.armBearing, this.beforeBindAxes.armTwist ).normalize();
-
+        
         // elbow
-        m1 = this.skeleton.boneInverses[ this.shoulderIndex + 2 ].clone().invert();
-        m2 = this.skeleton.boneInverses[ this.shoulderIndex + 1 ];
-        m1.premultiply(m2);
-        this.bindQuats.elbow.setFromRotationMatrix( m1 );
-        m3.setFromMatrix4( this.skeleton.boneInverses[ this.shoulderIndex + 2 ] );
+        boneIdx = this.config.boneMap[ handName + "Elbow" ];
+        getBindQuaternion( this.skeleton, boneIdx, this.bindQuats.elbow );
+        m3.setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] );
         this._tempV3_0.addVectors( this.config.axes[2], this.config.axes[1] ).applyMatrix3( m3 ).normalize(); // convert mesh front axis to local coord
-        this.beforeBindAxes.elbow.crossVectors( this.skeleton.bones[ this.shoulderIndex + 3 ].position, this._tempV3_0 ).normalize();
+        this.beforeBindAxes.elbow.crossVectors( this.skeleton.bones[ boneIdx + 1 ].position, this._tempV3_0 ).normalize();
         
         // wrist
-        m1 = this.skeleton.boneInverses[ this.shoulderIndex + 3 ].clone().invert();
-        m2 = this.skeleton.boneInverses[ this.shoulderIndex + 2 ];
-        m1.premultiply(m2);
-        this.bindQuats.wrist.setFromRotationMatrix( m1 );
+        getBindQuaternion( this.skeleton, this.config.boneMap[ handName + "Wrist" ], this.bindQuats.wrist );
 
         // put in tpose
         this.shoulderBone.quaternion.copy( this.bindQuats.shoulder );
@@ -101,19 +91,24 @@ class GeometricArmIK{
         elbowBone.quaternion.copy( this.bindQuats.elbow );
         wristBone.updateWorldMatrix( true, false );
 
-        let armWPos = this._tempV3_2.setFromMatrixPosition( armBone.matrixWorld );
+        let armWPos = (new THREE.Vector3()).setFromMatrixPosition( armBone.matrixWorld );     
+        
+        // projection of line armBone-targetPoint onto the main avatar axes (from shoulderUnion bone), normalized by the world arm length
+        let targetWorldProj = new THREE.Vector3(); 
+        this._tempM4_0.multiplyMatrices( this.skeleton.bones[ this.config.boneMap.ShouldersUnion ].matrixWorld, this.skeleton.boneInverses[ this.config.boneMap.ShouldersUnion ] ); // mesh to world coordinates
+        let meshToWMat3 = this._tempM3_0.setFromMatrix4( this._tempM4_0 );
+        this._tempV3_0.subVectors( targetWorldPoint, armWPos );
+        this._tempV3_1.copy( this.config.axes[0] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.x = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        this._tempV3_1.copy( this.config.axes[1] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.y = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        this._tempV3_1.copy( this.config.axes[2] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.z = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        if ( targetWorldProj.lengthSq() > 1 ){ targetWorldProj.normalize(); }// if target is beyond arm length, set projection length to 1 
 
         /** Shoulder Raise and Hunch */
-        this._tempV3_1.subVectors( targetWorldPoint, armWPos ); // direction with respect to arm Bone. World coords
-        if ( this._tempV3_1.lengthSq() > this.armWorldSize*this.armWorldSize ){ this._tempV3_1.normalize().multiplyScalar( this.armWorldSize ); }
-        this._tempM4_0.multiplyMatrices( this.shoulderBone.matrixWorld, this.skeleton.boneInverses[ this.shoulderIndex ] ); // mesh to world coordinates
-        let meshToWorldMat3 = this._tempM3_0.setFromMatrix4( this._tempM4_0 ); // just for directions
-        this._tempV3_0.copy( this.config.axes[0] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert horizontal axis from mesh to world coords from shoulder perspective
-        this._tempV3_0.multiplyScalar( this.isLeftHand ? -1: 1 );
-        let shoulderHunchFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
-        this._tempV3_0.copy( this.config.axes[1] ).applyMatrix3( meshToWorldMat3 ).normalize(); // convert vertical axis from mesh to world coords from shoulder perspective
-        let shoulderRaiseFactor = this._tempV3_0.dot( this._tempV3_1 ) / this.armWorldSize;
-        
+        let shoulderHunchFactor = targetWorldProj.x * ( this.isLeftHand ? -1 : 1 );
+        let shoulderRaiseFactor = targetWorldProj.y;   
         shoulderRaiseFactor = Math.max( -1, Math.min( 1, shoulderRaiseFactor * shoulderRaiseFactor * Math.sign( shoulderRaiseFactor ) ) );
         shoulderHunchFactor = Math.max( -1, Math.min( 1, shoulderHunchFactor * shoulderHunchFactor * Math.sign( shoulderHunchFactor ) ) );
         
@@ -133,8 +128,19 @@ class GeometricArmIK{
 
         // prepare variables for elbow
         wristBone.updateWorldMatrix( true, false ); // TODO should be only wrist, elbow, arm, shoulder
-        armWPos = this._tempV3_1.setFromMatrixPosition( armBone.matrixWorld ); // update arm position 
-        let wristArmAxis = this._tempV3_1;
+        armWPos.setFromMatrixPosition( armBone.matrixWorld ); // update arm position 
+
+        // recompute projection. armWPos might have moved due to shoulder
+        this._tempV3_0.subVectors( targetWorldPoint, armWPos );
+        this._tempV3_1.copy( this.config.axes[0] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.x = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        this._tempV3_1.copy( this.config.axes[1] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.y = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        this._tempV3_1.copy( this.config.axes[2] ).applyMatrix3( meshToWMat3 ).normalize();
+        targetWorldProj.z = this._tempV3_1.dot( this._tempV3_0 ) / this.armWorldSize;
+        if ( targetWorldProj.lengthSq() > 1 ){ targetWorldProj.normalize(); }// if target is beyond arm length, set projection length to 1 
+
+        let wristArmAxis = this._tempV3_2;
         let elbowRaiseQuat = this._tempQ_1;
         let armElevationBearingQuat = this._tempQ_2;
 
@@ -147,35 +153,34 @@ class GeometricArmIK{
         let misalignmentAngle = Math.acos( Math.max( -1, Math.min( 1, ( cc - a*a - b*b ) / ( -2 * a * b ) ) ) ); // angle from forearm-upperarm tpose misalignment
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.elbow, misalignmentAngle - elbowAngle ); // ( Math.PI - elbowAngle ) - ( Math.PI - misalignmentAngle )
         elbowBone.quaternion.multiply( this._tempQ_0 )
-
+        
         elbowBone.updateMatrix();
         wristArmAxis.copy( wristBone.position ).applyMatrix4( elbowBone.matrix ).normalize(); // axis in "before bind" space
 
-        /** Arm Computation */
-        armBone.updateWorldMatrix( false, false ); // only update required is for the arm
-        let wToLArm = this._tempM4_0.copy( this.armBone.matrixWorld ).invert();
-        let targetLocalDir = this._tempV3_0.copy( targetWorldPoint ).applyMatrix4( wToLArm ).normalize();
-        
+        /** Arm Computation */       
+        // assuming T-pose. Move from T-Pose to arms facing forward, without any twisting.
         // the 0º bearing, 0º elevation angles correspond to the armFront axis 
-        let targetProj = { x: this.beforeBindAxes.armTwist.dot( targetLocalDir ), y: this.beforeBindAxes.armBearing.dot( targetLocalDir ), z: this.beforeBindAxes.armFront.dot( targetLocalDir ) };
-        let targetAngles = { elevation: Math.asin( targetProj.y ), bearing: Math.atan2( -targetProj.x, targetProj.z ) };
         let sourceProj = { x: this.beforeBindAxes.armTwist.dot( wristArmAxis ), y: this.beforeBindAxes.armBearing.dot( wristArmAxis ), z: this.beforeBindAxes.armFront.dot( wristArmAxis ) };
-        let sourceAngles = { elevation: Math.asin( sourceProj.y ), bearing: Math.atan2( -sourceProj.x, sourceProj.z ) };
-        
+        let sourceAngles = { elevation: Math.asin( sourceProj.y ), bearing: Math.atan2( -sourceProj.x, sourceProj.z ) };        
         armElevationBearingQuat.set(0,0,0,1);
-        // assuming T-pose. Move from T-Pose to arms facing forward (armFront more or less)
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.armBearing, - sourceAngles.bearing );
         armElevationBearingQuat.premultiply( this._tempQ_0 );
         this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.armTwist, - sourceAngles.elevation );
         armElevationBearingQuat.premultiply( this._tempQ_0 );
-        // move arms to desired location
-        this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.armTwist, targetAngles.elevation );
-        armElevationBearingQuat.premultiply( this._tempQ_0 );
-        this._tempQ_0.setFromAxisAngle( this.beforeBindAxes.armBearing, targetAngles.bearing );
+
+        // move to target
+        armBone.updateWorldMatrix( false, false ); // only update required is for the arm
+        let wToLArm = this._tempM4_0.copy( this.armBone.matrixWorld ).invert(); // world to local
+        let targetLocalDir = this._tempV3_0.copy( targetWorldPoint ).applyMatrix4( wToLArm ).normalize();
+        let rotAxis = this._tempV3_1.crossVectors( this.beforeBindAxes.armFront, targetLocalDir ).normalize();
+        this._tempQ_0.setFromAxisAngle( rotAxis, this.beforeBindAxes.armFront.angleTo( targetLocalDir ) );
         armElevationBearingQuat.premultiply( this._tempQ_0 );
 
         /** ElbowRaise Computation */
-        let elbowRaiseAngle = (-0.7 + targetAngles.bearing ) * ( 1 - elbowAngle / Math.PI ); // default angle. 45º 
+        let elbowRaiseAngle = -1.5* ( 1 - elbowAngle / Math.PI ); 
+        elbowRaiseAngle += Math.PI * 0.1 * Math.max( 0, Math.min( 1, targetWorldProj.x * 2 * (this.isLeftHand?-1:1)) );  // x / 0.5
+        elbowRaiseAngle += -Math.PI * 0.1 * Math.max( 0, Math.min( 1, targetWorldProj.y * 2 ) ); // y / 0.5
+        elbowRaiseAngle += Math.PI * 0.2 * Math.max( 0, Math.min( 1, -targetWorldProj.z * 5 ) ); // z / 0.2
         elbowRaiseAngle += forcedElbowRaiseDelta + this.config.elbowRaise;
         elbowRaiseAngle *= ( this.isLeftHand ? 1 : -1 ); // due to how axis is computed, angle for right arm is inverted
         elbowRaiseQuat.setFromAxisAngle( wristArmAxis, elbowRaiseAngle );

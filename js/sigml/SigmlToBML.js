@@ -558,7 +558,7 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     else { 
         if ( locationMapHead[ attributes.location ] ){ attributes.contact = "touch"; } // need this later for srcContact
         if ( attributes.contact == "touch" ){ result.distance = 0.0; }
-        else{ result.distance = 0.36; } 
+        else{ result.distance = 0.4; } 
     } // jasigning has a default unmentioned distance...
 
     // jasigning might accept some arm locations in the body location instruction. Transform it into a handconstellation
@@ -884,7 +884,7 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         }else{
             // "wachten" sign needs these
             result.dstLocation = "TIP"; 
-            result.dstFinger = "2";
+            result.dstFinger = "1";
         }
     }
     if ( locationHandCount < 2 ){
@@ -894,8 +894,8 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
             result.srcFinger = currentPosture.handConstellation.srcFinger;
         }else{
             // "wachten" sign needs these
-            result.dstLocation = "TIP";
-            result.dstFinger = "2";
+            result.srcLocation = "TIP";
+            result.srcFinger = "1";
         }
     }
 

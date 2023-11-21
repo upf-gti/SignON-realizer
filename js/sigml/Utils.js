@@ -118,12 +118,22 @@ function findIndexOfBoneByName( skeleton, name ){
     return -1;
 }
 
+function getBindQuaternion( skeleton, boneIdx, outQuat ){
+    let m1 = skeleton.boneInverses[ boneIdx ].clone().invert(); 
+    let parentIdx = findIndexOfBone( skeleton, skeleton.bones[ boneIdx ].parent );
+    if ( parentIdx > -1 ){
+        let m2 = skeleton.boneInverses[ parentIdx ]; 
+        m1.premultiply(m2);
+    }
+    outQuat.setFromRotationMatrix( m1 ).normalize();
+}
+
 // sets bind quaternions only. Warning: Not the best function to call every frame.
 function forceBindPoseQuats( skeleton, skipRoot = false ){
     let bones = skeleton.bones;
     let inverses = skeleton.boneInverses;
     if ( inverses.length < 1 ){ return; }
-    let boneMat = inverses[0].clone(); // to avoid new THREE.Matrix4() and an import of threejs
+    let boneMat = inverses[0].clone(); // to avoid including ThreeJS and new THREE.Matrix4()
     for( let i = 0; i < bones.length; ++i ){
         boneMat.copy( inverses[i] ); // World to Local
         boneMat.invert(); // Local to World
@@ -140,4 +150,4 @@ function forceBindPoseQuats( skeleton, skipRoot = false ){
     }
 }
 
-export { quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone, findIndexOfBoneByName, forceBindPoseQuats }
+export{ quadraticBezierVec3, cubicBezierVec3,  mirrorQuat, mirrorQuatSelf, nlerpQuats, getTwistSwingQuaternions, getTwistQuaternion, stringToDirection,  findIndexOfBone, findIndexOfBoneByName, getBindQuaternion, forceBindPoseQuats }

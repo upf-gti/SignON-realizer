@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { findIndexOfBone } from "./Utils.js";
+import { getBindQuaternion } from "./Utils.js";
 
 class BasicBMLValueInterpolator {
     constructor( config, skeleton, isLeftHand = false ){
@@ -139,11 +139,8 @@ class BodyMovement {
     }
 
     computeJointData( boneIdx, upAxisReferenceBoneIdx ){
-        // compute bind quat
-        let m1 = this.skeleton.boneInverses[ boneIdx ].clone().invert(); // LocalToMeshCoords:    parentParentBone * parentBone * bone * point
-        // inv(parentBone) * inv(parentParentBone)    *    parentParentBone * parentBone * bone   --> 
-        m1.premultiply( this.skeleton.boneInverses[ findIndexOfBone( this.skeleton, this.skeleton.bones[ boneIdx ].parent ) ] ); 
-        let bindQuat = (new THREE.Quaternion()).setFromRotationMatrix( m1 ).normalize();;
+        let bindQuat = (new THREE.Quaternion());
+        getBindQuaternion( this.skeleton, boneIdx, bindQuat );
 
         // compute local axes of rotation based on bones boneIdx and upAxisReferenceBoneIdx.
         let xAxis = new THREE.Vector3();

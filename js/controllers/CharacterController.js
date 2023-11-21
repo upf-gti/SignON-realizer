@@ -56,10 +56,10 @@ function CharacterController(o) {
     } 
 }
 
-CharacterController.prototype.start = function (o) {
+CharacterController.prototype.start = function () {
     this.pendingResources = [];
 
-    if ( this.facialController ){ this.facialController.start(o); }
+    if ( this.facialController ){ this.facialController.start(); }
 }
 
 CharacterController.prototype.reset = function ( keepEmotion = false ) {
