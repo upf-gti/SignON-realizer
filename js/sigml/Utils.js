@@ -132,6 +132,7 @@ function getBindQuaternion( skeleton, boneIdx, outQuat ){
         m1.premultiply(m2);
     }
     outQuat.setFromRotationMatrix( m1 ).normalize();
+    return outQuat;
 }
 
 // sets bind quaternions only. Warning: Not the best function to call every frame.

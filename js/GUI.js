@@ -62,7 +62,7 @@ class AppGUI{
 
     createPanel(){
 
-        new LX.PocketDialog( "Controls", p => {
+        let pocketDialog = new LX.PocketDialog( "Controls", p => {
             this.gui = p;
 
             this.gui.refresh = () =>{
@@ -314,7 +314,11 @@ class AppGUI{
             this.gui.refresh();
             // p.merge(); // end of customization
 
-        }, { size: ["20%", null], float:"left", draggable:false});
+        }, { size: ["20%", null], float:"left", draggable:false });
+        
+        if ( window.innerWidth < window.innerHeight){
+            pocketDialog.title.click();
+        }
 
     }
 }

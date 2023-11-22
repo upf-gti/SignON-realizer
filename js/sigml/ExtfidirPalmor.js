@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { stringToDirection, nlerpQuats } from "./Utils.js";
+import { stringToDirection, nlerpQuats, getBindQuaternion } from "./Utils.js";
 
 
 class ExtfidirPalmor { 
@@ -7,13 +7,16 @@ class ExtfidirPalmor {
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
 
+        this.config = config;
         let boneMap = config.boneMap;
         let handName = ( isLeftHand ) ? "L" : "R";
         let bones = this.skeleton.bones;
 
-        this.wristBone = bones[ boneMap[ handName + "Wrist" ] ];
+        this.wristIdx = boneMap[ handName + "Wrist" ];
+        this.wristBone = bones[ this.wristIdx ];
         this.forearmBone = bones[ boneMap[ handName + "Elbow" ] ];
 
+        this.wristBindQuat = getBindQuaternion( this.skeleton, this.wristIdx, new THREE.Quaternion() );
         // before-bind axes
         this.twistAxisForearm = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "Wrist" ] ].position ).normalize(),
         this.twistAxisWrist = ( new THREE.Vector3() ).copy( bones[ boneMap[ handName + "HandMiddle" ] ].position ).normalize(),
@@ -65,8 +68,8 @@ class ExtfidirPalmor {
         this.extfidir.defDir.set(0,-1,0);
     }
 
-      // compute the swing rotation so as to get the twistAxisWrist to point at a certain location. It finds the forearm twist correction
-      _computeSwingFromCurrentPose( targetPoint, resultWristQuat ){
+    // compute the swing rotation so as to get the twistAxisWrist to point at a certain location. It finds the forearm twist correction
+    _computeSwingFromCurrentPose( targetPoint, resultWristQuat ){
         let elevation = Math.atan2( targetPoint.y, Math.sqrt( targetPoint.x * targetPoint.x + targetPoint.z * targetPoint.z ) );
         let bearing = Math.atan2( targetPoint.x, targetPoint.z );
         
@@ -76,8 +79,10 @@ class ExtfidirPalmor {
 
 
         let wristBone = this.wristBone;
-        wristBone.quaternion.set(0,0,0,1); // swing computation requires it to be with no palmor
+        wristBone.quaternion.copy( this.wristBindQuat );
+        // wristBone.quaternion.set(0,0,0,1); // swing computation requires it to be with no palmor
         wristBone.updateWorldMatrix( true );
+
         let wToLMat3 = this._tempMat3_0.setFromMatrix4( wristBone.matrixWorld ).invert(); // gets only rotation (and scale)
         
         let worldZAxisToLocal = this._tempV3_1.set(0,0,1).applyMatrix3( wToLMat3 ).normalize();        
@@ -103,10 +108,12 @@ class ExtfidirPalmor {
         let bearingRot = this._tempQ_0.setFromAxisAngle( worldYAxisToLocal, bearing );
         resultWristQuat.premultiply( bearingRot );
 
+        resultWristQuat.premultiply( this.wristBindQuat)
+
     }
 
     update(dt){
-        this.wristBone.quaternion.set(0,0,0,1);
+        this.wristBone.quaternion.copy( this.wristBindQuat );
         // if( !this.transition ){ return; }
 
         this.time += dt;
