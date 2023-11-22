@@ -445,7 +445,15 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 15, 15 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0 } ) );
+        const texture = new THREE.TextureLoader().load( "./data/performs.png");
+        // logo.wrapS = THREE.ClampToEdgeWrapping;
+        // logo.wrapT = THREE.ClampToEdgeWrapping;
+        let logo = new THREE.Mesh( new THREE.PlaneGeometry(1, 0.3 ), new THREE.MeshStandardMaterial( {roughness: 1, metalness: 0, map: texture,  transparent: true, side: THREE.DoubleSide, depthWrite: false } ) );
+        // logo.scale.set(0.5,0.5,0.5);
+        logo.position.set(6.2,0.3, -0.95);
+        logo.receiveShadow = true;
+        this.scene.add( logo );
+        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 15, 15 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0} ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
