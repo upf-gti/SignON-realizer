@@ -58,7 +58,7 @@ class App {
     // value (hex colour) in sRGB space 
     setBackPlaneColour( value ){
         if ( !this.backPlane ){ return false; }
-        this.backPlane.color.material.set( value );   
+        this.backPlane.material.color.set( value );   
         return true;
     }
     
