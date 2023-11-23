@@ -445,7 +445,7 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        const texture = new THREE.TextureLoader().load( "./data/performs.png");
+        const texture = new THREE.TextureLoader().load( "./data/imgs/performs.png");
         let logo = new THREE.Mesh( new THREE.PlaneGeometry(1, 0.3 ), new THREE.MeshStandardMaterial( {roughness: 1, metalness: 0, map: texture,  transparent: true, side: THREE.DoubleSide, depthWrite: false } ) );
         logo.position.set(2.6,0.3, -0.95);
         logo.receiveShadow = true;
