@@ -422,9 +422,13 @@ function postureParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, 
     else if ( tagName == "handconstellation" ){ 
         // <!ELEMENT  handconstellation  (  (location_hand, location_hand)?, location_bodyarm? )>
         result = result.concat( handConstellationParser( xml, time, time + TIMESLOT.LOC / signSpeed, hand, signGeneralInfo, currentPosture ) );
-        maxEnd = TIMESLOT.LOC / signSpeed;
+        if ( result.length > 0 ){ maxEnd = TIMESLOT.LOC / signSpeed; }
 
     } 
+    else if ( tagName == "location_hand" ){
+        result = result.concat( locationHandAsHandConstellationParser( xml, time, time + TIMESLOT.LOC / signSpeed, hand, signGeneralInfo, currentPosture ) );
+        if ( result.length > 0 ){ maxEnd = TIMESLOT.LOC / signSpeed; }
+    }
 
     return { data: result, end: ( start + maxEnd ) };
 }
@@ -811,6 +815,28 @@ function locationHandInfoExtract( xml, parseChildren = true ){
     // second_side             %side;
     // second_digits           CDATA           #IMPLIED
     // approx_second_location  %boolfalse;
+}
+
+function locationHandAsHandConstellationParser( xml, start, attackPeak, hand, signGeneralInfo, currentPosture ){
+    let locationHand = locationHandInfoExtract( xml, true );
+    if ( !locationHand ){ return []; }
+
+    let result = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand, handConstellation: "true" };
+
+    result.hand = hand;
+    result.dstLocation = locationHand.location;
+    result.dstSide = locationHand.side;
+    result.dstFinger = locationHand.finger;
+    if ( locationHand.child ){
+        result.srcLocation = locationHand.child.location;
+        result.srcSide = locationHand.child.side;
+        result.srcFinger = locationHand.child.finger;
+    }else{
+        result.srcLocation = "tip";
+        result.srcFinger = "1";
+    }
+    return [ result ];
+
 }
 
 function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo, currentPosture ){

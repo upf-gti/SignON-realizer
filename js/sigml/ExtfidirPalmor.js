@@ -80,7 +80,6 @@ class ExtfidirPalmor {
 
         let wristBone = this.wristBone;
         wristBone.quaternion.copy( this.wristBindQuat );
-        // wristBone.quaternion.set(0,0,0,1); // swing computation requires it to be with no palmor
         wristBone.updateWorldMatrix( true );
 
         let wToLMat3 = this._tempMat3_0.setFromMatrix4( wristBone.matrixWorld ).invert(); // gets only rotation (and scale)

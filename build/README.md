@@ -22,7 +22,6 @@ The organisation of folders and files should be as follows:
 
         - data/
             - dictionaries/
-            - hdrs/
             - imgs/
             - EvaHandsEyesFixed.glb
             - EvaConfig.json
