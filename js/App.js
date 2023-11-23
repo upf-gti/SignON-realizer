@@ -23,7 +23,6 @@ class App {
         this.fps = 0;
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
-        this.signingSpeed = 1;
         this.loaderGLB = new GLTFLoader();
         
         this.scene = null;
@@ -39,9 +38,40 @@ class App {
         this.neckTarget = null;
         
         this.msg = {};
-
+        
         this.languageDictionaries = {}; // key = NGT, value = { glosses: {}, word2ARPA: {} }
         this.selectedLanguage = "NGT";
+        
+        this.signingSpeed = 1;
+        this.backPlane = null;
+        this.avatarShirt = null;
+    }
+
+    setSigningSpeed( value ){ this.signingSpeed = value; }
+    getSigningSpeed( ){ return this.signingSpeed; }
+
+    // returns value (hex) with the colour in sRGB space
+    getBackPlaneColour(){
+        if ( !this.backPlane ){ return 0; }   
+        return this.backPlane.material.color.getHex(); // css works in sRGB
+    }
+    // value (hex colour) in sRGB space 
+    setBackPlaneColour( value ){
+        if ( !this.backPlane ){ return false; }
+        this.backPlane.color.material.set( value );   
+        return true;
+    }
+    
+    // returns value (hex) with the colour in sRGB space
+    getClothesColour(){
+        if ( !this.avatarShirt ){ return 0; }   
+        return this.avatarShirt.material.color.getHex(); // css works in sRGB
+    }
+    // value (hex colour) in sRGB space 
+    setClothesColour( value ){
+        if ( !this.avatarShirt ){ return false; }
+        this.avatarShirt.material.color.set( value );   
+        return true;
     }
 
     // entry point of data from the mobile app. "Synchronous"
@@ -334,6 +364,7 @@ class App {
                     }
                 } );
     
+                this.avatarShirt = model.getObjectByName( "Tops" );
             }
 
             // correct hand's size
@@ -451,7 +482,7 @@ class App {
         logo.receiveShadow = true;
         this.scene.add( logo );
         
-        let backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0} ) );
+        let backPlane = this.backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0} ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
