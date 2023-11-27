@@ -1090,6 +1090,11 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                             if( typeof( forward[i].attackPeak ) == "number" ){ forward[i].attackPeak += loop * loopDuration; } 
                             if( typeof( forward[i].ready ) == "number" ){ forward[i].ready += loop * loopDuration; } 
 
+
+                            if ( r.data[i].locationBodyArm || r.data[i].handshape || r.data[i].extfidir || r.data[i].palmor ){
+                                continue;
+                            }
+                            
                             // start relax-end at the end of the block until loop duration
                             if( typeof( forward[i].relax ) == "number" ){ forward[i].relax += loop * loopDuration; } 
                             else{ forward[i].relax = forward[i].start + blockDuration; }
@@ -1186,23 +1191,17 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
 
 // necessary for nesting such in tgt and par
 function remapBlockTiming ( srcStart, srcEnd, dstStart, dstEnd, bmlArray ){
+    let timings = [ "start", "attackPeak", "relax", "end", "ready" ];
+    
     for( let i = 0; i < bmlArray.length; ++i ){
         let bml = bmlArray[i];
-        let f = ( bml.start - srcStart ) / ( srcEnd - srcStart ); 
-        bml.start = dstStart * ( 1.0 - f ) + dstEnd * f ;
-        if ( bml.locationBodyArm || bml.handshape || bml.extfidir || bml.palmor ){ // postures
-            f = ( bml.attackPeak - srcStart ) / ( srcEnd - srcStart ); 
-            bml.attackPeak = dstStart * ( 1.0 - f ) + dstEnd * f;
-        }
-        else{ // motions
-            if ( bml.motion == "directed" || bml.motion == "circular" ){
-                f = ( bml.attackPeak - srcStart ) / ( srcEnd - srcStart ); 
-                bml.attackPeak = dstStart * ( 1.0 - f ) + dstEnd * f;
-            }else{
-                f = ( bml.end - srcStart ) / ( srcEnd - srcStart ); 
-                bml.end = dstStart * ( 1.0 - f ) + dstEnd * f;
+
+        for( let j = 0; j < timings.length; ++j ){
+            if ( typeof( bml[ timings[j] ] ) == "number" ){
+                let f = ( bml[ timings[j] ] - srcStart ) / ( srcEnd - srcStart ); 
+                bml[ timings[j] ] = dstStart * ( 1.0 - f ) + dstEnd * f ;        
             }
-        }
+        }    
     }
 }
 
