@@ -1783,4 +1783,4 @@ let mouthGestureTable = {
     // T17: { type: "speech", text: "", sentInt: 0.3 }, //_mouth_open_tongue_protrudes_briefly
 }
 
-export{ sigmlStringToBML, TIMESLOT }
+export { sigmlStringToBML, TIMESLOT }
