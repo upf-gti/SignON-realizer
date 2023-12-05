@@ -1,5 +1,7 @@
-# SignON-realizer
+> [!IMPORTANT]  
+> This GitHub repository serves as a legacy archive, marking the culmination of past contributions within the SignON European project. A new repository has been created to build upon this foundation, where ongoing work and advancements can be found. Please visit the successor repository ([here](https://github.com/upf-gti/performs)) to stay up-to-date with the latest developments.
 
+# SignON-realizer
 
 <img src="./docs/SignOn_Favicon_500x500px.png" height="200" align="right">
 
